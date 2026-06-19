@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/destination.dart';
 import '../models/current_location.dart';
 import '../models/monitoring_state.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../providers/navigation_provider.dart';
+import '../providers/transit_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
@@ -48,6 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
           _MonitoringStatusCard(state: monitoring.currentState),
+          const SizedBox(height: 16),
+          const _TransitSettingsCard(),
+          const SizedBox(height: 16),
+          const _QuickDestinationsCard(),
           const SizedBox(height: 16),
           _DestinationCard(monitoring: monitoring),
           const SizedBox(height: 16),
@@ -92,6 +99,174 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) {
       _showingArrivalDialog = false;
     }
+  }
+}
+
+class _TransitSettingsCard extends StatelessWidget {
+  const _TransitSettingsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final country = context.select<TransitProvider, String>(
+      (provider) => provider.preferences.country,
+    );
+    final transitSystem = context.select<TransitProvider, String>(
+      (provider) => provider.preferences.transitSystem,
+    );
+    final defaultLine = context.select<TransitProvider, String>(
+      (provider) => provider.preferences.defaultLine,
+    );
+
+    return HomeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const HomeCardHeader(
+            icon: Icons.train_outlined,
+            title: 'Transit Settings',
+          ),
+          const SizedBox(height: 16),
+          _TransitMetricRow(label: 'Country', value: country),
+          const SizedBox(height: 8),
+          _TransitMetricRow(label: 'Transit', value: transitSystem),
+          const SizedBox(height: 8),
+          _TransitMetricRow(label: 'Line', value: defaultLine),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                context.read<NavigationProvider>().setIndex(1);
+              },
+              child: const Text('Change'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransitMetricRow extends StatelessWidget {
+  const _TransitMetricRow({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickDestinationsCard extends StatelessWidget {
+  const _QuickDestinationsCard();
+
+  Future<void> _selectStation(
+    BuildContext context,
+    Destination station,
+  ) async {
+    await context.read<MonitoringProvider>().setDestination(station);
+    if (!context.mounted) {
+      return;
+    }
+    await context.read<TransitProvider>().recordRecentStation(station);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final favoriteStations = context.select<TransitProvider, List<Destination>>(
+      (provider) => provider.favoriteStations,
+    );
+    final recentStations = context.select<TransitProvider, List<Destination>>(
+      (provider) => provider.recentStations,
+    );
+
+    return HomeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const HomeCardHeader(
+            icon: Icons.star_outline,
+            title: 'Quick Destinations',
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Favorite Stations',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (favoriteStations.isEmpty)
+            Text(
+              'No favorite stations for this transit line.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: favoriteStations
+                  .map(
+                    (station) => ActionChip(
+                      label: Text(station.name),
+                      onPressed: () => _selectStation(context, station),
+                    ),
+                  )
+                  .toList(),
+            ),
+          if (recentStations.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              'Recents',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: recentStations
+                  .map(
+                    (station) => ActionChip(
+                      label: Text(station.name),
+                      onPressed: () => _selectStation(context, station),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

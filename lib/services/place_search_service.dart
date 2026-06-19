@@ -1,7 +1,7 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
 
-import '../config/google_api_config.dart';
+import '../config/env_config.dart';
 import '../models/destination.dart';
 import '../utils/map_defaults.dart';
 
@@ -28,7 +28,7 @@ class PlaceSearchResult {
 }
 
 class PlaceSearchService {
-  PlaceSearchService({String? apiKey}) : _apiKey = apiKey ?? GoogleApiConfig.apiKey;
+  PlaceSearchService({String? apiKey}) : _apiKey = apiKey ?? _readApiKey();
 
   final String _apiKey;
 
@@ -43,9 +43,22 @@ class PlaceSearchService {
 
   bool get isConfigured => _apiKey.isNotEmpty;
 
-  String get apiKey => _apiKey;
+  String get apiKey {
+    if (_apiKey.isEmpty) {
+      throw EnvConfigException(EnvConfig.missingApiKeyMessage);
+    }
+    return _apiKey;
+  }
 
   String get searchHelperText => 'Examples: ${exampleSearches.join(', ')}';
+
+  static String _readApiKey() {
+    if (!EnvConfig.isGoogleMapsApiKeyConfigured) {
+      return '';
+    }
+
+    return EnvConfig.googleMapsApiKey;
+  }
 
   PlaceSearchResult? parsePrediction(Prediction prediction) {
     final latitude = double.tryParse(prediction.lat ?? '');

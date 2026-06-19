@@ -4,6 +4,7 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
 import 'package:provider/provider.dart';
 
+import '../config/env_config.dart';
 import '../providers/monitoring_provider.dart';
 import '../services/place_search_service.dart';
 import '../utils/map_defaults.dart';
@@ -141,7 +142,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
-                          'Add GOOGLE_MAPS_API_KEY to enable place search.',
+                          EnvConfig.missingApiKeyMessage,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: colorScheme.error,
                           ),

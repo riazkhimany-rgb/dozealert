@@ -12,6 +12,36 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
+fun readEnvValue(key: String): String {
+    val envFile = rootProject.file("../.env")
+    if (!envFile.exists()) {
+        return ""
+    }
+
+    return envFile.readLines()
+        .asSequence()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && !it.startsWith("#") }
+        .mapNotNull { line ->
+            val separatorIndex = line.indexOf('=')
+            if (separatorIndex <= 0) {
+                return@mapNotNull null
+            }
+
+            val name = line.substring(0, separatorIndex).trim()
+            if (name != key) {
+                return@mapNotNull null
+            }
+
+            line.substring(separatorIndex + 1).trim()
+        }
+        .firstOrNull()
+        .orEmpty()
+}
+
+val googleMapsApiKey = readEnvValue("GOOGLE_MAPS_API_KEY")
+    .ifEmpty { localProperties.getProperty("GOOGLE_MAPS_API_KEY", "") }
+
 android {
     namespace = "com.example.dozealert"
     compileSdk = flutter.compileSdkVersion
@@ -32,8 +62,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] =
-            localProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsApiKey
     }
 
     buildTypes {

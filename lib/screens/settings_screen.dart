@@ -8,6 +8,7 @@ import '../providers/theme_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/app_branding.dart';
 import '../utils/location_format.dart';
+import '../widgets/transit_preferences_section.dart';
 import 'about_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -62,6 +63,8 @@ class SettingsScreen extends StatelessWidget {
                   .toList(),
             ),
           ),
+          const Divider(height: 32),
+          const TransitPreferencesSection(),
           const Divider(height: 32),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),

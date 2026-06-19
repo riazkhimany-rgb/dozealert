@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dozealert/main.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/providers/monitoring_provider.dart';
+import 'package:dozealert/providers/transit_provider.dart';
 import 'package:dozealert/services/alarm_service.dart';
 import 'package:dozealert/services/background_monitor_service.dart';
 import 'package:dozealert/services/destination_storage_service.dart';
 import 'package:dozealert/services/monitoring_storage_service.dart';
 import 'package:dozealert/services/place_search_service.dart';
+import 'package:dozealert/services/preferences_service.dart';
 import 'package:dozealert/services/settings_service.dart';
 
 Future<DozeAlertApp> _createTestApp() async {
   SharedPreferences.setMockInitialValues({});
+  dotenv.loadFromString(envString: 'GOOGLE_MAPS_API_KEY=test_key');
 
   final settingsService = SettingsService();
   await settingsService.loadSettings();
@@ -28,6 +32,10 @@ Future<DozeAlertApp> _createTestApp() async {
   await backgroundMonitorService.initialize();
 
   final placeSearchService = PlaceSearchService();
+  final preferencesService = PreferencesService();
+  final transitProvider = TransitProvider(preferencesService);
+  await transitProvider.loadPreferences();
+
   final monitoringProvider = MonitoringProvider(
     destinationStorageService,
     monitoringStorageService,
@@ -42,6 +50,8 @@ Future<DozeAlertApp> _createTestApp() async {
     backgroundMonitorService: backgroundMonitorService,
     monitoringStorageService: monitoringStorageService,
     placeSearchService: placeSearchService,
+    preferencesService: preferencesService,
+    transitProvider: transitProvider,
     destinationStorageService: destinationStorageService,
     monitoringProvider: monitoringProvider,
     skipSplash: true,
@@ -55,6 +65,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('DozeAlert'), findsOneWidget);
+    expect(find.text('Transit Settings'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Favorite Stations'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Favorite Stations'), findsOneWidget);
     expect(find.text('Destination'), findsOneWidget);
     expect(find.text('No destination selected'), findsWidgets);
     expect(find.text('Choose Destination'), findsOneWidget);
@@ -76,6 +96,11 @@ void main() {
     expect(find.text('-79.3806'), findsOneWidget);
     expect(find.text('No destination selected'), findsNothing);
     expect(find.text('Clear Destination'), findsOneWidget);
+
+    final homeScrollable = find.byType(Scrollable).first;
+    await tester.drag(homeScrollable, const Offset(0, 800));
+    await tester.pumpAndSettle();
+
     expect(find.text('Monitoring Status'), findsOneWidget);
 
     await tester.scrollUntilVisible(
@@ -96,6 +121,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Appearance'), findsOneWidget);
+    expect(find.text('Transit Preferences'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Developer Settings'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('Developer Settings'), findsOneWidget);
 
     await tester.scrollUntilVisible(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +8,7 @@ import 'providers/monitoring_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/transit_provider.dart';
 import 'screens/app_startup_screen.dart';
 import 'services/alarm_service.dart';
 import 'services/background_monitor_service.dart';
@@ -14,12 +16,15 @@ import 'services/destination_storage_service.dart';
 import 'services/location_service.dart';
 import 'services/monitoring_storage_service.dart';
 import 'services/place_search_service.dart';
+import 'services/preferences_service.dart';
 import 'services/settings_service.dart';
 import 'utils/app_theme.dart';
 
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  await _loadEnvironment();
 
   final settingsService = SettingsService();
   await settingsService.loadSettings();
@@ -34,6 +39,10 @@ Future<void> main() async {
   await backgroundMonitorService.initialize();
 
   final placeSearchService = PlaceSearchService();
+  final preferencesService = PreferencesService();
+  final transitProvider = TransitProvider(preferencesService);
+  await transitProvider.loadPreferences();
+
   final monitoringProvider = MonitoringProvider(
     destinationStorageService,
     monitoringStorageService,
@@ -49,10 +58,25 @@ Future<void> main() async {
       backgroundMonitorService: backgroundMonitorService,
       monitoringStorageService: monitoringStorageService,
       placeSearchService: placeSearchService,
+      preferencesService: preferencesService,
+      transitProvider: transitProvider,
       destinationStorageService: destinationStorageService,
       monitoringProvider: monitoringProvider,
     ),
   );
+}
+
+Future<void> _loadEnvironment() async {
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (error, stackTrace) {
+    debugPrint('Failed to load .env: $error');
+    debugPrint('$stackTrace');
+    dotenv.loadFromString(
+      envString: 'GOOGLE_MAPS_API_KEY=',
+      isOptional: true,
+    );
+  }
 }
 
 class DozeAlertApp extends StatelessWidget {
@@ -63,6 +87,8 @@ class DozeAlertApp extends StatelessWidget {
     required this.backgroundMonitorService,
     required this.monitoringStorageService,
     required this.placeSearchService,
+    required this.preferencesService,
+    required this.transitProvider,
     required this.destinationStorageService,
     required this.monitoringProvider,
     this.skipSplash = false,
@@ -73,6 +99,8 @@ class DozeAlertApp extends StatelessWidget {
   final BackgroundMonitorService backgroundMonitorService;
   final MonitoringStorageService monitoringStorageService;
   final PlaceSearchService placeSearchService;
+  final PreferencesService preferencesService;
+  final TransitProvider transitProvider;
   final DestinationStorageService destinationStorageService;
   final MonitoringProvider monitoringProvider;
   final bool skipSplash;
@@ -90,6 +118,7 @@ class DozeAlertApp extends StatelessWidget {
           value: monitoringStorageService,
         ),
         Provider<PlaceSearchService>.value(value: placeSearchService),
+        Provider<PreferencesService>.value(value: preferencesService),
         Provider<DestinationStorageService>.value(
           value: destinationStorageService,
         ),
@@ -108,6 +137,9 @@ class DozeAlertApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<MonitoringProvider>.value(
           value: monitoringProvider,
+        ),
+        ChangeNotifierProvider<TransitProvider>.value(
+          value: transitProvider,
         ),
         ChangeNotifierProvider(
           create: (context) => LocationProvider(
