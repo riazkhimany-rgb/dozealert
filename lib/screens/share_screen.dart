@@ -8,14 +8,11 @@ import '../widgets/home_card.dart';
 class ShareScreen extends StatelessWidget {
   const ShareScreen({super.key});
 
-  static const _playStoreUrl =
-      'https://play.google.com/store/apps/details?id=app.dozealert';
-
   static String get _shareMessage =>
       'Try ${AppBranding.appName}!\n\n'
       '${AppBranding.tagline}\n\n'
       '${AppBranding.description}\n\n'
-      'Download: $_playStoreUrl';
+      'Download: ${AppBranding.websiteUrl}';
 
   Future<void> _launchShareUri(Uri uri) async {
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -124,7 +121,7 @@ class ShareScreen extends StatelessWidget {
                 color: const Color(0xFF1877F2),
                 onTap: () => _launchShareUri(
                   Uri.parse(
-                    'https://www.facebook.com/sharer/sharer.php?u=${Uri.encodeComponent(_playStoreUrl)}&quote=$encodedMessage',
+                    'https://www.facebook.com/sharer/sharer.php?u=${Uri.encodeComponent(AppBranding.websiteUrl)}&quote=$encodedMessage',
                   ),
                 ),
               ),

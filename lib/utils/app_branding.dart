@@ -9,6 +9,9 @@ abstract final class AppBranding {
   static const String privacyPolicyAsset = 'privacy_policy.md';
   static const String githubUrl = 'https://github.com/dozealert/dozealert';
   static const String supportEmail = 'support@dozealert.app';
+  static const String websiteUrl = 'https://dozealert.app';
+  static const String apkDownloadUrl =
+      'https://dozealert.app/downloads/dozealert-latest.apk';
   static const String privacyPolicyUrl = 'https://dozealert.app/privacy';
 
   static const Color midnightBlue = Color(0xFF0D1B2A);
