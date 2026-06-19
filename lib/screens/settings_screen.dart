@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/theme_provider.dart';
+import '../utils/app_branding.dart';
+import 'about_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -66,12 +68,25 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('DozeAlert'),
+            leading: CircleAvatar(
+              backgroundColor: colorScheme.primaryContainer,
+              backgroundImage: const AssetImage(
+                'assets/branding/splash_logo.png',
+              ),
+            ),
+            title: const Text('About DozeAlert'),
             subtitle: Text(
-              'Version 1.0.0',
+              AppBranding.tagline,
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AboutScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),

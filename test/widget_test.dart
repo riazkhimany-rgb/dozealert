@@ -21,6 +21,7 @@ Future<DozeAlertApp> _createTestApp() async {
     settingsService: settingsService,
     destinationStorageService: destinationStorageService,
     monitoringProvider: monitoringProvider,
+    skipSplash: true,
   );
 }
 
@@ -70,7 +71,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Appearance'), findsOneWidget);
-    expect(find.text('System default'), findsOneWidget);
+    expect(find.text('About DozeAlert'), findsOneWidget);
+
+    await tester.tap(find.text('About DozeAlert'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('About'), findsOneWidget);
+    expect(find.text('Sleep peacefully. Arrive confidently.'), findsWidgets);
+    expect(find.text('Privacy Policy'), findsOneWidget);
+    expect(find.text('GitHub Repository'), findsOneWidget);
   });
 
   testWidgets('persists and clears selected destination', (

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DozeAlert logo">
+  <rect width="512" height="512" rx="96" fill="#0D1B2A"/>
+  <ellipse cx="256" cy="292" rx="118" ry="132" fill="#4CC9F0" opacity="0.22"/>
+  <ellipse cx="256" cy="292" rx="86" ry="98" fill="#4CC9F0" opacity="0.12"/>
+  <path d="M256 88c-74 0-134 60-134 134 0 52 36 108 86 158 14 14 32 22 48 22s34-8 48-22c50-50 86-106 86-158 0-74-60-134-134-134z" fill="#FFFFFF"/>
+  <circle cx="256" cy="214" r="58" fill="#0D1B2A"/>
+  <path d="M226 206c8 8 16 8 24 0" stroke="#4CC9F0" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <path d="M262 206c8 8 16 8 24 0" stroke="#4CC9F0" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <path d="M234 236c10 12 34 12 44 0" stroke="#4CC9F0" stroke-width="6" stroke-linecap="round" fill="none"/>
+</svg>

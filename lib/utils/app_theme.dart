@@ -1,34 +1,65 @@
 import 'package:flutter/material.dart';
 
-abstract final class AppTheme {
-  static const Color _seedColor = Color(0xFF006874);
+import 'app_branding.dart';
 
+abstract final class AppTheme {
   static ThemeData light() {
-    return ThemeData(
-      useMaterial3: true,
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: AppBranding.cyanAccent,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _seedColor,
-        brightness: Brightness.light,
-      ),
-      appBarTheme: const AppBarTheme(centerTitle: false),
-      navigationBarTheme: const NavigationBarThemeData(
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-      ),
+      primary: AppBranding.midnightBlue,
+      onPrimary: AppBranding.white,
+      secondary: AppBranding.cyanAccent,
+      onSecondary: AppBranding.midnightBlue,
+      surface: AppBranding.white,
+      onSurface: AppBranding.midnightBlue,
     );
+
+    return _baseTheme(colorScheme);
   }
 
   static ThemeData dark() {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: AppBranding.cyanAccent,
+      brightness: Brightness.dark,
+      primary: AppBranding.cyanAccent,
+      onPrimary: AppBranding.midnightBlue,
+      secondary: AppBranding.cyanAccent,
+      onSecondary: AppBranding.midnightBlue,
+      surface: AppBranding.midnightBlue,
+      onSurface: AppBranding.white,
+      surfaceContainerLow: const Color(0xFF152536),
+      surfaceContainerHighest: const Color(0xFF1B3147),
+    );
+
+    return _baseTheme(colorScheme);
+  }
+
+  static ThemeData _baseTheme(ColorScheme colorScheme) {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _seedColor,
-        brightness: Brightness.dark,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: colorScheme.surface,
+      appBarTheme: AppBarTheme(
+        centerTitle: false,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
       ),
-      appBarTheme: const AppBarTheme(centerTitle: false),
-      navigationBarTheme: const NavigationBarThemeData(
+      navigationBarTheme: NavigationBarThemeData(
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        backgroundColor: colorScheme.surfaceContainerLow,
+        indicatorColor: colorScheme.secondary.withValues(alpha: 0.24),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        side: BorderSide(color: colorScheme.outlineVariant),
+        selectedColor: colorScheme.secondary.withValues(alpha: 0.24),
       ),
     );
   }

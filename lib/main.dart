@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/monitoring_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/theme_provider.dart';
-import 'screens/main_screen.dart';
+import 'screens/app_startup_screen.dart';
 import 'services/destination_storage_service.dart';
 import 'services/settings_service.dart';
 import 'utils/app_theme.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   final settingsService = SettingsService();
   final destinationStorageService = DestinationStorageService();
@@ -33,11 +35,13 @@ class DozeAlertApp extends StatelessWidget {
     required this.settingsService,
     required this.destinationStorageService,
     required this.monitoringProvider,
+    this.skipSplash = false,
   });
 
   final SettingsService settingsService;
   final DestinationStorageService destinationStorageService;
   final MonitoringProvider monitoringProvider;
+  final bool skipSplash;
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +69,7 @@ class DozeAlertApp extends StatelessWidget {
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
             themeMode: themeProvider.themeMode,
-            home: const MainScreen(),
+            home: AppStartupScreen(skipSplash: skipSplash),
           );
         },
       ),
