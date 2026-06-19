@@ -45,9 +45,23 @@ class TransitPreferencesSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
           child: _TransitPreferenceCard(
-            title: 'Transit System',
+            title: TransitCatalog.regionLabelForCountry(preferences.country),
+            value: preferences.region,
+            options: TransitCatalog.regionsForCountry(preferences.country),
+            onChanged: (value) {
+              unawaited(context.read<TransitProvider>().setRegion(value));
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          child: _TransitPreferenceCard(
+            title: 'Transit Agency',
             value: preferences.transitSystem,
-            options: TransitCatalog.systemsForCountry(preferences.country),
+            options: TransitCatalog.agenciesForRegion(
+              preferences.country,
+              preferences.region,
+            ),
             onChanged: (value) {
               unawaited(context.read<TransitProvider>().setTransitSystem(value));
             },

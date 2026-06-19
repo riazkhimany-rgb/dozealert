@@ -7,12 +7,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:vibration/vibration.dart';
 
 import '../services/settings_service.dart';
+import '../services/system_volume_service.dart';
 import '../utils/app_log.dart';
 
 class AlarmService {
-  AlarmService(this._settingsService);
+  AlarmService(this._settingsService, [SystemVolumeService? volumeService])
+      : _volumeService = volumeService ?? SystemVolumeService();
 
   final SettingsService _settingsService;
+  final SystemVolumeService _volumeService;
 
   static const _arrivalNotificationId = 1001;
   static const _alarmAssetPath = 'sounds/alarm.mp3';
@@ -108,7 +111,12 @@ class AlarmService {
 
     final forceSound = _settingsService.settings.alwaysPlayAlarmSound;
     final volume = _settingsService.settings.alarmVolume;
+    final approachSystemVolume =
+        _settingsService.settings.approachSystemVolume;
 
+    await _volumeService.applyApproachAlertVolume(
+      targetVolume: approachSystemVolume,
+    );
     await _startApproachSpeechLoop(volume: volume);
     await _startVibration();
 
@@ -137,6 +145,7 @@ class AlarmService {
     await _audioPlayer.stop();
     await _stopVibration();
     await _notifications.cancel(_arrivalNotificationId);
+    await _volumeService.restoreSavedVolume();
   }
 
   Future<void> showArrivalNotification({

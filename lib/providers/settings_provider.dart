@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/alarm_sound_mode.dart';
+import '../models/app_settings.dart';
 import '../models/transit_mode_wake_setting.dart';
 import '../services/settings_service.dart';
 
@@ -16,6 +17,8 @@ class SettingsProvider extends ChangeNotifier {
   AlarmSoundMode get alarmSoundMode => _settingsService.settings.alarmSoundMode;
   bool get alwaysPlayAlarmSound => _settingsService.settings.alwaysPlayAlarmSound;
   double get alarmVolume => _settingsService.settings.alarmVolume;
+  double get approachSystemVolume =>
+      _settingsService.settings.approachSystemVolume;
 
   Future<void> setTestModeEnabled(bool enabled) async {
     if (enabled == testModeEnabled) {
@@ -69,6 +72,18 @@ class SettingsProvider extends ChangeNotifier {
 
     await _settingsService.saveSettings(
       _settingsService.settings.copyWith(alarmVolume: clamped),
+    );
+    notifyListeners();
+  }
+
+  Future<void> setApproachSystemVolume(double volume) async {
+    final clamped = AppSettings.clampApproachSystemVolume(volume);
+    if (clamped == approachSystemVolume) {
+      return;
+    }
+
+    await _settingsService.saveSettings(
+      _settingsService.settings.copyWith(approachSystemVolume: clamped),
     );
     notifyListeners();
   }

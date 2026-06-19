@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/transit_catalog.dart';
 import '../models/agency_detection_result.dart';
 import '../models/destination.dart';
 import '../models/transit_agency.dart';
@@ -179,8 +180,11 @@ class GtfsProvider extends ChangeNotifier {
     final route = detection.route;
     if (route != null) {
       _transitModeProvider.setActiveRouteId(route.routeId);
+      final agency = TransitCatalog.agencyByName(route.transitSystem);
       await _transitProvider.applyTransitSelection(
         country: route.country,
+        region: agency?.region ??
+            TransitCatalog.defaultRegionForCountry(route.country),
         transitSystem: route.transitSystem,
         defaultLine: route.lineName,
       );

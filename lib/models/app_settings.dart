@@ -4,6 +4,9 @@ import '../models/alarm_sound_mode.dart';
 import '../models/transit_mode_wake_setting.dart';
 
 class AppSettings {
+  static const defaultApproachSystemVolume = 0.25;
+  static const minApproachSystemVolume = 0.10;
+
   const AppSettings({
     this.themeMode = ThemeMode.system,
     this.testModeEnabled = false,
@@ -11,6 +14,7 @@ class AppSettings {
     this.transitModeWake = TransitModeWakeSetting.oneStopBefore,
     this.alarmSoundMode = AlarmSoundMode.followDevice,
     this.alarmVolume = 1.0,
+    this.approachSystemVolume = defaultApproachSystemVolume,
   });
 
   final ThemeMode themeMode;
@@ -19,6 +23,7 @@ class AppSettings {
   final TransitModeWakeSetting transitModeWake;
   final AlarmSoundMode alarmSoundMode;
   final double alarmVolume;
+  final double approachSystemVolume;
 
   bool get alwaysPlayAlarmSound =>
       alarmSoundMode == AlarmSoundMode.alwaysPlaySound;
@@ -30,6 +35,7 @@ class AppSettings {
     TransitModeWakeSetting? transitModeWake,
     AlarmSoundMode? alarmSoundMode,
     double? alarmVolume,
+    double? approachSystemVolume,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -38,6 +44,11 @@ class AppSettings {
       transitModeWake: transitModeWake ?? this.transitModeWake,
       alarmSoundMode: alarmSoundMode ?? this.alarmSoundMode,
       alarmVolume: alarmVolume ?? this.alarmVolume,
+      approachSystemVolume: approachSystemVolume ?? this.approachSystemVolume,
     );
+  }
+
+  static double clampApproachSystemVolume(double volume) {
+    return volume.clamp(minApproachSystemVolume, 1.0);
   }
 }

@@ -2,11 +2,13 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/transit_catalog.dart';
 import '../models/destination.dart';
 import '../models/transit_preferences.dart';
 
 class PreferencesService {
   static const _countryKey = 'transit_country';
+  static const _regionKey = 'transit_region';
   static const _transitSystemKey = 'transit_system';
   static const _defaultLineKey = 'transit_default_line';
   static const _recentStationsKey = 'transit_recent_stations';
@@ -15,6 +17,7 @@ class PreferencesService {
   Future<TransitPreferences> loadTransitPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final country = prefs.getString(_countryKey);
+    final region = prefs.getString(_regionKey);
     final transitSystem = prefs.getString(_transitSystemKey);
     final defaultLine = prefs.getString(_defaultLineKey);
 
@@ -22,18 +25,23 @@ class PreferencesService {
       return TransitPreferences.defaults;
     }
 
-    return TransitPreferences(
-      country: country,
-      transitSystem: transitSystem,
-      defaultLine: defaultLine,
+    return TransitCatalog.normalize(
+      TransitPreferences(
+        country: country,
+        region: region ?? TransitCatalog.defaultRegionForCountry(country),
+        transitSystem: transitSystem,
+        defaultLine: defaultLine,
+      ),
     );
   }
 
   Future<void> saveTransitPreferences(TransitPreferences preferences) async {
+    final normalized = TransitCatalog.normalize(preferences);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_countryKey, preferences.country);
-    await prefs.setString(_transitSystemKey, preferences.transitSystem);
-    await prefs.setString(_defaultLineKey, preferences.defaultLine);
+    await prefs.setString(_countryKey, normalized.country);
+    await prefs.setString(_regionKey, normalized.region);
+    await prefs.setString(_transitSystemKey, normalized.transitSystem);
+    await prefs.setString(_defaultLineKey, normalized.defaultLine);
   }
 
   Future<List<Destination>> loadRecentStations() async {

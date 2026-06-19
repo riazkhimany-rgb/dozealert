@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../cache/gtfs_cache_store.dart';
 import '../data/default_gtfs_feeds.dart';
+import '../data/transit_catalog.dart';
 import '../models/gtfs_feed_info.dart';
 import '../services/gtfs_download_service.dart';
 import '../services/gtfs_import_service.dart';
@@ -30,6 +31,15 @@ class GtfsFeedProvider extends ChangeNotifier {
 
   bool get isInitialized => _initialized;
   List<GtfsFeedInfo> get feeds => List.unmodifiable(_feeds);
+
+  List<GtfsFeedInfo> feedsForRegion(String country, String region) {
+    final feedIds = TransitCatalog.gtfsFeedsForRegion(country, region)
+        .map((feed) => feed.feedId)
+        .toSet();
+    return _feeds
+        .where((feed) => feedIds.contains(feed.feedId))
+        .toList(growable: false);
+  }
 
   Future<void> initialize() async {
     if (_initialized) {

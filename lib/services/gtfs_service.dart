@@ -27,68 +27,7 @@ class GtfsService {
   List<TransitStop> get stops => List.unmodifiable(_stops);
   bool get isInitialized => _initialized;
 
-  static const seededAgencies = <TransitAgency>[
-    TransitAgency(
-      agencyId: 'go_transit',
-      agencyName: 'GO Transit',
-      country: 'Canada',
-      city: 'Toronto',
-    ),
-    TransitAgency(
-      agencyId: 'ttc',
-      agencyName: 'TTC',
-      country: 'Canada',
-      city: 'Toronto',
-    ),
-    TransitAgency(
-      agencyId: 'stm_montreal',
-      agencyName: 'STM Montreal',
-      country: 'Canada',
-      city: 'Montreal',
-    ),
-    TransitAgency(
-      agencyId: 'exo_montreal',
-      agencyName: 'Exo Montreal',
-      country: 'Canada',
-      city: 'Montreal',
-    ),
-    TransitAgency(
-      agencyId: 'translink_vancouver',
-      agencyName: 'TransLink Vancouver',
-      country: 'Canada',
-      city: 'Vancouver',
-    ),
-    TransitAgency(
-      agencyId: 'oc_transpo',
-      agencyName: 'OC Transpo',
-      country: 'Canada',
-      city: 'Ottawa',
-    ),
-    TransitAgency(
-      agencyId: 'amtrak',
-      agencyName: 'Amtrak',
-      country: 'United States',
-      city: 'National',
-    ),
-    TransitAgency(
-      agencyId: 'mta',
-      agencyName: 'MTA',
-      country: 'United States',
-      city: 'New York',
-    ),
-    TransitAgency(
-      agencyId: 'national_rail',
-      agencyName: 'National Rail',
-      country: 'United Kingdom',
-      city: 'National',
-    ),
-    TransitAgency(
-      agencyId: 'london_underground',
-      agencyName: 'London Underground',
-      country: 'United Kingdom',
-      city: 'London',
-    ),
-  ];
+  static List<TransitAgency> get seededAgencies => TransitCatalog.seedAgencies;
 
   Future<void> initializeFromFallbackData({
     List<GtfsCachedFeed> cachedFeeds = const [],
@@ -258,19 +197,6 @@ class GtfsService {
           name: 'Penn Station',
           latitude: 40.7506,
           longitude: -73.9935,
-          sequence: 1,
-        ),
-      ],
-    );
-    _addSupplementalRoute(
-      agencyId: 'national_rail',
-      transitSystem: 'National Rail',
-      lineName: 'West Coast Main Line',
-      stops: const [
-        _SupplementalStop(
-          name: 'Waterloo Station',
-          latitude: 51.5033,
-          longitude: -0.1147,
           sequence: 1,
         ),
       ],

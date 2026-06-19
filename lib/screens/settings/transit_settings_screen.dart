@@ -46,14 +46,14 @@ class TransitSettingsScreen extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Choose which agencies appear first in search and trip setup.',
+              'Choose your country, province or state, and preferred transit agency.',
             ),
           ),
           const SizedBox(height: 8),
           SettingsNavTile(
             icon: Icons.apartment_outlined,
             title: 'Preferred Agencies',
-            subtitle: 'GO Transit, TTC, YRT, MiWay, and more',
+            subtitle: 'GTA and Ontario agencies by region',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

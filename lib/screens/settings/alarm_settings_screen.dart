@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/alarm_sound_mode.dart';
+import '../../models/app_settings.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/alarm_service.dart';
 import '../../widgets/settings_section_tile.dart';
 
 class AlarmSettingsScreen extends StatelessWidget {
   const AlarmSettingsScreen({super.key});
+
+  static int _percentLabel(double value) => (value * 100).round();
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +21,9 @@ class AlarmSettingsScreen extends StatelessWidget {
     );
     final alarmVolume = context.select<SettingsProvider, double>(
       (provider) => provider.alarmVolume,
+    );
+    final approachSystemVolume = context.select<SettingsProvider, double>(
+      (provider) => provider.approachSystemVolume,
     );
     final alwaysPlaySound =
         alarmSoundMode == AlarmSoundMode.alwaysPlaySound;
@@ -35,12 +41,54 @@ class AlarmSettingsScreen extends StatelessWidget {
             title: const Text('Voice alert'),
             subtitle: Text(
               'Always speaks "Heads up! Approaching destination." with '
-              'vibration until you dismiss the alert.',
+              'vibration until you dismiss. Phone speaker volume is temporarily '
+              'adjusted during the alert, then restored.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
           ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            child: Text(
+              'Speaker volume during alert',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+            child: Row(
+              children: [
+                Icon(Icons.volume_down, color: colorScheme.onSurfaceVariant),
+                Expanded(
+                  child: Slider(
+                    value: approachSystemVolume,
+                    min: AppSettings.minApproachSystemVolume,
+                    max: 1.0,
+                    divisions: 18,
+                    label: '${_percentLabel(approachSystemVolume)}%',
+                    onChanged:
+                        context.read<SettingsProvider>().setApproachSystemVolume,
+                  ),
+                ),
+                Icon(Icons.volume_up, color: colorScheme.onSurfaceVariant),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Text(
+              'Sets media volume to ${_percentLabel(approachSystemVolume)}% while '
+              'the alert plays, even if your phone volume is lower. Your previous '
+              'level is restored when you dismiss.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
           const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Alert Volume'),
+          const SettingsSectionHeader(title: 'Voice & Tone Level'),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
             child: Row(
@@ -50,7 +98,7 @@ class AlarmSettingsScreen extends StatelessWidget {
                   child: Slider(
                     value: alarmVolume,
                     divisions: 10,
-                    label: '${(alarmVolume * 100).round()}%',
+                    label: '${_percentLabel(alarmVolume)}%',
                     onChanged: context.read<SettingsProvider>().setAlarmVolume,
                   ),
                 ),
@@ -61,7 +109,7 @@ class AlarmSettingsScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
             child: Text(
-              'Controls voice alert volume and optional alarm tone volume.',
+              'Controls how loud the spoken alert and optional alarm tone play.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),

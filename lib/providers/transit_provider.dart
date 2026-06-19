@@ -32,11 +32,34 @@ class TransitProvider extends ChangeNotifier {
       return;
     }
 
-    final transitSystem = TransitCatalog.defaultSystemForCountry(country);
+    final region = TransitCatalog.defaultRegionForCountry(country);
+    final transitSystem = TransitCatalog.defaultAgencyForRegion(country, region);
     final defaultLine = TransitCatalog.defaultLineForSystem(transitSystem);
 
     _preferences = _preferences.copyWith(
       country: country,
+      region: region,
+      transitSystem: transitSystem,
+      defaultLine: defaultLine,
+    );
+    await savePreferences();
+    notifyListeners();
+  }
+
+  Future<void> setRegion(String region) async {
+    if (!TransitCatalog.isValidRegionForCountry(_preferences.country, region) ||
+        region == _preferences.region) {
+      return;
+    }
+
+    final transitSystem = TransitCatalog.defaultAgencyForRegion(
+      _preferences.country,
+      region,
+    );
+    final defaultLine = TransitCatalog.defaultLineForSystem(transitSystem);
+
+    _preferences = _preferences.copyWith(
+      region: region,
       transitSystem: transitSystem,
       defaultLine: defaultLine,
     );
@@ -45,8 +68,9 @@ class TransitProvider extends ChangeNotifier {
   }
 
   Future<void> setTransitSystem(String transitSystem) async {
-    if (!TransitCatalog.isValidSystemForCountry(
+    if (!TransitCatalog.isValidAgencyForRegion(
           _preferences.country,
+          _preferences.region,
           transitSystem,
         ) ||
         transitSystem == _preferences.transitSystem) {
@@ -79,20 +103,24 @@ class TransitProvider extends ChangeNotifier {
 
   Future<void> applyTransitSelection({
     required String country,
+    required String region,
     required String transitSystem,
     required String defaultLine,
   }) async {
-    if (_preferences.country == country &&
-        _preferences.transitSystem == transitSystem &&
-        _preferences.defaultLine == defaultLine) {
+    final normalized = TransitCatalog.normalize(
+      TransitPreferences(
+        country: country,
+        region: region,
+        transitSystem: transitSystem,
+        defaultLine: defaultLine,
+      ),
+    );
+
+    if (_preferences == normalized) {
       return;
     }
 
-    _preferences = TransitPreferences(
-      country: country,
-      transitSystem: transitSystem,
-      defaultLine: defaultLine,
-    );
+    _preferences = normalized;
     await savePreferences();
     notifyListeners();
   }

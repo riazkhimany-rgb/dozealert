@@ -93,6 +93,7 @@ flutter_launcher_icons:
 flutter_native_splash:
   color: "#0D1B2A"
   background_image: assets/branding/splash_screen.png
+  android_gravity: center
   android_12:
     color: "#0D1B2A"
     background_image: assets/branding/splash_screen.png

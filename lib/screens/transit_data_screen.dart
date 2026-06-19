@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../data/transit_catalog.dart';
 import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
+import '../providers/transit_provider.dart';
 import '../widgets/home_card.dart';
 
 class TransitDataScreen extends StatefulWidget {
@@ -153,7 +155,15 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
   @override
   Widget build(BuildContext context) {
     final feedProvider = context.watch<GtfsFeedProvider>();
+    final preferences = context.watch<TransitProvider>().preferences;
     final colorScheme = Theme.of(context).colorScheme;
+    final regionFeeds = feedProvider.feedsForRegion(
+      preferences.country,
+      preferences.region,
+    );
+    final regionLabel = TransitCatalog.regionLabelForCountry(
+      preferences.country,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -166,14 +176,15 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const HomeCardHeader(
+                HomeCardHeader(
                   icon: Icons.cloud_download_outlined,
-                  title: 'Ontario Transit Feeds',
+                  title: '${preferences.region} GTFS Feeds',
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Download GTFS feeds for offline stop search and Transit Mode. '
-                  'Once downloaded, no internet is required.',
+                  'Download GTFS feeds for agencies in ${preferences.region} '
+                  '(${preferences.country}). Change your $regionLabel under '
+                  'Settings → Transit → Preferred Agencies to browse other regions.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -195,8 +206,19 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
           const SizedBox(height: 16),
           if (!feedProvider.isInitialized)
             const Center(child: CircularProgressIndicator())
+          else if (regionFeeds.isEmpty)
+            HomeCard(
+              child: Text(
+                'No GTFS feeds are configured for ${preferences.region} yet. '
+                'Select another $regionLabel under Preferred Agencies, or import '
+                'a GTFS zip manually.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            )
           else
-            ...feedProvider.feeds.map(
+            ...regionFeeds.map(
               (feed) => _FeedCard(
                 feed: feed,
                 isBusy: _busyFeedId == feed.feedId,
