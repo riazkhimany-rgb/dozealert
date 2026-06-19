@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'providers/monitoring_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/main_screen.dart';
@@ -26,6 +27,9 @@ class DozeAlertApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => NavigationProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => MonitoringProvider(),
         ),
       ],
       child: Consumer<ThemeProvider>(
