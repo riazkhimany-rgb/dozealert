@@ -107,6 +107,19 @@ class _DestinationCard extends StatelessWidget {
               label: const Text('Choose Destination'),
             ),
           ),
+          if (destination != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  context.read<MonitoringProvider>().clearDestination();
+                },
+                icon: const Icon(Icons.clear_outlined),
+                label: const Text('Clear Destination'),
+              ),
+            ),
+          ],
         ],
       ),
     );

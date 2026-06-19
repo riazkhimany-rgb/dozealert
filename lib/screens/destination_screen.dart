@@ -33,18 +33,25 @@ class _DestinationScreenState extends State<DestinationScreen> {
     super.dispose();
   }
 
-  List<Destination> get _filteredDestinations {
-    if (_query.isEmpty) {
+  bool get _isSearching => _query.isNotEmpty;
+
+  List<DestinationCatalogItem> get _filteredDestinations {
+    if (!_isSearching) {
       return MockDestinations.all;
     }
 
     return MockDestinations.all
-        .where((destination) => destination.name.toLowerCase().contains(_query))
+        .where(
+          (item) => item.destination.name.toLowerCase().contains(_query),
+        )
         .toList();
   }
 
-  void _selectDestination(Destination destination) {
-    context.read<MonitoringProvider>().setDestination(destination);
+  Future<void> _selectDestination(Destination destination) async {
+    await context.read<MonitoringProvider>().setDestination(destination);
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pop();
   }
 
@@ -52,6 +59,8 @@ class _DestinationScreenState extends State<DestinationScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final destinations = _filteredDestinations;
+    final selectedDestination =
+        context.watch<MonitoringProvider>().selectedDestination;
 
     return Scaffold(
       appBar: AppBar(
@@ -85,83 +94,145 @@ class _DestinationScreenState extends State<DestinationScreen> {
                       ),
                     ),
                   )
-                : ListView.separated(
+                : ListView(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                    itemCount: destinations.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final destination = destinations[index];
-                      final selectedDestination = context
-                          .watch<MonitoringProvider>()
-                          .selectedDestination;
-                      final isSelected =
-                          selectedDestination == destination;
-
-                      return HomeCard(
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () => _selectDestination(destination),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor:
-                                      colorScheme.primaryContainer,
-                                  child: Icon(
-                                    Icons.place_outlined,
-                                    color: colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        destination.name,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${destination.latitude.toStringAsFixed(4)}, '
-                                        '${destination.longitude.toStringAsFixed(4)}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color:
-                                                  colorScheme.onSurfaceVariant,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (isSelected)
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: colorScheme.primary,
-                                  )
-                                else
-                                  Icon(
-                                    Icons.chevron_right,
-                                    color: colorScheme.outline,
-                                  ),
-                              ],
+                    children: [
+                      if (!_isSearching) ...[
+                        Text(
+                          'Recent Destinations',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ...MockDestinations.recent.map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _DestinationListCard(
+                              item: item,
+                              isSelected:
+                                  selectedDestination == item.destination,
+                              onTap: () =>
+                                  _selectDestination(item.destination),
                             ),
                           ),
                         ),
-                      );
-                    },
+                        const SizedBox(height: 8),
+                        Text(
+                          'All Destinations',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      ...destinations.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _DestinationListCard(
+                            item: item,
+                            isSelected:
+                                selectedDestination == item.destination,
+                            onTap: () => _selectDestination(item.destination),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DestinationListCard extends StatelessWidget {
+  const _DestinationListCard({
+    required this.item,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final DestinationCatalogItem item;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final destination = item.destination;
+
+    return HomeCard(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                backgroundColor: colorScheme.primaryContainer,
+                child: Icon(
+                  Icons.place_outlined,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      destination.name,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${destination.latitude.toStringAsFixed(4)}, '
+                      '${destination.longitude.toStringAsFixed(4)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (item.badges.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: item.badges
+                            .map(
+                              (badge) => Chip(
+                                label: Text(badge),
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: colorScheme.primary,
+                )
+              else
+                Icon(
+                  Icons.chevron_right,
+                  color: colorScheme.outline,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

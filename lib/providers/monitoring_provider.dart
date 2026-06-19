@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../models/destination.dart';
 import '../models/monitoring_state.dart';
+import '../services/destination_storage_service.dart';
 
 class MonitoringProvider extends ChangeNotifier {
+  MonitoringProvider(this._destinationStorage);
+
+  final DestinationStorageService _destinationStorage;
+
   MonitoringState _currentState = MonitoringState.idle;
   Destination? _selectedDestination;
   int _radiusMeters = 1000;
@@ -14,11 +19,38 @@ class MonitoringProvider extends ChangeNotifier {
 
   bool get isMonitoring => _currentState == MonitoringState.monitoring;
 
-  void setDestination(Destination destination) {
+  Future<void> loadSavedDestination() async {
+    final destination = await _destinationStorage.loadDestination();
+    if (destination == null) {
+      return;
+    }
+
     _selectedDestination = destination;
     if (_currentState != MonitoringState.monitoring) {
       _currentState = MonitoringState.idle;
     }
+    notifyListeners();
+  }
+
+  Future<void> setDestination(Destination destination) async {
+    _selectedDestination = destination;
+    if (_currentState != MonitoringState.monitoring) {
+      _currentState = MonitoringState.idle;
+    }
+
+    await _destinationStorage.saveDestination(destination);
+    notifyListeners();
+  }
+
+  Future<void> clearDestination() async {
+    if (_selectedDestination == null) {
+      return;
+    }
+
+    _selectedDestination = null;
+    _currentState = MonitoringState.idle;
+
+    await _destinationStorage.clearDestination();
     notifyListeners();
   }
 
