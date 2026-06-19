@@ -5,7 +5,16 @@ abstract final class MonitoringFormat {
     return switch (state) {
       MonitoringState.idle => 'Idle',
       MonitoringState.monitoring => 'Monitoring',
-      MonitoringState.arrived => 'Arrived',
+      MonitoringState.arrived => 'Arriving',
+      MonitoringState.missed => 'Missed',
+    };
+  }
+
+  static String homeStatusLabel(MonitoringState state) {
+    return switch (state) {
+      MonitoringState.idle => 'Idle',
+      MonitoringState.monitoring => 'Monitoring',
+      MonitoringState.arrived => 'Arriving',
       MonitoringState.missed => 'Missed',
     };
   }

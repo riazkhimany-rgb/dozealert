@@ -6,6 +6,7 @@ import '../models/agency_detection_result.dart';
 import '../models/destination.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_stop.dart';
+import '../services/gtfs_import_service.dart';
 import '../services/gtfs_service.dart';
 import 'monitoring_provider.dart';
 import 'train_mode_provider.dart';
@@ -14,6 +15,7 @@ import 'transit_provider.dart';
 class GtfsProvider extends ChangeNotifier {
   GtfsProvider(
     this._gtfsService,
+    this._gtfsImportService,
     this._transitProvider,
     this._monitoringProvider,
     this._trainModeProvider,
@@ -22,6 +24,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   final GtfsService _gtfsService;
+  final GtfsImportService _gtfsImportService;
   final TransitProvider _transitProvider;
   final MonitoringProvider _monitoringProvider;
   final TrainModeProvider _trainModeProvider;
@@ -38,13 +41,42 @@ class GtfsProvider extends ChangeNotifier {
       return;
     }
 
-    await _gtfsService.initializeFromFallbackData();
+    final cachedFeeds = await _gtfsImportService.loadCache();
+    await _gtfsService.initializeFromFallbackData(cachedFeeds: cachedFeeds);
     _initialized = true;
     notifyListeners();
 
     final destination = _monitoringProvider.selectedDestination;
     if (destination != null) {
       await detectAndApplyForDestination(destination);
+    }
+  }
+
+  Future<void> importZipFeed({
+    required List<int> bytes,
+    required String fileName,
+    String? feedName,
+  }) async {
+    await _gtfsImportService.importZipBytes(
+      bytes: bytes,
+      fileName: fileName,
+      feedName: feedName,
+    );
+
+    if (_initialized) {
+      await _gtfsService.reloadCachedFeeds(
+        await _gtfsImportService.loadCache(),
+      );
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> refreshImportedFeeds() async {
+    final cachedFeeds = await _gtfsImportService.refreshCache();
+    if (_initialized) {
+      await _gtfsService.reloadCachedFeeds(cachedFeeds);
+      notifyListeners();
     }
   }
 

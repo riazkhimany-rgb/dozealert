@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../cache/gtfs_cache_store.dart';
 import '../data/transit_catalog.dart';
 import '../models/agency_detection_result.dart';
 import '../models/transit_agency.dart';
@@ -88,7 +89,9 @@ class GtfsService {
     ),
   ];
 
-  Future<void> initializeFromFallbackData() async {
+  Future<void> initializeFromFallbackData({
+    List<GtfsCachedFeed> cachedFeeds = const [],
+  }) async {
     if (_initialized) {
       return;
     }
@@ -110,10 +113,50 @@ class GtfsService {
     await _loadGoTransitJsonFallback();
     _loadSupplementalStops();
 
+    for (final feed in cachedFeeds) {
+      mergeCachedFeed(feed);
+    }
+
     _initialized = true;
     debugPrint(
       'GtfsService: initialized ${_stops.length} stops across ${_routes.length} routes',
     );
+  }
+
+  void mergeCachedFeed(GtfsCachedFeed feed) {
+    for (final agency in feed.agencies) {
+      _agenciesById[agency.agencyId] = agency;
+      if (!_agencies.any((entry) => entry.agencyId == agency.agencyId)) {
+        _agencies.add(agency);
+      }
+    }
+
+    for (final route in feed.routes) {
+      _routesById[route.routeId] = route;
+      if (!_routes.any((entry) => entry.routeId == route.routeId)) {
+        _routes.add(route);
+      }
+      _stopsByRouteId.putIfAbsent(route.routeId, () => []);
+    }
+
+    for (final stop in feed.stops) {
+      final routeStops = _stopsByRouteId.putIfAbsent(stop.routeId, () => []);
+      routeStops.removeWhere((existing) => existing.stopId == stop.stopId);
+      routeStops.add(stop);
+      _stops.removeWhere((existing) => existing.stopId == stop.stopId);
+      _stops.add(stop);
+    }
+
+    debugPrint(
+      'GtfsService: merged cached feed ${feed.info.feedName} '
+      '(${feed.stops.length} stops)',
+    );
+  }
+
+  Future<void> reloadCachedFeeds(List<GtfsCachedFeed> cachedFeeds) async {
+    for (final feed in cachedFeeds) {
+      mergeCachedFeed(feed);
+    }
   }
 
   Future<void> _loadGoTransitJsonFallback() async {

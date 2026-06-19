@@ -13,9 +13,11 @@ import 'providers/train_mode_provider.dart';
 import 'providers/transit_line_provider.dart';
 import 'providers/transit_provider.dart';
 import 'screens/app_startup_screen.dart';
+import 'cache/gtfs_cache_store.dart';
 import 'services/alarm_service.dart';
 import 'services/background_monitor_service.dart';
 import 'services/destination_storage_service.dart';
+import 'services/gtfs_import_service.dart';
 import 'services/gtfs_service.dart';
 import 'services/location_service.dart';
 import 'services/monitoring_storage_service.dart';
@@ -47,6 +49,8 @@ Future<void> main() async {
   final placeSearchService = PlaceSearchService();
   final preferencesService = PreferencesService();
   final transitDataService = TransitDataService();
+  final gtfsCacheStore = GtfsCacheStore();
+  final gtfsImportService = GtfsImportService(gtfsCacheStore);
   final gtfsService = GtfsService(transitDataService);
   final transitProvider = TransitProvider(preferencesService);
   await transitProvider.loadPreferences();
@@ -74,6 +78,7 @@ Future<void> main() async {
   );
   final gtfsProvider = GtfsProvider(
     gtfsService,
+    gtfsImportService,
     transitProvider,
     monitoringProvider,
     trainModeProvider,
@@ -90,6 +95,8 @@ Future<void> main() async {
       preferencesService: preferencesService,
       transitDataService: transitDataService,
       gtfsService: gtfsService,
+      gtfsCacheStore: gtfsCacheStore,
+      gtfsImportService: gtfsImportService,
       transitProvider: transitProvider,
       transitLineProvider: transitLineProvider,
       trainModeProvider: trainModeProvider,
@@ -124,6 +131,8 @@ class DozeAlertApp extends StatelessWidget {
     required this.preferencesService,
     required this.transitDataService,
     required this.gtfsService,
+    required this.gtfsCacheStore,
+    required this.gtfsImportService,
     required this.transitProvider,
     required this.transitLineProvider,
     required this.trainModeProvider,
@@ -141,6 +150,8 @@ class DozeAlertApp extends StatelessWidget {
   final PreferencesService preferencesService;
   final TransitDataService transitDataService;
   final GtfsService gtfsService;
+  final GtfsCacheStore gtfsCacheStore;
+  final GtfsImportService gtfsImportService;
   final TransitProvider transitProvider;
   final TransitLineProvider transitLineProvider;
   final TrainModeProvider trainModeProvider;
@@ -165,6 +176,8 @@ class DozeAlertApp extends StatelessWidget {
         Provider<PreferencesService>.value(value: preferencesService),
         Provider<TransitDataService>.value(value: transitDataService),
         Provider<GtfsService>.value(value: gtfsService),
+        Provider<GtfsCacheStore>.value(value: gtfsCacheStore),
+        Provider<GtfsImportService>.value(value: gtfsImportService),
         Provider<DestinationStorageService>.value(
           value: destinationStorageService,
         ),
