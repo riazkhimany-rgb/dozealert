@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/current_location.dart';
 import '../models/monitoring_state.dart';
 import '../providers/monitoring_provider.dart';
+import '../providers/train_mode_provider.dart';
 import '../services/alarm_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/location_service.dart';
@@ -32,6 +33,7 @@ class LocationProvider extends ChangeNotifier {
     this._settingsService,
     this._backgroundMonitorService,
     this._monitoringStorage,
+    this._trainModeProvider,
   ) {
     _locationSubscription = _locationService.locationStream.listen(
       _onLocationUpdate,
@@ -53,6 +55,7 @@ class LocationProvider extends ChangeNotifier {
   final SettingsService _settingsService;
   final BackgroundMonitorService _backgroundMonitorService;
   final MonitoringStorageService _monitoringStorage;
+  final TrainModeProvider _trainModeProvider;
 
   StreamSubscription<CurrentLocation>? _locationSubscription;
   StreamSubscription<CurrentLocation>? _backgroundLocationSubscription;
@@ -174,6 +177,7 @@ class LocationProvider extends ChangeNotifier {
     }
 
     await _monitoringStorage.setArrivalTriggered(false);
+    _trainModeProvider.resetApproachAlarm();
     _trackingEnabled = true;
     _monitoringProvider.startMonitoring();
     await _backgroundMonitorService.syncServiceState();
@@ -191,6 +195,7 @@ class LocationProvider extends ChangeNotifier {
     }
 
     _arrivalDialogVisible = false;
+    _trainModeProvider.resetApproachAlarm();
     await _locationService.stopTracking();
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
@@ -203,6 +208,7 @@ class LocationProvider extends ChangeNotifier {
   Future<void> dismissArrival() async {
     await _alarmService.stopAlarm();
     _arrivalDialogVisible = false;
+    _trainModeProvider.resetApproachAlarm();
     await _monitoringStorage.setArrivalTriggered(false);
     _monitoringProvider.resetToIdle();
     await _locationService.stopTracking();
@@ -235,6 +241,10 @@ class LocationProvider extends ChangeNotifier {
   Future<void> _onLocationUpdate(CurrentLocation location) async {
     _currentLocation = location;
     updateDistance();
+    _trainModeProvider.updateFromLocation(
+      latitude: location.latitude,
+      longitude: location.longitude,
+    );
 
     final destination = _monitoringProvider.selectedDestination;
     if (destination != null && _usingBackgroundService) {
@@ -296,6 +306,26 @@ class LocationProvider extends ChangeNotifier {
 
     if (await _monitoringStorage.isArrivalTriggered()) {
       return;
+    }
+
+    if (_settingsService.settings.trainModeEnabled) {
+      if (_trainModeProvider.shouldTriggerApproachAlarm) {
+        await _monitoringStorage.setArrivalTriggered(true);
+        final message = _trainModeProvider.approachAlarmMessage;
+        await _alarmService.playApproachAlarm(
+          title: 'Train Mode Alert',
+          body: message,
+        );
+        _trainModeProvider.markApproachAlarmTriggered();
+        _monitoringProvider.markArrived();
+        _arrivalDialogVisible = true;
+        notifyListeners();
+        return;
+      }
+
+      if (_trainModeProvider.isActive) {
+        return;
+      }
     }
 
     final thresholdMeters = _settingsService.settings.testModeEnabled

@@ -6,12 +6,17 @@ import 'package:provider/provider.dart';
 import '../models/destination.dart';
 import '../models/current_location.dart';
 import '../models/monitoring_state.dart';
+import '../models/train_mode_snapshot.dart';
 import '../models/transit_station.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/settings_provider.dart';
+import '../providers/train_mode_provider.dart';
 import '../providers/transit_line_provider.dart';
 import '../providers/transit_provider.dart';
+import '../models/transit_stop.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
@@ -55,6 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _MonitoringStatusCard(state: monitoring.currentState),
           const SizedBox(height: 16),
           const _TransitSettingsCard(),
+          const SizedBox(height: 16),
+          const _TrainModeCard(),
           const SizedBox(height: 16),
           const _QuickDestinationsCard(),
           const SizedBox(height: 16),
@@ -184,6 +191,146 @@ class _TransitMetricRow extends StatelessWidget {
   }
 }
 
+class _TrainModeCard extends StatefulWidget {
+  const _TrainModeCard();
+
+  @override
+  State<_TrainModeCard> createState() => _TrainModeCardState();
+}
+
+class _TrainModeCardState extends State<_TrainModeCard> {
+  bool _debugExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final trainModeEnabled = context.select<SettingsProvider, bool>(
+      (provider) => provider.trainModeEnabled,
+    );
+    final snapshot = context.select<TrainModeProvider, TrainModeSnapshot>(
+      (provider) => provider.snapshot,
+    );
+
+    return HomeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const HomeCardHeader(
+            icon: Icons.directions_railway_outlined,
+            title: 'Train Mode',
+          ),
+          const SizedBox(height: 16),
+          if (!trainModeEnabled)
+            Text(
+              'Enable Train Mode in Settings for station-based wake-ups.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            )
+          else if (!snapshot.isActive)
+            Text(
+              'Select a supported transit destination to activate Train Mode. '
+              'Distance-based alarms remain active as fallback.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            )
+          else ...[
+            _TransitMetricRow(
+              label: 'Current',
+              value: snapshot.currentNearestStation?.stopName ?? '—',
+            ),
+            const SizedBox(height: 8),
+            _TransitMetricRow(
+              label: 'Next',
+              value: snapshot.nextStation?.stopName ?? '—',
+            ),
+            const SizedBox(height: 8),
+            _TransitMetricRow(
+              label: 'Destination',
+              value: snapshot.destinationStation?.stopName ?? '—',
+            ),
+            const SizedBox(height: 8),
+            _TransitMetricRow(
+              label: 'Stations Remaining',
+              value: snapshot.stationsRemaining.toString(),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Status: ${snapshot.status}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: EdgeInsets.zero,
+            initiallyExpanded: _debugExpanded,
+            onExpansionChanged: (expanded) {
+              setState(() {
+                _debugExpanded = expanded;
+              });
+            },
+            title: Text(
+              'Train Mode Debug',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            children: [
+              _TransitMetricRow(
+                label: 'Agency',
+                value: snapshot.agency?.agencyName ?? '—',
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'Route',
+                value: snapshot.route?.lineName ?? '—',
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'Current Station',
+                value: snapshot.currentNearestStation?.stopName ?? '—',
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'Destination Station',
+                value: snapshot.destinationStation?.stopName ?? '—',
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'Previous Station',
+                value: snapshot.previousStation?.stopName ?? '—',
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'Next Station',
+                value: snapshot.nextStation?.stopName ?? '—',
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'Stations Remaining',
+                value: snapshot.stationsRemaining.toString(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _QuickDestinationsCard extends StatefulWidget {
   const _QuickDestinationsCard();
 
@@ -216,6 +363,20 @@ class _QuickDestinationsCardState extends State<_QuickDestinationsCard> {
     });
   }
 
+  Future<void> _selectGlobalStop(
+    BuildContext context,
+    TransitStop stop,
+  ) async {
+    await context.read<GtfsProvider>().selectStop(stop);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _searchQuery = '';
+      _searchController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -224,7 +385,9 @@ class _QuickDestinationsCardState extends State<_QuickDestinationsCard> {
     final recentStations = context.select<TransitProvider, List<Destination>>(
       (provider) => provider.recentStations,
     );
-    final searchResults = lineProvider.filterStations(_searchQuery);
+    final globalSearchResults = _searchQuery.trim().isEmpty
+        ? const <TransitStop>[]
+        : context.read<GtfsProvider>().searchStops(_searchQuery);
     final isLoading = lineProvider.isLoading;
 
     return HomeCard(
@@ -265,7 +428,7 @@ class _QuickDestinationsCardState extends State<_QuickDestinationsCard> {
               ),
             ),
             const SizedBox(height: 8),
-            if (searchResults.isEmpty)
+            if (globalSearchResults.isEmpty)
               Text(
                 'No matching stations.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -277,13 +440,13 @@ class _QuickDestinationsCardState extends State<_QuickDestinationsCard> {
                 height: 44,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: searchResults.length,
+                  itemCount: globalSearchResults.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
-                    final station = searchResults[index];
+                    final stop = globalSearchResults[index];
                     return ActionChip(
-                      label: Text(station.name),
-                      onPressed: () => _selectStation(context, station),
+                      label: Text(stop.stopName),
+                      onPressed: () => _selectGlobalStop(context, stop),
                     );
                   },
                 ),
@@ -417,16 +580,24 @@ class _StationDetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final station = context.select<TransitLineProvider, TransitStation?>(
+    final lineStation = context.select<TransitLineProvider, TransitStation?>(
       (provider) => provider.selectedDestinationStation,
     );
     final lineName = context.select<TransitLineProvider, String?>(
       (provider) => provider.currentLine?.lineName,
     );
+    final destination = context.select<MonitoringProvider, Destination?>(
+      (provider) => provider.selectedDestination,
+    );
 
-    if (station == null) {
+    if (lineStation == null && destination == null) {
       return const SizedBox.shrink();
     }
+
+    final stationName = lineStation?.name ?? destination!.name;
+    final latitude = lineStation?.latitude ?? destination!.latitude;
+    final longitude = lineStation?.longitude ?? destination!.longitude;
+    final stationOrder = lineStation?.stationOrder;
 
     return HomeCard(
       child: Column(
@@ -437,23 +608,25 @@ class _StationDetailsCard extends StatelessWidget {
             title: 'Station Details',
           ),
           const SizedBox(height: 16),
-          _TransitMetricRow(label: 'Station Name', value: station.name),
+          _TransitMetricRow(label: 'Station Name', value: stationName),
           const SizedBox(height: 8),
           _TransitMetricRow(label: 'Line', value: lineName ?? '—'),
-          const SizedBox(height: 8),
-          _TransitMetricRow(
-            label: 'Station Order',
-            value: station.stationOrder.toString(),
-          ),
+          if (stationOrder != null) ...[
+            const SizedBox(height: 8),
+            _TransitMetricRow(
+              label: 'Station Order',
+              value: stationOrder.toString(),
+            ),
+          ],
           const SizedBox(height: 8),
           _TransitMetricRow(
             label: 'Latitude',
-            value: station.latitude.toStringAsFixed(4),
+            value: latitude.toStringAsFixed(4),
           ),
           const SizedBox(height: 8),
           _TransitMetricRow(
             label: 'Longitude',
-            value: station.longitude.toStringAsFixed(4),
+            value: longitude.toStringAsFixed(4),
           ),
         ],
       ),

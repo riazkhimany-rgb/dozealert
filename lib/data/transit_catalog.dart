@@ -6,7 +6,14 @@ abstract final class TransitCatalog {
   ];
 
   static const systemsByCountry = <String, List<String>>{
-    'Canada': ['GO Transit', 'TTC', 'Exo'],
+    'Canada': [
+      'GO Transit',
+      'TTC',
+      'STM Montreal',
+      'Exo',
+      'TransLink Vancouver',
+      'OC Transpo',
+    ],
     'United States': ['Amtrak', 'MTA'],
     'United Kingdom': ['National Rail', 'London Underground'],
   };

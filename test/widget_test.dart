@@ -6,15 +6,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dozealert/main.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/providers/monitoring_provider.dart';
+import 'package:dozealert/providers/gtfs_provider.dart';
+import 'package:dozealert/providers/train_mode_provider.dart';
 import 'package:dozealert/providers/transit_line_provider.dart';
 import 'package:dozealert/providers/transit_provider.dart';
 import 'package:dozealert/services/alarm_service.dart';
 import 'package:dozealert/services/background_monitor_service.dart';
 import 'package:dozealert/services/destination_storage_service.dart';
+import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/monitoring_storage_service.dart';
 import 'package:dozealert/services/place_search_service.dart';
 import 'package:dozealert/services/preferences_service.dart';
 import 'package:dozealert/services/settings_service.dart';
+import 'package:dozealert/services/train_mode_service.dart';
 import 'package:dozealert/services/transit_data_service.dart';
 
 Future<DozeAlertApp> _createTestApp() async {
@@ -36,6 +40,7 @@ Future<DozeAlertApp> _createTestApp() async {
   final placeSearchService = PlaceSearchService();
   final preferencesService = PreferencesService();
   final transitDataService = TransitDataService();
+  final gtfsService = GtfsService(transitDataService);
   final transitProvider = TransitProvider(preferencesService);
   await transitProvider.loadPreferences();
 
@@ -54,6 +59,20 @@ Future<DozeAlertApp> _createTestApp() async {
   );
   await transitLineProvider.loadCurrentLine();
 
+  final trainModeService = TrainModeService(gtfsService);
+  final trainModeProvider = TrainModeProvider(
+    trainModeService,
+    settingsService,
+    monitoringProvider,
+  );
+  final gtfsProvider = GtfsProvider(
+    gtfsService,
+    transitProvider,
+    monitoringProvider,
+    trainModeProvider,
+  );
+  await gtfsProvider.initialize();
+
   return DozeAlertApp(
     settingsService: settingsService,
     alarmService: alarmService,
@@ -62,8 +81,11 @@ Future<DozeAlertApp> _createTestApp() async {
     placeSearchService: placeSearchService,
     preferencesService: preferencesService,
     transitDataService: transitDataService,
+    gtfsService: gtfsService,
     transitProvider: transitProvider,
     transitLineProvider: transitLineProvider,
+    trainModeProvider: trainModeProvider,
+    gtfsProvider: gtfsProvider,
     destinationStorageService: destinationStorageService,
     monitoringProvider: monitoringProvider,
     skipSplash: true,
@@ -78,6 +100,15 @@ void main() {
 
     expect(find.text('DozeAlert'), findsOneWidget);
     expect(find.text('Transit Settings'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Train Mode'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Train Mode'), findsWidgets);
 
     await tester.scrollUntilVisible(
       find.text('Favorite Stations'),
@@ -105,9 +136,9 @@ void main() {
     await tester.tap(find.text('Union Station').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Union Station'), findsOneWidget);
-    expect(find.text('43.6453'), findsOneWidget);
-    expect(find.text('-79.3806'), findsOneWidget);
+    expect(find.text('Union Station'), findsWidgets);
+    expect(find.text('43.6453'), findsWidgets);
+    expect(find.text('-79.3806'), findsWidgets);
     expect(find.text('No destination selected'), findsNothing);
     expect(find.text('Clear Destination'), findsOneWidget);
 

@@ -58,6 +58,16 @@ class AlarmService {
   }
 
   Future<void> playAlarm() async {
+    await playApproachAlarm(
+      title: 'Destination Reached',
+      body: 'You are approaching your destination.',
+    );
+  }
+
+  Future<void> playApproachAlarm({
+    required String title,
+    required String body,
+  }) async {
     if (_alarmActive) {
       return;
     }
@@ -66,7 +76,7 @@ class AlarmService {
 
     await _startAlarmSound();
     await _startVibration();
-    await showArrivalNotification();
+    await showArrivalNotification(title: title, body: body);
   }
 
   Future<void> stopAlarm() async {
@@ -81,7 +91,10 @@ class AlarmService {
     await _notifications.cancel(_arrivalNotificationId);
   }
 
-  Future<void> showArrivalNotification() async {
+  Future<void> showArrivalNotification({
+    String title = 'Destination Reached',
+    String body = 'You are approaching your destination.',
+  }) async {
     try {
       const androidDetails = AndroidNotificationDetails(
         'arrival_alerts',
@@ -108,8 +121,8 @@ class AlarmService {
 
       await _notifications.show(
         _arrivalNotificationId,
-        'Destination Reached',
-        'You are approaching your destination.',
+        title,
+        body,
         details,
       );
     } catch (error, stackTrace) {

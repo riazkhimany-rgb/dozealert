@@ -77,6 +77,26 @@ class TransitProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> applyTransitSelection({
+    required String country,
+    required String transitSystem,
+    required String defaultLine,
+  }) async {
+    if (_preferences.country == country &&
+        _preferences.transitSystem == transitSystem &&
+        _preferences.defaultLine == defaultLine) {
+      return;
+    }
+
+    _preferences = TransitPreferences(
+      country: country,
+      transitSystem: transitSystem,
+      defaultLine: defaultLine,
+    );
+    await savePreferences();
+    notifyListeners();
+  }
+
   Future<void> recordRecentStation(Destination station) async {
     _recentStations = await _preferencesService.addRecentStation(station);
     notifyListeners();

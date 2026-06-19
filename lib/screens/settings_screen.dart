@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/train_mode_wake_setting.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/settings_provider.dart';
@@ -65,6 +66,55 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 32),
           const TransitPreferencesSection(),
+          const Divider(height: 32),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+            child: Text(
+              'Train Mode',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          SwitchListTile(
+            title: const Text('Enable Train Mode'),
+            subtitle: Text(
+              'Wake up based on stations remaining on your line.',
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+            value: settingsProvider.trainModeEnabled,
+            onChanged: settingsProvider.setTrainModeEnabled,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+            child: Text(
+              'Wake',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          RadioGroup<TrainModeWakeSetting>(
+            groupValue: settingsProvider.trainModeWake,
+            onChanged: (value) {
+              if (!settingsProvider.trainModeEnabled || value == null) {
+                return;
+              }
+              settingsProvider.setTrainModeWake(value);
+            },
+            child: Column(
+              children: TrainModeWakeSetting.values
+                  .map(
+                    (wakeSetting) => RadioListTile<TrainModeWakeSetting>(
+                      title: Text(wakeSetting.label),
+                      value: wakeSetting,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
           const Divider(height: 32),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
