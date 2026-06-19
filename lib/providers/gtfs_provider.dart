@@ -6,10 +6,11 @@ import '../models/agency_detection_result.dart';
 import '../models/destination.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_stop.dart';
+import '../models/transit_stop_search_result.dart';
 import '../services/gtfs_import_service.dart';
 import '../services/gtfs_service.dart';
 import 'monitoring_provider.dart';
-import 'train_mode_provider.dart';
+import 'transit_mode_provider.dart';
 import 'transit_provider.dart';
 
 class GtfsProvider extends ChangeNotifier {
@@ -18,7 +19,7 @@ class GtfsProvider extends ChangeNotifier {
     this._gtfsImportService,
     this._transitProvider,
     this._monitoringProvider,
-    this._trainModeProvider,
+    this._transitModeProvider,
   ) {
     _monitoringProvider.addListener(_handleDestinationChanged);
   }
@@ -27,7 +28,7 @@ class GtfsProvider extends ChangeNotifier {
   final GtfsImportService _gtfsImportService;
   final TransitProvider _transitProvider;
   final MonitoringProvider _monitoringProvider;
-  final TrainModeProvider _trainModeProvider;
+  final TransitModeProvider _transitModeProvider;
 
   bool _initialized = false;
   AgencyDetectionResult? _lastDetection;
@@ -64,8 +65,8 @@ class GtfsProvider extends ChangeNotifier {
     );
 
     if (_initialized) {
-      await _gtfsService.reloadCachedFeeds(
-        await _gtfsImportService.loadCache(),
+      await _gtfsService.reinitialize(
+        cachedFeeds: await _gtfsImportService.loadCache(),
       );
     }
 
@@ -75,7 +76,7 @@ class GtfsProvider extends ChangeNotifier {
   Future<void> refreshImportedFeeds() async {
     final cachedFeeds = await _gtfsImportService.refreshCache();
     if (_initialized) {
-      await _gtfsService.reloadCachedFeeds(cachedFeeds);
+      await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);
       notifyListeners();
     }
   }
@@ -87,12 +88,19 @@ class GtfsProvider extends ChangeNotifier {
     return _gtfsService.searchStops(query);
   }
 
+  List<TransitStopSearchResult> searchStopResults(String query) {
+    if (!_initialized) {
+      return const [];
+    }
+    return _gtfsService.searchStopResults(query);
+  }
+
   AgencyDetectionResult? detectAgencyFromDestination(String destinationName) {
     return _gtfsService.detectAgencyFromDestination(destinationName);
   }
 
   Future<void> selectStop(TransitStop stop) async {
-    _trainModeProvider.setActiveRouteId(stop.routeId);
+    _transitModeProvider.setActiveRouteId(stop.routeId);
 
     final destination = Destination(
       name: stop.stopName,
@@ -120,7 +128,7 @@ class GtfsProvider extends ChangeNotifier {
 
     final route = detection.route;
     if (route != null) {
-      _trainModeProvider.setActiveRouteId(route.routeId);
+      _transitModeProvider.setActiveRouteId(route.routeId);
       await _transitProvider.applyTransitSelection(
         country: route.country,
         transitSystem: route.transitSystem,

@@ -8,6 +8,7 @@ import '../models/gtfs_feed_info.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_route.dart';
 import '../models/transit_stop.dart';
+import '../models/transit_vehicle_type.dart';
 
 class GtfsCachedFeed {
   const GtfsCachedFeed({
@@ -112,9 +113,13 @@ class GtfsCacheStore {
         }
       }
 
-      feeds.sort(
-        (a, b) => b.info.lastUpdated.compareTo(a.info.lastUpdated),
-      );
+      feeds.sort((a, b) {
+        final aDate =
+            a.info.lastUpdated ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate =
+            b.info.lastUpdated ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bDate.compareTo(aDate);
+      });
       debugPrint('GtfsCacheStore: loaded ${feeds.length} cached feeds');
       return feeds;
     } catch (error) {
@@ -126,6 +131,15 @@ class GtfsCacheStore {
   Future<List<GtfsFeedInfo>> loadFeedInfos() async {
     final feeds = await loadAllFeeds();
     return feeds.map((feed) => feed.info).toList(growable: false);
+  }
+
+  Future<void> deleteFeed(String feedId) async {
+    final cacheDir = await _resolveCacheDirectory();
+    final feedDir = Directory('${cacheDir.path}/$feedId');
+    if (feedDir.existsSync()) {
+      feedDir.deleteSync(recursive: true);
+      debugPrint('GtfsCacheStore: deleted cached feed $feedId');
+    }
   }
 
   List<TransitAgency> _readAgencies(String path) {
@@ -162,6 +176,9 @@ class GtfsCacheStore {
             country: entry['country'] as String,
             lineName: entry['lineName'] as String,
             transitSystem: entry['transitSystem'] as String,
+            vehicleType: TransitVehicleTypeX.fromName(
+              entry['vehicleType'] as String?,
+            ),
           ),
         )
         .toList(growable: false);
@@ -205,6 +222,7 @@ class GtfsCacheStore {
       'country': route.country,
       'lineName': route.lineName,
       'transitSystem': route.transitSystem,
+      'vehicleType': route.vehicleType.name,
     };
   }
 

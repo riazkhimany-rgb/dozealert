@@ -5,10 +5,11 @@ import 'package:provider/provider.dart';
 
 import '../models/destination.dart';
 import '../models/monitoring_state.dart';
-import '../models/train_mode_snapshot.dart';
+import '../models/transit_mode_snapshot.dart';
+import '../models/transit_vehicle_type.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
-import '../providers/train_mode_provider.dart';
+import '../providers/transit_mode_provider.dart';
 import '../providers/transit_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
@@ -96,7 +97,7 @@ class _DestinationCard extends StatelessWidget {
     final destination = context.select<MonitoringProvider, Destination?>(
       (provider) => provider.selectedDestination,
     );
-    final snapshot = context.select<TrainModeProvider, TrainModeSnapshot>(
+    final snapshot = context.select<TransitModeProvider, TransitModeSnapshot>(
       (provider) => provider.snapshot,
     );
 
@@ -120,23 +121,37 @@ class _DestinationCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _MetricRow(
-            label: 'Current Station',
+            label: 'Current Stop',
             value: snapshot.isActive
-                ? snapshot.currentNearestStation?.stopName ?? '—'
+                ? snapshot.currentStop?.stopName ?? '—'
                 : '—',
           ),
           const SizedBox(height: 8),
           _MetricRow(
-            label: 'Next Station',
+            label: 'Next Stop',
             value: snapshot.isActive
-                ? snapshot.nextStation?.stopName ?? '—'
+                ? snapshot.nextStop?.stopName ?? '—'
                 : '—',
           ),
           const SizedBox(height: 8),
           _MetricRow(
-            label: 'Stations Remaining',
+            label: 'Destination Stop',
             value: snapshot.isActive
-                ? snapshot.stationsRemaining.toString()
+                ? snapshot.destinationStop?.stopName ?? '—'
+                : '—',
+          ),
+          const SizedBox(height: 8),
+          _MetricRow(
+            label: 'Stops Remaining',
+            value: snapshot.isActive
+                ? snapshot.stopsRemaining.toString()
+                : '—',
+          ),
+          const SizedBox(height: 8),
+          _MetricRow(
+            label: 'Vehicle Type',
+            value: snapshot.isActive
+                ? snapshot.vehicleType?.label ?? '—'
                 : '—',
           ),
           const SizedBox(height: 20),

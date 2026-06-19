@@ -1,0 +1,181 @@
+{
+  "country": "Canada",
+  "transitSystem": "TTC",
+  "lineName": "Line 2",
+  "stations": [
+    {
+      "name": "Kennedy Station",
+      "latitude": 43.7326,
+      "longitude": -79.2642,
+      "stationOrder": 1
+    },
+    {
+      "name": "Warden Station",
+      "latitude": 43.7106,
+      "longitude": -79.2796,
+      "stationOrder": 2
+    },
+    {
+      "name": "Victoria Park Station",
+      "latitude": 43.6893,
+      "longitude": -79.2928,
+      "stationOrder": 3
+    },
+    {
+      "name": "Main Street Station",
+      "latitude": 43.6789,
+      "longitude": -79.3524,
+      "stationOrder": 4
+    },
+    {
+      "name": "Woodbine Station",
+      "latitude": 43.686,
+      "longitude": -79.315,
+      "stationOrder": 5
+    },
+    {
+      "name": "Coxwell Station",
+      "latitude": 43.676,
+      "longitude": -79.337,
+      "stationOrder": 6
+    },
+    {
+      "name": "Greenwood Station",
+      "latitude": 43.668,
+      "longitude": -79.347,
+      "stationOrder": 7
+    },
+    {
+      "name": "Donlands Station",
+      "latitude": 43.665,
+      "longitude": -79.357,
+      "stationOrder": 8
+    },
+    {
+      "name": "Pape Station",
+      "latitude": 43.664,
+      "longitude": -79.364,
+      "stationOrder": 9
+    },
+    {
+      "name": "Chester Station",
+      "latitude": 43.662,
+      "longitude": -79.37,
+      "stationOrder": 10
+    },
+    {
+      "name": "Broadview Station",
+      "latitude": 43.66,
+      "longitude": -79.376,
+      "stationOrder": 11
+    },
+    {
+      "name": "Castle Frank Station",
+      "latitude": 43.659,
+      "longitude": -79.382,
+      "stationOrder": 12
+    },
+    {
+      "name": "Sherbourne Station",
+      "latitude": 43.661,
+      "longitude": -79.388,
+      "stationOrder": 13
+    },
+    {
+      "name": "Bloor-Yonge Station",
+      "latitude": 43.6705,
+      "longitude": -79.3866,
+      "stationOrder": 14
+    },
+    {
+      "name": "Bay Station",
+      "latitude": 43.662,
+      "longitude": -79.382,
+      "stationOrder": 15
+    },
+    {
+      "name": "St George Station",
+      "latitude": 43.6682,
+      "longitude": -79.3997,
+      "stationOrder": 16
+    },
+    {
+      "name": "Spadina Station",
+      "latitude": 43.665,
+      "longitude": -79.4033,
+      "stationOrder": 17
+    },
+    {
+      "name": "Bathurst Station",
+      "latitude": 43.656,
+      "longitude": -79.406,
+      "stationOrder": 18
+    },
+    {
+      "name": "Christie Station",
+      "latitude": 43.653,
+      "longitude": -79.418,
+      "stationOrder": 19
+    },
+    {
+      "name": "Ossington Station",
+      "latitude": 43.651,
+      "longitude": -79.426,
+      "stationOrder": 20
+    },
+    {
+      "name": "Dufferin Station",
+      "latitude": 43.657,
+      "longitude": -79.4358,
+      "stationOrder": 21
+    },
+    {
+      "name": "Keele Station",
+      "latitude": 43.6555,
+      "longitude": -79.458,
+      "stationOrder": 22
+    },
+    {
+      "name": "High Park Station",
+      "latitude": 43.646,
+      "longitude": -79.466,
+      "stationOrder": 23
+    },
+    {
+      "name": "Runnymede Station",
+      "latitude": 43.642,
+      "longitude": -79.476,
+      "stationOrder": 24
+    },
+    {
+      "name": "Jane Station",
+      "latitude": 43.635,
+      "longitude": -79.486,
+      "stationOrder": 25
+    },
+    {
+      "name": "Old Mill Station",
+      "latitude": 43.628,
+      "longitude": -79.496,
+      "stationOrder": 26
+    },
+    {
+      "name": "Royal York Station",
+      "latitude": 43.62,
+      "longitude": -79.506,
+      "stationOrder": 27
+    },
+    {
+      "name": "Islington Station",
+      "latitude": 43.612,
+      "longitude": -79.516,
+      "stationOrder": 28
+    },
+    {
+      "name": "Kipling Station",
+      "latitude": 43.602,
+      "longitude": -79.526,
+      "stationOrder": 29
+    }
+  ]
+}

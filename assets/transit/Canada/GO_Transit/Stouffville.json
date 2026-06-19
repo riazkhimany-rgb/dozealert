@@ -2,5 +2,66 @@
   "country": "Canada",
   "transitSystem": "GO Transit",
   "lineName": "Stouffville",
-  "stations": []
+  "stations": [
+    {
+      "name": "Union GO",
+      "latitude": 43.6453,
+      "longitude": -79.3806,
+      "stationOrder": 1
+    },
+    {
+      "name": "Kennedy GO",
+      "latitude": 43.7348,
+      "longitude": -79.2647,
+      "stationOrder": 2
+    },
+    {
+      "name": "Agincourt GO",
+      "latitude": 43.7976,
+      "longitude": -79.272,
+      "stationOrder": 3
+    },
+    {
+      "name": "Milliken GO",
+      "latitude": 43.8255,
+      "longitude": -79.281,
+      "stationOrder": 4
+    },
+    {
+      "name": "Unionville GO",
+      "latitude": 43.863,
+      "longitude": -79.289,
+      "stationOrder": 5
+    },
+    {
+      "name": "Centennial GO",
+      "latitude": 43.888,
+      "longitude": -79.298,
+      "stationOrder": 6
+    },
+    {
+      "name": "Markham GO",
+      "latitude": 43.901,
+      "longitude": -79.318,
+      "stationOrder": 7
+    },
+    {
+      "name": "Mount Joy GO",
+      "latitude": 43.917,
+      "longitude": -79.318,
+      "stationOrder": 8
+    },
+    {
+      "name": "Stouffville GO",
+      "latitude": 43.971,
+      "longitude": -79.259,
+      "stationOrder": 9
+    },
+    {
+      "name": "Lincolnville GO",
+      "latitude": 44.017,
+      "longitude": -79.202,
+      "stationOrder": 10
+    }
+  ]
 }

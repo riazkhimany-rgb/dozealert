@@ -1,0 +1,37 @@
+{
+  "country": "Canada",
+  "transitSystem": "TTC",
+  "lineName": "Line 4",
+  "stations": [
+    {
+      "name": "Sheppard-Yonge Station",
+      "latitude": 43.7614,
+      "longitude": -79.4109,
+      "stationOrder": 1
+    },
+    {
+      "name": "Bayview Station",
+      "latitude": 43.768,
+      "longitude": -79.392,
+      "stationOrder": 2
+    },
+    {
+      "name": "Bessarion Station",
+      "latitude": 43.769,
+      "longitude": -79.379,
+      "stationOrder": 3
+    },
+    {
+      "name": "Leslie Station",
+      "latitude": 43.77,
+      "longitude": -79.365,
+      "stationOrder": 4
+    },
+    {
+      "name": "Don Mills Station",
+      "latitude": 43.775,
+      "longitude": -79.346,
+      "stationOrder": 5
+    }
+  ]
+}

@@ -9,22 +9,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dozealert/cache/gtfs_cache_store.dart';
 import 'package:dozealert/main.dart';
 import 'package:dozealert/models/destination.dart';
+import 'package:dozealert/providers/gtfs_feed_provider.dart';
 import 'package:dozealert/providers/gtfs_provider.dart';
 import 'package:dozealert/providers/monitoring_provider.dart';
-import 'package:dozealert/providers/train_mode_provider.dart';
+import 'package:dozealert/providers/transit_mode_provider.dart';
 import 'package:dozealert/providers/transit_line_provider.dart';
 import 'package:dozealert/providers/transit_provider.dart';
 import 'package:dozealert/services/alarm_service.dart';
 import 'package:dozealert/services/background_monitor_service.dart';
 import 'package:dozealert/services/destination_storage_service.dart';
+import 'package:dozealert/services/gtfs_download_service.dart';
 import 'package:dozealert/services/gtfs_import_service.dart';
+import 'package:dozealert/services/gtfs_parser_service.dart';
 import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/monitoring_storage_service.dart';
 import 'package:dozealert/services/place_search_service.dart';
 import 'package:dozealert/services/preferences_service.dart';
 import 'package:dozealert/services/settings_service.dart';
-import 'package:dozealert/services/train_mode_service.dart';
+import 'package:dozealert/services/transit_mode_service.dart';
 import 'package:dozealert/services/transit_data_service.dart';
+import 'package:dozealert/services/trip_history_service.dart';
 
 class _FakePathProvider {
   static void install() {
@@ -59,7 +63,9 @@ Future<DozeAlertApp> _createTestApp() async {
   final preferencesService = PreferencesService();
   final transitDataService = TransitDataService();
   final gtfsCacheStore = GtfsCacheStore();
-  final gtfsImportService = GtfsImportService(gtfsCacheStore);
+  final gtfsParserService = GtfsParserService();
+  final gtfsDownloadService = GtfsDownloadService();
+  final gtfsImportService = GtfsImportService(gtfsCacheStore, gtfsParserService);
   final gtfsService = GtfsService(transitDataService);
   final transitProvider = TransitProvider(preferencesService);
   await transitProvider.loadPreferences();
@@ -79,9 +85,9 @@ Future<DozeAlertApp> _createTestApp() async {
   );
   await transitLineProvider.loadCurrentLine();
 
-  final trainModeService = TrainModeService(gtfsService);
-  final trainModeProvider = TrainModeProvider(
-    trainModeService,
+  final transitModeService = TransitModeService(gtfsService);
+  final transitModeProvider = TransitModeProvider(
+    transitModeService,
     settingsService,
     monitoringProvider,
   );
@@ -90,9 +96,21 @@ Future<DozeAlertApp> _createTestApp() async {
     gtfsImportService,
     transitProvider,
     monitoringProvider,
-    trainModeProvider,
+    transitModeProvider,
   );
   await gtfsProvider.initialize();
+
+  final gtfsFeedProvider = GtfsFeedProvider(
+    gtfsDownloadService,
+    gtfsParserService,
+    gtfsImportService,
+    gtfsCacheStore,
+    gtfsService,
+  );
+  await gtfsFeedProvider.initialize();
+
+  final tripHistoryService = TripHistoryService();
+  await tripHistoryService.loadActiveTripId();
 
   return DozeAlertApp(
     settingsService: settingsService,
@@ -104,13 +122,17 @@ Future<DozeAlertApp> _createTestApp() async {
     transitDataService: transitDataService,
     gtfsService: gtfsService,
     gtfsCacheStore: gtfsCacheStore,
+    gtfsDownloadService: gtfsDownloadService,
+    gtfsParserService: gtfsParserService,
     gtfsImportService: gtfsImportService,
     transitProvider: transitProvider,
     transitLineProvider: transitLineProvider,
-    trainModeProvider: trainModeProvider,
+    transitModeProvider: transitModeProvider,
     gtfsProvider: gtfsProvider,
+    gtfsFeedProvider: gtfsFeedProvider,
     destinationStorageService: destinationStorageService,
     monitoringProvider: monitoringProvider,
+    tripHistoryService: tripHistoryService,
     skipSplash: true,
   );
 }
@@ -201,32 +223,40 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(
-      find.text('Agencies, train mode, favorites, GTFS data'),
+      find.text('Transit data, transit mode, agencies, favorites'),
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Transit Data'), findsOneWidget);
+    expect(find.text('Transit Mode'), findsOneWidget);
+
+    await tester.tap(find.text('Transit Mode'));
+    await tester.pumpAndSettle();
+
     await tester.scrollUntilVisible(
-      find.text('Enable Train Mode'),
+      find.text('Enable Transit Mode'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Enable Train Mode'), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      find.text('Import GTFS Feed'),
-      500,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Import GTFS Feed'), findsOneWidget);
+    expect(find.text('Enable Transit Mode'), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Home'));
+    await tester.tap(find.text('Transit Data'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Download Feed'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Home').first);
     await tester.pumpAndSettle();
 
     expect(find.text('Home'), findsWidgets);

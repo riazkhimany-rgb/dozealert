@@ -1,3 +1,5 @@
+import 'transit_vehicle_type.dart';
+
 class TransitRoute {
   const TransitRoute({
     required this.routeId,
@@ -6,6 +8,7 @@ class TransitRoute {
     required this.country,
     required this.lineName,
     required this.transitSystem,
+    this.vehicleType = TransitVehicleType.bus,
   });
 
   final String routeId;
@@ -14,6 +17,7 @@ class TransitRoute {
   final String country;
   final String lineName;
   final String transitSystem;
+  final TransitVehicleType vehicleType;
 
   @override
   bool operator ==(Object other) {
@@ -24,7 +28,8 @@ class TransitRoute {
             other.agencyId == agencyId &&
             other.country == country &&
             other.lineName == lineName &&
-            other.transitSystem == transitSystem;
+            other.transitSystem == transitSystem &&
+            other.vehicleType == vehicleType;
   }
 
   @override
@@ -35,5 +40,6 @@ class TransitRoute {
         country,
         lineName,
         transitSystem,
+        vehicleType,
       );
 }

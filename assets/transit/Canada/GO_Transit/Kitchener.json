@@ -2,5 +2,72 @@
   "country": "Canada",
   "transitSystem": "GO Transit",
   "lineName": "Kitchener",
-  "stations": []
+  "stations": [
+    {
+      "name": "Union GO",
+      "latitude": 43.6453,
+      "longitude": -79.3806,
+      "stationOrder": 1
+    },
+    {
+      "name": "Bloor GO",
+      "latitude": 43.6569,
+      "longitude": -79.45,
+      "stationOrder": 2
+    },
+    {
+      "name": "Weston GO",
+      "latitude": 43.699,
+      "longitude": -79.5161,
+      "stationOrder": 3
+    },
+    {
+      "name": "Etobicoke North GO",
+      "latitude": 43.706,
+      "longitude": -79.576,
+      "stationOrder": 4
+    },
+    {
+      "name": "Malton GO",
+      "latitude": 43.704,
+      "longitude": -79.635,
+      "stationOrder": 5
+    },
+    {
+      "name": "Brampton GO",
+      "latitude": 43.6815,
+      "longitude": -79.763,
+      "stationOrder": 6
+    },
+    {
+      "name": "Mount Pleasant GO",
+      "latitude": 43.662,
+      "longitude": -79.818,
+      "stationOrder": 7
+    },
+    {
+      "name": "Georgetown GO",
+      "latitude": 43.651,
+      "longitude": -79.914,
+      "stationOrder": 8
+    },
+    {
+      "name": "Acton GO",
+      "latitude": 43.6348,
+      "longitude": -80.0405,
+      "stationOrder": 9
+    },
+    {
+      "name": "Guelph Central GO",
+      "latitude": 43.544,
+      "longitude": -80.249,
+      "stationOrder": 10
+    },
+    {
+      "name": "Kitchener GO",
+      "latitude": 43.4555,
+      "longitude": -80.493,
+      "stationOrder": 11
+    }
+  ]
 }

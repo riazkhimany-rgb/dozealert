@@ -17,38 +17,38 @@
     },
     {
       "name": "Cooksville GO",
-      "latitude": 43.5820,
-      "longitude": -79.6230,
+      "latitude": 43.582,
+      "longitude": -79.623,
       "stationOrder": 3
     },
     {
       "name": "Erindale GO",
-      "latitude": 43.5630,
-      "longitude": -79.6680,
+      "latitude": 43.563,
+      "longitude": -79.668,
       "stationOrder": 4
     },
     {
       "name": "Streetsville GO",
-      "latitude": 43.5870,
-      "longitude": -79.7180,
+      "latitude": 43.587,
+      "longitude": -79.718,
       "stationOrder": 5
     },
     {
       "name": "Meadowvale GO",
-      "latitude": 43.5940,
-      "longitude": -79.7580,
+      "latitude": 43.594,
+      "longitude": -79.758,
       "stationOrder": 6
     },
     {
       "name": "Lisgar GO",
-      "latitude": 43.5930,
-      "longitude": -79.7860,
+      "latitude": 43.593,
+      "longitude": -79.786,
       "stationOrder": 7
     },
     {
       "name": "Milton GO",
-      "latitude": 43.5130,
-      "longitude": -79.8670,
+      "latitude": 43.513,
+      "longitude": -79.867,
       "stationOrder": 8
     }
   ]

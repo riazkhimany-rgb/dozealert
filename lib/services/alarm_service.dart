@@ -15,8 +15,12 @@ class AlarmService {
 
   bool _initialized = false;
   bool _alarmActive = false;
+  DateTime? _lastAlarmTriggeredAt;
+  DateTime? _lastAlarmDismissedAt;
 
   bool get alarmActive => _alarmActive;
+  DateTime? get lastAlarmTriggeredAt => _lastAlarmTriggeredAt;
+  DateTime? get lastAlarmDismissedAt => _lastAlarmDismissedAt;
 
   Future<void> initialize() async {
     if (_initialized) {
@@ -73,6 +77,7 @@ class AlarmService {
     }
 
     _alarmActive = true;
+    _lastAlarmTriggeredAt = DateTime.now();
 
     await _startAlarmSound();
     await _startVibration();
@@ -85,6 +90,7 @@ class AlarmService {
     }
 
     _alarmActive = false;
+    _lastAlarmDismissedAt = DateTime.now();
 
     await _audioPlayer.stop();
     await _stopVibration();

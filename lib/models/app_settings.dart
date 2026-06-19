@@ -1,31 +1,31 @@
 import 'package:flutter/material.dart';
 
-import 'train_mode_wake_setting.dart';
+import '../models/transit_mode_wake_setting.dart';
 
 class AppSettings {
   const AppSettings({
     this.themeMode = ThemeMode.system,
     this.testModeEnabled = false,
-    this.trainModeEnabled = false,
-    this.trainModeWake = TrainModeWakeSetting.oneStationBefore,
+    this.transitModeEnabled = false,
+    this.transitModeWake = TransitModeWakeSetting.oneStopBefore,
   });
 
   final ThemeMode themeMode;
   final bool testModeEnabled;
-  final bool trainModeEnabled;
-  final TrainModeWakeSetting trainModeWake;
+  final bool transitModeEnabled;
+  final TransitModeWakeSetting transitModeWake;
 
   AppSettings copyWith({
     ThemeMode? themeMode,
     bool? testModeEnabled,
-    bool? trainModeEnabled,
-    TrainModeWakeSetting? trainModeWake,
+    bool? transitModeEnabled,
+    TransitModeWakeSetting? transitModeWake,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
       testModeEnabled: testModeEnabled ?? this.testModeEnabled,
-      trainModeEnabled: trainModeEnabled ?? this.trainModeEnabled,
-      trainModeWake: trainModeWake ?? this.trainModeWake,
+      transitModeEnabled: transitModeEnabled ?? this.transitModeEnabled,
+      transitModeWake: transitModeWake ?? this.transitModeWake,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -95,6 +96,32 @@ class LocationService {
     _tracking = false;
     _updateTimer?.cancel();
     _updateTimer = null;
+  }
+
+  Future<CurrentLocation?> fetchCurrentLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+
+      return CurrentLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        speed: position.speed,
+        accuracy: position.accuracy,
+        timestamp: position.timestamp,
+      );
+    } on LocationServiceDisabledException {
+      rethrow;
+    } on PermissionDeniedException {
+      rethrow;
+    } catch (error) {
+      debugPrint('LocationService: fetchCurrentLocation failed: $error');
+      return null;
+    }
   }
 
   Future<void> _emitCurrentLocation() async {

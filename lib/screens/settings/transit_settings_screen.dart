@@ -1,85 +1,80 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../models/train_mode_wake_setting.dart';
-import '../../providers/settings_provider.dart';
 import '../../widgets/settings_section_tile.dart';
 import '../../widgets/transit_preferences_section.dart';
 import '../gtfs_import_screen.dart';
+import '../transit_data_screen.dart';
+import 'transit_mode_settings_screen.dart';
 
 class TransitSettingsScreen extends StatelessWidget {
   const TransitSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final settingsProvider = context.watch<SettingsProvider>();
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transit'),
       ),
       body: ListView(
         children: [
-          const SettingsSectionHeader(title: 'Preferred Agencies'),
-          const TransitPreferencesSection(),
-          const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Train Mode'),
-          SwitchListTile(
-            secondary: Icon(Icons.directions_railway, color: colorScheme.primary),
-            title: const Text('Enable Train Mode'),
-            subtitle: Text(
-              'Wake up based on stations remaining on your line.',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
-            value: settingsProvider.trainModeEnabled,
-            onChanged: settingsProvider.setTrainModeEnabled,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-            child: Text(
-              'Wake One Station Before',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          RadioGroup<TrainModeWakeSetting>(
-            groupValue: settingsProvider.trainModeWake,
-            onChanged: (value) {
-              if (!settingsProvider.trainModeEnabled || value == null) {
-                return;
-              }
-              settingsProvider.setTrainModeWake(value);
+          SettingsNavTile(
+            icon: Icons.cloud_download_outlined,
+            title: 'Transit Data',
+            subtitle: 'Download, update, and delete GTFS feeds',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TransitDataScreen(),
+                ),
+              );
             },
-            child: Column(
-              children: TrainModeWakeSetting.values
-                  .map(
-                    (wakeSetting) => RadioListTile<TrainModeWakeSetting>(
-                      title: Text(wakeSetting.label),
-                      value: wakeSetting,
-                    ),
-                  )
-                  .toList(),
-            ),
+          ),
+          SettingsNavTile(
+            icon: Icons.directions_transit,
+            title: 'Transit Mode',
+            subtitle: 'Stop-based wake alarms for all vehicle types',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TransitModeSettingsScreen(),
+                ),
+              );
+            },
           ),
           const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Favorite Stations'),
+          const SettingsSectionHeader(title: 'Preferred Agencies'),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Choose which agencies appear first in search and trip setup.',
+            ),
+          ),
+          const SizedBox(height: 8),
+          SettingsNavTile(
+            icon: Icons.apartment_outlined,
+            title: 'Preferred Agencies',
+            subtitle: 'GO Transit, TTC, YRT, MiWay, and more',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const _PreferredAgenciesScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 32),
+          const SettingsSectionHeader(title: 'Favorite Stops'),
           ListTile(
-            leading: Icon(Icons.star_outline, color: colorScheme.primary),
-            title: const Text('Favorite Stations'),
-            subtitle: Text(
-              'Manage favorites from the Trips tab.',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
+            leading: const Icon(Icons.star_outline),
+            title: const Text('Favorite Stops'),
+            subtitle: const Text('Manage favorites from the Trips tab.'),
           ),
           const Divider(height: 32),
-          const SettingsSectionHeader(title: 'GTFS Data'),
+          const SettingsSectionHeader(title: 'Advanced'),
           SettingsNavTile(
             icon: Icons.upload_file_outlined,
-            title: 'Import GTFS Feed',
-            subtitle: 'GO Transit, TTC, STM, Exo, Amtrak, National Rail',
+            title: 'Import GTFS Zip',
+            subtitle: 'Manually import a transit feed file',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -88,6 +83,24 @@ class TransitSettingsScreen extends StatelessWidget {
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferredAgenciesScreen extends StatelessWidget {
+  const _PreferredAgenciesScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Preferred Agencies'),
+      ),
+      body: ListView(
+        children: const [
+          TransitPreferencesSection(),
         ],
       ),
     );

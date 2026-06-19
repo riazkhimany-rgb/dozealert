@@ -2,5 +2,66 @@
   "country": "Canada",
   "transitSystem": "GO Transit",
   "lineName": "Lakeshore East",
-  "stations": []
+  "stations": [
+    {
+      "name": "Union GO",
+      "latitude": 43.6453,
+      "longitude": -79.3806,
+      "stationOrder": 1
+    },
+    {
+      "name": "Danforth GO",
+      "latitude": 43.6905,
+      "longitude": -79.3005,
+      "stationOrder": 2
+    },
+    {
+      "name": "Scarborough GO",
+      "latitude": 43.7244,
+      "longitude": -79.2482,
+      "stationOrder": 3
+    },
+    {
+      "name": "Eglinton GO",
+      "latitude": 43.7311,
+      "longitude": -79.1944,
+      "stationOrder": 4
+    },
+    {
+      "name": "Guildwood GO",
+      "latitude": 43.7528,
+      "longitude": -79.1943,
+      "stationOrder": 5
+    },
+    {
+      "name": "Rouge Hill GO",
+      "latitude": 43.8047,
+      "longitude": -79.1359,
+      "stationOrder": 6
+    },
+    {
+      "name": "Pickering GO",
+      "latitude": 43.8357,
+      "longitude": -79.0887,
+      "stationOrder": 7
+    },
+    {
+      "name": "Ajax GO",
+      "latitude": 43.8503,
+      "longitude": -79.0404,
+      "stationOrder": 8
+    },
+    {
+      "name": "Whitby GO",
+      "latitude": 43.871,
+      "longitude": -78.94,
+      "stationOrder": 9
+    },
+    {
+      "name": "Oshawa GO",
+      "latitude": 43.8676,
+      "longitude": -78.8865,
+      "stationOrder": 10
+    }
+  ]
 }

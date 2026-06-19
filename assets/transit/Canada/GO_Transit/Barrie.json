@@ -2,5 +2,72 @@
   "country": "Canada",
   "transitSystem": "GO Transit",
   "lineName": "Barrie",
-  "stations": []
+  "stations": [
+    {
+      "name": "Union GO",
+      "latitude": 43.6453,
+      "longitude": -79.3806,
+      "stationOrder": 1
+    },
+    {
+      "name": "Downsview Park GO",
+      "latitude": 43.7505,
+      "longitude": -79.486,
+      "stationOrder": 2
+    },
+    {
+      "name": "York University GO",
+      "latitude": 43.7749,
+      "longitude": -79.4996,
+      "stationOrder": 3
+    },
+    {
+      "name": "Rutherford GO",
+      "latitude": 43.82,
+      "longitude": -79.506,
+      "stationOrder": 4
+    },
+    {
+      "name": "Maple GO",
+      "latitude": 43.843,
+      "longitude": -79.52,
+      "stationOrder": 5
+    },
+    {
+      "name": "Aurora GO",
+      "latitude": 43.998,
+      "longitude": -79.46,
+      "stationOrder": 6
+    },
+    {
+      "name": "Newmarket GO",
+      "latitude": 44.058,
+      "longitude": -79.461,
+      "stationOrder": 7
+    },
+    {
+      "name": "East Gwillimbury GO",
+      "latitude": 44.089,
+      "longitude": -79.469,
+      "stationOrder": 8
+    },
+    {
+      "name": "Bradford GO",
+      "latitude": 44.106,
+      "longitude": -79.543,
+      "stationOrder": 9
+    },
+    {
+      "name": "Barrie South GO",
+      "latitude": 44.36,
+      "longitude": -79.67,
+      "stationOrder": 10
+    },
+    {
+      "name": "Allandale Waterfront GO",
+      "latitude": 44.389,
+      "longitude": -79.691,
+      "stationOrder": 11
+    }
+  ]
 }

@@ -23,8 +23,8 @@
     },
     {
       "name": "Long Branch GO",
-      "latitude": 43.5910,
-      "longitude": -79.5400,
+      "latitude": 43.591,
+      "longitude": -79.54,
       "stationOrder": 4
     },
     {
@@ -66,14 +66,38 @@
     {
       "name": "Aldershot GO",
       "latitude": 43.3138,
-      "longitude": -79.8550,
+      "longitude": -79.855,
       "stationOrder": 11
     },
     {
       "name": "West Harbour GO",
-      "latitude": 43.2650,
+      "latitude": 43.265,
       "longitude": -79.8672,
       "stationOrder": 12
+    },
+    {
+      "name": "Confederation GO",
+      "latitude": 43.2183,
+      "longitude": -79.8628,
+      "stationOrder": 13
+    },
+    {
+      "name": "Centennial GO",
+      "latitude": 43.2189,
+      "longitude": -79.738,
+      "stationOrder": 14
+    },
+    {
+      "name": "St. Catharines GO",
+      "latitude": 43.1478,
+      "longitude": -79.2557,
+      "stationOrder": 15
+    },
+    {
+      "name": "Niagara Falls GO",
+      "latitude": 43.1099,
+      "longitude": -79.0613,
+      "stationOrder": 16
     }
   ]
 }

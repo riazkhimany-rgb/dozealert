@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 abstract final class AppBranding {
   static const String appName = 'DozeAlert';
   static const String tagline = 'Sleep peacefully. Arrive confidently.';
-  static const String subtitle = 'Never miss your stop again';
   static const String description =
       'DozeAlert helps travelers wake up before reaching their '
       'destination using smart location-based alarms.';

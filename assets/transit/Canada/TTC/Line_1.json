@@ -1,0 +1,253 @@
+{
+  "country": "Canada",
+  "transitSystem": "TTC",
+  "lineName": "Line 1",
+  "stations": [
+    {
+      "name": "Finch Station",
+      "latitude": 43.7817,
+      "longitude": -79.4157,
+      "stationOrder": 1
+    },
+    {
+      "name": "North York Centre Station",
+      "latitude": 43.7682,
+      "longitude": -79.413,
+      "stationOrder": 2
+    },
+    {
+      "name": "Sheppard-Yonge Station",
+      "latitude": 43.7614,
+      "longitude": -79.4109,
+      "stationOrder": 3
+    },
+    {
+      "name": "York Mills Station",
+      "latitude": 43.7443,
+      "longitude": -79.409,
+      "stationOrder": 4
+    },
+    {
+      "name": "Lawrence Station",
+      "latitude": 43.7246,
+      "longitude": -79.393,
+      "stationOrder": 5
+    },
+    {
+      "name": "Eglinton Station",
+      "latitude": 43.7067,
+      "longitude": -79.3987,
+      "stationOrder": 6
+    },
+    {
+      "name": "Davisville Station",
+      "latitude": 43.6977,
+      "longitude": -79.3965,
+      "stationOrder": 7
+    },
+    {
+      "name": "St Clair Station",
+      "latitude": 43.6888,
+      "longitude": -79.3938,
+      "stationOrder": 8
+    },
+    {
+      "name": "Summerhill Station",
+      "latitude": 43.682,
+      "longitude": -79.3905,
+      "stationOrder": 9
+    },
+    {
+      "name": "Rosedale Station",
+      "latitude": 43.6742,
+      "longitude": -79.3805,
+      "stationOrder": 10
+    },
+    {
+      "name": "Bloor-Yonge Station",
+      "latitude": 43.6705,
+      "longitude": -79.3866,
+      "stationOrder": 11
+    },
+    {
+      "name": "Wellesley Station",
+      "latitude": 43.6651,
+      "longitude": -79.3851,
+      "stationOrder": 12
+    },
+    {
+      "name": "College Station",
+      "latitude": 43.6617,
+      "longitude": -79.384,
+      "stationOrder": 13
+    },
+    {
+      "name": "Dundas Station",
+      "latitude": 43.6564,
+      "longitude": -79.3804,
+      "stationOrder": 14
+    },
+    {
+      "name": "Queen Station",
+      "latitude": 43.6523,
+      "longitude": -79.3798,
+      "stationOrder": 15
+    },
+    {
+      "name": "King Station",
+      "latitude": 43.6489,
+      "longitude": -79.3787,
+      "stationOrder": 16
+    },
+    {
+      "name": "Union Station",
+      "latitude": 43.6455,
+      "longitude": -79.3806,
+      "stationOrder": 17
+    },
+    {
+      "name": "St Andrew Station",
+      "latitude": 43.6476,
+      "longitude": -79.3867,
+      "stationOrder": 18
+    },
+    {
+      "name": "Osgoode Station",
+      "latitude": 43.6508,
+      "longitude": -79.3867,
+      "stationOrder": 19
+    },
+    {
+      "name": "St Patrick Station",
+      "latitude": 43.6546,
+      "longitude": -79.3867,
+      "stationOrder": 20
+    },
+    {
+      "name": "Queen's Park Station",
+      "latitude": 43.6579,
+      "longitude": -79.3888,
+      "stationOrder": 21
+    },
+    {
+      "name": "Museum Station",
+      "latitude": 43.6605,
+      "longitude": -79.39,
+      "stationOrder": 22
+    },
+    {
+      "name": "St George Station",
+      "latitude": 43.6682,
+      "longitude": -79.3997,
+      "stationOrder": 23
+    },
+    {
+      "name": "Spadina Station",
+      "latitude": 43.665,
+      "longitude": -79.4033,
+      "stationOrder": 24
+    },
+    {
+      "name": "Dupont Station",
+      "latitude": 43.6503,
+      "longitude": -79.4057,
+      "stationOrder": 25
+    },
+    {
+      "name": "St Clair West Station",
+      "latitude": 43.6784,
+      "longitude": -79.4107,
+      "stationOrder": 26
+    },
+    {
+      "name": "Dufferin Station",
+      "latitude": 43.657,
+      "longitude": -79.4358,
+      "stationOrder": 27
+    },
+    {
+      "name": "Keele Station",
+      "latitude": 43.6555,
+      "longitude": -79.458,
+      "stationOrder": 28
+    },
+    {
+      "name": "Dundas West Station",
+      "latitude": 43.6533,
+      "longitude": -79.464,
+      "stationOrder": 29
+    },
+    {
+      "name": "Lansdowne Station",
+      "latitude": 43.649,
+      "longitude": -79.475,
+      "stationOrder": 30
+    },
+    {
+      "name": "Glencairn Station",
+      "latitude": 43.637,
+      "longitude": -79.489,
+      "stationOrder": 31
+    },
+    {
+      "name": "Lawrence West Station",
+      "latitude": 43.625,
+      "longitude": -79.497,
+      "stationOrder": 32
+    },
+    {
+      "name": "Yorkdale Station",
+      "latitude": 43.615,
+      "longitude": -79.506,
+      "stationOrder": 33
+    },
+    {
+      "name": "Wilson Station",
+      "latitude": 43.7347,
+      "longitude": -79.4502,
+      "stationOrder": 34
+    },
+    {
+      "name": "Sheppard West Station",
+      "latitude": 43.7246,
+      "longitude": -79.4771,
+      "stationOrder": 35
+    },
+    {
+      "name": "Downsview Park Station",
+      "latitude": 43.7379,
+      "longitude": -79.483,
+      "stationOrder": 36
+    },
+    {
+      "name": "Finch West Station",
+      "latitude": 43.7649,
+      "longitude": -79.4859,
+      "stationOrder": 37
+    },
+    {
+      "name": "York University Station",
+      "latitude": 43.7749,
+      "longitude": -79.4996,
+      "stationOrder": 38
+    },
+    {
+      "name": "Pioneer Village Station",
+      "latitude": 43.8165,
+      "longitude": -79.5164,
+      "stationOrder": 39
+    },
+    {
+      "name": "Highway 407 Station",
+      "latitude": 43.8048,
+      "longitude": -79.5246,
+      "stationOrder": 40
+    },
+    {
+      "name": "Vaughan Metropolitan Centre Station",
+      "latitude": 43.7949,
+      "longitude": -79.5273,
+      "stationOrder": 41
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dozealert/services/gtfs_service.dart';
-import 'package:dozealert/services/train_mode_service.dart';
+import 'package:dozealert/services/transit_mode_service.dart';
 import 'package:dozealert/services/transit_data_service.dart';
 import 'package:dozealert/models/destination.dart';
 
@@ -9,12 +9,12 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late GtfsService gtfsService;
-  late TrainModeService trainModeService;
+  late TransitModeService transitModeService;
 
   setUp(() async {
     gtfsService = GtfsService(TransitDataService());
     await gtfsService.initializeFromFallbackData();
-    trainModeService = TrainModeService(gtfsService);
+    transitModeService = TransitModeService(gtfsService);
   });
 
   test('detects GO Transit route for Bronte GO', () {
@@ -38,14 +38,22 @@ void main() {
     expect(results.any((stop) => stop.stopName == 'Bronte GO'), isTrue);
   });
 
-  test('train mode calculates stations remaining', () {
+  test('global search result includes agency metadata', () {
+    final results = gtfsService.searchStopResults('Finch');
+
+    expect(results, isNotEmpty);
+    expect(results.first.agencyName, isNotEmpty);
+    expect(results.first.routeName, isNotEmpty);
+  });
+
+  test('transit mode calculates stops remaining', () {
     const destination = Destination(
       name: 'Bronte GO',
       latitude: 43.4039,
       longitude: -79.7589,
     );
 
-    final snapshot = trainModeService.evaluate(
+    final snapshot = transitModeService.evaluate(
       destination: destination,
       latitude: 43.4553,
       longitude: -79.6829,
@@ -53,9 +61,9 @@ void main() {
     );
 
     expect(snapshot.isActive, isTrue);
-    expect(snapshot.currentNearestStation?.stopName, 'Oakville GO');
-    expect(snapshot.destinationStation?.stopName, 'Bronte GO');
-    expect(snapshot.stationsRemaining, 1);
-    expect(snapshot.nextStation?.stopName, 'Bronte GO');
+    expect(snapshot.currentStop?.stopName, 'Oakville GO');
+    expect(snapshot.destinationStop?.stopName, 'Bronte GO');
+    expect(snapshot.stopsRemaining, 1);
+    expect(snapshot.nextStop?.stopName, 'Bronte GO');
   });
 }

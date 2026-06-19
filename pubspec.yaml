@@ -51,6 +51,7 @@ dependencies:
   archive: ^4.0.7
   file_picker: ^10.3.2
   path_provider: ^2.1.5
+  http: ^1.4.0
 
 dev_dependencies:
   flutter_test:
@@ -75,6 +76,7 @@ flutter:
     - assets/branding/
     - assets/sounds/
     - assets/transit/Canada/GO_Transit/
+    - assets/transit/Canada/TTC/
     - privacy_policy.md
 
 flutter_launcher_icons:

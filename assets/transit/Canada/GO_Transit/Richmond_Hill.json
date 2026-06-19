@@ -2,5 +2,36 @@
   "country": "Canada",
   "transitSystem": "GO Transit",
   "lineName": "Richmond Hill",
-  "stations": []
+  "stations": [
+    {
+      "name": "Union GO",
+      "latitude": 43.6453,
+      "longitude": -79.3806,
+      "stationOrder": 1
+    },
+    {
+      "name": "Oriole GO",
+      "latitude": 43.778,
+      "longitude": -79.387,
+      "stationOrder": 2
+    },
+    {
+      "name": "Old Cummer GO",
+      "latitude": 43.798,
+      "longitude": -79.364,
+      "stationOrder": 3
+    },
+    {
+      "name": "Langstaff GO",
+      "latitude": 43.821,
+      "longitude": -79.426,
+      "stationOrder": 4
+    },
+    {
+      "name": "Richmond Hill GO",
+      "latitude": 43.848,
+      "longitude": -79.426,
+      "stationOrder": 5
+    }
+  ]
 }

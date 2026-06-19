@@ -1,29 +1,29 @@
 import 'package:geolocator/geolocator.dart';
 
 import '../models/destination.dart';
-import '../models/train_mode_snapshot.dart';
+import '../models/transit_mode_snapshot.dart';
 import '../models/transit_stop.dart';
 import 'gtfs_service.dart';
 
-class TrainModeService {
-  TrainModeService(this._gtfsService);
+class TransitModeService {
+  TransitModeService(this._gtfsService);
 
   final GtfsService _gtfsService;
 
-  TrainModeSnapshot evaluate({
+  TransitModeSnapshot evaluate({
     required Destination? destination,
     required double? latitude,
     required double? longitude,
     String? routeId,
   }) {
     if (destination == null || latitude == null || longitude == null) {
-      return TrainModeSnapshot.inactive;
+      return TransitModeSnapshot.inactive;
     }
 
     final detection = _gtfsService.detectAgencyFromDestination(destination.name);
     final resolvedRouteId = routeId ?? detection?.route?.routeId;
     if (resolvedRouteId == null) {
-      return TrainModeSnapshot.inactive;
+      return TransitModeSnapshot.inactive;
     }
 
     final route = _gtfsService.routeById(resolvedRouteId);
@@ -32,56 +32,57 @@ class TrainModeService {
         : _gtfsService.agencyById(route.agencyId);
     final routeStops = _gtfsService.stopsForRoute(resolvedRouteId);
     if (route == null || agency == null || routeStops.length < 2) {
-      return TrainModeSnapshot.inactive;
+      return TransitModeSnapshot.inactive;
     }
 
-    final destinationStation = getDestinationStation(
+    final destinationStop = getDestinationStop(
       destination: destination,
       routeId: resolvedRouteId,
     );
-    final currentNearestStation = getCurrentNearestStation(
+    final currentStop = getCurrentStop(
       latitude: latitude,
       longitude: longitude,
       routeId: resolvedRouteId,
     );
 
-    if (destinationStation == null || currentNearestStation == null) {
-      return TrainModeSnapshot.inactive;
+    if (destinationStop == null || currentStop == null) {
+      return TransitModeSnapshot.inactive;
     }
 
-    final nextStation = getNextStation(
-      currentNearestStation: currentNearestStation,
-      destinationStation: destinationStation,
+    final nextStop = getNextStop(
+      currentStop: currentStop,
+      destinationStop: destinationStop,
       routeId: resolvedRouteId,
     );
-    final previousStation = getPreviousStation(
-      currentNearestStation: currentNearestStation,
-      destinationStation: destinationStation,
+    final previousStop = getPreviousStop(
+      currentStop: currentStop,
+      destinationStop: destinationStop,
       routeId: resolvedRouteId,
     );
-    final stationsRemaining = getStationsRemaining(
-      currentNearestStation: currentNearestStation,
-      destinationStation: destinationStation,
+    final stopsRemaining = getStopsRemaining(
+      currentStop: currentStop,
+      destinationStop: destinationStop,
     );
 
-    final status = stationsRemaining == 0
+    final status = stopsRemaining == 0
         ? 'At destination'
         : 'Approaching destination';
 
-    return TrainModeSnapshot(
+    return TransitModeSnapshot(
       isActive: true,
       agency: agency,
       route: route,
-      destinationStation: destinationStation,
-      currentNearestStation: currentNearestStation,
-      previousStation: previousStation,
-      nextStation: nextStation,
-      stationsRemaining: stationsRemaining,
+      vehicleType: route.vehicleType,
+      destinationStop: destinationStop,
+      currentStop: currentStop,
+      previousStop: previousStop,
+      nextStop: nextStop,
+      stopsRemaining: stopsRemaining,
       status: status,
     );
   }
 
-  TransitStop? getDestinationStation({
+  TransitStop? getDestinationStop({
     required Destination destination,
     required String routeId,
   }) {
@@ -91,7 +92,7 @@ class TrainModeService {
     );
   }
 
-  TransitStop? getCurrentNearestStation({
+  TransitStop? getCurrentStop({
     required double latitude,
     required double longitude,
     required String routeId,
@@ -120,17 +121,17 @@ class TrainModeService {
     return nearest;
   }
 
-  TransitStop? getPreviousStation({
-    required TransitStop currentNearestStation,
-    required TransitStop destinationStation,
+  TransitStop? getPreviousStop({
+    required TransitStop currentStop,
+    required TransitStop destinationStop,
     required String routeId,
   }) {
     final routeStops = _sortedStops(routeId);
     final travelingForward =
-        destinationStation.stopSequence >= currentNearestStation.stopSequence;
+        destinationStop.stopSequence >= currentStop.stopSequence;
     final targetSequence = travelingForward
-        ? currentNearestStation.stopSequence - 1
-        : currentNearestStation.stopSequence + 1;
+        ? currentStop.stopSequence - 1
+        : currentStop.stopSequence + 1;
 
     for (final stop in routeStops) {
       if (stop.stopSequence == targetSequence) {
@@ -138,20 +139,20 @@ class TrainModeService {
       }
     }
 
-    return currentNearestStation;
+    return currentStop;
   }
 
-  TransitStop? getNextStation({
-    required TransitStop currentNearestStation,
-    required TransitStop destinationStation,
+  TransitStop? getNextStop({
+    required TransitStop currentStop,
+    required TransitStop destinationStop,
     required String routeId,
   }) {
     final routeStops = _sortedStops(routeId);
     final travelingForward =
-        destinationStation.stopSequence >= currentNearestStation.stopSequence;
+        destinationStop.stopSequence >= currentStop.stopSequence;
     final targetSequence = travelingForward
-        ? currentNearestStation.stopSequence + 1
-        : currentNearestStation.stopSequence - 1;
+        ? currentStop.stopSequence + 1
+        : currentStop.stopSequence - 1;
 
     for (final stop in routeStops) {
       if (stop.stopSequence == targetSequence) {
@@ -159,15 +160,14 @@ class TrainModeService {
       }
     }
 
-    return destinationStation;
+    return destinationStop;
   }
 
-  int getStationsRemaining({
-    required TransitStop currentNearestStation,
-    required TransitStop destinationStation,
+  int getStopsRemaining({
+    required TransitStop currentStop,
+    required TransitStop destinationStop,
   }) {
-    return (destinationStation.stopSequence - currentNearestStation.stopSequence)
-        .abs();
+    return (destinationStop.stopSequence - currentStop.stopSequence).abs();
   }
 
   List<TransitStop> _sortedStops(String routeId) {

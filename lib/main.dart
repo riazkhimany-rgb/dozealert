@@ -3,13 +3,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 
+import 'providers/gtfs_feed_provider.dart';
 import 'providers/gtfs_provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/monitoring_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/theme_provider.dart';
-import 'providers/train_mode_provider.dart';
+import 'providers/transit_mode_provider.dart';
 import 'providers/transit_line_provider.dart';
 import 'providers/transit_provider.dart';
 import 'screens/app_startup_screen.dart';
@@ -17,15 +18,19 @@ import 'cache/gtfs_cache_store.dart';
 import 'services/alarm_service.dart';
 import 'services/background_monitor_service.dart';
 import 'services/destination_storage_service.dart';
+import 'services/developer_diagnostics_service.dart';
+import 'services/gtfs_download_service.dart';
 import 'services/gtfs_import_service.dart';
+import 'services/gtfs_parser_service.dart';
 import 'services/gtfs_service.dart';
 import 'services/location_service.dart';
 import 'services/monitoring_storage_service.dart';
 import 'services/place_search_service.dart';
 import 'services/preferences_service.dart';
 import 'services/settings_service.dart';
-import 'services/train_mode_service.dart';
+import 'services/transit_mode_service.dart';
 import 'services/transit_data_service.dart';
+import 'services/trip_history_service.dart';
 import 'utils/app_theme.dart';
 
 Future<void> main() async {
@@ -50,7 +55,9 @@ Future<void> main() async {
   final preferencesService = PreferencesService();
   final transitDataService = TransitDataService();
   final gtfsCacheStore = GtfsCacheStore();
-  final gtfsImportService = GtfsImportService(gtfsCacheStore);
+  final gtfsParserService = GtfsParserService();
+  final gtfsDownloadService = GtfsDownloadService();
+  final gtfsImportService = GtfsImportService(gtfsCacheStore, gtfsParserService);
   final gtfsService = GtfsService(transitDataService);
   final transitProvider = TransitProvider(preferencesService);
   await transitProvider.loadPreferences();
@@ -70,9 +77,9 @@ Future<void> main() async {
   );
   await transitLineProvider.loadCurrentLine();
 
-  final trainModeService = TrainModeService(gtfsService);
-  final trainModeProvider = TrainModeProvider(
-    trainModeService,
+  final transitModeService = TransitModeService(gtfsService);
+  final transitModeProvider = TransitModeProvider(
+    transitModeService,
     settingsService,
     monitoringProvider,
   );
@@ -81,9 +88,21 @@ Future<void> main() async {
     gtfsImportService,
     transitProvider,
     monitoringProvider,
-    trainModeProvider,
+    transitModeProvider,
   );
   await gtfsProvider.initialize();
+
+  final gtfsFeedProvider = GtfsFeedProvider(
+    gtfsDownloadService,
+    gtfsParserService,
+    gtfsImportService,
+    gtfsCacheStore,
+    gtfsService,
+  );
+  await gtfsFeedProvider.initialize();
+
+  final tripHistoryService = TripHistoryService();
+  await tripHistoryService.loadActiveTripId();
 
   runApp(
     DozeAlertApp(
@@ -96,13 +115,17 @@ Future<void> main() async {
       transitDataService: transitDataService,
       gtfsService: gtfsService,
       gtfsCacheStore: gtfsCacheStore,
+      gtfsDownloadService: gtfsDownloadService,
+      gtfsParserService: gtfsParserService,
       gtfsImportService: gtfsImportService,
       transitProvider: transitProvider,
       transitLineProvider: transitLineProvider,
-      trainModeProvider: trainModeProvider,
+      transitModeProvider: transitModeProvider,
       gtfsProvider: gtfsProvider,
+      gtfsFeedProvider: gtfsFeedProvider,
       destinationStorageService: destinationStorageService,
       monitoringProvider: monitoringProvider,
+      tripHistoryService: tripHistoryService,
     ),
   );
 }
@@ -132,13 +155,17 @@ class DozeAlertApp extends StatelessWidget {
     required this.transitDataService,
     required this.gtfsService,
     required this.gtfsCacheStore,
+    required this.gtfsDownloadService,
+    required this.gtfsParserService,
     required this.gtfsImportService,
     required this.transitProvider,
     required this.transitLineProvider,
-    required this.trainModeProvider,
+    required this.transitModeProvider,
     required this.gtfsProvider,
+    required this.gtfsFeedProvider,
     required this.destinationStorageService,
     required this.monitoringProvider,
+    required this.tripHistoryService,
     this.skipSplash = false,
   });
 
@@ -151,13 +178,17 @@ class DozeAlertApp extends StatelessWidget {
   final TransitDataService transitDataService;
   final GtfsService gtfsService;
   final GtfsCacheStore gtfsCacheStore;
+  final GtfsDownloadService gtfsDownloadService;
+  final GtfsParserService gtfsParserService;
   final GtfsImportService gtfsImportService;
   final TransitProvider transitProvider;
   final TransitLineProvider transitLineProvider;
-  final TrainModeProvider trainModeProvider;
+  final TransitModeProvider transitModeProvider;
   final GtfsProvider gtfsProvider;
+  final GtfsFeedProvider gtfsFeedProvider;
   final DestinationStorageService destinationStorageService;
   final MonitoringProvider monitoringProvider;
+  final TripHistoryService tripHistoryService;
   final bool skipSplash;
 
   @override
@@ -177,13 +208,24 @@ class DozeAlertApp extends StatelessWidget {
         Provider<TransitDataService>.value(value: transitDataService),
         Provider<GtfsService>.value(value: gtfsService),
         Provider<GtfsCacheStore>.value(value: gtfsCacheStore),
+        Provider<GtfsDownloadService>.value(value: gtfsDownloadService),
+        Provider<GtfsParserService>.value(value: gtfsParserService),
         Provider<GtfsImportService>.value(value: gtfsImportService),
+        Provider<TripHistoryService>.value(value: tripHistoryService),
         Provider<DestinationStorageService>.value(
           value: destinationStorageService,
         ),
         Provider<LocationService>(
           create: (_) => LocationService(),
           dispose: (_, service) => service.dispose(),
+        ),
+        Provider<DeveloperDiagnosticsService>(
+          create: (context) => DeveloperDiagnosticsService(
+            context.read<LocationService>(),
+            context.read<BackgroundMonitorService>(),
+            context.read<AlarmService>(),
+            context.read<TripHistoryService>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => ThemeProvider(settingsService),
@@ -203,11 +245,14 @@ class DozeAlertApp extends StatelessWidget {
         ChangeNotifierProvider<TransitLineProvider>.value(
           value: transitLineProvider,
         ),
-        ChangeNotifierProvider<TrainModeProvider>.value(
-          value: trainModeProvider,
+        ChangeNotifierProvider<TransitModeProvider>.value(
+          value: transitModeProvider,
         ),
         ChangeNotifierProvider<GtfsProvider>.value(
           value: gtfsProvider,
+        ),
+        ChangeNotifierProvider<GtfsFeedProvider>.value(
+          value: gtfsFeedProvider,
         ),
         ChangeNotifierProvider(
           create: (context) => LocationProvider(
@@ -217,7 +262,8 @@ class DozeAlertApp extends StatelessWidget {
             settingsService,
             backgroundMonitorService,
             monitoringStorageService,
-            trainModeProvider,
+            transitModeProvider,
+            context.read<TripHistoryService>(),
           ),
         ),
       ],

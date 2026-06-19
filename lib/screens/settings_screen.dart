@@ -37,7 +37,7 @@ class SettingsScreen extends StatelessWidget {
           SettingsNavTile(
             icon: Icons.directions_transit_outlined,
             title: 'Transit',
-            subtitle: 'Agencies, train mode, favorites, GTFS data',
+            subtitle: 'Transit data, transit mode, agencies, favorites',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

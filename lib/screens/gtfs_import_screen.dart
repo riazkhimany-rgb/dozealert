@@ -227,9 +227,9 @@ class _FeedInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final lastUpdated = MaterialLocalizations.of(context).formatShortDate(
-      feed.lastUpdated,
-    );
+    final lastUpdated = feed.lastUpdated == null
+        ? '—'
+        : MaterialLocalizations.of(context).formatShortDate(feed.lastUpdated!);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -238,7 +238,7 @@ class _FeedInfoCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              feed.feedName,
+              feed.agencyName,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),

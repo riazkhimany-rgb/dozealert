@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/current_location.dart';
 import '../models/monitoring_state.dart';
 import '../providers/monitoring_provider.dart';
-import '../providers/train_mode_provider.dart';
+import '../providers/transit_mode_provider.dart';
 import '../services/alarm_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/location_service.dart';
 import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
+import '../services/trip_history_service.dart';
 
 enum LocationStartResult {
   success,
@@ -33,7 +35,8 @@ class LocationProvider extends ChangeNotifier {
     this._settingsService,
     this._backgroundMonitorService,
     this._monitoringStorage,
-    this._trainModeProvider,
+    this._transitModeProvider,
+    this._tripHistoryService,
   ) {
     _locationSubscription = _locationService.locationStream.listen(
       _onLocationUpdate,
@@ -55,7 +58,8 @@ class LocationProvider extends ChangeNotifier {
   final SettingsService _settingsService;
   final BackgroundMonitorService _backgroundMonitorService;
   final MonitoringStorageService _monitoringStorage;
-  final TrainModeProvider _trainModeProvider;
+  final TransitModeProvider _transitModeProvider;
+  final TripHistoryService _tripHistoryService;
 
   StreamSubscription<CurrentLocation>? _locationSubscription;
   StreamSubscription<CurrentLocation>? _backgroundLocationSubscription;
@@ -177,9 +181,10 @@ class LocationProvider extends ChangeNotifier {
     }
 
     await _monitoringStorage.setArrivalTriggered(false);
-    _trainModeProvider.resetApproachAlarm();
+    _transitModeProvider.resetApproachAlarm();
     _trackingEnabled = true;
     _monitoringProvider.startMonitoring();
+    await _tripHistoryService.startTrip(destination.name);
     await _backgroundMonitorService.syncServiceState();
     notifyListeners();
     return LocationStartResult.success;
@@ -194,8 +199,12 @@ class LocationProvider extends ChangeNotifier {
       await _alarmService.stopAlarm();
     }
 
+    if (_monitoringProvider.currentState == MonitoringState.monitoring) {
+      await _tripHistoryService.endTrip(missed: true);
+    }
+
     _arrivalDialogVisible = false;
-    _trainModeProvider.resetApproachAlarm();
+    _transitModeProvider.resetApproachAlarm();
     await _locationService.stopTracking();
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
@@ -207,8 +216,9 @@ class LocationProvider extends ChangeNotifier {
 
   Future<void> dismissArrival() async {
     await _alarmService.stopAlarm();
+    await _tripHistoryService.recordAlarmDismissed();
     _arrivalDialogVisible = false;
-    _trainModeProvider.resetApproachAlarm();
+    _transitModeProvider.resetApproachAlarm();
     await _monitoringStorage.setArrivalTriggered(false);
     _monitoringProvider.resetToIdle();
     await _locationService.stopTracking();
@@ -241,7 +251,7 @@ class LocationProvider extends ChangeNotifier {
   Future<void> _onLocationUpdate(CurrentLocation location) async {
     _currentLocation = location;
     updateDistance();
-    _trainModeProvider.updateFromLocation(
+    _transitModeProvider.updateFromLocation(
       latitude: location.latitude,
       longitude: location.longitude,
     );
@@ -282,6 +292,7 @@ class LocationProvider extends ChangeNotifier {
     }
 
     await _alarmService.playAlarm();
+    await _tripHistoryService.recordAlarmTriggered();
     _monitoringProvider.markArrived();
     _arrivalDialogVisible = true;
     notifyListeners();
@@ -308,22 +319,23 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
-    if (_settingsService.settings.trainModeEnabled) {
-      if (_trainModeProvider.shouldTriggerApproachAlarm) {
+    if (_settingsService.settings.transitModeEnabled) {
+      if (_transitModeProvider.shouldTriggerApproachAlarm) {
         await _monitoringStorage.setArrivalTriggered(true);
-        final message = _trainModeProvider.approachAlarmMessage;
+        final message = _transitModeProvider.approachAlarmMessage;
         await _alarmService.playApproachAlarm(
-          title: 'Train Mode Alert',
+          title: 'Transit Mode Alert',
           body: message,
         );
-        _trainModeProvider.markApproachAlarmTriggered();
+        await _tripHistoryService.recordAlarmTriggered();
+        _transitModeProvider.markApproachAlarmTriggered();
         _monitoringProvider.markArrived();
         _arrivalDialogVisible = true;
         notifyListeners();
         return;
       }
 
-      if (_trainModeProvider.isActive) {
+      if (_transitModeProvider.isActive) {
         return;
       }
     }
@@ -338,8 +350,49 @@ class LocationProvider extends ChangeNotifier {
 
     await _monitoringStorage.setArrivalTriggered(true);
     await _alarmService.playAlarm();
+    await _tripHistoryService.recordAlarmTriggered();
     _monitoringProvider.markArrived();
     _arrivalDialogVisible = true;
+    notifyListeners();
+  }
+
+  Future<void> refreshLocation() async {
+    try {
+      final location = await _locationService.fetchCurrentLocation();
+      if (location != null) {
+        await _onLocationUpdate(location);
+      }
+    } catch (error) {
+      debugPrint('LocationProvider: refreshLocation failed: $error');
+    }
+  }
+
+  Future<void> developerTriggerAlarm() async {
+    await _alarmService.playAlarm();
+    await _tripHistoryService.recordAlarmTriggered();
+    notifyListeners();
+  }
+
+  Future<void> developerStopAlarm() async {
+    await _alarmService.stopAlarm();
+    notifyListeners();
+  }
+
+  Future<void> developerSimulateArrival() async {
+    if (_monitoringProvider.currentState == MonitoringState.monitoring) {
+      await _monitoringStorage.setArrivalTriggered(true);
+    }
+    await _alarmService.playAlarm();
+    await _tripHistoryService.recordAlarmTriggered();
+    if (_monitoringProvider.currentState == MonitoringState.monitoring) {
+      _monitoringProvider.markArrived();
+    }
+    _arrivalDialogVisible = true;
+    notifyListeners();
+  }
+
+  void developerSimulateOneStopRemaining() {
+    _transitModeProvider.simulateOneStopRemaining();
     notifyListeners();
   }
 

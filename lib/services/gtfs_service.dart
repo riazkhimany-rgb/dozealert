@@ -6,6 +6,8 @@ import '../models/agency_detection_result.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_route.dart';
 import '../models/transit_stop.dart';
+import '../models/transit_stop_search_result.dart';
+import '../models/transit_vehicle_type.dart';
 import 'transit_data_service.dart';
 
 class GtfsService {
@@ -110,7 +112,16 @@ class GtfsService {
       _agenciesById[agency.agencyId] = agency;
     }
 
-    await _loadGoTransitJsonFallback();
+    await _loadJsonFallbackForSystem(
+      country: 'Canada',
+      transitSystem: 'GO Transit',
+      agencyId: 'go_transit',
+    );
+    await _loadJsonFallbackForSystem(
+      country: 'Canada',
+      transitSystem: 'TTC',
+      agencyId: 'ttc',
+    );
     _loadSupplementalStops();
 
     for (final feed in cachedFeeds) {
@@ -154,16 +165,27 @@ class GtfsService {
   }
 
   Future<void> reloadCachedFeeds(List<GtfsCachedFeed> cachedFeeds) async {
-    for (final feed in cachedFeeds) {
-      mergeCachedFeed(feed);
-    }
+    await reinitialize(cachedFeeds: cachedFeeds);
   }
 
-  Future<void> _loadGoTransitJsonFallback() async {
-    const country = 'Canada';
-    const transitSystem = 'GO Transit';
-    const agencyId = 'go_transit';
+  Future<void> reinitialize({
+    List<GtfsCachedFeed> cachedFeeds = const [],
+  }) async {
+    _initialized = false;
+    _agencies.clear();
+    _routes.clear();
+    _stops.clear();
+    _agenciesById.clear();
+    _routesById.clear();
+    _stopsByRouteId.clear();
+    await initializeFromFallbackData(cachedFeeds: cachedFeeds);
+  }
 
+  Future<void> _loadJsonFallbackForSystem({
+    required String country,
+    required String transitSystem,
+    required String agencyId,
+  }) async {
     for (final lineName in TransitCatalog.linesForSystem(transitSystem)) {
       final result = await _transitDataService.loadLine(
         country: country,
@@ -187,6 +209,7 @@ class GtfsService {
         country: country,
         lineName: lineName,
         transitSystem: transitSystem,
+        vehicleType: _defaultVehicleTypeForSystem(transitSystem),
       );
       _routes.add(route);
       _routesById[routeId] = route;
@@ -305,22 +328,54 @@ class GtfsService {
   }
 
   List<TransitStop> searchStops(String query, {int limit = 20}) {
+    return searchStopResults(query, limit: limit)
+        .map((result) => result.stop)
+        .toList(growable: false);
+  }
+
+  List<TransitStopSearchResult> searchStopResults(
+    String query, {
+    int limit = 20,
+  }) {
     final normalizedQuery = query.trim().toLowerCase();
     if (normalizedQuery.isEmpty) {
       return const [];
     }
 
-    final matches = _stops
-        .where(
-          (stop) => stop.stopName.toLowerCase().contains(normalizedQuery),
-        )
-        .take(limit)
-        .toList(growable: false);
+    final matches = <TransitStopSearchResult>[];
+    for (final stop in _stops) {
+      if (!stop.stopName.toLowerCase().contains(normalizedQuery)) {
+        continue;
+      }
+
+      final route = _routesById[stop.routeId];
+      final agency = route == null ? null : _agenciesById[route.agencyId];
+      matches.add(
+        TransitStopSearchResult(
+          stop: stop,
+          agencyName: agency?.agencyName ?? route?.transitSystem ?? 'Transit',
+          routeName: route?.routeName ?? route?.lineName ?? 'Route',
+          vehicleType: route?.vehicleType ?? TransitVehicleType.bus,
+        ),
+      );
+
+      if (matches.length >= limit) {
+        break;
+      }
+    }
 
     debugPrint(
       'GtfsService: search "$query" returned ${matches.length} matches',
     );
     return matches;
+  }
+
+  TransitVehicleType _defaultVehicleTypeForSystem(String transitSystem) {
+    return switch (transitSystem) {
+      'GO Transit' || 'Exo' => TransitVehicleType.train,
+      'TTC' => TransitVehicleType.subway,
+      _ => TransitVehicleType.bus,
+    };
   }
 
   AgencyDetectionResult? detectAgencyFromDestination(String destinationName) {
@@ -452,6 +507,22 @@ class GtfsService {
 
   Future<void> refreshFeeds() async {
     debugPrint('GtfsService: refreshFeeds() is not implemented yet.');
+  }
+
+  Future<void> downloadRealtimeFeed(String agencyId) async {
+    debugPrint(
+      'GtfsService: downloadRealtimeFeed($agencyId) is not implemented yet.',
+    );
+  }
+
+  Future<void> updateRealtimeVehicles(String agencyId) async {
+    debugPrint(
+      'GtfsService: updateRealtimeVehicles($agencyId) is not implemented yet.',
+    );
+  }
+
+  Future<void> syncAllFeeds() async {
+    debugPrint('GtfsService: syncAllFeeds() is not implemented yet.');
   }
 
   bool supportsRealtime(String agencyId) {

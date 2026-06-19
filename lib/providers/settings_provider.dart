@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../models/train_mode_wake_setting.dart';
+import '../models/transit_mode_wake_setting.dart';
 import '../services/settings_service.dart';
 
 class SettingsProvider extends ChangeNotifier {
@@ -9,9 +9,9 @@ class SettingsProvider extends ChangeNotifier {
   final SettingsService _settingsService;
 
   bool get testModeEnabled => _settingsService.settings.testModeEnabled;
-  bool get trainModeEnabled => _settingsService.settings.trainModeEnabled;
-  TrainModeWakeSetting get trainModeWake =>
-      _settingsService.settings.trainModeWake;
+  bool get transitModeEnabled => _settingsService.settings.transitModeEnabled;
+  TransitModeWakeSetting get transitModeWake =>
+      _settingsService.settings.transitModeWake;
 
   Future<void> setTestModeEnabled(bool enabled) async {
     if (enabled == testModeEnabled) {
@@ -24,24 +24,24 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setTrainModeEnabled(bool enabled) async {
-    if (enabled == trainModeEnabled) {
+  Future<void> setTransitModeEnabled(bool enabled) async {
+    if (enabled == transitModeEnabled) {
       return;
     }
 
     await _settingsService.saveSettings(
-      _settingsService.settings.copyWith(trainModeEnabled: enabled),
+      _settingsService.settings.copyWith(transitModeEnabled: enabled),
     );
     notifyListeners();
   }
 
-  Future<void> setTrainModeWake(TrainModeWakeSetting wakeSetting) async {
-    if (wakeSetting == trainModeWake) {
+  Future<void> setTransitModeWake(TransitModeWakeSetting wakeSetting) async {
+    if (wakeSetting == transitModeWake) {
       return;
     }
 
     await _settingsService.saveSettings(
-      _settingsService.settings.copyWith(trainModeWake: wakeSetting),
+      _settingsService.settings.copyWith(transitModeWake: wakeSetting),
     );
     notifyListeners();
   }
