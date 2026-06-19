@@ -13,6 +13,20 @@ void main() {
     expect(find.text('No destination selected'), findsOneWidget);
     expect(find.text('Choose Destination'), findsOneWidget);
 
+    await tester.tap(find.text('Choose Destination'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Union Station'), findsOneWidget);
+    expect(find.text('Pearson Airport'), findsOneWidget);
+
+    await tester.tap(find.text('Union Station').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Union Station'), findsOneWidget);
+    expect(find.text('43.6453'), findsOneWidget);
+    expect(find.text('-79.3806'), findsOneWidget);
+    expect(find.text('No destination selected'), findsNothing);
+
     await tester.scrollUntilVisible(
       find.text('Start Monitoring'),
       500,

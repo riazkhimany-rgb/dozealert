@@ -5,6 +5,7 @@ import '../models/monitoring_state.dart';
 import '../providers/monitoring_provider.dart';
 import '../utils/monitoring_format.dart';
 import '../widgets/home_card.dart';
+import 'destination_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -70,20 +71,35 @@ class _DestinationCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             destination?.name ?? 'No destination selected',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
               color: destination == null
                   ? colorScheme.onSurfaceVariant
                   : colorScheme.onSurface,
             ),
+          ),
+          const SizedBox(height: 12),
+          _MetricRow(
+            label: 'Latitude',
+            value: destination != null
+                ? destination.latitude.toStringAsFixed(4)
+                : '—',
+          ),
+          const SizedBox(height: 8),
+          _MetricRow(
+            label: 'Longitude',
+            value: destination != null
+                ? destination.longitude.toStringAsFixed(4)
+                : '—',
           ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: FilledButton.tonalIcon(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Destination selection coming soon.'),
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DestinationScreen(),
                   ),
                 );
               },
