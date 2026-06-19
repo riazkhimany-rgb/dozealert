@@ -98,7 +98,7 @@ class _DestinationCard extends StatelessWidget {
       (provider) => provider.snapshot,
     );
     final canPickStop = context.select<GtfsProvider, bool>(
-      (provider) => provider.hasStopsForSelectedLine(),
+      (provider) => provider.canShowStopPicker(),
     );
     final selectedLine = context.select<GtfsProvider, String>(
       (provider) => provider.selectedLineLabel,

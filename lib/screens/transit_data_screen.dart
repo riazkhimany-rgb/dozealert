@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/transit_catalog.dart';
 import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../widgets/home_card.dart';
 
@@ -132,6 +133,10 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
         bytes: bytes,
         fileName: file.name,
       );
+      if (!mounted) {
+        return;
+      }
+      await context.read<GtfsProvider>().refreshFromCache();
       if (!mounted) {
         return;
       }

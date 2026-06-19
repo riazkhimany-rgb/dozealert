@@ -353,6 +353,90 @@ class GtfsService {
     return _stopsByRouteId[routeId] ?? const [];
   }
 
+  List<TransitRoute> routesForTransitSystem(String transitSystem) {
+    return _routes
+        .where((route) => route.transitSystem == transitSystem)
+        .toList(growable: false);
+  }
+
+  List<String> linesForTransitSystem(String transitSystem) {
+    if (TransitCatalog.hasCatalogLines(transitSystem)) {
+      return TransitCatalog.linesForSystem(transitSystem);
+    }
+
+    final gtfsLines = routesForTransitSystem(transitSystem)
+        .map((route) => route.lineName)
+        .toSet()
+        .toList(growable: false)
+      ..sort(_compareLineNames);
+
+    if (gtfsLines.isNotEmpty) {
+      return gtfsLines;
+    }
+
+    return TransitCatalog.linesForSystem(transitSystem);
+  }
+
+  bool hasStopsForTransitSystem(String transitSystem) {
+    for (final route in routesForTransitSystem(transitSystem)) {
+      if (stopsForRoute(route.routeId).isNotEmpty) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  List<TransitStopSearchResult> searchStopsForTransitSystem(
+    String transitSystem,
+    String query, {
+    int limit = 100,
+  }) {
+    final normalizedQuery = query.trim().toLowerCase();
+    final results = <TransitStopSearchResult>[];
+    final seenStopKeys = <String>{};
+
+    for (final route in routesForTransitSystem(transitSystem)) {
+      final agency = _agenciesById[route.agencyId];
+      for (final stop in stopsForRoute(route.routeId)) {
+        if (normalizedQuery.isNotEmpty &&
+            !stop.stopName.toLowerCase().contains(normalizedQuery)) {
+          continue;
+        }
+
+        final stopKey =
+            '${stop.stopName}|${stop.latitude}|${stop.longitude}';
+        if (seenStopKeys.contains(stopKey)) {
+          continue;
+        }
+        seenStopKeys.add(stopKey);
+
+        results.add(
+          TransitStopSearchResult(
+            stop: stop,
+            agencyName: agency?.agencyName ?? route.transitSystem,
+            routeName: route.routeName,
+            vehicleType: route.vehicleType,
+          ),
+        );
+
+        if (results.length >= limit) {
+          break;
+        }
+      }
+
+      if (results.length >= limit) {
+        break;
+      }
+    }
+
+    results.sort(
+      (a, b) => a.stop.stopName.toLowerCase().compareTo(
+            b.stop.stopName.toLowerCase(),
+          ),
+    );
+    return results;
+  }
+
   TransitRoute? routeForTransitLine({
     required String transitSystem,
     required String lineName,
@@ -515,6 +599,19 @@ class GtfsService {
       return false;
     }
     return agency.supportsRealtime;
+  }
+
+  int _compareLineNames(String a, String b) {
+    final aMatch = RegExp(r'^(\d+)').firstMatch(a);
+    final bMatch = RegExp(r'^(\d+)').firstMatch(b);
+    final aNumber = int.tryParse(aMatch?.group(1) ?? '');
+    final bNumber = int.tryParse(bMatch?.group(1) ?? '');
+
+    if (aNumber != null && bNumber != null && aNumber != bNumber) {
+      return aNumber.compareTo(bNumber);
+    }
+
+    return a.toLowerCase().compareTo(b.toLowerCase());
   }
 }
 

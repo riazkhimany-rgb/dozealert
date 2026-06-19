@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/transit_stop.dart';
+import '../models/transit_stop_search_result.dart';
 import '../providers/gtfs_provider.dart';
+
+enum _StopSearchScope { thisRoute, allRoutes }
 
 class StopPickerSheet extends StatefulWidget {
   const StopPickerSheet({super.key});
@@ -35,6 +38,7 @@ class StopPickerSheet extends StatefulWidget {
 class _StopPickerSheetState extends State<StopPickerSheet> {
   final _searchController = TextEditingController();
   String _query = '';
+  _StopSearchScope _scope = _StopSearchScope.thisRoute;
 
   @override
   void dispose() {
@@ -53,7 +57,23 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
   Widget build(BuildContext context) {
     final gtfsProvider = context.watch<GtfsProvider>();
     final colorScheme = Theme.of(context).colorScheme;
-    final stops = gtfsProvider.filterStopsForSelectedLine(_query);
+    final hasLineStops = gtfsProvider.hasStopsForSelectedLine();
+    final hasAgencyStops = gtfsProvider.hasStopsForSelectedAgency();
+    final effectiveScope = hasLineStops
+        ? _scope
+        : _StopSearchScope.allRoutes;
+    final showScopeToggle = hasLineStops && hasAgencyStops;
+
+    final routeStops = effectiveScope == _StopSearchScope.thisRoute
+        ? gtfsProvider.filterStopsForSelectedLine(_query)
+        : const <TransitStop>[];
+    final agencyResults = effectiveScope == _StopSearchScope.allRoutes
+        ? gtfsProvider.searchStopsForSelectedAgency(_query)
+        : const <TransitStopSearchResult>[];
+
+    final resultCount = effectiveScope == _StopSearchScope.thisRoute
+        ? routeStops.length
+        : agencyResults.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -76,11 +96,37 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
             ),
           ),
         ),
+        if (showScopeToggle) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: SegmentedButton<_StopSearchScope>(
+              segments: const [
+                ButtonSegment(
+                  value: _StopSearchScope.thisRoute,
+                  label: Text('This route'),
+                  icon: Icon(Icons.route_outlined, size: 18),
+                ),
+                ButtonSegment(
+                  value: _StopSearchScope.allRoutes,
+                  label: Text('All routes'),
+                  icon: Icon(Icons.hub_outlined, size: 18),
+                ),
+              ],
+              selected: {_scope},
+              onSelectionChanged: (selection) {
+                setState(() => _scope = selection.first);
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: SearchBar(
             controller: _searchController,
-            hintText: 'Filter stops…',
+            hintText: effectiveScope == _StopSearchScope.allRoutes
+                ? 'Search all stops…'
+                : 'Filter stops…',
             leading: const Icon(Icons.search),
             trailing: _query.isEmpty
                 ? null
@@ -100,7 +146,7 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
-            '${stops.length} stop${stops.length == 1 ? '' : 's'}',
+            '$resultCount stop${resultCount == 1 ? '' : 's'}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -108,14 +154,16 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
         ),
         const SizedBox(height: 8),
         Expanded(
-          child: stops.isEmpty
+          child: resultCount == 0
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Text(
-                      _query.isEmpty
-                          ? 'No stops available for this line.'
-                          : 'No stops match "$_query".',
+                      _emptyMessage(
+                        query: _query,
+                        scope: effectiveScope,
+                        hasAgencyStops: hasAgencyStops,
+                      ),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -123,32 +171,118 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
                     ),
                   ),
                 )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                  itemCount: stops.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final stop = stops[index];
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: colorScheme.primaryContainer,
-                        child: Text(
-                          '${stop.stopSequence}',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      title: Text(stop.stopName),
-                      onTap: () => _selectStop(stop),
-                    );
-                  },
-                ),
+              : effectiveScope == _StopSearchScope.thisRoute
+                  ? _RouteStopList(
+                      stops: routeStops,
+                      onSelect: _selectStop,
+                    )
+                  : _AgencyStopList(
+                      results: agencyResults,
+                      onSelect: _selectStop,
+                    ),
         ),
       ],
+    );
+  }
+
+  String _emptyMessage({
+    required String query,
+    required _StopSearchScope scope,
+    required bool hasAgencyStops,
+  }) {
+    if (query.isNotEmpty) {
+      return 'No stops match "$query".';
+    }
+
+    if (scope == _StopSearchScope.allRoutes && !hasAgencyStops) {
+      return 'Download GTFS data for this agency under Settings → Transit '
+          'to search stops.';
+    }
+
+    if (scope == _StopSearchScope.thisRoute) {
+      return 'No stops available for this line. Try All routes or download '
+          'GTFS data.';
+    }
+
+    return 'No stops available for this agency.';
+  }
+}
+
+class _RouteStopList extends StatelessWidget {
+  const _RouteStopList({
+    required this.stops,
+    required this.onSelect,
+  });
+
+  final List<TransitStop> stops;
+  final ValueChanged<TransitStop> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      itemCount: stops.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final stop = stops[index];
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            radius: 16,
+            backgroundColor: colorScheme.primaryContainer,
+            child: Text(
+              '${stop.stopSequence}',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          title: Text(stop.stopName),
+          onTap: () => onSelect(stop),
+        );
+      },
+    );
+  }
+}
+
+class _AgencyStopList extends StatelessWidget {
+  const _AgencyStopList({
+    required this.results,
+    required this.onSelect,
+  });
+
+  final List<TransitStopSearchResult> results;
+  final ValueChanged<TransitStop> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      itemCount: results.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final result = results[index];
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            radius: 16,
+            backgroundColor: colorScheme.secondaryContainer,
+            child: Icon(
+              Icons.location_on_outlined,
+              size: 18,
+              color: colorScheme.onSecondaryContainer,
+            ),
+          ),
+          title: Text(result.stop.stopName),
+          subtitle: Text(result.routeName),
+          onTap: () => onSelect(result.stop),
+        );
+      },
     );
   }
 }

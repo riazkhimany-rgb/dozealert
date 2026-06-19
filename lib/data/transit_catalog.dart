@@ -6,6 +6,9 @@ import '../models/transit_vehicle_type.dart';
 
 /// Unified Canada / US transit catalog and GTFS feed registry.
 abstract final class TransitCatalog {
+  /// Placeholder line for bus agencies until GTFS routes are loaded.
+  static const allRoutesLine = 'All routes';
+
   static const countries = <String>[
     'Canada',
     'United States',
@@ -327,6 +330,13 @@ abstract final class TransitCatalog {
       }
     }
     return linesForSystem(defaultAgencyForRegion('Canada', 'Ontario'));
+  }
+
+  /// Agencies with curated line lists (GO, TTC) vs GTFS-derived routes (bus).
+  static bool hasCatalogLines(String transitSystem) {
+    final lines = linesForSystem(transitSystem);
+    return lines.length > 1 ||
+        (lines.length == 1 && lines.single != allRoutesLine);
   }
 
   static String defaultRegionForCountry(String country) {

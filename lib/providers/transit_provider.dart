@@ -88,11 +88,7 @@ class TransitProvider extends ChangeNotifier {
   }
 
   Future<void> setDefaultLine(String defaultLine) async {
-    if (!TransitCatalog.isValidLineForSystem(
-          _preferences.transitSystem,
-          defaultLine,
-        ) ||
-        defaultLine == _preferences.defaultLine) {
+    if (defaultLine.isEmpty || defaultLine == _preferences.defaultLine) {
       return;
     }
 

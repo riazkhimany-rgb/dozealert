@@ -47,12 +47,21 @@ class GtfsProvider extends ChangeNotifier {
     final cachedFeeds = await _gtfsImportService.loadCache();
     await _gtfsService.initializeFromFallbackData(cachedFeeds: cachedFeeds);
     _initialized = true;
+    await _syncDefaultLineIfNeeded();
     notifyListeners();
 
     final destination = _monitoringProvider.selectedDestination;
     if (destination != null) {
       await detectAndApplyForDestination(destination);
     }
+  }
+
+  Future<void> refreshFromCache() async {
+    final cachedFeeds = await _gtfsImportService.loadCache();
+    await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);
+    _initialized = true;
+    await _syncDefaultLineIfNeeded();
+    notifyListeners();
   }
 
   Future<void> importZipFeed({
@@ -109,15 +118,43 @@ class GtfsProvider extends ChangeNotifier {
     );
   }
 
-  List<TransitStop> stopsForSelectedLine() {
+  bool hasStopsForSelectedAgency() {
+    if (!_initialized) {
+      return false;
+    }
+
+    return _gtfsService.hasStopsForTransitSystem(
+      _transitProvider.preferences.transitSystem,
+    );
+  }
+
+  bool canShowStopPicker() {
+    return hasStopsForSelectedLine() || hasStopsForSelectedAgency();
+  }
+
+  List<String> availableLinesForSelectedAgency() {
     if (!_initialized) {
       return const [];
     }
 
-    final preferences = _transitProvider.preferences;
-    return _gtfsService.stopsForTransitLine(
-      transitSystem: preferences.transitSystem,
-      lineName: preferences.defaultLine,
+    return _gtfsService.linesForTransitSystem(
+      _transitProvider.preferences.transitSystem,
+    );
+  }
+
+  bool get usesDynamicLinesForSelectedAgency {
+    final transitSystem = _transitProvider.preferences.transitSystem;
+    return !TransitCatalog.hasCatalogLines(transitSystem);
+  }
+
+  List<TransitStopSearchResult> searchStopsForSelectedAgency(String query) {
+    if (!_initialized) {
+      return const [];
+    }
+
+    return _gtfsService.searchStopsForTransitSystem(
+      _transitProvider.preferences.transitSystem,
+      query,
     );
   }
 
@@ -153,6 +190,18 @@ class GtfsProvider extends ChangeNotifier {
   Future<void> selectStop(TransitStop stop) async {
     _transitModeProvider.setActiveRouteId(stop.routeId);
 
+    final route = _gtfsService.routeById(stop.routeId);
+    if (route != null) {
+      final agency = TransitCatalog.agencyByName(route.transitSystem);
+      await _transitProvider.applyTransitSelection(
+        country: route.country,
+        region: agency?.region ??
+            TransitCatalog.defaultRegionForCountry(route.country),
+        transitSystem: route.transitSystem,
+        defaultLine: route.lineName,
+      );
+    }
+
     final destination = Destination(
       name: stop.stopName,
       latitude: stop.latitude,
@@ -163,6 +212,18 @@ class GtfsProvider extends ChangeNotifier {
     await _transitProvider.recordRecentStation(destination);
     await detectAndApplyForDestination(destination);
     notifyListeners();
+  }
+
+  Future<void> _syncDefaultLineIfNeeded() async {
+    final preferences = _transitProvider.preferences;
+    final lines = _gtfsService.linesForTransitSystem(preferences.transitSystem);
+    if (lines.isEmpty) {
+      return;
+    }
+
+    if (!lines.contains(preferences.defaultLine)) {
+      await _transitProvider.setDefaultLine(lines.first);
+    }
   }
 
   Future<void> detectAndApplyForDestination(Destination destination) async {
@@ -194,7 +255,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   void _handleTransitPreferencesChanged() {
-    notifyListeners();
+    unawaited(_syncDefaultLineIfNeeded().then((_) => notifyListeners()));
   }
 
   void _handleDestinationChanged() {
