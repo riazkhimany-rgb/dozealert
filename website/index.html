@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DozeAlert wakes you before you reach your destination. Sleep peacefully. Arrive confidently.">
+  <meta name="theme-color" content="#0D1B2A">
+  <title>DozeAlert — Sleep peacefully. Arrive confidently.</title>
+  <link rel="icon" type="image/png" href="assets/icon-512.png">
+  <style>
+    :root {
+      --midnight: #0D1B2A;
+      --midnight-light: #152536;
+      --cyan: #4CC9F0;
+      --cyan-dim: #3aa8cc;
+      --white: #FFFFFF;
+      --muted: #94a3b8;
+      --card: #1B3147;
+      --radius: 16px;
+      --max-width: 720px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--midnight);
+      color: var(--white);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(76, 201, 240, 0.18), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(76, 201, 240, 0.08), transparent);
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 28px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      margin-bottom: 1.25rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .tagline {
+      font-size: 1.125rem;
+      color: var(--cyan);
+      font-weight: 500;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(76, 201, 240, 0.12);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: var(--cyan);
+    }
+
+    .card p,
+    .card li {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    .card ul {
+      padding-left: 1.25rem;
+      margin-top: 0.5rem;
+    }
+
+    .card li + li {
+      margin-top: 0.35rem;
+    }
+
+    .download-block {
+      text-align: center;
+      padding: 2rem 1.5rem;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--cyan);
+      color: var(--midnight);
+      font-size: 1.0625rem;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 1rem 2rem;
+      border-radius: 999px;
+      transition: background 0.15s, transform 0.15s;
+      box-shadow: 0 4px 20px rgba(76, 201, 240, 0.35);
+    }
+
+    .download-btn:hover {
+      background: var(--cyan-dim);
+      transform: translateY(-1px);
+    }
+
+    .download-btn svg {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .meta {
+      margin-top: 1rem;
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+
+    .meta code {
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding-left: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0.1rem;
+      width: 1.75rem;
+      height: 1.75rem;
+      background: rgba(76, 201, 240, 0.15);
+      color: var(--cyan);
+      border-radius: 50%;
+      font-size: 0.875rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .note {
+      background: rgba(76, 201, 240, 0.08);
+      border-left: 3px solid var(--cyan);
+      padding: 0.875rem 1rem;
+      border-radius: 0 8px 8px 0;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: #cbd5e1;
+    }
+
+    .note strong {
+      color: var(--white);
+    }
+
+    details {
+      margin-top: 0.75rem;
+    }
+
+    summary {
+      cursor: pointer;
+      color: var(--cyan);
+      font-weight: 500;
+      font-size: 0.9rem;
+      user-select: none;
+    }
+
+    details[open] summary {
+      margin-bottom: 0.75rem;
+    }
+
+    details p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+
+    footer a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (min-width: 600px) {
+      h1 { font-size: 2.5rem; }
+      .wrap { padding-top: 3.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <header>
+      <img class="logo" src="assets/icon-512.png" width="120" height="120" alt="DozeAlert app icon">
+      <h1>DozeAlert</h1>
+      <p class="tagline">Sleep peacefully. Arrive confidently.</p>
+    </header>
+
+    <section class="card download-block">
+      <h2 style="margin-bottom: 1rem;">Download for Android</h2>
+      <a class="download-btn" href="downloads/dozealert-latest.apk" download="dozealert.apk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download APK
+      </a>
+      <p class="meta">
+        Version <span id="app-version">1.0.0</span> · Android 8.0+ ·
+        <code>app.dozealert</code>
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>About</h2>
+      <p>
+        DozeAlert helps commuters sleep peacefully and arrive confidently.
+        Whether you're on a train, bus, car, or rideshare, DozeAlert monitors
+        your trip and wakes you before you miss your stop.
+      </p>
+      <ul>
+        <li>Location-based wake alerts with adjustable radius</li>
+        <li>Transit mode with stop countdown (GO, TTC, and GTFS agencies)</li>
+        <li>Background monitoring while you rest</li>
+        <li>Voice, vibration, and alarm alerts</li>
+        <li>Map picker and saved destinations</li>
+        <li>No account required — data stays on your device</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Install instructions</h2>
+      <p style="margin-bottom: 1rem;">
+        DozeAlert is not on the Play Store yet. You install it directly from the APK file.
+        Android will ask you to allow installs from your browser or file manager — that is normal.
+      </p>
+
+      <ol class="steps">
+        <li>
+          <strong>Download the APK</strong> using the button above.
+          Wait until the download finishes (check your notification shade or Downloads folder).
+        </li>
+        <li>
+          <strong>Open the downloaded file</strong> — tap the notification, or open
+          <em>Files</em> / <em>Downloads</em> and tap <code>dozealert-latest.apk</code>.
+        </li>
+        <li>
+          <strong>Allow installation</strong> if Android blocks it. When prompted, tap
+          <em>Settings</em> and turn on <em>Allow from this source</em> for Chrome,
+          Samsung Internet, or whichever app you used to download. Then go back and tap
+          <em>Install</em>.
+        </li>
+        <li>
+          <strong>Grant permissions</strong> when you first use the app — location is
+          required for destination monitoring. Optional notification permission helps
+          background alerts work reliably.
+        </li>
+        <li>
+          <strong>Open DozeAlert</strong>, pick a destination, set your wake radius, and
+          tap Start monitoring.
+        </li>
+      </ol>
+
+      <div class="note">
+        <strong>Tip:</strong> After installing, you can turn off “Install unknown apps” again
+        for your browser. It only needs to be enabled during installation.
+      </div>
+
+      <details>
+        <summary>Android version-specific help</summary>
+        <p><strong>Android 13 and newer:</strong> Settings → Security & privacy →
+        More security settings → Install unknown apps → select your browser → Allow.</p>
+        <p><strong>Android 12:</strong> Settings → Apps → Special app access →
+        Install unknown apps → your browser → Allow.</p>
+        <p><strong>Samsung Galaxy:</strong> Settings → Biometrics and security →
+        Install unknown apps → select the app you downloaded with → Allow.</p>
+        <p><strong>“App not installed” error:</strong> Uninstall any older test build first,
+        or download the APK again — the file may have been corrupted during download.</p>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2>Requirements</h2>
+      <ul>
+        <li>Android 8.0 (Oreo) or later</li>
+        <li>GPS / location services enabled</li>
+        <li>Internet for map search and optional GTFS transit data downloads</li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>
+        <a href="mailto:support@dozealert.app">support@dozealert.app</a>
+        · Privacy-first · No ads
+      </p>
+      <p style="margin-top: 0.5rem;">© DozeAlert</p>
+    </footer>
+  </div>
+
+  <script>
+    // Update version label when you ship a new APK (or generate from build script).
+    document.getElementById('app-version').textContent = '1.0.0';
+  </script>
+</body>
+</html>

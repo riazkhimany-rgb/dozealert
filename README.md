@@ -70,6 +70,17 @@ Set `GMSApiKey` in `ios/Runner/Info.plist` for iOS.
 
 See [docs/PLAY_STORE_RELEASE.md](docs/PLAY_STORE_RELEASE.md) for signing, building, and uploading.
 
+## Direct APK download (website)
+
+For sideloading and a public download page, see [docs/APK_RELEASE.md](docs/APK_RELEASE.md).
+
+```powershell
+# Build APK and copy to website/downloads/
+.\tools\build_apk.ps1
+```
+
+Host the `website/` folder on any static site; users install via the APK link and “Allow unknown apps” steps on the page.
+
 Store assets and listing copy are in `play-store/`. Release notes: `RELEASE_NOTES.txt`.
 
 ```powershell
