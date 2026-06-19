@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/alarm_sound_mode.dart';
+import '../../providers/settings_provider.dart';
 import '../../services/alarm_service.dart';
 import '../../widgets/settings_section_tile.dart';
 
@@ -11,6 +13,9 @@ class AlarmSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final alarmService = context.read<AlarmService>();
+    final alarmSoundMode = context.select<SettingsProvider, AlarmSoundMode>(
+      (provider) => provider.alarmSoundMode,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -18,6 +23,37 @@ class AlarmSettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
+          const SettingsSectionHeader(title: 'Sound Override'),
+          SwitchListTile(
+            secondary: Icon(Icons.volume_up_outlined, color: colorScheme.primary),
+            title: const Text('Always play sound'),
+            subtitle: Text(
+              AlarmSoundMode.alwaysPlaySound.description,
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+            value: alarmSoundMode == AlarmSoundMode.alwaysPlaySound,
+            onChanged: (enabled) {
+              context.read<SettingsProvider>().setAlarmSoundMode(
+                enabled
+                    ? AlarmSoundMode.alwaysPlaySound
+                    : AlarmSoundMode.followDevice,
+              );
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Text(
+              alarmSoundMode == AlarmSoundMode.alwaysPlaySound
+                  ? 'DozeAlert uses the alarm audio stream so sound plays even '
+                      'when your phone is on vibrate or silent. Make sure your '
+                      'alarm volume is turned up in system settings.'
+                  : AlarmSoundMode.followDevice.description,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const Divider(height: 32),
           const SettingsSectionHeader(title: 'Alarm Sound'),
           ListTile(
             leading: Icon(Icons.music_note_outlined, color: colorScheme.primary),
@@ -29,22 +65,12 @@ class AlarmSettingsScreen extends StatelessWidget {
             trailing: const Text('alarm.mp3'),
           ),
           const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Volume'),
-          ListTile(
-            leading: Icon(Icons.volume_up_outlined, color: colorScheme.primary),
-            title: const Text('Volume'),
-            subtitle: Text(
-              'Uses system media volume.',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
-          ),
-          const Divider(height: 32),
           const SettingsSectionHeader(title: 'Vibration'),
           ListTile(
             leading: Icon(Icons.vibration, color: colorScheme.primary),
             title: const Text('Vibration'),
             subtitle: Text(
-              'Vibration enabled when supported.',
+              'Vibration is always enabled when supported.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             trailing: const Text('On'),

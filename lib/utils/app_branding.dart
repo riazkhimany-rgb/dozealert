@@ -16,5 +16,5 @@ abstract final class AppBranding {
 
   static const String splashLogoAsset = 'assets/branding/splash_logo.png';
   static const String splashScreenAsset = 'assets/branding/splash_screen.png';
-  static const Duration splashDisplayDuration = Duration(milliseconds: 3500);
+  static const Duration splashDisplayDuration = Duration(milliseconds: 2000);
 }

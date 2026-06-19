@@ -3,11 +3,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:vibration/vibration.dart';
 
+import '../services/settings_service.dart';
+
 class AlarmService {
-  AlarmService();
+  AlarmService(this._settingsService);
+
+  final SettingsService _settingsService;
 
   static const _arrivalNotificationId = 1001;
   static const _alarmAssetPath = 'sounds/alarm.mp3';
+  static const _defaultChannelId = 'arrival_alerts';
+  static const _forcedAlarmChannelId = 'arrival_alerts_forced';
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -38,21 +44,35 @@ class AlarmService {
 
       await _notifications.initialize(settings);
 
-      const androidChannel = AndroidNotificationChannel(
-        'arrival_alerts',
+      const defaultChannel = AndroidNotificationChannel(
+        _defaultChannelId,
         'Arrival Alerts',
         description: 'Alerts when you approach your destination',
         importance: Importance.max,
         playSound: true,
       );
 
-      await _notifications
+      const forcedAlarmChannel = AndroidNotificationChannel(
+        _forcedAlarmChannelId,
+        'Arrival Alarm',
+        description: 'Loud arrival alarms that play even on vibrate or silent',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+        sound: RawResourceAndroidNotificationSound('alarm'),
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+      );
+
+      final androidPlugin = _notifications
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(androidChannel);
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      await androidPlugin?.createNotificationChannel(defaultChannel);
+      await androidPlugin?.createNotificationChannel(forcedAlarmChannel);
 
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.setVolume(1.0);
+      await _audioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
 
       _initialized = true;
     } catch (error, stackTrace) {
@@ -79,9 +99,20 @@ class AlarmService {
     _alarmActive = true;
     _lastAlarmTriggeredAt = DateTime.now();
 
-    await _startAlarmSound();
+    final forceSound = _settingsService.settings.alwaysPlayAlarmSound;
+
+    if (forceSound) {
+      await _startForcedAlarmSound();
+    } else {
+      await _startAlarmSound(forceSound: false);
+    }
+
     await _startVibration();
-    await showArrivalNotification(title: title, body: body);
+    await showArrivalNotification(
+      title: title,
+      body: body,
+      forceSound: forceSound,
+    );
   }
 
   Future<void> stopAlarm() async {
@@ -100,27 +131,51 @@ class AlarmService {
   Future<void> showArrivalNotification({
     String title = 'Destination Reached',
     String body = 'You are approaching your destination.',
+    bool? forceSound,
   }) async {
     try {
-      const androidDetails = AndroidNotificationDetails(
-        'arrival_alerts',
-        'Arrival Alerts',
-        channelDescription: 'Alerts when you approach your destination',
-        importance: Importance.max,
-        priority: Priority.high,
-        ongoing: true,
-        autoCancel: false,
-        category: AndroidNotificationCategory.alarm,
-      );
+      final useForcedSound =
+          forceSound ?? _settingsService.settings.alwaysPlayAlarmSound;
 
-      const iosDetails = DarwinNotificationDetails(
+      final androidDetails = useForcedSound
+          ? AndroidNotificationDetails(
+              _forcedAlarmChannelId,
+              'Arrival Alarm',
+              channelDescription:
+                  'Loud arrival alarms that play even on vibrate or silent',
+              importance: Importance.max,
+              priority: Priority.max,
+              ongoing: true,
+              autoCancel: false,
+              category: AndroidNotificationCategory.alarm,
+              playSound: true,
+              sound: const RawResourceAndroidNotificationSound('alarm'),
+              fullScreenIntent: true,
+              visibility: NotificationVisibility.public,
+              audioAttributesUsage: AudioAttributesUsage.alarm,
+            )
+          : const AndroidNotificationDetails(
+              _defaultChannelId,
+              'Arrival Alerts',
+              channelDescription: 'Alerts when you approach your destination',
+              importance: Importance.max,
+              priority: Priority.high,
+              ongoing: true,
+              autoCancel: false,
+              category: AndroidNotificationCategory.alarm,
+              playSound: true,
+            );
+
+      final iosDetails = DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
-        presentSound: true,
-        interruptionLevel: InterruptionLevel.timeSensitive,
+        presentSound: useForcedSound,
+        interruptionLevel: useForcedSound
+            ? InterruptionLevel.timeSensitive
+            : InterruptionLevel.active,
       );
 
-      const details = NotificationDetails(
+      final details = NotificationDetails(
         android: androidDetails,
         iOS: iosDetails,
       );
@@ -137,8 +192,63 @@ class AlarmService {
     }
   }
 
-  Future<void> _startAlarmSound() async {
+  Future<void> _startForcedAlarmSound() async {
     try {
+      await _audioPlayer.stop();
+      await _audioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+      await _audioPlayer.setAudioContext(
+        AudioContext(
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: true,
+            stayAwake: true,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.alarm,
+            audioFocus: AndroidAudioFocus.gain,
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: {
+              AVAudioSessionOptions.duckOthers,
+              AVAudioSessionOptions.mixWithOthers,
+            },
+          ),
+        ),
+      );
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      await _audioPlayer.setVolume(1.0);
+      await _audioPlayer.play(AssetSource(_alarmAssetPath));
+    } catch (error, stackTrace) {
+      debugPrint('AlarmService: failed to play forced alarm sound: $error');
+      debugPrint('$stackTrace');
+    }
+  }
+
+  Future<void> _startAlarmSound({required bool forceSound}) async {
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+      await _audioPlayer.setAudioContext(
+        AudioContext(
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: forceSound,
+            stayAwake: true,
+            contentType: AndroidContentType.sonification,
+            usageType:
+                forceSound ? AndroidUsageType.alarm : AndroidUsageType.media,
+            audioFocus: AndroidAudioFocus.gain,
+          ),
+          iOS: AudioContextIOS(
+            category: forceSound
+                ? AVAudioSessionCategory.playback
+                : AVAudioSessionCategory.ambient,
+            options: forceSound
+                ? {AVAudioSessionOptions.duckOthers}
+                : {AVAudioSessionOptions.mixWithOthers},
+          ),
+        ),
+      );
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      await _audioPlayer.setVolume(1.0);
       await _audioPlayer.play(AssetSource(_alarmAssetPath));
     } catch (error, stackTrace) {
       debugPrint('AlarmService: failed to play alarm sound: $error');

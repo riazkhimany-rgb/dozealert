@@ -52,6 +52,14 @@ class GtfsFeedProvider extends ChangeNotifier {
     return DefaultGtfsFeeds.byId(feedId);
   }
 
+  GtfsFeedInfo? feedForTransitSystem(String transitSystem) {
+    final seed = DefaultGtfsFeeds.byAgencyName(transitSystem);
+    if (seed == null) {
+      return null;
+    }
+    return feedById(seed.feedId);
+  }
+
   String? errorFor(String feedId) => _errors[feedId];
 
   Future<void> downloadFeed(String feedId) async {

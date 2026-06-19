@@ -29,9 +29,6 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       return;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FlutterNativeSplash.remove();
-    });
     _startSplashTimer();
   }
 
@@ -40,6 +37,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     if (!mounted) {
       return;
     }
+    FlutterNativeSplash.remove();
     setState(() {
       _showMainApp = true;
     });

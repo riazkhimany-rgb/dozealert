@@ -50,7 +50,7 @@ Future<DozeAlertApp> _createTestApp() async {
   final settingsService = SettingsService();
   await settingsService.loadSettings();
 
-  final alarmService = AlarmService();
+  final alarmService = AlarmService(settingsService);
   await alarmService.initialize();
 
   final destinationStorageService = DestinationStorageService();
@@ -149,6 +149,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('DozeAlert'), findsOneWidget);
+    expect(find.text('Monitoring'), findsOneWidget);
+    expect(find.text('Start Monitoring'), findsOneWidget);
+    expect(find.text('Stop Monitoring'), findsOneWidget);
+    expect(find.textContaining('Idle'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Destination'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('Destination'), findsOneWidget);
     expect(find.text('Pick Stop'), findsOneWidget);
     expect(find.text('No destination selected'), findsWidgets);
@@ -165,18 +177,6 @@ void main() {
 
     expect(find.text('Union Station'), findsWidgets);
     expect(find.text('No destination selected'), findsNothing);
-
-    await tester.scrollUntilVisible(
-      find.text('Monitoring'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Monitoring'), findsOneWidget);
-    expect(find.text('Start Monitoring'), findsOneWidget);
-    expect(find.text('Stop Monitoring'), findsOneWidget);
-    expect(find.textContaining('Idle'), findsOneWidget);
     expect(find.text('Transit Settings'), findsNothing);
     expect(find.text('Train Mode'), findsNothing);
     expect(find.text('Wake-Up Radius'), findsNothing);

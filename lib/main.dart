@@ -42,7 +42,7 @@ Future<void> main() async {
   final settingsService = SettingsService();
   await settingsService.loadSettings();
 
-  final alarmService = AlarmService();
+  final alarmService = AlarmService(settingsService);
   await alarmService.initialize();
 
   final destinationStorageService = DestinationStorageService();

@@ -50,9 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: const [
-          _DestinationCard(),
-          SizedBox(height: 16),
           _MonitoringCard(),
+          SizedBox(height: 16),
+          _DestinationCard(),
           SizedBox(height: 16),
           _DistanceCard(),
           SizedBox(height: 16),
