@@ -34,6 +34,7 @@ void main() {
     expect(find.text('Destination'), findsOneWidget);
     expect(find.text('No destination selected'), findsOneWidget);
     expect(find.text('Choose Destination'), findsOneWidget);
+    expect(find.text('Change Destination'), findsOneWidget);
 
     await tester.tap(find.text('Choose Destination'));
     await tester.pumpAndSettle();

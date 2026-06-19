@@ -6,6 +6,7 @@ import '../providers/monitoring_provider.dart';
 import '../utils/monitoring_format.dart';
 import '../widgets/home_card.dart';
 import 'destination_screen.dart';
+import 'map_picker_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -105,6 +106,21 @@ class _DestinationCard extends StatelessWidget {
               },
               icon: const Icon(Icons.edit_location_alt_outlined),
               label: const Text('Choose Destination'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const MapPickerScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.map_outlined),
+              label: const Text('Change Destination'),
             ),
           ),
           if (destination != null) ...[
