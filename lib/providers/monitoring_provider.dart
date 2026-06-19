@@ -1,13 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/destination.dart';
 import '../models/monitoring_state.dart';
 import '../services/destination_storage_service.dart';
+import '../services/monitoring_storage_service.dart';
 
 class MonitoringProvider extends ChangeNotifier {
-  MonitoringProvider(this._destinationStorage);
+  MonitoringProvider(
+    this._destinationStorage,
+    this._monitoringStorage,
+  );
 
   final DestinationStorageService _destinationStorage;
+  final MonitoringStorageService _monitoringStorage;
 
   MonitoringState _currentState = MonitoringState.idle;
   Destination? _selectedDestination;
@@ -26,8 +33,21 @@ class MonitoringProvider extends ChangeNotifier {
     }
 
     _selectedDestination = destination;
-    if (_currentState != MonitoringState.monitoring) {
+    notifyListeners();
+  }
+
+  Future<void> loadMonitoringSession() async {
+    final session = await _monitoringStorage.loadSession();
+    if (session == null) {
+      return;
+    }
+
+    _radiusMeters = session.radiusMeters;
+    if (_selectedDestination != null) {
+      _currentState = session.state;
+    } else if (session.isActive) {
       _currentState = MonitoringState.idle;
+      await _monitoringStorage.clearSession();
     }
     notifyListeners();
   }
@@ -51,15 +71,20 @@ class MonitoringProvider extends ChangeNotifier {
     _currentState = MonitoringState.idle;
 
     await _destinationStorage.clearDestination();
+    await _monitoringStorage.clearSession();
     notifyListeners();
   }
 
-  void setRadius(int meters) {
+  Future<void> setRadius(int meters) async {
     if (meters <= 0 || meters == _radiusMeters) {
       return;
     }
 
     _radiusMeters = meters;
+    await _monitoringStorage.saveRadius(meters);
+    if (isMonitoring || _currentState == MonitoringState.arrived) {
+      await _persistSession(isActive: true);
+    }
     notifyListeners();
   }
 
@@ -73,6 +98,7 @@ class MonitoringProvider extends ChangeNotifier {
     }
 
     _currentState = MonitoringState.monitoring;
+    unawaited(_persistSession(isActive: true));
     notifyListeners();
   }
 
@@ -82,6 +108,7 @@ class MonitoringProvider extends ChangeNotifier {
     }
 
     _currentState = MonitoringState.idle;
+    unawaited(_monitoringStorage.clearSession());
     notifyListeners();
   }
 
@@ -91,6 +118,7 @@ class MonitoringProvider extends ChangeNotifier {
     }
 
     _currentState = MonitoringState.arrived;
+    unawaited(_persistSession(isActive: true));
     notifyListeners();
   }
 
@@ -100,6 +128,15 @@ class MonitoringProvider extends ChangeNotifier {
     }
 
     _currentState = MonitoringState.idle;
+    unawaited(_monitoringStorage.clearSession());
     notifyListeners();
+  }
+
+  Future<void> _persistSession({required bool isActive}) async {
+    await _monitoringStorage.saveSession(
+      isActive: isActive,
+      state: _currentState,
+      radiusMeters: _radiusMeters,
+    );
   }
 }

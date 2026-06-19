@@ -11,6 +11,12 @@ class DestinationCatalogItem {
 }
 
 abstract final class MockDestinations {
+  static const bronteGo = Destination(
+    name: 'Bronte GO',
+    latitude: 43.4039,
+    longitude: -79.7589,
+  );
+
   static const unionStation = Destination(
     name: 'Union Station',
     latitude: 43.6453,
@@ -29,22 +35,11 @@ abstract final class MockDestinations {
     longitude: -79.6248,
   );
 
-  static const recent = <DestinationCatalogItem>[
+  static const favorites = <DestinationCatalogItem>[
     DestinationCatalogItem(
-      destination: unionStation,
+      destination: bronteGo,
       badges: ['Recent'],
     ),
-    DestinationCatalogItem(
-      destination: miltonGo,
-      badges: ['Recent'],
-    ),
-    DestinationCatalogItem(
-      destination: pearsonAirport,
-      badges: ['Recent'],
-    ),
-  ];
-
-  static const all = <DestinationCatalogItem>[
     DestinationCatalogItem(
       destination: unionStation,
       badges: ['Recent'],

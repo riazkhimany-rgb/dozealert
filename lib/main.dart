@@ -9,8 +9,11 @@ import 'providers/settings_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/app_startup_screen.dart';
 import 'services/alarm_service.dart';
+import 'services/background_monitor_service.dart';
 import 'services/destination_storage_service.dart';
 import 'services/location_service.dart';
+import 'services/monitoring_storage_service.dart';
+import 'services/place_search_service.dart';
 import 'services/settings_service.dart';
 import 'utils/app_theme.dart';
 
@@ -25,14 +28,27 @@ Future<void> main() async {
   await alarmService.initialize();
 
   final destinationStorageService = DestinationStorageService();
-  final monitoringProvider = MonitoringProvider(destinationStorageService);
+  final monitoringStorageService = MonitoringStorageService();
+  final backgroundMonitorService =
+      BackgroundMonitorService(monitoringStorageService);
+  await backgroundMonitorService.initialize();
+
+  final placeSearchService = PlaceSearchService();
+  final monitoringProvider = MonitoringProvider(
+    destinationStorageService,
+    monitoringStorageService,
+  );
 
   await monitoringProvider.loadSavedDestination();
+  await monitoringProvider.loadMonitoringSession();
 
   runApp(
     DozeAlertApp(
       settingsService: settingsService,
       alarmService: alarmService,
+      backgroundMonitorService: backgroundMonitorService,
+      monitoringStorageService: monitoringStorageService,
+      placeSearchService: placeSearchService,
       destinationStorageService: destinationStorageService,
       monitoringProvider: monitoringProvider,
     ),
@@ -44,6 +60,9 @@ class DozeAlertApp extends StatelessWidget {
     super.key,
     required this.settingsService,
     required this.alarmService,
+    required this.backgroundMonitorService,
+    required this.monitoringStorageService,
+    required this.placeSearchService,
     required this.destinationStorageService,
     required this.monitoringProvider,
     this.skipSplash = false,
@@ -51,6 +70,9 @@ class DozeAlertApp extends StatelessWidget {
 
   final SettingsService settingsService;
   final AlarmService alarmService;
+  final BackgroundMonitorService backgroundMonitorService;
+  final MonitoringStorageService monitoringStorageService;
+  final PlaceSearchService placeSearchService;
   final DestinationStorageService destinationStorageService;
   final MonitoringProvider monitoringProvider;
   final bool skipSplash;
@@ -61,6 +83,13 @@ class DozeAlertApp extends StatelessWidget {
       providers: [
         Provider<SettingsService>.value(value: settingsService),
         Provider<AlarmService>.value(value: alarmService),
+        Provider<BackgroundMonitorService>.value(
+          value: backgroundMonitorService,
+        ),
+        Provider<MonitoringStorageService>.value(
+          value: monitoringStorageService,
+        ),
+        Provider<PlaceSearchService>.value(value: placeSearchService),
         Provider<DestinationStorageService>.value(
           value: destinationStorageService,
         ),
@@ -86,6 +115,8 @@ class DozeAlertApp extends StatelessWidget {
             monitoringProvider,
             alarmService,
             settingsService,
+            backgroundMonitorService,
+            monitoringStorageService,
           ),
         ),
       ],

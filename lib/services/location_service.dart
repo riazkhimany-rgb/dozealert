@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -35,6 +36,37 @@ class LocationService {
       return LocationPermissionStatus.granted;
     }
     if (status.isPermanentlyDenied) {
+      return LocationPermissionStatus.permanentlyDenied;
+    }
+
+    return LocationPermissionStatus.denied;
+  }
+
+  Future<LocationPermissionStatus> requestBackgroundPermission() async {
+    if (!Platform.isAndroid) {
+      return LocationPermissionStatus.granted;
+    }
+
+    final whenInUseStatus = await Permission.locationWhenInUse.status;
+    if (!whenInUseStatus.isGranted) {
+      final requested = await Permission.locationWhenInUse.request();
+      if (!requested.isGranted) {
+        return requested.isPermanentlyDenied
+            ? LocationPermissionStatus.permanentlyDenied
+            : LocationPermissionStatus.denied;
+      }
+    }
+
+    final backgroundStatus = await Permission.locationAlways.status;
+    if (backgroundStatus.isGranted) {
+      return LocationPermissionStatus.granted;
+    }
+
+    final requestedBackground = await Permission.locationAlways.request();
+    if (requestedBackground.isGranted) {
+      return LocationPermissionStatus.granted;
+    }
+    if (requestedBackground.isPermanentlyDenied) {
       return LocationPermissionStatus.permanentlyDenied;
     }
 

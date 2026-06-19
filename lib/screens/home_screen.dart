@@ -7,6 +7,7 @@ import '../models/current_location.dart';
 import '../models/monitoring_state.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
 import '../widgets/arrival_dialog.dart';
@@ -46,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
-          _ArrivalStatusCard(state: monitoring.currentState),
+          _MonitoringStatusCard(state: monitoring.currentState),
           const SizedBox(height: 16),
           _DestinationCard(monitoring: monitoring),
           const SizedBox(height: 16),
@@ -94,8 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _ArrivalStatusCard extends StatelessWidget {
-  const _ArrivalStatusCard({required this.state});
+class _MonitoringStatusCard extends StatelessWidget {
+  const _MonitoringStatusCard({required this.state});
 
   final MonitoringState state;
 
@@ -103,14 +104,17 @@ class _ArrivalStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusColor = _statusColor(state);
     final statusLabel = _statusLabel(state);
+    final diagnostics = context.select<LocationProvider, BackgroundMonitorDiagnostics>(
+      (provider) => provider.backgroundDiagnostics,
+    );
 
     return HomeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const HomeCardHeader(
-            icon: Icons.flag_outlined,
-            title: 'Arrival Status',
+            icon: Icons.sensors,
+            title: 'Monitoring Status',
           ),
           const SizedBox(height: 16),
           Container(
@@ -135,6 +139,18 @@ class _ArrivalStatusCard extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          _StatusDetailRow(
+            label: 'Foreground service active',
+            value: diagnostics.foregroundServiceRunning ? 'Yes' : 'No',
+            highlight: diagnostics.foregroundServiceRunning,
+          ),
+          const SizedBox(height: 8),
+          _StatusDetailRow(
+            label: 'Background monitoring active',
+            value: diagnostics.backgroundMonitoringEnabled ? 'Yes' : 'No',
+            highlight: diagnostics.backgroundMonitoringEnabled,
+          ),
         ],
       ),
     );
@@ -145,7 +161,7 @@ class _ArrivalStatusCard extends StatelessWidget {
       MonitoringState.idle => Colors.grey,
       MonitoringState.monitoring => Colors.blue,
       MonitoringState.arrived => Colors.green,
-      MonitoringState.missed => Colors.orange,
+      MonitoringState.missed => Colors.red,
     };
   }
 
@@ -165,6 +181,42 @@ class _ArrivalStatusCard extends StatelessWidget {
       MonitoringState.arrived => Icons.check_circle_outline,
       MonitoringState.missed => Icons.error_outline,
     };
+  }
+}
+
+class _StatusDetailRow extends StatelessWidget {
+  const _StatusDetailRow({
+    required this.label,
+    required this.value,
+    required this.highlight,
+  });
+
+  final String label;
+  final String value;
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: highlight ? Colors.blue : colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -520,11 +572,27 @@ class _MonitoringControlsCard extends StatelessWidget {
   }
 
   Future<void> _handleStartMonitoring(BuildContext context) async {
-    final result = await context.read<LocationProvider>().startTracking();
-    if (!context.mounted) {
-      return;
+    final locationProvider = context.read<LocationProvider>();
+    final backgroundMonitorService = context.read<BackgroundMonitorService>();
+
+    Future<void> tryStart({bool resume = false}) async {
+      final result = await locationProvider.startTracking(resume: resume);
+      if (!context.mounted) {
+        return;
+      }
+
+      await LocationFeedback.handleStartResult(
+        context,
+        result,
+        backgroundMonitorService: backgroundMonitorService,
+        onContinueAfterBatteryPrompt: result ==
+                LocationStartResult.batteryOptimizationRequired
+            ? () => tryStart(resume: true)
+            : null,
+      );
     }
-    await LocationFeedback.handleStartResult(context, result);
+
+    await tryStart();
   }
 
   Future<void> _handleStopMonitoring(BuildContext context) async {

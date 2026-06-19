@@ -5,6 +5,7 @@ import '../data/mock_destinations.dart';
 import '../models/destination.dart';
 import '../providers/monitoring_provider.dart';
 import '../widgets/home_card.dart';
+import 'map_picker_screen.dart';
 
 class DestinationScreen extends StatefulWidget {
   const DestinationScreen({super.key});
@@ -37,10 +38,10 @@ class _DestinationScreenState extends State<DestinationScreen> {
 
   List<DestinationCatalogItem> get _filteredDestinations {
     if (!_isSearching) {
-      return MockDestinations.all;
+      return MockDestinations.favorites;
     }
 
-    return MockDestinations.all
+    return MockDestinations.favorites
         .where(
           (item) => item.destination.name.toLowerCase().contains(_query),
         )
@@ -72,7 +73,7 @@ class _DestinationScreenState extends State<DestinationScreen> {
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
             child: SearchBar(
               controller: _searchController,
-              hintText: 'Search destinations',
+              hintText: 'Filter favorites',
               leading: const Icon(Icons.search),
               trailing: _query.isEmpty
                   ? null
@@ -84,11 +85,28 @@ class _DestinationScreenState extends State<DestinationScreen> {
                     ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const MapPickerScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Search on Map'),
+              ),
+            ),
+          ),
           Expanded(
             child: destinations.isEmpty
                 ? Center(
                     child: Text(
-                      'No destinations match your search.',
+                      'No favorites match your search.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -99,28 +117,7 @@ class _DestinationScreenState extends State<DestinationScreen> {
                     children: [
                       if (!_isSearching) ...[
                         Text(
-                          'Recent Destinations',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ...MockDestinations.recent.map(
-                          (item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _DestinationListCard(
-                              item: item,
-                              isSelected:
-                                  selectedDestination == item.destination,
-                              onTap: () =>
-                                  _selectDestination(item.destination),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'All Destinations',
+                          'Favorites',
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             color: colorScheme.primary,
                             fontWeight: FontWeight.w600,
@@ -135,7 +132,8 @@ class _DestinationScreenState extends State<DestinationScreen> {
                             item: item,
                             isSelected:
                                 selectedDestination == item.destination,
-                            onTap: () => _selectDestination(item.destination),
+                            onTap: () =>
+                                _selectDestination(item.destination),
                           ),
                         ),
                       ),

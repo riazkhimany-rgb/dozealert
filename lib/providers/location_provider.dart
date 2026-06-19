@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -7,7 +8,9 @@ import '../models/current_location.dart';
 import '../models/monitoring_state.dart';
 import '../providers/monitoring_provider.dart';
 import '../services/alarm_service.dart';
+import '../services/background_monitor_service.dart';
 import '../services/location_service.dart';
+import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
 
 enum LocationStartResult {
@@ -15,7 +18,10 @@ enum LocationStartResult {
   noDestination,
   permissionDenied,
   permissionPermanentlyDenied,
+  backgroundPermissionDenied,
   locationServiceDisabled,
+  foregroundServiceFailure,
+  batteryOptimizationRequired,
 }
 
 class LocationProvider extends ChangeNotifier {
@@ -24,10 +30,18 @@ class LocationProvider extends ChangeNotifier {
     this._monitoringProvider,
     this._alarmService,
     this._settingsService,
+    this._backgroundMonitorService,
+    this._monitoringStorage,
   ) {
     _locationSubscription = _locationService.locationStream.listen(
       _onLocationUpdate,
     );
+    _backgroundLocationSubscription =
+        _backgroundMonitorService.locationStream.listen(_onLocationUpdate);
+    _arrivalSubscription =
+        _backgroundMonitorService.arrivalStream.listen((_) {
+      unawaited(_handleBackgroundArrival());
+    });
     _monitoringProvider.addListener(_onMonitoringChanged);
   }
 
@@ -37,24 +51,55 @@ class LocationProvider extends ChangeNotifier {
   final MonitoringProvider _monitoringProvider;
   final AlarmService _alarmService;
   final SettingsService _settingsService;
+  final BackgroundMonitorService _backgroundMonitorService;
+  final MonitoringStorageService _monitoringStorage;
 
   StreamSubscription<CurrentLocation>? _locationSubscription;
+  StreamSubscription<CurrentLocation>? _backgroundLocationSubscription;
+  StreamSubscription<void>? _arrivalSubscription;
 
   CurrentLocation? _currentLocation;
   double _distanceRemainingMeters = 0;
   double _distanceRemainingKm = 0;
   bool _trackingEnabled = false;
   bool _arrivalDialogVisible = false;
+  bool _usingBackgroundService = false;
 
   CurrentLocation? get currentLocation => _currentLocation;
   double get distanceRemainingMeters => _distanceRemainingMeters;
   double get distanceRemainingKm => _distanceRemainingKm;
   bool get trackingEnabled => _trackingEnabled;
   bool get arrivalDialogVisible => _arrivalDialogVisible;
+  bool get usingBackgroundService => _usingBackgroundService;
+
+  BackgroundMonitorDiagnostics get backgroundDiagnostics =>
+      _backgroundMonitorService.diagnostics;
 
   bool get hasDestination => _monitoringProvider.selectedDestination != null;
 
-  Future<LocationStartResult> startTracking() async {
+  Future<void> resumeMonitoringIfNeeded() async {
+    final session = await _monitoringStorage.loadSession();
+    if (session == null || !session.isActive) {
+      return;
+    }
+
+    if (_monitoringProvider.selectedDestination == null) {
+      await _monitoringStorage.clearSession();
+      return;
+    }
+
+    if (session.state == MonitoringState.monitoring &&
+        !_trackingEnabled) {
+      await startTracking(resume: true);
+    }
+  }
+
+  Future<void> syncBackgroundState() async {
+    await _backgroundMonitorService.syncServiceState();
+    notifyListeners();
+  }
+
+  Future<LocationStartResult> startTracking({bool resume = false}) async {
     if (_monitoringProvider.selectedDestination == null) {
       return LocationStartResult.noDestination;
     }
@@ -73,21 +118,65 @@ class LocationProvider extends ChangeNotifier {
         return LocationStartResult.permissionPermanentlyDenied;
     }
 
+    if (Platform.isAndroid) {
+      final backgroundPermission =
+          await _locationService.requestBackgroundPermission();
+      switch (backgroundPermission) {
+        case LocationPermissionStatus.granted:
+          break;
+        case LocationPermissionStatus.denied:
+          return LocationStartResult.backgroundPermissionDenied;
+        case LocationPermissionStatus.permanentlyDenied:
+          return LocationStartResult.backgroundPermissionDenied;
+      }
+
+      if (!resume &&
+          await _backgroundMonitorService.isBatteryOptimizationEnabled()) {
+        return LocationStartResult.batteryOptimizationRequired;
+      }
+    }
+
     final serviceEnabled = await _locationService.isLocationServiceEnabled();
     if (!serviceEnabled) {
       return LocationStartResult.locationServiceDisabled;
     }
 
+    final destination = _monitoringProvider.selectedDestination!;
+
+    if (Platform.isAndroid) {
+      final backgroundResult = await _backgroundMonitorService.startMonitoring(
+        destinationName: destination.name,
+      );
+      switch (backgroundResult) {
+        case BackgroundMonitorStartResult.success:
+          _usingBackgroundService = true;
+        case BackgroundMonitorStartResult.unsupportedPlatform:
+          _usingBackgroundService = false;
+        case BackgroundMonitorStartResult.notificationPermissionDenied:
+          return LocationStartResult.foregroundServiceFailure;
+        case BackgroundMonitorStartResult.foregroundServiceFailure:
+          return LocationStartResult.foregroundServiceFailure;
+      }
+    } else {
+      _usingBackgroundService = false;
+    }
+
     try {
-      await _locationService.startTracking();
+      if (!_usingBackgroundService) {
+        await _locationService.startTracking();
+      }
     } on LocationServiceDisabledException {
+      await _backgroundMonitorService.stopMonitoring();
       return LocationStartResult.locationServiceDisabled;
     } on PermissionDeniedException {
+      await _backgroundMonitorService.stopMonitoring();
       return LocationStartResult.permissionDenied;
     }
 
+    await _monitoringStorage.setArrivalTriggered(false);
     _trackingEnabled = true;
     _monitoringProvider.startMonitoring();
+    await _backgroundMonitorService.syncServiceState();
     notifyListeners();
     return LocationStartResult.success;
   }
@@ -103,7 +192,10 @@ class LocationProvider extends ChangeNotifier {
 
     _arrivalDialogVisible = false;
     await _locationService.stopTracking();
+    await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
+    _usingBackgroundService = false;
+    await _monitoringStorage.clearSession();
     _monitoringProvider.stopMonitoring();
     notifyListeners();
   }
@@ -111,9 +203,13 @@ class LocationProvider extends ChangeNotifier {
   Future<void> dismissArrival() async {
     await _alarmService.stopAlarm();
     _arrivalDialogVisible = false;
+    await _monitoringStorage.setArrivalTriggered(false);
     _monitoringProvider.resetToIdle();
     await _locationService.stopTracking();
+    await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
+    _usingBackgroundService = false;
+    await _monitoringStorage.clearSession();
     notifyListeners();
   }
 
@@ -139,6 +235,15 @@ class LocationProvider extends ChangeNotifier {
   Future<void> _onLocationUpdate(CurrentLocation location) async {
     _currentLocation = location;
     updateDistance();
+
+    final destination = _monitoringProvider.selectedDestination;
+    if (destination != null && _usingBackgroundService) {
+      await _backgroundMonitorService.updateNotification(
+        destinationName: destination.name,
+        distanceKm: _distanceRemainingKm,
+      );
+    }
+
     await _checkArrival();
     notifyListeners();
   }
@@ -150,6 +255,25 @@ class LocationProvider extends ChangeNotifier {
       unawaited(stopTracking());
     }
 
+    notifyListeners();
+  }
+
+  Future<void> _handleBackgroundArrival() async {
+    if (!_trackingEnabled) {
+      return;
+    }
+
+    if (_monitoringProvider.currentState != MonitoringState.monitoring) {
+      return;
+    }
+
+    if (_alarmService.alarmActive) {
+      return;
+    }
+
+    await _alarmService.playAlarm();
+    _monitoringProvider.markArrived();
+    _arrivalDialogVisible = true;
     notifyListeners();
   }
 
@@ -170,6 +294,10 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
+    if (await _monitoringStorage.isArrivalTriggered()) {
+      return;
+    }
+
     final thresholdMeters = _settingsService.settings.testModeEnabled
         ? _testModeArrivalThresholdMeters
         : _monitoringProvider.radiusMeters.toDouble();
@@ -178,6 +306,7 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
+    await _monitoringStorage.setArrivalTriggered(true);
     await _alarmService.playAlarm();
     _monitoringProvider.markArrived();
     _arrivalDialogVisible = true;
@@ -187,6 +316,8 @@ class LocationProvider extends ChangeNotifier {
   @override
   void dispose() {
     _locationSubscription?.cancel();
+    _backgroundLocationSubscription?.cancel();
+    _arrivalSubscription?.cancel();
     _monitoringProvider.removeListener(_onMonitoringChanged);
     super.dispose();
   }

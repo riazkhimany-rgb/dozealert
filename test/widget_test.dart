@@ -6,7 +6,10 @@ import 'package:dozealert/main.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/providers/monitoring_provider.dart';
 import 'package:dozealert/services/alarm_service.dart';
+import 'package:dozealert/services/background_monitor_service.dart';
 import 'package:dozealert/services/destination_storage_service.dart';
+import 'package:dozealert/services/monitoring_storage_service.dart';
+import 'package:dozealert/services/place_search_service.dart';
 import 'package:dozealert/services/settings_service.dart';
 
 Future<DozeAlertApp> _createTestApp() async {
@@ -19,13 +22,26 @@ Future<DozeAlertApp> _createTestApp() async {
   await alarmService.initialize();
 
   final destinationStorageService = DestinationStorageService();
-  final monitoringProvider = MonitoringProvider(destinationStorageService);
+  final monitoringStorageService = MonitoringStorageService();
+  final backgroundMonitorService =
+      BackgroundMonitorService(monitoringStorageService);
+  await backgroundMonitorService.initialize();
+
+  final placeSearchService = PlaceSearchService();
+  final monitoringProvider = MonitoringProvider(
+    destinationStorageService,
+    monitoringStorageService,
+  );
 
   await monitoringProvider.loadSavedDestination();
+  await monitoringProvider.loadMonitoringSession();
 
   return DozeAlertApp(
     settingsService: settingsService,
     alarmService: alarmService,
+    backgroundMonitorService: backgroundMonitorService,
+    monitoringStorageService: monitoringStorageService,
+    placeSearchService: placeSearchService,
     destinationStorageService: destinationStorageService,
     monitoringProvider: monitoringProvider,
     skipSplash: true,
@@ -47,9 +63,10 @@ void main() {
     await tester.tap(find.text('Choose Destination'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Recent Destinations'), findsOneWidget);
+    expect(find.text('Favorites'), findsOneWidget);
+    expect(find.text('Search on Map'), findsOneWidget);
+    expect(find.text('Bronte GO'), findsOneWidget);
     expect(find.text('Union Station'), findsWidgets);
-    expect(find.text('Pearson Airport'), findsWidgets);
 
     await tester.tap(find.text('Union Station').last);
     await tester.pumpAndSettle();
@@ -59,6 +76,7 @@ void main() {
     expect(find.text('-79.3806'), findsOneWidget);
     expect(find.text('No destination selected'), findsNothing);
     expect(find.text('Clear Destination'), findsOneWidget);
+    expect(find.text('Monitoring Status'), findsOneWidget);
 
     await tester.scrollUntilVisible(
       find.text('Start Monitoring'),
@@ -78,6 +96,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Appearance'), findsOneWidget);
+    expect(find.text('Developer Settings'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('About DozeAlert'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('About DozeAlert'), findsOneWidget);
 
     await tester.tap(find.text('About DozeAlert'));
@@ -95,7 +122,11 @@ void main() {
     SharedPreferences.setMockInitialValues({});
 
     final destinationStorageService = DestinationStorageService();
-    final monitoringProvider = MonitoringProvider(destinationStorageService);
+    final monitoringStorageService = MonitoringStorageService();
+    final monitoringProvider = MonitoringProvider(
+      destinationStorageService,
+      monitoringStorageService,
+    );
 
     await monitoringProvider.setDestination(
       const Destination(
@@ -105,14 +136,20 @@ void main() {
       ),
     );
 
-    final reloadedProvider = MonitoringProvider(destinationStorageService);
+    final reloadedProvider = MonitoringProvider(
+      destinationStorageService,
+      monitoringStorageService,
+    );
     await reloadedProvider.loadSavedDestination();
 
     expect(reloadedProvider.selectedDestination?.name, 'Home');
 
     await reloadedProvider.clearDestination();
 
-    final clearedProvider = MonitoringProvider(destinationStorageService);
+    final clearedProvider = MonitoringProvider(
+      destinationStorageService,
+      monitoringStorageService,
+    );
     await clearedProvider.loadSavedDestination();
 
     expect(clearedProvider.selectedDestination, isNull);
