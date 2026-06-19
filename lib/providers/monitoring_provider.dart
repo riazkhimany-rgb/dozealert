@@ -84,4 +84,22 @@ class MonitoringProvider extends ChangeNotifier {
     _currentState = MonitoringState.idle;
     notifyListeners();
   }
+
+  void markArrived() {
+    if (_currentState != MonitoringState.monitoring) {
+      return;
+    }
+
+    _currentState = MonitoringState.arrived;
+    notifyListeners();
+  }
+
+  void resetToIdle() {
+    if (_currentState == MonitoringState.idle) {
+      return;
+    }
+
+    _currentState = MonitoringState.idle;
+    notifyListeners();
+  }
 }

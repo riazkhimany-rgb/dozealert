@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/settings_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/app_branding.dart';
 import 'about_screen.dart';
@@ -19,6 +20,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -55,6 +57,26 @@ class SettingsScreen extends StatelessWidget {
                   )
                   .toList(),
             ),
+          ),
+          const Divider(height: 32),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+            child: Text(
+              'Testing',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          SwitchListTile(
+            title: const Text('Enable Test Mode'),
+            subtitle: Text(
+              'Simulate arrival when distance is 5 km or less.',
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+            value: settingsProvider.testModeEnabled,
+            onChanged: settingsProvider.setTestModeEnabled,
           ),
           const Divider(height: 32),
           Padding(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,18 +9,35 @@ import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
+import '../widgets/arrival_dialog.dart';
 import '../widgets/home_card.dart';
 import 'destination_screen.dart';
 import 'map_picker_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _showingArrivalDialog = false;
 
   static const _radiusOptions = <int>[250, 500, 1000, 2000];
 
   @override
   Widget build(BuildContext context) {
     final monitoring = context.watch<MonitoringProvider>();
+    final arrivalVisible = context.select<LocationProvider, bool>(
+      (provider) => provider.arrivalDialogVisible,
+    );
+
+    if (arrivalVisible && !_showingArrivalDialog) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_presentArrivalDialog());
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -27,6 +46,8 @@ class HomeScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
+          _ArrivalStatusCard(state: monitoring.currentState),
+          const SizedBox(height: 16),
           _DestinationCard(monitoring: monitoring),
           const SizedBox(height: 16),
           const _CurrentLocationCard(),
@@ -43,6 +64,107 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _presentArrivalDialog() async {
+    if (!mounted || _showingArrivalDialog) {
+      return;
+    }
+
+    _showingArrivalDialog = true;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog.fullscreen(
+          child: ArrivalDialog(
+            onDismiss: () async {
+              Navigator.of(dialogContext).pop();
+              await context.read<LocationProvider>().dismissArrival();
+            },
+          ),
+        );
+      },
+    );
+
+    if (mounted) {
+      _showingArrivalDialog = false;
+    }
+  }
+}
+
+class _ArrivalStatusCard extends StatelessWidget {
+  const _ArrivalStatusCard({required this.state});
+
+  final MonitoringState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _statusColor(state);
+    final statusLabel = _statusLabel(state);
+
+    return HomeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const HomeCardHeader(
+            icon: Icons.flag_outlined,
+            title: 'Arrival Status',
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: statusColor.withValues(alpha: 0.35)),
+            ),
+            child: Row(
+              children: [
+                Icon(_statusIcon(state), color: statusColor),
+                const SizedBox(width: 12),
+                Text(
+                  statusLabel,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: statusColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _statusColor(MonitoringState state) {
+    return switch (state) {
+      MonitoringState.idle => Colors.grey,
+      MonitoringState.monitoring => Colors.blue,
+      MonitoringState.arrived => Colors.green,
+      MonitoringState.missed => Colors.orange,
+    };
+  }
+
+  String _statusLabel(MonitoringState state) {
+    return switch (state) {
+      MonitoringState.idle => 'Idle',
+      MonitoringState.monitoring => 'Monitoring',
+      MonitoringState.arrived => 'Arrived',
+      MonitoringState.missed => 'Missed',
+    };
+  }
+
+  IconData _statusIcon(MonitoringState state) {
+    return switch (state) {
+      MonitoringState.idle => Icons.hourglass_empty_outlined,
+      MonitoringState.monitoring => Icons.radar,
+      MonitoringState.arrived => Icons.check_circle_outline,
+      MonitoringState.missed => Icons.error_outline,
+    };
   }
 }
 
@@ -316,8 +438,9 @@ class _MonitoringControlsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final canStart = monitoring.selectedDestination != null &&
-        monitoring.currentState != MonitoringState.monitoring;
-    final canStop = monitoring.currentState != MonitoringState.idle;
+        monitoring.currentState == MonitoringState.idle;
+    final canStop = monitoring.currentState == MonitoringState.monitoring ||
+        monitoring.currentState == MonitoringState.arrived;
 
     return HomeCard(
       child: Column(
@@ -421,7 +544,7 @@ class _MonitoringControlsCard extends StatelessWidget {
     return switch (state) {
       MonitoringState.idle => colorScheme.onSurfaceVariant,
       MonitoringState.monitoring => colorScheme.primary,
-      MonitoringState.arrived => colorScheme.tertiary,
+      MonitoringState.arrived => Colors.green,
       MonitoringState.missed => colorScheme.error,
     };
   }

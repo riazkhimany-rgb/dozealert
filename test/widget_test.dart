@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dozealert/main.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/providers/monitoring_provider.dart';
+import 'package:dozealert/services/alarm_service.dart';
 import 'package:dozealert/services/destination_storage_service.dart';
 import 'package:dozealert/services/settings_service.dart';
 
@@ -12,6 +13,11 @@ Future<DozeAlertApp> _createTestApp() async {
   SharedPreferences.setMockInitialValues({});
 
   final settingsService = SettingsService();
+  await settingsService.loadSettings();
+
+  final alarmService = AlarmService();
+  await alarmService.initialize();
+
   final destinationStorageService = DestinationStorageService();
   final monitoringProvider = MonitoringProvider(destinationStorageService);
 
@@ -19,6 +25,7 @@ Future<DozeAlertApp> _createTestApp() async {
 
   return DozeAlertApp(
     settingsService: settingsService,
+    alarmService: alarmService,
     destinationStorageService: destinationStorageService,
     monitoringProvider: monitoringProvider,
     skipSplash: true,
@@ -62,7 +69,7 @@ void main() {
 
     expect(find.text('Wake-Up Radius'), findsOneWidget);
     expect(find.text('1000m'), findsOneWidget);
-    expect(find.text('Idle'), findsOneWidget);
+    expect(find.text('Idle'), findsWidgets);
     expect(find.text('Start Monitoring'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);

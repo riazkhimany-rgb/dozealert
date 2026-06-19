@@ -5,8 +5,10 @@ import 'package:provider/provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/monitoring_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/settings_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/app_startup_screen.dart';
+import 'services/alarm_service.dart';
 import 'services/destination_storage_service.dart';
 import 'services/location_service.dart';
 import 'services/settings_service.dart';
@@ -17,6 +19,11 @@ Future<void> main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   final settingsService = SettingsService();
+  await settingsService.loadSettings();
+
+  final alarmService = AlarmService();
+  await alarmService.initialize();
+
   final destinationStorageService = DestinationStorageService();
   final monitoringProvider = MonitoringProvider(destinationStorageService);
 
@@ -25,6 +32,7 @@ Future<void> main() async {
   runApp(
     DozeAlertApp(
       settingsService: settingsService,
+      alarmService: alarmService,
       destinationStorageService: destinationStorageService,
       monitoringProvider: monitoringProvider,
     ),
@@ -35,12 +43,14 @@ class DozeAlertApp extends StatelessWidget {
   const DozeAlertApp({
     super.key,
     required this.settingsService,
+    required this.alarmService,
     required this.destinationStorageService,
     required this.monitoringProvider,
     this.skipSplash = false,
   });
 
   final SettingsService settingsService;
+  final AlarmService alarmService;
   final DestinationStorageService destinationStorageService;
   final MonitoringProvider monitoringProvider;
   final bool skipSplash;
@@ -50,6 +60,7 @@ class DozeAlertApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<SettingsService>.value(value: settingsService),
+        Provider<AlarmService>.value(value: alarmService),
         Provider<DestinationStorageService>.value(
           value: destinationStorageService,
         ),
@@ -61,20 +72,21 @@ class DozeAlertApp extends StatelessWidget {
           create: (_) => ThemeProvider(settingsService),
         ),
         ChangeNotifierProvider(
+          create: (_) => SettingsProvider(settingsService),
+        ),
+        ChangeNotifierProvider(
           create: (_) => NavigationProvider(),
         ),
         ChangeNotifierProvider<MonitoringProvider>.value(
           value: monitoringProvider,
         ),
-        ChangeNotifierProxyProvider2<LocationService, MonitoringProvider,
-            LocationProvider>(
+        ChangeNotifierProvider(
           create: (context) => LocationProvider(
             context.read<LocationService>(),
             monitoringProvider,
+            alarmService,
+            settingsService,
           ),
-          update: (_, locationService, monitoring, previous) =>
-              previous ??
-              LocationProvider(locationService, monitoring),
         ),
       ],
       child: Consumer<ThemeProvider>(
