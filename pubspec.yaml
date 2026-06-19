@@ -71,6 +71,7 @@ flutter:
     - .env
     - assets/branding/
     - assets/sounds/
+    - assets/transit/
     - privacy_policy.md
 
 flutter_launcher_icons:

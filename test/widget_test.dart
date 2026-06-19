@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dozealert/main.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/providers/monitoring_provider.dart';
+import 'package:dozealert/providers/transit_line_provider.dart';
 import 'package:dozealert/providers/transit_provider.dart';
 import 'package:dozealert/services/alarm_service.dart';
 import 'package:dozealert/services/background_monitor_service.dart';
@@ -14,6 +15,7 @@ import 'package:dozealert/services/monitoring_storage_service.dart';
 import 'package:dozealert/services/place_search_service.dart';
 import 'package:dozealert/services/preferences_service.dart';
 import 'package:dozealert/services/settings_service.dart';
+import 'package:dozealert/services/transit_data_service.dart';
 
 Future<DozeAlertApp> _createTestApp() async {
   SharedPreferences.setMockInitialValues({});
@@ -33,6 +35,7 @@ Future<DozeAlertApp> _createTestApp() async {
 
   final placeSearchService = PlaceSearchService();
   final preferencesService = PreferencesService();
+  final transitDataService = TransitDataService();
   final transitProvider = TransitProvider(preferencesService);
   await transitProvider.loadPreferences();
 
@@ -44,6 +47,13 @@ Future<DozeAlertApp> _createTestApp() async {
   await monitoringProvider.loadSavedDestination();
   await monitoringProvider.loadMonitoringSession();
 
+  final transitLineProvider = TransitLineProvider(
+    transitDataService,
+    transitProvider,
+    monitoringProvider,
+  );
+  await transitLineProvider.loadCurrentLine();
+
   return DozeAlertApp(
     settingsService: settingsService,
     alarmService: alarmService,
@@ -51,7 +61,9 @@ Future<DozeAlertApp> _createTestApp() async {
     monitoringStorageService: monitoringStorageService,
     placeSearchService: placeSearchService,
     preferencesService: preferencesService,
+    transitDataService: transitDataService,
     transitProvider: transitProvider,
+    transitLineProvider: transitLineProvider,
     destinationStorageService: destinationStorageService,
     monitoringProvider: monitoringProvider,
     skipSplash: true,

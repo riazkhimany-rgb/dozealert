@@ -16,13 +16,6 @@ class TransitProvider extends ChangeNotifier {
   TransitPreferences get preferences => _preferences;
   List<Destination> get recentStations => _recentStations;
 
-  List<Destination> get favoriteStations {
-    return TransitCatalog.favoriteStations(
-      transitSystem: _preferences.transitSystem,
-      defaultLine: _preferences.defaultLine,
-    );
-  }
-
   Future<void> loadPreferences() async {
     _preferences = await _preferencesService.loadTransitPreferences();
     _recentStations = await _preferencesService.loadRecentStations();

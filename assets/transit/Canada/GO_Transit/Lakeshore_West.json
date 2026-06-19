@@ -1,0 +1,79 @@
+{
+  "country": "Canada",
+  "transitSystem": "GO Transit",
+  "lineName": "Lakeshore West",
+  "stations": [
+    {
+      "name": "Union GO",
+      "latitude": 43.6453,
+      "longitude": -79.3806,
+      "stationOrder": 1
+    },
+    {
+      "name": "Exhibition GO",
+      "latitude": 43.6359,
+      "longitude": -79.4187,
+      "stationOrder": 2
+    },
+    {
+      "name": "Mimico GO",
+      "latitude": 43.6172,
+      "longitude": -79.4946,
+      "stationOrder": 3
+    },
+    {
+      "name": "Long Branch GO",
+      "latitude": 43.5910,
+      "longitude": -79.5400,
+      "stationOrder": 4
+    },
+    {
+      "name": "Port Credit GO",
+      "latitude": 43.5534,
+      "longitude": -79.5855,
+      "stationOrder": 5
+    },
+    {
+      "name": "Clarkson GO",
+      "latitude": 43.5232,
+      "longitude": -79.6338,
+      "stationOrder": 6
+    },
+    {
+      "name": "Oakville GO",
+      "latitude": 43.4553,
+      "longitude": -79.6829,
+      "stationOrder": 7
+    },
+    {
+      "name": "Bronte GO",
+      "latitude": 43.4039,
+      "longitude": -79.7589,
+      "stationOrder": 8
+    },
+    {
+      "name": "Appleby GO",
+      "latitude": 43.3811,
+      "longitude": -79.7624,
+      "stationOrder": 9
+    },
+    {
+      "name": "Burlington GO",
+      "latitude": 43.3416,
+      "longitude": -79.8094,
+      "stationOrder": 10
+    },
+    {
+      "name": "Aldershot GO",
+      "latitude": 43.3138,
+      "longitude": -79.8550,
+      "stationOrder": 11
+    },
+    {
+      "name": "West Harbour GO",
+      "latitude": 43.2650,
+      "longitude": -79.8672,
+      "stationOrder": 12
+    }
+  ]
+}

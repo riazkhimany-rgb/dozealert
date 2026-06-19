@@ -6,9 +6,11 @@ import 'package:provider/provider.dart';
 import '../models/destination.dart';
 import '../models/current_location.dart';
 import '../models/monitoring_state.dart';
+import '../models/transit_station.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/transit_line_provider.dart';
 import '../providers/transit_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
@@ -55,6 +57,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const _TransitSettingsCard(),
           const SizedBox(height: 16),
           const _QuickDestinationsCard(),
+          const SizedBox(height: 16),
+          const _StationDetailsCard(),
           const SizedBox(height: 16),
           _DestinationCard(monitoring: monitoring),
           const SizedBox(height: 16),
@@ -185,20 +189,16 @@ class _QuickDestinationsCard extends StatelessWidget {
 
   Future<void> _selectStation(
     BuildContext context,
-    Destination station,
+    TransitStation station,
   ) async {
-    await context.read<MonitoringProvider>().setDestination(station);
-    if (!context.mounted) {
-      return;
-    }
-    await context.read<TransitProvider>().recordRecentStation(station);
+    await context.read<TransitLineProvider>().setDestinationStation(station);
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final favoriteStations = context.select<TransitProvider, List<Destination>>(
-      (provider) => provider.favoriteStations,
+    final lineStations = context.select<TransitLineProvider, List<TransitStation>>(
+      (provider) => provider.currentStations,
     );
     final recentStations = context.select<TransitProvider, List<Destination>>(
       (provider) => provider.recentStations,
@@ -221,7 +221,7 @@ class _QuickDestinationsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          if (favoriteStations.isEmpty)
+          if (lineStations.isEmpty)
             Text(
               'No favorite stations for this transit line.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -232,7 +232,7 @@ class _QuickDestinationsCard extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: favoriteStations
+              children: lineStations
                   .map(
                     (station) => ActionChip(
                       label: Text(station.name),
@@ -258,12 +258,63 @@ class _QuickDestinationsCard extends StatelessWidget {
                   .map(
                     (station) => ActionChip(
                       label: Text(station.name),
-                      onPressed: () => _selectStation(context, station),
+                      onPressed: () => context
+                          .read<TransitLineProvider>()
+                          .selectRecentDestination(station),
                     ),
                   )
                   .toList(),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StationDetailsCard extends StatelessWidget {
+  const _StationDetailsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final station = context.select<TransitLineProvider, TransitStation?>(
+      (provider) => provider.selectedDestinationStation,
+    );
+    final lineName = context.select<TransitLineProvider, String?>(
+      (provider) => provider.currentLine?.lineName,
+    );
+
+    if (station == null) {
+      return const SizedBox.shrink();
+    }
+
+    return HomeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const HomeCardHeader(
+            icon: Icons.info_outline,
+            title: 'Station Details',
+          ),
+          const SizedBox(height: 16),
+          _TransitMetricRow(label: 'Selected Station', value: station.name),
+          const SizedBox(height: 8),
+          _TransitMetricRow(label: 'Line', value: lineName ?? '—'),
+          const SizedBox(height: 8),
+          _TransitMetricRow(
+            label: 'Station Order',
+            value: station.stationOrder.toString(),
+          ),
+          const SizedBox(height: 8),
+          _TransitMetricRow(
+            label: 'Latitude',
+            value: station.latitude.toStringAsFixed(4),
+          ),
+          const SizedBox(height: 8),
+          _TransitMetricRow(
+            label: 'Longitude',
+            value: station.longitude.toStringAsFixed(4),
+          ),
         ],
       ),
     );
@@ -474,6 +525,9 @@ class _DestinationCard extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () {
                   context.read<MonitoringProvider>().clearDestination();
+                  context
+                      .read<TransitLineProvider>()
+                      .clearSelectedDestinationStation();
                 },
                 icon: const Icon(Icons.clear_outlined),
                 label: const Text('Clear Destination'),

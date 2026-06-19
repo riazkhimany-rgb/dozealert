@@ -1,0 +1,55 @@
+{
+  "country": "Canada",
+  "transitSystem": "GO Transit",
+  "lineName": "Milton",
+  "stations": [
+    {
+      "name": "Union GO",
+      "latitude": 43.6453,
+      "longitude": -79.3806,
+      "stationOrder": 1
+    },
+    {
+      "name": "Exhibition GO",
+      "latitude": 43.6359,
+      "longitude": -79.4187,
+      "stationOrder": 2
+    },
+    {
+      "name": "Cooksville GO",
+      "latitude": 43.5820,
+      "longitude": -79.6230,
+      "stationOrder": 3
+    },
+    {
+      "name": "Erindale GO",
+      "latitude": 43.5630,
+      "longitude": -79.6680,
+      "stationOrder": 4
+    },
+    {
+      "name": "Streetsville GO",
+      "latitude": 43.5870,
+      "longitude": -79.7180,
+      "stationOrder": 5
+    },
+    {
+      "name": "Meadowvale GO",
+      "latitude": 43.5940,
+      "longitude": -79.7580,
+      "stationOrder": 6
+    },
+    {
+      "name": "Lisgar GO",
+      "latitude": 43.5930,
+      "longitude": -79.7860,
+      "stationOrder": 7
+    },
+    {
+      "name": "Milton GO",
+      "latitude": 43.5130,
+      "longitude": -79.8670,
+      "stationOrder": 8
+    }
+  ]
+}

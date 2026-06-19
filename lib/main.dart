@@ -8,6 +8,7 @@ import 'providers/monitoring_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/transit_line_provider.dart';
 import 'providers/transit_provider.dart';
 import 'screens/app_startup_screen.dart';
 import 'services/alarm_service.dart';
@@ -18,6 +19,7 @@ import 'services/monitoring_storage_service.dart';
 import 'services/place_search_service.dart';
 import 'services/preferences_service.dart';
 import 'services/settings_service.dart';
+import 'services/transit_data_service.dart';
 import 'utils/app_theme.dart';
 
 Future<void> main() async {
@@ -40,6 +42,7 @@ Future<void> main() async {
 
   final placeSearchService = PlaceSearchService();
   final preferencesService = PreferencesService();
+  final transitDataService = TransitDataService();
   final transitProvider = TransitProvider(preferencesService);
   await transitProvider.loadPreferences();
 
@@ -51,6 +54,13 @@ Future<void> main() async {
   await monitoringProvider.loadSavedDestination();
   await monitoringProvider.loadMonitoringSession();
 
+  final transitLineProvider = TransitLineProvider(
+    transitDataService,
+    transitProvider,
+    monitoringProvider,
+  );
+  await transitLineProvider.loadCurrentLine();
+
   runApp(
     DozeAlertApp(
       settingsService: settingsService,
@@ -59,7 +69,9 @@ Future<void> main() async {
       monitoringStorageService: monitoringStorageService,
       placeSearchService: placeSearchService,
       preferencesService: preferencesService,
+      transitDataService: transitDataService,
       transitProvider: transitProvider,
+      transitLineProvider: transitLineProvider,
       destinationStorageService: destinationStorageService,
       monitoringProvider: monitoringProvider,
     ),
@@ -88,7 +100,9 @@ class DozeAlertApp extends StatelessWidget {
     required this.monitoringStorageService,
     required this.placeSearchService,
     required this.preferencesService,
+    required this.transitDataService,
     required this.transitProvider,
+    required this.transitLineProvider,
     required this.destinationStorageService,
     required this.monitoringProvider,
     this.skipSplash = false,
@@ -100,7 +114,9 @@ class DozeAlertApp extends StatelessWidget {
   final MonitoringStorageService monitoringStorageService;
   final PlaceSearchService placeSearchService;
   final PreferencesService preferencesService;
+  final TransitDataService transitDataService;
   final TransitProvider transitProvider;
+  final TransitLineProvider transitLineProvider;
   final DestinationStorageService destinationStorageService;
   final MonitoringProvider monitoringProvider;
   final bool skipSplash;
@@ -119,6 +135,7 @@ class DozeAlertApp extends StatelessWidget {
         ),
         Provider<PlaceSearchService>.value(value: placeSearchService),
         Provider<PreferencesService>.value(value: preferencesService),
+        Provider<TransitDataService>.value(value: transitDataService),
         Provider<DestinationStorageService>.value(
           value: destinationStorageService,
         ),
@@ -140,6 +157,9 @@ class DozeAlertApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<TransitProvider>.value(
           value: transitProvider,
+        ),
+        ChangeNotifierProvider<TransitLineProvider>.value(
+          value: transitLineProvider,
         ),
         ChangeNotifierProvider(
           create: (context) => LocationProvider(

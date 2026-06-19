@@ -1,5 +1,3 @@
-import '../models/destination.dart';
-
 abstract final class TransitCatalog {
   static const countries = <String>[
     'Canada',
@@ -47,21 +45,6 @@ abstract final class TransitCatalog {
     'London Underground': 'Piccadilly',
   };
 
-  static const lakeshoreWestStations = <Destination>[
-    Destination(name: 'Union', latitude: 43.6453, longitude: -79.3806),
-    Destination(name: 'Exhibition', latitude: 43.6359, longitude: -79.4187),
-    Destination(name: 'Mimico', latitude: 43.6172, longitude: -79.4946),
-    Destination(name: 'Long Branch', latitude: 43.5910, longitude: -79.5400),
-    Destination(name: 'Port Credit', latitude: 43.5534, longitude: -79.5855),
-    Destination(name: 'Clarkson', latitude: 43.5232, longitude: -79.6338),
-    Destination(name: 'Oakville', latitude: 43.4553, longitude: -79.6829),
-    Destination(name: 'Bronte', latitude: 43.4039, longitude: -79.7589),
-    Destination(name: 'Appleby', latitude: 43.3811, longitude: -79.7624),
-    Destination(name: 'Burlington', latitude: 43.3416, longitude: -79.8094),
-    Destination(name: 'Aldershot', latitude: 43.3138, longitude: -79.8550),
-    Destination(name: 'West Harbour', latitude: 43.2650, longitude: -79.8672),
-  ];
-
   static List<String> systemsForCountry(String country) {
     return systemsByCountry[country] ?? systemsByCountry['Canada']!;
   }
@@ -91,17 +74,5 @@ abstract final class TransitCatalog {
 
   static bool isValidLineForSystem(String transitSystem, String line) {
     return linesForSystem(transitSystem).contains(line);
-  }
-
-  static const emptyStations = <Destination>[];
-
-  static List<Destination> favoriteStations({
-    required String transitSystem,
-    required String defaultLine,
-  }) {
-    if (transitSystem == 'GO Transit' && defaultLine == 'Lakeshore West') {
-      return lakeshoreWestStations;
-    }
-    return emptyStations;
   }
 }

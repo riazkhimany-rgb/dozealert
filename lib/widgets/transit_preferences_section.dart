@@ -1,9 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/transit_catalog.dart';
+import '../providers/transit_line_provider.dart';
 import '../providers/transit_provider.dart';
 import '../widgets/home_card.dart';
 
@@ -34,8 +33,12 @@ class TransitPreferencesSection extends StatelessWidget {
             title: 'Country',
             value: preferences.country,
             options: TransitCatalog.countries,
-            onChanged: (value) {
-              unawaited(context.read<TransitProvider>().setCountry(value));
+            onChanged: (value) async {
+              await context.read<TransitProvider>().setCountry(value);
+              if (!context.mounted) {
+                return;
+              }
+              await context.read<TransitLineProvider>().loadCurrentLine();
             },
           ),
         ),
@@ -45,8 +48,12 @@ class TransitPreferencesSection extends StatelessWidget {
             title: 'Transit System',
             value: preferences.transitSystem,
             options: TransitCatalog.systemsForCountry(preferences.country),
-            onChanged: (value) {
-              unawaited(context.read<TransitProvider>().setTransitSystem(value));
+            onChanged: (value) async {
+              await context.read<TransitProvider>().setTransitSystem(value);
+              if (!context.mounted) {
+                return;
+              }
+              await context.read<TransitLineProvider>().loadCurrentLine();
             },
           ),
         ),
@@ -56,8 +63,12 @@ class TransitPreferencesSection extends StatelessWidget {
             title: 'Default Line',
             value: preferences.defaultLine,
             options: TransitCatalog.linesForSystem(preferences.transitSystem),
-            onChanged: (value) {
-              unawaited(context.read<TransitProvider>().setDefaultLine(value));
+            onChanged: (value) async {
+              await context.read<TransitProvider>().setDefaultLine(value);
+              if (!context.mounted) {
+                return;
+              }
+              await context.read<TransitLineProvider>().loadCurrentLine();
             },
           ),
         ),
