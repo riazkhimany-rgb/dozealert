@@ -88,7 +88,7 @@ class GtfsParserService {
               transitSystem: resolvedFeedName,
               vehicleType: _vehicleTypeForRoute(
                 routeType: row['route_type'],
-                defaultType: seedFeed.vehicleType,
+                defaultType: seedFeed.primaryVehicleType,
               ),
             );
           },
@@ -209,6 +209,8 @@ class GtfsParserService {
   }) {
     final typeCode = int.tryParse(routeType ?? '');
     return switch (typeCode) {
+      0 when defaultType == TransitVehicleType.lightRail =>
+        TransitVehicleType.lightRail,
       0 => TransitVehicleType.streetcar,
       1 => TransitVehicleType.subway,
       2 => TransitVehicleType.train,

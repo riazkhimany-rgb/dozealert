@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../cache/gtfs_cache_store.dart';
-import '../data/predefined_gtfs_feeds.dart';
+import '../data/default_gtfs_feeds.dart';
 import '../models/gtfs_feed_info.dart';
 import '../services/gtfs_download_service.dart';
 import '../services/gtfs_import_service.dart';
@@ -36,7 +36,7 @@ class GtfsFeedProvider extends ChangeNotifier {
     }
 
     final cachedInfos = await _cacheStore.loadFeedInfos();
-    _feeds = PredefinedGtfsFeeds.feeds
+    _feeds = DefaultGtfsFeeds.feeds
         .map((seed) => _mergeSeedWithCache(seed, cachedInfos))
         .toList(growable: false);
     _initialized = true;
@@ -49,7 +49,7 @@ class GtfsFeedProvider extends ChangeNotifier {
         return feed;
       }
     }
-    return PredefinedGtfsFeeds.byId(feedId);
+    return DefaultGtfsFeeds.byId(feedId);
   }
 
   String? errorFor(String feedId) => _errors[feedId];
@@ -95,14 +95,16 @@ class GtfsFeedProvider extends ChangeNotifier {
   }
 
   Future<void> _fetchFeed(String feedId, {required bool isUpdate}) async {
-    final seed = PredefinedGtfsFeeds.byId(feedId);
+    final seed = DefaultGtfsFeeds.byId(feedId);
     if (seed == null) {
       throw ArgumentError('Unknown feed id: $feedId');
     }
 
-    final downloadUrl = seed.downloadUrl;
-    if (downloadUrl == null || downloadUrl.isEmpty) {
-      throw StateError('No download URL configured for ${seed.agencyName}.');
+    if (!seed.hasDirectDownload) {
+      throw StateError(
+        '${seed.agencyName} does not provide a direct GTFS download URL. '
+        'Use the open data page and import the zip manually.',
+      );
     }
 
     _errors.remove(feedId);
@@ -112,7 +114,7 @@ class GtfsFeedProvider extends ChangeNotifier {
     );
 
     try {
-      final bytes = await _downloadService.downloadFeed(downloadUrl);
+      final bytes = await _downloadService.downloadFeed(seed.downloadUrl!);
       await _downloadService.saveFeedZip(feedId: feedId, bytes: bytes);
 
       final parsed = _parserService.parseZipBytes(
@@ -142,7 +144,7 @@ class GtfsFeedProvider extends ChangeNotifier {
 
   Future<void> _refreshFeedList() async {
     final cachedInfos = await _cacheStore.loadFeedInfos();
-    _feeds = PredefinedGtfsFeeds.feeds
+    _feeds = DefaultGtfsFeeds.feeds
         .map((seed) => _mergeSeedWithCache(seed, cachedInfos))
         .toList(growable: false);
   }

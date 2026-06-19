@@ -24,9 +24,14 @@ class GtfsFeedInfo {
   const GtfsFeedInfo({
     required this.feedId,
     required this.agencyName,
-    required this.vehicleType,
+    required this.province,
+    required this.vehicleTypes,
     this.downloadUrl,
     this.supportsRealtime = false,
+    this.openDataPageUrl,
+    this.openDataPageLabel,
+    this.requiresUserAcknowledgement = false,
+    this.acknowledgementMessage,
     this.agencyCount = 0,
     this.routeCount = 0,
     this.stopCount = 0,
@@ -38,9 +43,14 @@ class GtfsFeedInfo {
 
   final String feedId;
   final String agencyName;
+  final String province;
+  final List<TransitVehicleType> vehicleTypes;
   final String? downloadUrl;
-  final TransitVehicleType vehicleType;
   final bool supportsRealtime;
+  final String? openDataPageUrl;
+  final String? openDataPageLabel;
+  final bool requiresUserAcknowledgement;
+  final String? acknowledgementMessage;
   final int agencyCount;
   final int routeCount;
   final int stopCount;
@@ -52,6 +62,18 @@ class GtfsFeedInfo {
   /// Legacy alias used by older cache entries.
   String get feedName => agencyName;
 
+  TransitVehicleType get primaryVehicleType =>
+      vehicleTypes.isNotEmpty ? vehicleTypes.first : TransitVehicleType.bus;
+
+  String get vehicleTypesLabel =>
+      vehicleTypes.map((type) => type.label).join(', ');
+
+  bool get hasDirectDownload =>
+      downloadUrl != null && downloadUrl!.trim().isNotEmpty;
+
+  bool get hasOpenDataPage =>
+      openDataPageUrl != null && openDataPageUrl!.trim().isNotEmpty;
+
   bool get isDownloaded =>
       status == GtfsFeedStatus.downloaded ||
       status == GtfsFeedStatus.updating ||
@@ -60,9 +82,14 @@ class GtfsFeedInfo {
   GtfsFeedInfo copyWith({
     String? feedId,
     String? agencyName,
+    String? province,
+    List<TransitVehicleType>? vehicleTypes,
     String? downloadUrl,
-    TransitVehicleType? vehicleType,
     bool? supportsRealtime,
+    String? openDataPageUrl,
+    String? openDataPageLabel,
+    bool? requiresUserAcknowledgement,
+    String? acknowledgementMessage,
     int? agencyCount,
     int? routeCount,
     int? stopCount,
@@ -74,9 +101,16 @@ class GtfsFeedInfo {
     return GtfsFeedInfo(
       feedId: feedId ?? this.feedId,
       agencyName: agencyName ?? this.agencyName,
+      province: province ?? this.province,
+      vehicleTypes: vehicleTypes ?? this.vehicleTypes,
       downloadUrl: downloadUrl ?? this.downloadUrl,
-      vehicleType: vehicleType ?? this.vehicleType,
       supportsRealtime: supportsRealtime ?? this.supportsRealtime,
+      openDataPageUrl: openDataPageUrl ?? this.openDataPageUrl,
+      openDataPageLabel: openDataPageLabel ?? this.openDataPageLabel,
+      requiresUserAcknowledgement:
+          requiresUserAcknowledgement ?? this.requiresUserAcknowledgement,
+      acknowledgementMessage:
+          acknowledgementMessage ?? this.acknowledgementMessage,
       agencyCount: agencyCount ?? this.agencyCount,
       routeCount: routeCount ?? this.routeCount,
       stopCount: stopCount ?? this.stopCount,
@@ -90,12 +124,22 @@ class GtfsFeedInfo {
   factory GtfsFeedInfo.fromJson(Map<String, dynamic> json) {
     final agencyName =
         json['agencyName'] as String? ?? json['feedName'] as String? ?? '';
+    final vehicleTypes = json['vehicleTypes'] != null
+        ? TransitVehicleTypeX.listFromJson(json['vehicleTypes'])
+        : TransitVehicleTypeX.listFromJson(json['vehicleType']);
+
     return GtfsFeedInfo(
       feedId: json['feedId'] as String,
       agencyName: agencyName,
+      province: json['province'] as String? ?? 'Ontario',
+      vehicleTypes: vehicleTypes,
       downloadUrl: json['downloadUrl'] as String?,
-      vehicleType: TransitVehicleTypeX.fromName(json['vehicleType'] as String?),
       supportsRealtime: json['supportsRealtime'] as bool? ?? false,
+      openDataPageUrl: json['openDataPageUrl'] as String?,
+      openDataPageLabel: json['openDataPageLabel'] as String?,
+      requiresUserAcknowledgement:
+          json['requiresUserAcknowledgement'] as bool? ?? false,
+      acknowledgementMessage: json['acknowledgementMessage'] as String?,
       agencyCount: json['agencyCount'] as int? ?? 0,
       routeCount: json['routeCount'] as int? ?? 0,
       stopCount: json['stopCount'] as int? ?? 0,
@@ -116,9 +160,14 @@ class GtfsFeedInfo {
       'feedId': feedId,
       'agencyName': agencyName,
       'feedName': agencyName,
+      'province': province,
+      'vehicleTypes': vehicleTypes.map((type) => type.name).toList(),
       'downloadUrl': downloadUrl,
-      'vehicleType': vehicleType.name,
       'supportsRealtime': supportsRealtime,
+      'openDataPageUrl': openDataPageUrl,
+      'openDataPageLabel': openDataPageLabel,
+      'requiresUserAcknowledgement': requiresUserAcknowledgement,
+      'acknowledgementMessage': acknowledgementMessage,
       'agencyCount': agencyCount,
       'routeCount': routeCount,
       'stopCount': stopCount,

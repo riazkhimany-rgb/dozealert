@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 import '../cache/gtfs_cache_store.dart';
-import '../data/predefined_gtfs_feeds.dart';
+import '../data/default_gtfs_feeds.dart';
 import '../models/gtfs_feed_info.dart';
+import '../models/transit_vehicle_type.dart';
 import 'gtfs_parser_service.dart';
 
 class GtfsImportService {
@@ -14,11 +15,10 @@ class GtfsImportService {
   static const supportedExamples = <String>[
     'GO Transit',
     'TTC',
-    'MiWay',
-    'STM Montreal',
-    'Exo Montreal',
-    'Amtrak',
-    'National Rail',
+    'York Region Transit',
+    'Grand River Transit',
+    'Brampton Transit',
+    'Niagara Region Transit',
   ];
 
   Future<List<GtfsCachedFeed>> loadCache() {
@@ -65,21 +65,26 @@ class GtfsImportService {
   }
 
   GtfsFeedInfo _seedFeedForName(String name) {
-    final normalized = name.toLowerCase();
-    for (final feed in PredefinedGtfsFeeds.feeds) {
-      if (feed.agencyName.toLowerCase() == normalized ||
-          feed.feedId == normalized.replaceAll(' ', '_')) {
-        return feed;
-      }
+    final byName = DefaultGtfsFeeds.byAgencyName(name);
+    if (byName != null) {
+      return byName;
+    }
+
+    final feedId = name
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+
+    final byId = DefaultGtfsFeeds.byId(feedId);
+    if (byId != null) {
+      return byId;
     }
 
     return GtfsFeedInfo(
-      feedId: name
-          .toLowerCase()
-          .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-          .replaceAll(RegExp(r'^_|_$'), ''),
+      feedId: feedId,
       agencyName: name,
-      vehicleType: PredefinedGtfsFeeds.feeds.first.vehicleType,
+      province: 'Ontario',
+      vehicleTypes: const [TransitVehicleType.bus],
     );
   }
 }

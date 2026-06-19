@@ -46,6 +46,32 @@ void main() {
     expect(results.first.routeName, isNotEmpty);
   });
 
+  test('lists stops for selected GO Transit line', () {
+    final stops = gtfsService.stopsForTransitLine(
+      transitSystem: 'GO Transit',
+      lineName: 'Lakeshore West',
+    );
+
+    expect(stops, isNotEmpty);
+    expect(stops.any((stop) => stop.stopName == 'Bronte GO'), isTrue);
+    expect(stops.first.stopSequence, lessThan(stops.last.stopSequence));
+  });
+
+  test('filters stops on a line by query', () {
+    final route = gtfsService.routeForTransitLine(
+      transitSystem: 'GO Transit',
+      lineName: 'Lakeshore West',
+    );
+    expect(route, isNotNull);
+
+    final filtered = gtfsService.filterStopsOnRoute(
+      routeId: route!.routeId,
+      query: 'Bro',
+    );
+
+    expect(filtered.any((stop) => stop.stopName == 'Bronte GO'), isTrue);
+  });
+
   test('transit mode calculates stops remaining', () {
     const destination = Destination(
       name: 'Bronte GO',

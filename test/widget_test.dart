@@ -150,15 +150,9 @@ void main() {
 
     expect(find.text('DozeAlert'), findsOneWidget);
     expect(find.text('Destination'), findsOneWidget);
-    expect(find.text('Monitoring'), findsOneWidget);
+    expect(find.text('Pick Stop'), findsOneWidget);
     expect(find.text('No destination selected'), findsWidgets);
     expect(find.text('Change Destination'), findsOneWidget);
-    expect(find.text('Start Monitoring'), findsOneWidget);
-    expect(find.text('Stop Monitoring'), findsOneWidget);
-    expect(find.textContaining('Idle'), findsOneWidget);
-    expect(find.text('Transit Settings'), findsNothing);
-    expect(find.text('Train Mode'), findsNothing);
-    expect(find.text('Wake-Up Radius'), findsNothing);
 
     await tester.tap(find.text('Choose Destination'));
     await tester.pumpAndSettle();
@@ -171,6 +165,21 @@ void main() {
 
     expect(find.text('Union Station'), findsWidgets);
     expect(find.text('No destination selected'), findsNothing);
+
+    await tester.scrollUntilVisible(
+      find.text('Monitoring'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Monitoring'), findsOneWidget);
+    expect(find.text('Start Monitoring'), findsOneWidget);
+    expect(find.text('Stop Monitoring'), findsOneWidget);
+    expect(find.textContaining('Idle'), findsOneWidget);
+    expect(find.text('Transit Settings'), findsNothing);
+    expect(find.text('Train Mode'), findsNothing);
+    expect(find.text('Wake-Up Radius'), findsNothing);
 
     await tester.scrollUntilVisible(
       find.text('Distance'),
@@ -248,7 +257,7 @@ void main() {
     await tester.tap(find.text('Transit Data'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Download Feed'), findsWidgets);
+    expect(find.text('Download'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();

@@ -7,6 +7,7 @@ import '../models/destination.dart';
 import '../models/monitoring_state.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_vehicle_type.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/transit_mode_provider.dart';
@@ -14,6 +15,7 @@ import '../providers/transit_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
+import '../widgets/stop_picker_sheet.dart';
 import '../widgets/arrival_dialog.dart';
 import '../widgets/home_card.dart';
 import 'destination_screen.dart';
@@ -100,6 +102,12 @@ class _DestinationCard extends StatelessWidget {
     final snapshot = context.select<TransitModeProvider, TransitModeSnapshot>(
       (provider) => provider.snapshot,
     );
+    final canPickStop = context.select<GtfsProvider, bool>(
+      (provider) => provider.hasStopsForSelectedLine(),
+    );
+    final selectedLine = context.select<GtfsProvider, String>(
+      (provider) => provider.selectedLineLabel,
+    );
 
     return HomeCard(
       child: Column(
@@ -155,6 +163,26 @@ class _DestinationCard extends StatelessWidget {
                 : '—',
           ),
           const SizedBox(height: 20),
+          if (canPickStop) ...[
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                onPressed: () => StopPickerSheet.show(context),
+                icon: const Icon(Icons.route_outlined),
+                label: const Text('Pick Stop'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                selectedLine,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(

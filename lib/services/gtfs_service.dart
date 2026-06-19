@@ -428,6 +428,65 @@ class GtfsService {
     return _stopsByRouteId[routeId] ?? const [];
   }
 
+  TransitRoute? routeForTransitLine({
+    required String transitSystem,
+    required String lineName,
+  }) {
+    for (final route in _routes) {
+      if (route.transitSystem == transitSystem &&
+          (route.lineName == lineName || route.routeName == lineName)) {
+        return route;
+      }
+    }
+    return null;
+  }
+
+  List<TransitStop> stopsForTransitLine({
+    required String transitSystem,
+    required String lineName,
+  }) {
+    final route = routeForTransitLine(
+      transitSystem: transitSystem,
+      lineName: lineName,
+    );
+    if (route == null) {
+      return const [];
+    }
+
+    final stops = List<TransitStop>.from(stopsForRoute(route.routeId))
+      ..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
+    return stops;
+  }
+
+  List<TransitStop> filterStopsOnRoute({
+    required String routeId,
+    required String query,
+  }) {
+    final normalizedQuery = query.trim().toLowerCase();
+    final routeStops = stopsForRoute(routeId);
+    if (normalizedQuery.isEmpty) {
+      return List<TransitStop>.from(routeStops)
+        ..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
+    }
+
+    return routeStops
+        .where(
+          (stop) => stop.stopName.toLowerCase().contains(normalizedQuery),
+        )
+        .toList(growable: false)
+      ..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
+  }
+
+  bool hasStopsForTransitLine({
+    required String transitSystem,
+    required String lineName,
+  }) {
+    return stopsForTransitLine(
+      transitSystem: transitSystem,
+      lineName: lineName,
+    ).isNotEmpty;
+  }
+
   AgencyDetectionResult? _detectionForStop(TransitStop stop) {
     final route = _routesById[stop.routeId];
     final agency = route == null ? null : _agenciesById[route.agencyId];

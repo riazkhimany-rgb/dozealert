@@ -22,6 +22,7 @@ class GtfsProvider extends ChangeNotifier {
     this._transitModeProvider,
   ) {
     _monitoringProvider.addListener(_handleDestinationChanged);
+    _transitProvider.addListener(_handleTransitPreferencesChanged);
   }
 
   final GtfsService _gtfsService;
@@ -95,6 +96,55 @@ class GtfsProvider extends ChangeNotifier {
     return _gtfsService.searchStopResults(query);
   }
 
+  bool hasStopsForSelectedLine() {
+    if (!_initialized) {
+      return false;
+    }
+
+    final preferences = _transitProvider.preferences;
+    return _gtfsService.hasStopsForTransitLine(
+      transitSystem: preferences.transitSystem,
+      lineName: preferences.defaultLine,
+    );
+  }
+
+  List<TransitStop> stopsForSelectedLine() {
+    if (!_initialized) {
+      return const [];
+    }
+
+    final preferences = _transitProvider.preferences;
+    return _gtfsService.stopsForTransitLine(
+      transitSystem: preferences.transitSystem,
+      lineName: preferences.defaultLine,
+    );
+  }
+
+  List<TransitStop> filterStopsForSelectedLine(String query) {
+    if (!_initialized) {
+      return const [];
+    }
+
+    final preferences = _transitProvider.preferences;
+    final route = _gtfsService.routeForTransitLine(
+      transitSystem: preferences.transitSystem,
+      lineName: preferences.defaultLine,
+    );
+    if (route == null) {
+      return const [];
+    }
+
+    return _gtfsService.filterStopsOnRoute(
+      routeId: route.routeId,
+      query: query,
+    );
+  }
+
+  String get selectedLineLabel {
+    final preferences = _transitProvider.preferences;
+    return '${preferences.transitSystem} · ${preferences.defaultLine}';
+  }
+
   AgencyDetectionResult? detectAgencyFromDestination(String destinationName) {
     return _gtfsService.detectAgencyFromDestination(destinationName);
   }
@@ -139,6 +189,10 @@ class GtfsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _handleTransitPreferencesChanged() {
+    notifyListeners();
+  }
+
   void _handleDestinationChanged() {
     final destination = _monitoringProvider.selectedDestination;
     if (destination == null) {
@@ -153,6 +207,7 @@ class GtfsProvider extends ChangeNotifier {
   @override
   void dispose() {
     _monitoringProvider.removeListener(_handleDestinationChanged);
+    _transitProvider.removeListener(_handleTransitPreferencesChanged);
     super.dispose();
   }
 }

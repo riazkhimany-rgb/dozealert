@@ -1,9 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/gtfs_feed_info.dart';
-import '../models/transit_vehicle_type.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../widgets/home_card.dart';
 
@@ -16,6 +16,63 @@ class TransitDataScreen extends StatefulWidget {
 
 class _TransitDataScreenState extends State<TransitDataScreen> {
   String? _busyFeedId;
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await canLaunchUrl(uri)) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open $url')),
+      );
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<bool> _confirmYrtAcknowledgement(GtfsFeedInfo feed) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('YRT Open Data'),
+          content: Text(
+            feed.acknowledgementMessage ??
+                'YRT requires you to review their open data terms before '
+                'downloading GTFS data.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
+  }
+
+  Future<void> _openDataPage(GtfsFeedInfo feed) async {
+    final url = feed.openDataPageUrl;
+    if (url == null) {
+      return;
+    }
+
+    if (feed.requiresUserAcknowledgement) {
+      final confirmed = await _confirmYrtAcknowledgement(feed);
+      if (!confirmed || !mounted) {
+        return;
+      }
+    }
+
+    await _launchUrl(url);
+  }
 
   Future<void> _runFeedAction(
     String feedId,
@@ -111,7 +168,7 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
               children: [
                 const HomeCardHeader(
                   icon: Icons.cloud_download_outlined,
-                  title: 'Offline Transit Feeds',
+                  title: 'Ontario Transit Feeds',
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -144,18 +201,27 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
                 feed: feed,
                 isBusy: _busyFeedId == feed.feedId,
                 errorMessage: feedProvider.errorFor(feed.feedId),
-                onDownload: () => _runFeedAction(
-                  feed.feedId,
-                  () => feedProvider.downloadFeed(feed.feedId),
-                ),
-                onUpdate: () => _runFeedAction(
-                  feed.feedId,
-                  () => feedProvider.updateFeed(feed.feedId),
-                ),
-                onDelete: () => _runFeedAction(
-                  feed.feedId,
-                  () => feedProvider.deleteFeed(feed.feedId),
-                ),
+                onDownload: feed.hasDirectDownload
+                    ? () => _runFeedAction(
+                        feed.feedId,
+                        () => feedProvider.downloadFeed(feed.feedId),
+                      )
+                    : null,
+                onUpdate: feed.hasDirectDownload && feed.isDownloaded
+                    ? () => _runFeedAction(
+                        feed.feedId,
+                        () => feedProvider.updateFeed(feed.feedId),
+                      )
+                    : null,
+                onDelete: feed.isDownloaded
+                    ? () => _runFeedAction(
+                        feed.feedId,
+                        () => feedProvider.deleteFeed(feed.feedId),
+                      )
+                    : null,
+                onOpenDataPage: feed.hasOpenDataPage
+                    ? () => _openDataPage(feed)
+                    : null,
               ),
             ),
         ],
@@ -168,18 +234,20 @@ class _FeedCard extends StatelessWidget {
   const _FeedCard({
     required this.feed,
     required this.isBusy,
-    required this.onDownload,
-    required this.onUpdate,
-    required this.onDelete,
+    this.onDownload,
+    this.onUpdate,
+    this.onDelete,
+    this.onOpenDataPage,
     this.errorMessage,
   });
 
   final GtfsFeedInfo feed;
   final bool isBusy;
+  final VoidCallback? onDownload;
+  final VoidCallback? onUpdate;
+  final VoidCallback? onDelete;
+  final VoidCallback? onOpenDataPage;
   final String? errorMessage;
-  final VoidCallback onDownload;
-  final VoidCallback onUpdate;
-  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -202,19 +270,28 @@ class _FeedCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              feed.vehicleType.label,
+              feed.province,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.primary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 12),
-            _MetricRow(label: 'Feed Status', value: feed.status.label),
+            _MetricRow(label: 'Vehicle types', value: feed.vehicleTypesLabel),
             const SizedBox(height: 8),
             _MetricRow(label: 'Last Updated', value: lastUpdated),
             const SizedBox(height: 8),
-            _MetricRow(label: 'Routes', value: '${feed.routeCount}'),
-            const SizedBox(height: 8),
             _MetricRow(label: 'Stops', value: '${feed.stopCount}'),
+            const SizedBox(height: 8),
+            _MetricRow(label: 'Routes', value: '${feed.routeCount}'),
+            if (feed.supportsRealtime) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Supports realtime',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.primary,
+                ),
+              ),
+            ],
             if (errorMessage != null) ...[
               const SizedBox(height: 8),
               Text(
@@ -227,34 +304,41 @@ class _FeedCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                FilledButton.icon(
-                  onPressed: isBusy ? null : onDownload,
-                  icon: isBusy
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colorScheme.onPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.download_outlined, size: 18),
-                  label: const Text('Download Feed'),
-                ),
-                if (feed.isDownloaded)
+                if (onDownload != null)
+                  FilledButton.icon(
+                    onPressed: isBusy ? null : onDownload,
+                    icon: isBusy
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          )
+                        : const Icon(Icons.download_outlined, size: 18),
+                    label: const Text('Download'),
+                  ),
+                if (onUpdate != null)
                   OutlinedButton.icon(
                     onPressed: isBusy ? null : onUpdate,
                     icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Update Feed'),
+                    label: const Text('Update'),
                   ),
-                if (feed.isDownloaded)
+                if (onDelete != null)
                   TextButton.icon(
                     onPressed: isBusy ? null : onDelete,
                     icon: Icon(Icons.delete_outline, color: colorScheme.error),
                     label: Text(
-                      'Delete Feed',
+                      'Delete',
                       style: TextStyle(color: colorScheme.error),
                     ),
+                  ),
+                if (onOpenDataPage != null)
+                  OutlinedButton.icon(
+                    onPressed: isBusy ? null : onOpenDataPage,
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: Text(feed.openDataPageLabel ?? 'Open Data Page'),
                   ),
               ],
             ),
@@ -287,10 +371,13 @@ class _MetricRow extends StatelessWidget {
             color: colorScheme.onSurfaceVariant,
           ),
         ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
