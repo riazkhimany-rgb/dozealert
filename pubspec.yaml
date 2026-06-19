@@ -71,7 +71,7 @@ flutter:
     - .env
     - assets/branding/
     - assets/sounds/
-    - assets/transit/
+    - assets/transit/Canada/GO_Transit/
     - privacy_policy.md
 
 flutter_launcher_icons:

@@ -87,6 +87,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Favorite Stations'), findsOneWidget);
+    expect(find.text('Union GO'), findsOneWidget);
+    expect(find.text('Search Station'), findsOneWidget);
     expect(find.text('Destination'), findsOneWidget);
     expect(find.text('No destination selected'), findsWidgets);
     expect(find.text('Choose Destination'), findsOneWidget);

@@ -184,25 +184,48 @@ class _TransitMetricRow extends StatelessWidget {
   }
 }
 
-class _QuickDestinationsCard extends StatelessWidget {
+class _QuickDestinationsCard extends StatefulWidget {
   const _QuickDestinationsCard();
+
+  @override
+  State<_QuickDestinationsCard> createState() => _QuickDestinationsCardState();
+}
+
+class _QuickDestinationsCardState extends State<_QuickDestinationsCard> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _debugExpanded = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectStation(
     BuildContext context,
     TransitStation station,
   ) async {
     await context.read<TransitLineProvider>().setDestinationStation(station);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _searchQuery = '';
+      _searchController.clear();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final lineStations = context.select<TransitLineProvider, List<TransitStation>>(
-      (provider) => provider.currentStations,
-    );
+    final lineProvider = context.watch<TransitLineProvider>();
+    final lineStations = lineProvider.currentStations;
     final recentStations = context.select<TransitProvider, List<Destination>>(
       (provider) => provider.recentStations,
     );
+    final searchResults = lineProvider.filterStations(_searchQuery);
+    final isLoading = lineProvider.isLoading;
 
     return HomeCard(
       child: Column(
@@ -213,6 +236,60 @@ class _QuickDestinationsCard extends StatelessWidget {
             title: 'Quick Destinations',
           ),
           const SizedBox(height: 16),
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              labelText: 'Search Station',
+              hintText: 'e.g. Bro, Oak, Uni',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+          ),
+          if (_searchQuery.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Search Results',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (searchResults.isEmpty)
+              Text(
+                'No matching stations.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              )
+            else
+              SizedBox(
+                height: 44,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: searchResults.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final station = searchResults[index];
+                    return ActionChip(
+                      label: Text(station.name),
+                      onPressed: () => _selectStation(context, station),
+                    );
+                  },
+                ),
+              ),
+          ],
+          const SizedBox(height: 16),
           Text(
             'Favorite Stations',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -221,25 +298,33 @@ class _QuickDestinationsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          if (lineStations.isEmpty)
+          if (isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: LinearProgressIndicator(),
+            )
+          else if (lineStations.isEmpty)
             Text(
-              'No favorite stations for this transit line.',
+              'No stations available',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             )
           else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: lineStations
-                  .map(
-                    (station) => ActionChip(
-                      label: Text(station.name),
-                      onPressed: () => _selectStation(context, station),
-                    ),
-                  )
-                  .toList(),
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: lineStations.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final station = lineStations[index];
+                  return ActionChip(
+                    label: Text(station.name),
+                    onPressed: () => _selectStation(context, station),
+                  );
+                },
+              ),
             ),
           if (recentStations.isNotEmpty) ...[
             const SizedBox(height: 20),
@@ -251,21 +336,76 @@ class _QuickDestinationsCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: recentStations
-                  .map(
-                    (station) => ActionChip(
-                      label: Text(station.name),
-                      onPressed: () => context
-                          .read<TransitLineProvider>()
-                          .selectRecentDestination(station),
-                    ),
-                  )
-                  .toList(),
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: recentStations.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final station = recentStations[index];
+                  return ActionChip(
+                    label: Text(station.name),
+                    onPressed: () => context
+                        .read<TransitLineProvider>()
+                        .selectRecentDestination(station),
+                  );
+                },
+              ),
             ),
           ],
+          const SizedBox(height: 8),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: EdgeInsets.zero,
+            initiallyExpanded: _debugExpanded,
+            onExpansionChanged: (expanded) {
+              setState(() {
+                _debugExpanded = expanded;
+              });
+            },
+            title: Text(
+              'Transit Debug',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            children: [
+              _TransitMetricRow(
+                label: 'Current Country',
+                value: lineProvider.currentCountry,
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'Current Transit System',
+                value: lineProvider.currentTransitSystem,
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'Current Line',
+                value: lineProvider.currentLineName,
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'JSON File Path',
+                value: lineProvider.loadedAssetPath ?? '—',
+              ),
+              const SizedBox(height: 8),
+              _TransitMetricRow(
+                label: 'Stations Loaded',
+                value: lineProvider.stationCount.toString(),
+              ),
+              if (lineProvider.loadError != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  lineProvider.loadError!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.error,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -297,7 +437,7 @@ class _StationDetailsCard extends StatelessWidget {
             title: 'Station Details',
           ),
           const SizedBox(height: 16),
-          _TransitMetricRow(label: 'Selected Station', value: station.name),
+          _TransitMetricRow(label: 'Station Name', value: station.name),
           const SizedBox(height: 8),
           _TransitMetricRow(label: 'Line', value: lineName ?? '—'),
           const SizedBox(height: 8),
