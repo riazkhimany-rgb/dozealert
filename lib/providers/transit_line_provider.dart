@@ -7,6 +7,7 @@ import '../models/transit_station.dart';
 import '../services/transit_data_service.dart';
 import 'monitoring_provider.dart';
 import 'transit_provider.dart';
+import '../utils/app_log.dart';
 
 class TransitLineProvider extends ChangeNotifier {
   TransitLineProvider(
@@ -86,12 +87,12 @@ class TransitLineProvider extends ChangeNotifier {
     _isLoading = false;
 
     if (result.isSuccess) {
-      debugPrint(
+      AppLog.d(
         'TransitLineProvider: ${result.fromCache ? 'cache hit' : 'loaded'} '
         '${result.assetPath} (${result.stationCount} stations)',
       );
     } else {
-      debugPrint(
+      AppLog.d(
         'TransitLineProvider: failed to load ${result.assetPath}: ${result.error}',
       );
     }

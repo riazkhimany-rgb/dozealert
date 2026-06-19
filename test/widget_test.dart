@@ -29,6 +29,7 @@ import 'package:dozealert/services/settings_service.dart';
 import 'package:dozealert/services/transit_mode_service.dart';
 import 'package:dozealert/services/transit_data_service.dart';
 import 'package:dozealert/services/trip_history_service.dart';
+import 'package:dozealert/utils/app_branding.dart';
 
 class _FakePathProvider {
   static void install() {
@@ -150,8 +151,8 @@ void main() {
 
     expect(find.text('DozeAlert'), findsOneWidget);
     expect(find.text('Monitoring'), findsOneWidget);
-    expect(find.text('Start Monitoring'), findsOneWidget);
-    expect(find.text('Stop Monitoring'), findsOneWidget);
+    expect(find.text('Start'), findsOneWidget);
+    expect(find.text('Stop'), findsOneWidget);
     expect(find.textContaining('Idle'), findsOneWidget);
 
     await tester.scrollUntilVisible(
@@ -180,24 +181,8 @@ void main() {
     expect(find.text('Transit Settings'), findsNothing);
     expect(find.text('Train Mode'), findsNothing);
     expect(find.text('Wake-Up Radius'), findsNothing);
-
-    await tester.scrollUntilVisible(
-      find.text('Distance'),
-      500,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Distance'), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      find.text('Recent Destinations'),
-      500,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Recent Destinations'), findsOneWidget);
+    expect(find.text('Distance'), findsNothing);
+    expect(find.text('Recent Destinations'), findsNothing);
 
     await tester.tap(find.text('Trips'));
     await tester.pumpAndSettle();
@@ -271,6 +256,13 @@ void main() {
     expect(find.text('Home'), findsWidgets);
     expect(find.text('Trips'), findsWidgets);
     expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Share'), findsWidgets);
+
+    await tester.tap(find.text('Share'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Share DozeAlert'), findsOneWidget);
+    expect(find.text(AppBranding.tagline), findsWidgets);
   });
 
   testWidgets('persists and clears selected destination', (
@@ -310,5 +302,25 @@ void main() {
     await clearedProvider.loadSavedDestination();
 
     expect(clearedProvider.selectedDestination, isNull);
+  });
+
+  test('persists wake radius without an active monitoring session', () async {
+    SharedPreferences.setMockInitialValues({});
+
+    final monitoringStorageService = MonitoringStorageService();
+    final monitoringProvider = MonitoringProvider(
+      DestinationStorageService(),
+      monitoringStorageService,
+    );
+
+    await monitoringProvider.setRadius(250);
+
+    final reloadedProvider = MonitoringProvider(
+      DestinationStorageService(),
+      monitoringStorageService,
+    );
+    await reloadedProvider.loadMonitoringSession();
+
+    expect(reloadedProvider.radiusMeters, 250);
   });
 }

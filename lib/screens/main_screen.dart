@@ -1,13 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/location_provider.dart';
 import '../providers/navigation_provider.dart';
-import 'developer_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
+import 'share_screen.dart';
 import 'trips_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -18,35 +17,34 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
-  List<NavigationDestination> get _destinations => [
-    const NavigationDestination(
+  static const _destinations = [
+    NavigationDestination(
       icon: Icon(Icons.home_outlined),
       selectedIcon: Icon(Icons.home),
       label: 'Home',
     ),
-    const NavigationDestination(
+    NavigationDestination(
       icon: Icon(Icons.route_outlined),
       selectedIcon: Icon(Icons.route),
       label: 'Trips',
     ),
-    const NavigationDestination(
+    NavigationDestination(
       icon: Icon(Icons.settings_outlined),
       selectedIcon: Icon(Icons.settings),
       label: 'Settings',
     ),
-    if (kDebugMode)
-      const NavigationDestination(
-        icon: Icon(Icons.developer_mode_outlined),
-        selectedIcon: Icon(Icons.developer_mode),
-        label: 'Developer',
-      ),
+    NavigationDestination(
+      icon: Icon(Icons.share_outlined),
+      selectedIcon: Icon(Icons.share),
+      label: 'Share',
+    ),
   ];
 
-  List<Widget> get _screens => [
-    const HomeScreen(),
-    const TripsScreen(),
-    const SettingsScreen(),
-    if (kDebugMode) const DeveloperScreen(),
+  static const _screens = [
+    HomeScreen(),
+    TripsScreen(),
+    SettingsScreen(),
+    ShareScreen(),
   ];
 
   @override

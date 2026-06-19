@@ -1,10 +1,9 @@
-import 'package:flutter/foundation.dart';
-
 import '../cache/gtfs_cache_store.dart';
 import '../data/default_gtfs_feeds.dart';
 import '../models/gtfs_feed_info.dart';
 import '../models/transit_vehicle_type.dart';
 import 'gtfs_parser_service.dart';
+import '../utils/app_log.dart';
 
 class GtfsImportService {
   GtfsImportService(this._cacheStore, this._parserService);
@@ -52,15 +51,15 @@ class GtfsImportService {
   }
 
   Future<void> downloadGtfsFeed(String feedId) async {
-    debugPrint('GtfsImportService: downloadGtfsFeed($feedId) not implemented.');
+    AppLog.d('GtfsImportService: downloadGtfsFeed($feedId) not implemented.');
   }
 
   Future<void> updateFeed(String feedId) async {
-    debugPrint('GtfsImportService: updateFeed($feedId) not implemented.');
+    AppLog.d('GtfsImportService: updateFeed($feedId) not implemented.');
   }
 
   Future<List<GtfsCachedFeed>> refreshCache() async {
-    debugPrint('GtfsImportService: refreshCache() reloading local cache.');
+    AppLog.d('GtfsImportService: refreshCache() reloading local cache.');
     return loadCache();
   }
 

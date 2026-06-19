@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import '../models/current_location.dart';
 import 'background_location_task_handler.dart';
 import 'monitoring_storage_service.dart';
+import '../utils/app_log.dart';
 
 enum BackgroundMonitorStartResult {
   success,
@@ -111,8 +111,8 @@ class BackgroundMonitorService {
       _foregroundServiceRunning = await FlutterForegroundTask.isRunningService;
       _backgroundMonitoringEnabled = await _monitoringStorage.isMonitoringActive();
     } catch (error, stackTrace) {
-      debugPrint('BackgroundMonitorService: sync failed: $error');
-      debugPrint('$stackTrace');
+      AppLog.d('BackgroundMonitorService: sync failed: $error');
+      AppLog.d('$stackTrace');
     }
   }
 
@@ -183,7 +183,7 @@ class BackgroundMonitorService {
         _foregroundServiceRunning = true;
         return BackgroundMonitorStartResult.success;
       case ServiceRequestFailure(:final error):
-        debugPrint('BackgroundMonitorService: start failed: $error');
+        AppLog.d('BackgroundMonitorService: start failed: $error');
         _foregroundServiceRunning = false;
         _backgroundMonitoringEnabled = false;
         return BackgroundMonitorStartResult.foregroundServiceFailure;
@@ -203,8 +203,8 @@ class BackgroundMonitorService {
         await FlutterForegroundTask.stopService();
       }
     } catch (error, stackTrace) {
-      debugPrint('BackgroundMonitorService: stop failed: $error');
-      debugPrint('$stackTrace');
+      AppLog.d('BackgroundMonitorService: stop failed: $error');
+      AppLog.d('$stackTrace');
     }
   }
 

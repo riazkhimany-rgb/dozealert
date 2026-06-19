@@ -1,4 +1,4 @@
-package com.example.dozealert
+package app.dozealert
 
 import io.flutter.embedding.android.FlutterActivity
 

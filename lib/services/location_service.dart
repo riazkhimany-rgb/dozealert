@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/current_location.dart';
+import '../utils/app_log.dart';
 
 enum LocationPermissionStatus {
   granted,
@@ -119,7 +119,7 @@ class LocationService {
     } on PermissionDeniedException {
       rethrow;
     } catch (error) {
-      debugPrint('LocationService: fetchCurrentLocation failed: $error');
+      AppLog.d('LocationService: fetchCurrentLocation failed: $error');
       return null;
     }
   }

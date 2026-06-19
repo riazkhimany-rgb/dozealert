@@ -15,6 +15,7 @@ class SettingsProvider extends ChangeNotifier {
       _settingsService.settings.transitModeWake;
   AlarmSoundMode get alarmSoundMode => _settingsService.settings.alarmSoundMode;
   bool get alwaysPlayAlarmSound => _settingsService.settings.alwaysPlayAlarmSound;
+  double get alarmVolume => _settingsService.settings.alarmVolume;
 
   Future<void> setTestModeEnabled(bool enabled) async {
     if (enabled == testModeEnabled) {
@@ -56,6 +57,18 @@ class SettingsProvider extends ChangeNotifier {
 
     await _settingsService.saveSettings(
       _settingsService.settings.copyWith(alarmSoundMode: mode),
+    );
+    notifyListeners();
+  }
+
+  Future<void> setAlarmVolume(double volume) async {
+    final clamped = volume.clamp(0.0, 1.0);
+    if (clamped == alarmVolume) {
+      return;
+    }
+
+    await _settingsService.saveSettings(
+      _settingsService.settings.copyWith(alarmVolume: clamped),
     );
     notifyListeners();
   }

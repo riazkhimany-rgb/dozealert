@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/trip_history_entry.dart';
+import '../utils/app_log.dart';
 
 class TripHistoryService {
   static const _historyKey = 'trip_history_entries';
@@ -33,7 +33,7 @@ class TripHistoryService {
           )
           .toList(growable: false);
     } catch (error) {
-      debugPrint('TripHistoryService: failed to load history: $error');
+      AppLog.d('TripHistoryService: failed to load history: $error');
       return const [];
     }
   }
@@ -53,7 +53,7 @@ class TripHistoryService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_activeTripIdKey, entry.id);
 
-    debugPrint('TripHistoryService: started trip to $destination');
+    AppLog.d('TripHistoryService: started trip to $destination');
   }
 
   Future<void> recordAlarmTriggered() async {

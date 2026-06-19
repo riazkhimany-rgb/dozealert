@@ -27,7 +27,7 @@ class ArrivalDialog extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Destination Reached',
+                'Approaching Destination',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
@@ -35,7 +35,8 @@ class ArrivalDialog extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'You are approaching your destination.',
+                'Heads up! You are approaching your destination. '
+                'Voice alert and vibration will continue until you dismiss.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: colorScheme.onSurfaceVariant,
@@ -48,7 +49,7 @@ class ArrivalDialog extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: onDismiss,
                   icon: const Icon(Icons.alarm_off_outlined),
-                  label: const Text('Dismiss Alarm'),
+                  label: const Text('Dismiss'),
                 ),
               ),
             ],

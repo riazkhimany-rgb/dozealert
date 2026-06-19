@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../cache/gtfs_cache_store.dart';
 import '../data/transit_catalog.dart';
 import '../models/agency_detection_result.dart';
@@ -9,6 +7,7 @@ import '../models/transit_stop.dart';
 import '../models/transit_stop_search_result.dart';
 import '../models/transit_vehicle_type.dart';
 import 'transit_data_service.dart';
+import '../utils/app_log.dart';
 
 class GtfsService {
   GtfsService(this._transitDataService);
@@ -129,7 +128,7 @@ class GtfsService {
     }
 
     _initialized = true;
-    debugPrint(
+    AppLog.d(
       'GtfsService: initialized ${_stops.length} stops across ${_routes.length} routes',
     );
   }
@@ -158,7 +157,7 @@ class GtfsService {
       _stops.add(stop);
     }
 
-    debugPrint(
+    AppLog.d(
       'GtfsService: merged cached feed ${feed.info.feedName} '
       '(${feed.stops.length} stops)',
     );
@@ -194,7 +193,7 @@ class GtfsService {
       );
 
       if (result.line == null || result.line!.stations.isEmpty) {
-        debugPrint(
+        AppLog.d(
           'GtfsService: skipped empty JSON fallback for $lineName '
           '(${result.error ?? 'no stations'})',
         );
@@ -230,7 +229,7 @@ class GtfsService {
       _stops.addAll(routeStops);
       _stopsByRouteId[routeId] = routeStops;
 
-      debugPrint(
+      AppLog.d(
         'GtfsService: loaded JSON fallback $routeId (${routeStops.length} stops)',
       );
     }
@@ -364,7 +363,7 @@ class GtfsService {
       }
     }
 
-    debugPrint(
+    AppLog.d(
       'GtfsService: search "$query" returned ${matches.length} matches',
     );
     return matches;
@@ -494,7 +493,7 @@ class GtfsService {
       return null;
     }
 
-    debugPrint(
+    AppLog.d(
       'GtfsService: detected ${agency.agencyName} / ${route!.lineName} '
       'for ${stop.stopName}',
     );
@@ -561,27 +560,27 @@ class GtfsService {
   }
 
   Future<void> downloadGtfsFeeds() async {
-    debugPrint('GtfsService: downloadGtfsFeeds() is not implemented yet.');
+    AppLog.d('GtfsService: downloadGtfsFeeds() is not implemented yet.');
   }
 
   Future<void> refreshFeeds() async {
-    debugPrint('GtfsService: refreshFeeds() is not implemented yet.');
+    AppLog.d('GtfsService: refreshFeeds() is not implemented yet.');
   }
 
   Future<void> downloadRealtimeFeed(String agencyId) async {
-    debugPrint(
+    AppLog.d(
       'GtfsService: downloadRealtimeFeed($agencyId) is not implemented yet.',
     );
   }
 
   Future<void> updateRealtimeVehicles(String agencyId) async {
-    debugPrint(
+    AppLog.d(
       'GtfsService: updateRealtimeVehicles($agencyId) is not implemented yet.',
     );
   }
 
   Future<void> syncAllFeeds() async {
-    debugPrint('GtfsService: syncAllFeeds() is not implemented yet.');
+    AppLog.d('GtfsService: syncAllFeeds() is not implemented yet.');
   }
 
   bool supportsRealtime(String agencyId) {

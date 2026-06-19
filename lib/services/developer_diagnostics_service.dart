@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -13,6 +12,7 @@ import '../services/alarm_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/location_service.dart';
 import '../services/trip_history_service.dart';
+import '../utils/app_log.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
 
@@ -110,7 +110,7 @@ class DeveloperDiagnosticsService {
       const JsonEncoder.withIndent('  ').convert(payload),
     );
 
-    debugPrint('DeveloperDiagnosticsService: exported ${file.path}');
+    AppLog.d('DeveloperDiagnosticsService: exported ${file.path}');
     return file;
   }
 
@@ -125,7 +125,7 @@ class DeveloperDiagnosticsService {
     try {
       return (await permission.status).isGranted;
     } catch (error) {
-      debugPrint('DeveloperDiagnosticsService: permission check failed: $error');
+      AppLog.d('DeveloperDiagnosticsService: permission check failed: $error');
       return false;
     }
   }
@@ -134,7 +134,7 @@ class DeveloperDiagnosticsService {
     try {
       return await future;
     } catch (error) {
-      debugPrint('DeveloperDiagnosticsService: async check failed: $error');
+      AppLog.d('DeveloperDiagnosticsService: async check failed: $error');
       return fallback;
     }
   }

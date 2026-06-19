@@ -10,6 +10,7 @@ class AppSettings {
     this.transitModeEnabled = false,
     this.transitModeWake = TransitModeWakeSetting.oneStopBefore,
     this.alarmSoundMode = AlarmSoundMode.followDevice,
+    this.alarmVolume = 1.0,
   });
 
   final ThemeMode themeMode;
@@ -17,6 +18,7 @@ class AppSettings {
   final bool transitModeEnabled;
   final TransitModeWakeSetting transitModeWake;
   final AlarmSoundMode alarmSoundMode;
+  final double alarmVolume;
 
   bool get alwaysPlayAlarmSound =>
       alarmSoundMode == AlarmSoundMode.alwaysPlaySound;
@@ -27,6 +29,7 @@ class AppSettings {
     bool? transitModeEnabled,
     TransitModeWakeSetting? transitModeWake,
     AlarmSoundMode? alarmSoundMode,
+    double? alarmVolume,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -34,6 +37,7 @@ class AppSettings {
       transitModeEnabled: transitModeEnabled ?? this.transitModeEnabled,
       transitModeWake: transitModeWake ?? this.transitModeWake,
       alarmSoundMode: alarmSoundMode ?? this.alarmSoundMode,
+      alarmVolume: alarmVolume ?? this.alarmVolume,
     );
   }
 }

@@ -8,6 +8,7 @@ import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/transit_mode_provider.dart';
 import '../services/developer_diagnostics_service.dart';
+import '../utils/app_log.dart';
 import '../utils/location_format.dart';
 import '../widgets/home_card.dart';
 
@@ -51,7 +52,7 @@ class _DeveloperDashboardScreenState extends State<DeveloperDashboardScreen> {
         _hasLoaded = true;
       });
     } catch (error) {
-      debugPrint('DeveloperDashboardScreen: refresh failed: $error');
+      AppLog.d('DeveloperDashboardScreen: refresh failed: $error');
     } finally {
       if (mounted) {
         setState(() {

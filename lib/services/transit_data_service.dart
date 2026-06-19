@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../models/transit_line.dart';
 import '../models/transit_station.dart';
+import '../utils/app_log.dart';
 
 class TransitLineLoadResult {
   const TransitLineLoadResult({
@@ -62,7 +63,7 @@ class TransitDataService {
 
     final cached = _cache[key];
     if (cached != null) {
-      debugPrint(
+      AppLog.d(
         'TransitDataService: cache hit for $path (${cached.stations.length} stations)',
       );
       return TransitLineLoadResult(
@@ -72,7 +73,7 @@ class TransitDataService {
       );
     }
 
-    debugPrint('TransitDataService: loading $path');
+    AppLog.d('TransitDataService: loading $path');
 
     try {
       final raw = await rootBundle.loadString(path);
@@ -80,18 +81,18 @@ class TransitDataService {
       final line = TransitLine.fromJson(decoded);
       _cache[key] = line;
 
-      debugPrint(
+      AppLog.d(
         'TransitDataService: loaded $path (${line.stations.length} stations)',
       );
 
       return TransitLineLoadResult(assetPath: path, line: line);
     } on FlutterError catch (error) {
       final message = 'Missing file: $path (${error.message})';
-      debugPrint('TransitDataService: $message');
+      AppLog.d('TransitDataService: $message');
       return TransitLineLoadResult(assetPath: path, error: message);
     } catch (error) {
       final message = 'Failed to load $path: $error';
-      debugPrint('TransitDataService: $message');
+      AppLog.d('TransitDataService: $message');
       return TransitLineLoadResult(assetPath: path, error: message);
     }
   }

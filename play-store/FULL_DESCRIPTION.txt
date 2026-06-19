@@ -1,0 +1,17 @@
+DozeAlert helps commuters sleep peacefully and arrive confidently.
+
+Whether you're travelling by train, bus, car, or rideshare, DozeAlert detects when you may be sleeping and wakes you before you miss your destination.
+
+Features:
+
+• Supports buses, trains and cars
+• Smart sleep detection
+• Loud alarm and vibration alerts
+• Runs in background
+• Adjustable sensitivity
+• Battery optimized
+• Simple and lightweight
+• Ideal for daily commuters and long trips
+
+Tagline:
+Sleep peacefully. Arrive confidently.

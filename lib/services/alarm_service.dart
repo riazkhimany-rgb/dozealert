@@ -1,9 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:vibration/vibration.dart';
 
 import '../services/settings_service.dart';
+import '../utils/app_log.dart';
 
 class AlarmService {
   AlarmService(this._settingsService);
@@ -14,13 +18,17 @@ class AlarmService {
   static const _alarmAssetPath = 'sounds/alarm.mp3';
   static const _defaultChannelId = 'arrival_alerts';
   static const _forcedAlarmChannelId = 'arrival_alerts_forced';
+  static const _approachPhrase = 'Heads up! Approaching destination.';
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final FlutterTts _tts = FlutterTts();
 
   bool _initialized = false;
   bool _alarmActive = false;
+  bool _ttsConfigured = false;
+  Timer? _ttsRepeatTimer;
   DateTime? _lastAlarmTriggeredAt;
   DateTime? _lastAlarmDismissedAt;
 
@@ -35,7 +43,7 @@ class AlarmService {
 
     try {
       const androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+          AndroidInitializationSettings('@drawable/ic_stat_dozealert');
       const iosSettings = DarwinInitializationSettings();
       const settings = InitializationSettings(
         android: androidSettings,
@@ -71,20 +79,19 @@ class AlarmService {
       await androidPlugin?.createNotificationChannel(forcedAlarmChannel);
 
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-      await _audioPlayer.setVolume(1.0);
       await _audioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
 
       _initialized = true;
     } catch (error, stackTrace) {
-      debugPrint('AlarmService: initialize failed: $error');
-      debugPrint('$stackTrace');
+      AppLog.d('AlarmService: initialize failed: $error');
+      AppLog.d('$stackTrace');
     }
   }
 
   Future<void> playAlarm() async {
     await playApproachAlarm(
-      title: 'Destination Reached',
-      body: 'You are approaching your destination.',
+      title: 'Approaching Destination',
+      body: _approachPhrase,
     );
   }
 
@@ -100,14 +107,15 @@ class AlarmService {
     _lastAlarmTriggeredAt = DateTime.now();
 
     final forceSound = _settingsService.settings.alwaysPlayAlarmSound;
+    final volume = _settingsService.settings.alarmVolume;
+
+    await _startApproachSpeechLoop(volume: volume);
+    await _startVibration();
 
     if (forceSound) {
-      await _startForcedAlarmSound();
-    } else {
-      await _startAlarmSound(forceSound: false);
+      await _startForcedAlarmSound(volume: volume);
     }
 
-    await _startVibration();
     await showArrivalNotification(
       title: title,
       body: body,
@@ -123,14 +131,17 @@ class AlarmService {
     _alarmActive = false;
     _lastAlarmDismissedAt = DateTime.now();
 
+    _ttsRepeatTimer?.cancel();
+    _ttsRepeatTimer = null;
+    await _tts.stop();
     await _audioPlayer.stop();
     await _stopVibration();
     await _notifications.cancel(_arrivalNotificationId);
   }
 
   Future<void> showArrivalNotification({
-    String title = 'Destination Reached',
-    String body = 'You are approaching your destination.',
+    String title = 'Approaching Destination',
+    String body = _approachPhrase,
     bool? forceSound,
   }) async {
     try {
@@ -163,7 +174,7 @@ class AlarmService {
               ongoing: true,
               autoCancel: false,
               category: AndroidNotificationCategory.alarm,
-              playSound: true,
+              playSound: false,
             );
 
       final iosDetails = DarwinNotificationDetails(
@@ -187,12 +198,73 @@ class AlarmService {
         details,
       );
     } catch (error, stackTrace) {
-      debugPrint('AlarmService: failed to show notification: $error');
-      debugPrint('$stackTrace');
+      AppLog.d('AlarmService: failed to show notification: $error');
+      AppLog.d('$stackTrace');
     }
   }
 
-  Future<void> _startForcedAlarmSound() async {
+  Future<void> _configureTts({required double volume}) async {
+    await _tts.setVolume(volume.clamp(0.0, 1.0));
+    await _tts.setSpeechRate(0.48);
+    await _tts.awaitSpeakCompletion(true);
+
+    if (Platform.isAndroid) {
+      await _tts.setQueueMode(1);
+    }
+
+    if (Platform.isIOS) {
+      await _tts.setIosAudioCategory(
+        IosTextToSpeechAudioCategory.playback,
+        [
+          IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
+          IosTextToSpeechAudioCategoryOptions.duckOthers,
+          IosTextToSpeechAudioCategoryOptions
+              .interruptSpokenAudioAndMixWithOthers,
+        ],
+      );
+    }
+
+    _ttsConfigured = true;
+  }
+
+  Future<void> _startApproachSpeechLoop({required double volume}) async {
+    try {
+      if (!_ttsConfigured) {
+        await _configureTts(volume: volume);
+      } else {
+        await _tts.setVolume(volume);
+      }
+
+      unawaited(_speakApproachOnce(volume: volume));
+
+      _ttsRepeatTimer?.cancel();
+      _ttsRepeatTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        if (_alarmActive) {
+          unawaited(_speakApproachOnce(volume: volume));
+        }
+      });
+    } catch (error, stackTrace) {
+      AppLog.d('AlarmService: failed to start approach speech: $error');
+      AppLog.d('$stackTrace');
+    }
+  }
+
+  Future<void> _speakApproachOnce({required double volume}) async {
+    if (!_alarmActive) {
+      return;
+    }
+
+    try {
+      await _tts.setVolume(volume);
+      await _tts.stop();
+      await _tts.speak(_approachPhrase);
+    } catch (error, stackTrace) {
+      AppLog.d('AlarmService: TTS speak failed: $error');
+      AppLog.d('$stackTrace');
+    }
+  }
+
+  Future<void> _startForcedAlarmSound({required double volume}) async {
     try {
       await _audioPlayer.stop();
       await _audioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
@@ -215,44 +287,11 @@ class AlarmService {
         ),
       );
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-      await _audioPlayer.setVolume(1.0);
+      await _audioPlayer.setVolume(volume);
       await _audioPlayer.play(AssetSource(_alarmAssetPath));
     } catch (error, stackTrace) {
-      debugPrint('AlarmService: failed to play forced alarm sound: $error');
-      debugPrint('$stackTrace');
-    }
-  }
-
-  Future<void> _startAlarmSound({required bool forceSound}) async {
-    try {
-      await _audioPlayer.stop();
-      await _audioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
-      await _audioPlayer.setAudioContext(
-        AudioContext(
-          android: AudioContextAndroid(
-            isSpeakerphoneOn: forceSound,
-            stayAwake: true,
-            contentType: AndroidContentType.sonification,
-            usageType:
-                forceSound ? AndroidUsageType.alarm : AndroidUsageType.media,
-            audioFocus: AndroidAudioFocus.gain,
-          ),
-          iOS: AudioContextIOS(
-            category: forceSound
-                ? AVAudioSessionCategory.playback
-                : AVAudioSessionCategory.ambient,
-            options: forceSound
-                ? {AVAudioSessionOptions.duckOthers}
-                : {AVAudioSessionOptions.mixWithOthers},
-          ),
-        ),
-      );
-      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-      await _audioPlayer.setVolume(1.0);
-      await _audioPlayer.play(AssetSource(_alarmAssetPath));
-    } catch (error, stackTrace) {
-      debugPrint('AlarmService: failed to play alarm sound: $error');
-      debugPrint('$stackTrace');
+      AppLog.d('AlarmService: failed to play forced alarm sound: $error');
+      AppLog.d('$stackTrace');
     }
   }
 
@@ -274,8 +313,8 @@ class AlarmService {
         await Vibration.vibrate(pattern: [500, 500], repeat: 0);
       }
     } catch (error, stackTrace) {
-      debugPrint('AlarmService: vibration unavailable: $error');
-      debugPrint('$stackTrace');
+      AppLog.d('AlarmService: vibration unavailable: $error');
+      AppLog.d('$stackTrace');
     }
   }
 
@@ -283,8 +322,8 @@ class AlarmService {
     try {
       await Vibration.cancel();
     } catch (error, stackTrace) {
-      debugPrint('AlarmService: failed to cancel vibration: $error');
-      debugPrint('$stackTrace');
+      AppLog.d('AlarmService: failed to cancel vibration: $error');
+      AppLog.d('$stackTrace');
     }
   }
 

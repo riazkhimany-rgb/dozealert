@@ -37,8 +37,11 @@ class MonitoringProvider extends ChangeNotifier {
   }
 
   Future<void> loadMonitoringSession() async {
+    _radiusMeters = await _monitoringStorage.loadRadiusMeters();
+
     final session = await _monitoringStorage.loadSession();
     if (session == null) {
+      notifyListeners();
       return;
     }
 

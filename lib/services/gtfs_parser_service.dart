@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:archive/archive.dart';
-import 'package:flutter/foundation.dart';
 
 import '../models/gtfs_feed_info.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_route.dart';
+import '../utils/app_log.dart';
 import '../models/transit_stop.dart';
 import '../models/transit_vehicle_type.dart';
 
@@ -189,7 +189,7 @@ class GtfsParserService {
       errorMessage: null,
     );
 
-    debugPrint(
+    AppLog.d(
       'GtfsParserService: parsed ${feedInfo.agencyName} '
       '(${feedInfo.agencyCount} agencies, ${feedInfo.routeCount} routes, '
       '${feedInfo.stopCount} stops, calendar rows: ${calendarRaw.length})',

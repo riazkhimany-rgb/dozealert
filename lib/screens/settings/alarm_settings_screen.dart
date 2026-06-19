@@ -16,6 +16,11 @@ class AlarmSettingsScreen extends StatelessWidget {
     final alarmSoundMode = context.select<SettingsProvider, AlarmSoundMode>(
       (provider) => provider.alarmSoundMode,
     );
+    final alarmVolume = context.select<SettingsProvider, double>(
+      (provider) => provider.alarmVolume,
+    );
+    final alwaysPlaySound =
+        alarmSoundMode == AlarmSoundMode.alwaysPlaySound;
 
     return Scaffold(
       appBar: AppBar(
@@ -23,15 +28,55 @@ class AlarmSettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          const SettingsSectionHeader(title: 'Sound Override'),
+          const SettingsSectionHeader(title: 'Approach Alert'),
+          ListTile(
+            leading: Icon(Icons.record_voice_over_outlined,
+                color: colorScheme.primary),
+            title: const Text('Voice alert'),
+            subtitle: Text(
+              'Always speaks "Heads up! Approaching destination." with '
+              'vibration until you dismiss the alert.',
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+          ),
+          const Divider(height: 32),
+          const SettingsSectionHeader(title: 'Alert Volume'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Row(
+              children: [
+                Icon(Icons.volume_down, color: colorScheme.onSurfaceVariant),
+                Expanded(
+                  child: Slider(
+                    value: alarmVolume,
+                    divisions: 10,
+                    label: '${(alarmVolume * 100).round()}%',
+                    onChanged: context.read<SettingsProvider>().setAlarmVolume,
+                  ),
+                ),
+                Icon(Icons.volume_up, color: colorScheme.onSurfaceVariant),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Text(
+              'Controls voice alert volume and optional alarm tone volume.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const Divider(height: 32),
+          const SettingsSectionHeader(title: 'Alarm Sound Override'),
           SwitchListTile(
             secondary: Icon(Icons.volume_up_outlined, color: colorScheme.primary),
-            title: const Text('Always play sound'),
+            title: const Text('Always play alarm sound'),
             subtitle: Text(
               AlarmSoundMode.alwaysPlaySound.description,
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
-            value: alarmSoundMode == AlarmSoundMode.alwaysPlaySound,
+            value: alwaysPlaySound,
             onChanged: (enabled) {
               context.read<SettingsProvider>().setAlarmSoundMode(
                 enabled
@@ -40,26 +85,34 @@ class AlarmSettingsScreen extends StatelessWidget {
               );
             },
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            child: Text(
-              alarmSoundMode == AlarmSoundMode.alwaysPlaySound
-                  ? 'DozeAlert uses the alarm audio stream so sound plays even '
-                      'when your phone is on vibrate or silent. Make sure your '
-                      'alarm volume is turned up in system settings.'
-                  : AlarmSoundMode.followDevice.description,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+          if (alwaysPlaySound)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                'Uses the alarm audio stream so the tone plays even when your phone '
+                'is on vibrate or silent.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                AlarmSoundMode.followDevice.description,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
-          ),
           const Divider(height: 32),
           const SettingsSectionHeader(title: 'Alarm Sound'),
           ListTile(
             leading: Icon(Icons.music_note_outlined, color: colorScheme.primary),
             title: const Text('Alarm Sound'),
             subtitle: Text(
-              'Default arrival alarm',
+              'Optional looped tone when override is enabled',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             trailing: const Text('alarm.mp3'),
@@ -87,7 +140,9 @@ class AlarmSettingsScreen extends StatelessWidget {
                 }
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Playing test alarm. Tap Stop to silence.'),
+                    content: Text(
+                      'Playing approach alert. Tap Stop to silence.',
+                    ),
                     duration: Duration(seconds: 2),
                   ),
                 );

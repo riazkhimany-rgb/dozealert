@@ -7,6 +7,7 @@ import '../services/gtfs_download_service.dart';
 import '../services/gtfs_import_service.dart';
 import '../services/gtfs_parser_service.dart';
 import '../services/gtfs_service.dart';
+import '../utils/app_log.dart';
 
 class GtfsFeedProvider extends ChangeNotifier {
   GtfsFeedProvider(
@@ -99,7 +100,7 @@ class GtfsFeedProvider extends ChangeNotifier {
   }
 
   Future<void> syncAllFeeds() async {
-    debugPrint('GtfsFeedProvider: syncAllFeeds() is not implemented yet.');
+    AppLog.d('GtfsFeedProvider: syncAllFeeds() is not implemented yet.');
   }
 
   Future<void> _fetchFeed(String feedId, {required bool isUpdate}) async {

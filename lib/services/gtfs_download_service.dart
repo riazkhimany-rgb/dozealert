@@ -1,8 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+
+import '../utils/app_log.dart';
 
 class GtfsDownloadService {
   static const _gtfsFolderName = 'gtfs';
@@ -33,7 +34,7 @@ class GtfsDownloadService {
   }
 
   Future<List<int>> downloadFeed(String downloadUrl) async {
-    debugPrint('GtfsDownloadService: downloading $downloadUrl');
+    AppLog.d('GtfsDownloadService: downloading $downloadUrl');
     final response = await http.get(Uri.parse(downloadUrl)).timeout(
           const Duration(minutes: 2),
         );
@@ -57,7 +58,7 @@ class GtfsDownloadService {
   }) async {
     final zipFile = await feedDirectory(feedId);
     await zipFile.writeAsBytes(bytes, flush: true);
-    debugPrint('GtfsDownloadService: saved ${zipFile.path}');
+    AppLog.d('GtfsDownloadService: saved ${zipFile.path}');
     return zipFile;
   }
 
@@ -79,7 +80,7 @@ class GtfsDownloadService {
     final feedDir = Directory('${root.path}/$feedId');
     if (feedDir.existsSync()) {
       feedDir.deleteSync(recursive: true);
-      debugPrint('GtfsDownloadService: deleted $feedId');
+      AppLog.d('GtfsDownloadService: deleted $feedId');
     }
   }
 }

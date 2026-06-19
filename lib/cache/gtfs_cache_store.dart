@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/gtfs_feed_info.dart';
+import '../utils/app_log.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_route.dart';
 import '../models/transit_stop.dart';
@@ -69,7 +69,7 @@ class GtfsCacheStore {
       jsonEncode(stops.map(_stopToJson).toList()),
     );
 
-    debugPrint(
+    AppLog.d(
       'GtfsCacheStore: saved ${info.feedName} '
       '(${stops.length} stops, ${routes.length} routes)',
     );
@@ -109,7 +109,7 @@ class GtfsCacheStore {
             ),
           );
         } catch (error) {
-          debugPrint('GtfsCacheStore: failed to load ${entity.path}: $error');
+          AppLog.d('GtfsCacheStore: failed to load ${entity.path}: $error');
         }
       }
 
@@ -120,10 +120,10 @@ class GtfsCacheStore {
             b.info.lastUpdated ?? DateTime.fromMillisecondsSinceEpoch(0);
         return bDate.compareTo(aDate);
       });
-      debugPrint('GtfsCacheStore: loaded ${feeds.length} cached feeds');
+      AppLog.d('GtfsCacheStore: loaded ${feeds.length} cached feeds');
       return feeds;
     } catch (error) {
-      debugPrint('GtfsCacheStore: cache unavailable: $error');
+      AppLog.d('GtfsCacheStore: cache unavailable: $error');
       return const [];
     }
   }
@@ -138,7 +138,7 @@ class GtfsCacheStore {
     final feedDir = Directory('${cacheDir.path}/$feedId');
     if (feedDir.existsSync()) {
       feedDir.deleteSync(recursive: true);
-      debugPrint('GtfsCacheStore: deleted cached feed $feedId');
+      AppLog.d('GtfsCacheStore: deleted cached feed $feedId');
     }
   }
 

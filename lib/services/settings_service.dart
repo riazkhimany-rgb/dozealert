@@ -11,6 +11,7 @@ class SettingsService {
   static const _transitModeEnabledKey = 'transit_mode_enabled';
   static const _transitModeWakeKey = 'transit_mode_wake';
   static const _alarmSoundModeKey = 'alarm_sound_mode';
+  static const _alarmVolumeKey = 'alarm_volume';
   static const _legacyTrainModeEnabledKey = 'train_mode_enabled';
   static const _legacyTrainModeWakeKey = 'train_mode_wake';
 
@@ -28,6 +29,7 @@ class SettingsService {
     final transitModeWakeIndex = prefs.getInt(_transitModeWakeKey) ??
         prefs.getInt(_legacyTrainModeWakeKey);
     final alarmSoundModeIndex = prefs.getInt(_alarmSoundModeKey);
+    final alarmVolume = prefs.getDouble(_alarmVolumeKey);
 
     _settings = AppSettings(
       themeMode: themeIndex != null && themeIndex < ThemeMode.values.length
@@ -42,6 +44,7 @@ class SettingsService {
       alarmSoundMode: AlarmSoundModeX.fromIndex(
         alarmSoundModeIndex ?? AlarmSoundMode.followDevice.index,
       ),
+      alarmVolume: (alarmVolume ?? 1.0).clamp(0.0, 1.0),
     );
   }
 
@@ -53,5 +56,6 @@ class SettingsService {
     await prefs.setBool(_transitModeEnabledKey, settings.transitModeEnabled);
     await prefs.setInt(_transitModeWakeKey, settings.transitModeWake.index);
     await prefs.setInt(_alarmSoundModeKey, settings.alarmSoundMode.index);
+    await prefs.setDouble(_alarmVolumeKey, settings.alarmVolume.clamp(0.0, 1.0));
   }
 }

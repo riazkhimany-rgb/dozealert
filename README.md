@@ -66,6 +66,18 @@ GOOGLE_MAPS_API_KEY=your_key_here
 
 Set `GMSApiKey` in `ios/Runner/Info.plist` for iOS.
 
+## Google Play (Internal Testing)
+
+See [docs/PLAY_STORE_RELEASE.md](docs/PLAY_STORE_RELEASE.md) for signing, building, and uploading.
+
+Store assets and listing copy are in `play-store/`. Release notes: `RELEASE_NOTES.txt`.
+
+```powershell
+# After configuring android/key.properties
+.\tools\build_release.ps1
+```
+
+
 ## Project Structure
 
 ```
@@ -82,10 +94,9 @@ docs/             # Store assets & design briefs
 
 ## Store & Legal
 
-- Play Store copy: `play_store_listing.md`
+- Play Store assets: `play-store/`
+- Release guide: `docs/PLAY_STORE_RELEASE.md`
 - Privacy policy: `privacy_policy.md`
-- Screenshot mocks: `docs/screenshots/`
-- Feature graphic brief: `docs/feature_graphic_brief.md`
 
 ## Contact
 

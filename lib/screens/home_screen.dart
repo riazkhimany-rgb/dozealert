@@ -11,7 +11,6 @@ import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/transit_mode_provider.dart';
-import '../providers/transit_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
@@ -53,10 +52,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _MonitoringCard(),
           SizedBox(height: 16),
           _DestinationCard(),
-          SizedBox(height: 16),
-          _DistanceCard(),
-          SizedBox(height: 16),
-          _RecentDestinationsCard(),
         ],
       ),
     );
@@ -232,6 +227,20 @@ class _MonitoringCard extends StatelessWidget {
     final hasDestination = context.select<MonitoringProvider, bool>(
       (provider) => provider.selectedDestination != null,
     );
+    final hasDistance = context.select<LocationProvider, bool>(
+      (provider) => provider.hasDestination,
+    );
+    final distanceKm = context.select<LocationProvider, double>(
+      (provider) => provider.distanceRemainingKm,
+    );
+    final speedLabel = context.select<LocationProvider, String>(
+      (provider) {
+        final location = provider.currentLocation;
+        return location == null
+            ? '—'
+            : '${location.speedKmh.toStringAsFixed(1)} km/h';
+      },
+    );
     final statusColor = _statusColor(colorScheme, state);
     final canStart = hasDestination && state == MonitoringState.idle;
     final canStop = state == MonitoringState.monitoring ||
@@ -268,27 +277,48 @@ class _MonitoringCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: FilledButton.icon(
-              onPressed: canStart
-                  ? () => _handleStartMonitoring(context)
-                  : null,
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Start Monitoring'),
+          const SizedBox(height: 16),
+          Text(
+            hasDistance
+                ? '${distanceKm.toStringAsFixed(1)} km remaining'
+                : 'No destination selected',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: hasDistance
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: FilledButton.tonalIcon(
-              onPressed: canStop ? () => _handleStopMonitoring(context) : null,
-              icon: const Icon(Icons.stop_rounded),
-              label: const Text('Stop Monitoring'),
-            ),
+          const SizedBox(height: 8),
+          _MetricRow(label: 'Current speed', value: speedLabel),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: FilledButton.icon(
+                    onPressed: canStart
+                        ? () => _handleStartMonitoring(context)
+                        : null,
+                    icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                    label: const Text('Start'),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: FilledButton.tonalIcon(
+                    onPressed:
+                        canStop ? () => _handleStopMonitoring(context) : null,
+                    icon: const Icon(Icons.stop_rounded, size: 20),
+                    label: const Text('Stop'),
+                  ),
+                ),
+              ),
+            ],
           ),
           if (!hasDestination) ...[
             const SizedBox(height: 12),
@@ -348,98 +378,6 @@ class _MonitoringCard extends StatelessWidget {
       MonitoringState.arrived => Icons.directions_railway,
       MonitoringState.missed => Icons.error_outline,
     };
-  }
-}
-
-class _DistanceCard extends StatelessWidget {
-  const _DistanceCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final hasDestination = context.select<LocationProvider, bool>(
-      (provider) => provider.hasDestination,
-    );
-    final distanceKm = context.select<LocationProvider, double>(
-      (provider) => provider.distanceRemainingKm,
-    );
-    final speedLabel = context.select<LocationProvider, String>(
-      (provider) {
-        final location = provider.currentLocation;
-        return location == null
-            ? '—'
-            : '${location.speedKmh.toStringAsFixed(1)} km/h';
-      },
-    );
-
-    return HomeCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const HomeCardHeader(
-            icon: Icons.straighten,
-            title: 'Distance',
-          ),
-          const SizedBox(height: 16),
-          Text(
-            hasDestination
-                ? '${distanceKm.toStringAsFixed(1)} km'
-                : 'No destination selected',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: hasDestination
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _MetricRow(label: 'Current speed', value: speedLabel),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecentDestinationsCard extends StatelessWidget {
-  const _RecentDestinationsCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final recentDestinations = context.select<TransitProvider, List<Destination>>(
-      (provider) => provider.recentStations.take(5).toList(growable: false),
-    );
-
-    return HomeCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const HomeCardHeader(
-            icon: Icons.history,
-            title: 'Recent Destinations',
-          ),
-          const SizedBox(height: 12),
-          if (recentDestinations.isEmpty)
-            Text(
-              'No recent destinations yet.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            )
-          else
-            ...recentDestinations.map(
-              (destination) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.place_outlined),
-                title: Text(destination.name),
-                onTap: () {
-                  context.read<MonitoringProvider>().setDestination(destination);
-                },
-              ),
-            ),
-        ],
-      ),
-    );
   }
 }
 

@@ -91,6 +91,12 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
+                onPressed: () => _launchUrl(AppBranding.privacyPolicyUrl),
+                icon: const Icon(Icons.language_outlined),
+                label: const Text('Privacy Policy (Web)'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
                 onPressed: () => _launchUrl(AppBranding.githubUrl),
                 icon: const Icon(Icons.code_outlined),
                 label: const Text('GitHub Repository'),

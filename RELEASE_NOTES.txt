@@ -1,0 +1,10 @@
+Version 1.0.0
+
+Initial Release
+
+• Smart sleep detection
+• Supports bus, train and car travel
+• Audible alarms and vibration
+• Background monitoring
+• Adjustable sensitivity
+• Battery optimized

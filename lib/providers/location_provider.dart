@@ -15,6 +15,7 @@ import '../services/location_service.dart';
 import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
 import '../services/trip_history_service.dart';
+import '../utils/app_log.dart';
 
 enum LocationStartResult {
   success,
@@ -363,7 +364,7 @@ class LocationProvider extends ChangeNotifier {
         await _onLocationUpdate(location);
       }
     } catch (error) {
-      debugPrint('LocationProvider: refreshLocation failed: $error');
+      AppLog.d('LocationProvider: refreshLocation failed: $error');
     }
   }
 

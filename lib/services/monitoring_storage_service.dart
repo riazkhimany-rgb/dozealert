@@ -36,6 +36,11 @@ class MonitoringStorageService {
     await prefs.setInt(radiusKey, radiusMeters);
   }
 
+  Future<int> loadRadiusMeters() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(radiusKey) ?? 1000;
+  }
+
   Future<MonitoringSession?> loadSession() async {
     final prefs = await SharedPreferences.getInstance();
     final isActive = prefs.getBool(activeKey);

@@ -31,6 +31,7 @@ import 'services/settings_service.dart';
 import 'services/transit_mode_service.dart';
 import 'services/transit_data_service.dart';
 import 'services/trip_history_service.dart';
+import 'utils/app_log.dart';
 import 'utils/app_theme.dart';
 
 Future<void> main() async {
@@ -134,8 +135,8 @@ Future<void> _loadEnvironment() async {
   try {
     await dotenv.load(fileName: '.env');
   } catch (error, stackTrace) {
-    debugPrint('Failed to load .env: $error');
-    debugPrint('$stackTrace');
+    AppLog.d('Failed to load .env: $error');
+    AppLog.d('$stackTrace');
     dotenv.loadFromString(
       envString: 'GOOGLE_MAPS_API_KEY=',
       isOptional: true,

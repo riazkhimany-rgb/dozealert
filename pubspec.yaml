@@ -52,6 +52,8 @@ dependencies:
   file_picker: ^10.3.2
   path_provider: ^2.1.5
   http: ^1.4.0
+  flutter_tts: ^4.2.0
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:
@@ -85,7 +87,7 @@ flutter_launcher_icons:
   image_path: assets/branding/icon_foreground.png
   adaptive_icon_background: assets/branding/icon_background.png
   adaptive_icon_foreground: assets/branding/icon_foreground.png
-  min_sdk_android: 21
+  min_sdk_android: 26
   remove_alpha_ios: true
 
 flutter_native_splash:
@@ -93,8 +95,7 @@ flutter_native_splash:
   background_image: assets/branding/splash_screen.png
   android_12:
     color: "#0D1B2A"
-    image: assets/branding/splash_logo.png
-    icon_background_color: "#0D1B2A"
+    background_image: assets/branding/splash_screen.png
   android: true
   ios: true
   web: false

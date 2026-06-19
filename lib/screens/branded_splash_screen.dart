@@ -36,53 +36,38 @@ class _BrandedSplashScreenState extends State<BrandedSplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-
     return DecoratedBox(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF0A1628),
-            AppBranding.midnightBlue,
-            Color(0xFF132238),
-          ],
+        image: DecorationImage(
+          image: AssetImage(AppBranding.splashScreenAsset),
+          fit: BoxFit.cover,
         ),
       ),
       child: SafeArea(
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  AppBranding.splashLogoAsset,
-                  fit: BoxFit.contain,
-                  width: size.width * 0.42,
-                  height: size.width * 0.42,
-                ),
-                const SizedBox(height: 28),
-                Text(
-                  AppBranding.appName,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppBranding.white,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            children: [
+              const Spacer(flex: 3),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
                   AppBranding.tagline,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: AppBranding.cyanAccent,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    shadows: [
+                      Shadow(
+                        color: AppBranding.midnightBlue.withValues(alpha: 0.85),
+                        blurRadius: 12,
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              const Spacer(flex: 2),
+            ],
           ),
         ),
       ),
