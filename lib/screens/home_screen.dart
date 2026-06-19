@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/current_location.dart';
 import '../models/monitoring_state.dart';
+import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
 import '../widgets/home_card.dart';
 import 'destination_screen.dart';
@@ -11,10 +14,6 @@ import 'map_picker_screen.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  static const _mockLatitude = 43.6532;
-  static const _mockLongitude = -79.3832;
-  static const _mockSpeedKmh = 0.0;
-  static const _mockDistanceKm = 0.0;
   static const _radiusOptions = <int>[250, 500, 1000, 2000];
 
   @override
@@ -30,13 +29,9 @@ class HomeScreen extends StatelessWidget {
         children: [
           _DestinationCard(monitoring: monitoring),
           const SizedBox(height: 16),
-          const _CurrentLocationCard(
-            latitude: _mockLatitude,
-            longitude: _mockLongitude,
-            speedKmh: _mockSpeedKmh,
-          ),
+          const _CurrentLocationCard(),
           const SizedBox(height: 16),
-          const _DistanceRemainingCard(distanceKm: _mockDistanceKm),
+          const _DistanceRemainingCard(),
           const SizedBox(height: 16),
           _WakeUpRadiusCard(
             selectedRadius: monitoring.radiusMeters,
@@ -143,64 +138,89 @@ class _DestinationCard extends StatelessWidget {
 }
 
 class _CurrentLocationCard extends StatelessWidget {
-  const _CurrentLocationCard({
-    required this.latitude,
-    required this.longitude,
-    required this.speedKmh,
-  });
-
-  final double latitude;
-  final double longitude;
-  final double speedKmh;
+  const _CurrentLocationCard();
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    return Selector<LocationProvider, CurrentLocation?>(
+      selector: (_, provider) => provider.currentLocation,
+      builder: (context, location, _) {
+        final tracking = context.select<LocationProvider, bool>(
+          (provider) => provider.trackingEnabled,
+        );
 
-    return HomeCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const HomeCardHeader(
-            icon: Icons.my_location,
-            title: 'Current Location',
+        return HomeCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const HomeCardHeader(
+                icon: Icons.my_location,
+                title: 'Current Location',
+              ),
+              const SizedBox(height: 16),
+              _MetricRow(
+                label: 'Latitude',
+                value: location != null
+                    ? location.latitude.toStringAsFixed(4)
+                    : '—',
+              ),
+              const SizedBox(height: 12),
+              _MetricRow(
+                label: 'Longitude',
+                value: location != null
+                    ? location.longitude.toStringAsFixed(4)
+                    : '—',
+              ),
+              const SizedBox(height: 12),
+              _MetricRow(
+                label: 'Speed',
+                value: location != null
+                    ? '${location.speedKmh.toStringAsFixed(1)} km/h'
+                    : '—',
+              ),
+              const SizedBox(height: 12),
+              _MetricRow(
+                label: 'Accuracy',
+                value: location != null
+                    ? '${location.accuracy.toStringAsFixed(0)} m'
+                    : '—',
+              ),
+              const SizedBox(height: 12),
+              _MetricRow(
+                label: 'Last updated',
+                value: location != null
+                    ? LocationFormat.lastUpdated(location.timestamp)
+                    : '—',
+              ),
+              if (!tracking) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Start monitoring to update your location.',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+              ],
+            ],
           ),
-          const SizedBox(height: 16),
-          _MetricRow(
-            label: 'Latitude',
-            value: latitude.toStringAsFixed(4),
-          ),
-          const SizedBox(height: 12),
-          _MetricRow(
-            label: 'Longitude',
-            value: longitude.toStringAsFixed(4),
-          ),
-          const SizedBox(height: 12),
-          _MetricRow(
-            label: 'Speed',
-            value: '${speedKmh.toStringAsFixed(0)} km/h',
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Mock location data',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.outline,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 class _DistanceRemainingCard extends StatelessWidget {
-  const _DistanceRemainingCard({required this.distanceKm});
-
-  final double distanceKm;
+  const _DistanceRemainingCard();
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final hasDestination = context.select<LocationProvider, bool>(
+      (provider) => provider.hasDestination,
+    );
+    final distanceKm = context.select<LocationProvider, double>(
+      (provider) => provider.distanceRemainingKm,
+    );
 
     return HomeCard(
       child: Column(
@@ -212,10 +232,14 @@ class _DistanceRemainingCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '${distanceKm.toStringAsFixed(1)} km',
+            hasDestination
+                ? '${distanceKm.toStringAsFixed(1)} km'
+                : 'No destination selected',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
+              color: hasDestination
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -342,7 +366,7 @@ class _MonitoringControlsCard extends StatelessWidget {
             height: 52,
             child: FilledButton.icon(
               onPressed: canStart
-                  ? context.read<MonitoringProvider>().startMonitoring
+                  ? () => _handleStartMonitoring(context)
                   : null,
               icon: const Icon(Icons.play_arrow_rounded),
               label: const Text('Start Monitoring'),
@@ -353,9 +377,7 @@ class _MonitoringControlsCard extends StatelessWidget {
             width: double.infinity,
             height: 52,
             child: FilledButton.tonalIcon(
-              onPressed: canStop
-                  ? context.read<MonitoringProvider>().stopMonitoring
-                  : null,
+              onPressed: canStop ? () => _handleStopMonitoring(context) : null,
               icon: const Icon(Icons.stop_rounded),
               label: const Text('Stop Monitoring'),
             ),
@@ -372,6 +394,18 @@ class _MonitoringControlsCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _handleStartMonitoring(BuildContext context) async {
+    final result = await context.read<LocationProvider>().startTracking();
+    if (!context.mounted) {
+      return;
+    }
+    await LocationFeedback.handleStartResult(context, result);
+  }
+
+  Future<void> _handleStopMonitoring(BuildContext context) async {
+    await context.read<LocationProvider>().stopTracking();
   }
 
   IconData _stateIcon(MonitoringState state) {

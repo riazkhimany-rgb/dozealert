@@ -26,6 +26,8 @@
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
 		<key>GMSApiKey</key>
 		<string></string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>DozeAlert uses your location while the app is open to monitor your progress toward your destination.</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>UIApplicationSceneManifest</key>

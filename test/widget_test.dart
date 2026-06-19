@@ -33,7 +33,7 @@ void main() {
 
     expect(find.text('DozeAlert'), findsOneWidget);
     expect(find.text('Destination'), findsOneWidget);
-    expect(find.text('No destination selected'), findsOneWidget);
+    expect(find.text('No destination selected'), findsWidgets);
     expect(find.text('Choose Destination'), findsOneWidget);
     expect(find.text('Change Destination'), findsOneWidget);
 
