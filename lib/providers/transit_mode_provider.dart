@@ -65,6 +65,7 @@ class TransitModeProvider extends ChangeNotifier {
       latitude: latitude,
       longitude: longitude,
       routeId: _activeRouteId,
+      maxStopProximityMeters: _monitoringProvider.radiusMeters,
     );
 
     if (nextSnapshot.route?.routeId != null) {
@@ -87,6 +88,22 @@ class TransitModeProvider extends ChangeNotifier {
 
   void resetApproachAlarm() {
     _approachAlarmTriggered = false;
+  }
+
+  void refreshFromSettings() {
+    if (!_settingsService.settings.transitModeEnabled) {
+      if (_snapshot.isActive || _approachAlarmTriggered) {
+        _snapshot = TransitModeSnapshot.inactive;
+        _approachAlarmTriggered = false;
+        notifyListeners();
+      }
+      return;
+    }
+
+    if (_monitoringProvider.selectedDestination != null) {
+      _approachAlarmTriggered = false;
+      notifyListeners();
+    }
   }
 
   void simulateOneStopRemaining() {

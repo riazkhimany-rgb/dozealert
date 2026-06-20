@@ -10,11 +10,15 @@ class TransitModeService {
 
   final GtfsService _gtfsService;
 
+  /// Max GPS distance to a route stop before we treat the user as off-route.
+  static const defaultMaxStopProximityMeters = 1000;
+
   TransitModeSnapshot evaluate({
     required Destination? destination,
     required double? latitude,
     required double? longitude,
     String? routeId,
+    int maxStopProximityMeters = defaultMaxStopProximityMeters,
   }) {
     if (destination == null || latitude == null || longitude == null) {
       return TransitModeSnapshot.inactive;
@@ -43,6 +47,7 @@ class TransitModeService {
       latitude: latitude,
       longitude: longitude,
       routeId: resolvedRouteId,
+      maxProximityMeters: maxStopProximityMeters,
     );
 
     if (destinationStop == null || currentStop == null) {
@@ -96,6 +101,7 @@ class TransitModeService {
     required double latitude,
     required double longitude,
     required String routeId,
+    required int maxProximityMeters,
   }) {
     final routeStops = _gtfsService.stopsForRoute(routeId);
     if (routeStops.isEmpty) {
@@ -116,6 +122,10 @@ class TransitModeService {
         nearestDistance = distance;
         nearest = stop;
       }
+    }
+
+    if (nearest == null || nearestDistance > maxProximityMeters) {
+      return null;
     }
 
     return nearest;

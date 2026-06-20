@@ -9,12 +9,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dozealert/cache/gtfs_cache_store.dart';
 import 'package:dozealert/main.dart';
 import 'package:dozealert/models/destination.dart';
+import 'package:dozealert/providers/destination_history_provider.dart';
 import 'package:dozealert/providers/gtfs_feed_provider.dart';
 import 'package:dozealert/providers/gtfs_provider.dart';
 import 'package:dozealert/providers/monitoring_provider.dart';
 import 'package:dozealert/providers/transit_mode_provider.dart';
 import 'package:dozealert/providers/transit_line_provider.dart';
 import 'package:dozealert/providers/transit_provider.dart';
+import 'package:dozealert/providers/trip_history_provider.dart';
 import 'package:dozealert/services/alarm_service.dart';
 import 'package:dozealert/services/background_monitor_service.dart';
 import 'package:dozealert/services/destination_storage_service.dart';
@@ -23,6 +25,7 @@ import 'package:dozealert/services/gtfs_import_service.dart';
 import 'package:dozealert/services/gtfs_parser_service.dart';
 import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/monitoring_storage_service.dart';
+import 'package:dozealert/services/onboarding_service.dart';
 import 'package:dozealert/services/place_search_service.dart';
 import 'package:dozealert/services/preferences_service.dart';
 import 'package:dozealert/services/settings_service.dart';
@@ -45,7 +48,7 @@ class _FakePathProvider {
 }
 
 Future<DozeAlertApp> _createTestApp() async {
-  SharedPreferences.setMockInitialValues({});
+  SharedPreferences.setMockInitialValues({'onboarding_complete': true});
   dotenv.loadFromString(envString: 'GOOGLE_MAPS_API_KEY=test_key');
 
   final settingsService = SettingsService();
@@ -71,9 +74,14 @@ Future<DozeAlertApp> _createTestApp() async {
   final transitProvider = TransitProvider(preferencesService);
   await transitProvider.loadPreferences();
 
+  final destinationHistoryProvider =
+      DestinationHistoryProvider(preferencesService);
+  await destinationHistoryProvider.load();
+
   final monitoringProvider = MonitoringProvider(
     destinationStorageService,
     monitoringStorageService,
+    destinationHistory: destinationHistoryProvider,
   );
 
   await monitoringProvider.loadSavedDestination();
@@ -99,7 +107,6 @@ Future<DozeAlertApp> _createTestApp() async {
     monitoringProvider,
     transitModeProvider,
   );
-  await gtfsProvider.initialize();
 
   final gtfsFeedProvider = GtfsFeedProvider(
     gtfsDownloadService,
@@ -108,10 +115,16 @@ Future<DozeAlertApp> _createTestApp() async {
     gtfsCacheStore,
     gtfsService,
   );
+  await gtfsProvider.initialize();
   await gtfsFeedProvider.initialize();
 
   final tripHistoryService = TripHistoryService();
   await tripHistoryService.loadActiveTripId();
+
+  final tripHistoryProvider = TripHistoryProvider(tripHistoryService);
+  await tripHistoryProvider.load();
+
+  final onboardingService = OnboardingService();
 
   return DozeAlertApp(
     settingsService: settingsService,
@@ -133,8 +146,12 @@ Future<DozeAlertApp> _createTestApp() async {
     gtfsFeedProvider: gtfsFeedProvider,
     destinationStorageService: destinationStorageService,
     monitoringProvider: monitoringProvider,
+    destinationHistoryProvider: destinationHistoryProvider,
     tripHistoryService: tripHistoryService,
+    tripHistoryProvider: tripHistoryProvider,
+      onboardingService: onboardingService,
     skipSplash: true,
+    skipBootstrap: true,
   );
 }
 
@@ -163,14 +180,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Destination'), findsOneWidget);
-    expect(find.text('Pick Stop'), findsOneWidget);
+    expect(find.text('Set destination'), findsOneWidget);
     expect(find.text('No destination selected'), findsWidgets);
-    expect(find.text('Change Destination'), findsOneWidget);
 
-    await tester.tap(find.text('Choose Destination'));
+    await tester.tap(find.text('Set destination'));
     await tester.pumpAndSettle();
 
     expect(find.text('Favorites'), findsOneWidget);
+
+    await tester.tap(find.text('Favorites'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Union Station'), findsWidgets);
 
     await tester.tap(find.text('Union Station').last);
@@ -213,6 +233,13 @@ void main() {
     expect(find.text('About DozeAlert'), findsOneWidget);
     expect(find.text('App Version'), findsOneWidget);
 
+    await tester.tap(find.text('About DozeAlert'));
+    await tester.pumpAndSettle();
+    expect(find.text('Share DozeAlert'), findsOneWidget);
+    expect(find.text(AppBranding.tagline), findsWidgets);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
     await tester.pageBack();
     await tester.pumpAndSettle();
 
@@ -223,6 +250,7 @@ void main() {
 
     expect(find.text('Transit Data'), findsOneWidget);
     expect(find.text('Transit Mode'), findsOneWidget);
+    expect(find.text('Import GTFS Zip'), findsNothing);
 
     await tester.tap(find.text('Transit Mode'));
     await tester.pumpAndSettle();
@@ -243,26 +271,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsWidgets);
+    expect(find.text('Import GTFS Zip'), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
-
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Home').first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Home'), findsWidgets);
-    expect(find.text('Trips'), findsWidgets);
-    expect(find.text('Settings'), findsWidgets);
-    expect(find.text('Share'), findsWidgets);
-
-    await tester.tap(find.text('Share'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Share DozeAlert'), findsOneWidget);
-    expect(find.text(AppBranding.tagline), findsWidgets);
   });
 
   testWidgets('persists and clears selected destination', (

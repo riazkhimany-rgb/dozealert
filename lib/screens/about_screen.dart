@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/app_branding.dart';
 import 'privacy_policy_screen.dart';
+import 'share_screen.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -78,6 +79,18 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ShareScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.share_outlined),
+                label: const Text('Share DozeAlert'),
+              ),
+              const SizedBox(height: 12),
               FilledButton.tonalIcon(
                 onPressed: () {
                   Navigator.of(context).push(

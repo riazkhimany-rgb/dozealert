@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
@@ -5,7 +7,10 @@ import 'package:google_places_flutter/model/prediction.dart';
 import 'package:provider/provider.dart';
 
 import '../config/env_config.dart';
+import '../providers/destination_history_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../providers/transit_provider.dart';
+import '../services/location_service.dart';
 import '../services/place_search_service.dart';
 import '../utils/map_defaults.dart';
 import '../widgets/home_card.dart';
@@ -25,16 +30,14 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   GoogleMapController? _mapController;
   LatLng? _selectedPosition;
-
-  CameraPosition get _initialCameraPosition {
-    return const CameraPosition(
-      target: LatLng(
-        MapDefaults.torontoLatitude,
-        MapDefaults.torontoLongitude,
-      ),
-      zoom: MapDefaults.initialZoom,
-    );
-  }
+  CameraPosition _initialCameraPosition = const CameraPosition(
+    target: LatLng(
+      MapDefaults.torontoLatitude,
+      MapDefaults.torontoLongitude,
+    ),
+    zoom: MapDefaults.initialZoom,
+  );
+  bool _centeredOnUser = false;
 
   Set<Marker> get _markers {
     final position = _selectedPosition;
@@ -51,11 +54,47 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_centerOnUserLocation());
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _nameController.dispose();
     _mapController?.dispose();
     super.dispose();
+  }
+
+  Future<void> _centerOnUserLocation() async {
+    if (_centeredOnUser) {
+      return;
+    }
+
+    final locationService = context.read<LocationService>();
+    final location = await locationService.fetchCurrentLocation();
+    if (!mounted || location == null) {
+      return;
+    }
+
+    final target = LatLng(location.latitude, location.longitude);
+    setState(() {
+      _centeredOnUser = true;
+      _initialCameraPosition = CameraPosition(target: target, zoom: 14);
+    });
+    await _mapController?.animateCamera(CameraUpdate.newLatLngZoom(target, 14));
+  }
+
+  List<String> _placeCountries() {
+    final country = context.read<TransitProvider>().preferences.country;
+    return switch (country) {
+      'United States' => const ['us'],
+      'Canada' => const ['ca'],
+      _ => const ['ca', 'us'],
+    };
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -102,6 +141,33 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     Navigator.of(context).pop();
   }
 
+  Future<void> _saveAndFavorite() async {
+    final position = _selectedPosition;
+    if (position == null) {
+      return;
+    }
+
+    final name = _nameController.text.trim();
+    final destination = PlaceSearchResult(
+      name: name.isEmpty ? MapDefaults.customDestinationName : name,
+      latitude: position.latitude,
+      longitude: position.longitude,
+    ).toDestination();
+
+    await context.read<MonitoringProvider>().setDestination(destination);
+    if (!mounted) {
+      return;
+    }
+    await context.read<DestinationHistoryProvider>().addFavorite(destination);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Saved ${destination.name} to favorites')),
+    );
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -120,7 +186,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             markers: _markers,
             onMapCreated: _onMapCreated,
             onTap: _onMapTap,
-            myLocationButtonEnabled: false,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: true,
             zoomControlsEnabled: false,
             mapToolbarEnabled: false,
           ),
@@ -153,7 +220,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                         textEditingController: _searchController,
                         googleAPIKey: placeSearchService.apiKey,
                         debounceTime: 400,
-                        countries: const ['ca'],
+                        countries: _placeCountries(),
                         isLatLngRequired: true,
                         isCrossBtnShown: true,
                         containerHorizontalPadding: 0,
@@ -279,6 +346,16 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       onPressed: canSave ? _saveDestination : null,
                       icon: const Icon(Icons.save_outlined),
                       label: const Text('Save Destination'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: canSave ? _saveAndFavorite : null,
+                      icon: const Icon(Icons.star_outline),
+                      label: const Text('Save & Add to Favorites'),
                     ),
                   ),
                   const SizedBox(height: 12),

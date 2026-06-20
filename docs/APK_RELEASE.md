@@ -4,7 +4,15 @@ Direct APK distribution for testers and users before (or alongside) Google Play.
 
 ## Build the APK
 
-### Quick (PowerShell, from project root)
+### Full pipeline (clean, test, build, optional GitHub)
+
+```powershell
+.\tools\release.ps1
+```
+
+See [README.md](../README.md#one-command-release-recommended) for flags (`-Push`, `-CreateGitHubRelease`, `-Target aab`, etc.).
+
+### Quick APK only (no clean / tests)
 
 ```powershell
 .\tools\build_apk.ps1

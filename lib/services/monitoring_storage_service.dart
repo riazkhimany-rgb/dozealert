@@ -19,6 +19,7 @@ class MonitoringStorageService {
   static const stateKey = 'monitoring_state_index';
   static const radiusKey = 'monitoring_radius_meters';
   static const arrivalTriggeredKey = 'monitoring_arrival_triggered';
+  static const monitoringStartedAtKey = 'monitoring_started_at_ms';
 
   Future<void> saveSession({
     required bool isActive,
@@ -75,10 +76,28 @@ class MonitoringStorageService {
     await prefs.setBool(arrivalTriggeredKey, value);
   }
 
+  Future<void> markMonitoringStarted([DateTime? startedAt]) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      monitoringStartedAtKey,
+      (startedAt ?? DateTime.now()).millisecondsSinceEpoch,
+    );
+  }
+
+  Future<DateTime?> loadMonitoringStartedAt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final timestamp = prefs.getInt(monitoringStartedAtKey);
+    if (timestamp == null) {
+      return null;
+    }
+    return DateTime.fromMillisecondsSinceEpoch(timestamp);
+  }
+
   Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(activeKey);
     await prefs.remove(stateKey);
+    await prefs.remove(monitoringStartedAtKey);
     await prefs.setBool(arrivalTriggeredKey, false);
   }
 }

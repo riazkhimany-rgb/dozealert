@@ -4,17 +4,20 @@ import 'package:flutter/material.dart';
 
 import '../models/destination.dart';
 import '../models/monitoring_state.dart';
+import '../providers/destination_history_provider.dart';
 import '../services/destination_storage_service.dart';
 import '../services/monitoring_storage_service.dart';
 
 class MonitoringProvider extends ChangeNotifier {
   MonitoringProvider(
     this._destinationStorage,
-    this._monitoringStorage,
-  );
+    this._monitoringStorage, {
+    this._destinationHistory,
+  });
 
   final DestinationStorageService _destinationStorage;
   final MonitoringStorageService _monitoringStorage;
+  final DestinationHistoryProvider? _destinationHistory;
 
   MonitoringState _currentState = MonitoringState.idle;
   Destination? _selectedDestination;
@@ -62,6 +65,7 @@ class MonitoringProvider extends ChangeNotifier {
     }
 
     await _destinationStorage.saveDestination(destination);
+    await _destinationHistory?.recordRecent(destination);
     notifyListeners();
   }
 
@@ -122,6 +126,16 @@ class MonitoringProvider extends ChangeNotifier {
 
     _currentState = MonitoringState.arrived;
     unawaited(_persistSession(isActive: true));
+    notifyListeners();
+  }
+
+  void markMissed() {
+    if (_currentState != MonitoringState.monitoring) {
+      return;
+    }
+
+    _currentState = MonitoringState.missed;
+    unawaited(_persistSession(isActive: false));
     notifyListeners();
   }
 

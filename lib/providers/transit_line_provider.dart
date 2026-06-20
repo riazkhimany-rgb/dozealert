@@ -110,13 +110,11 @@ class TransitLineProvider extends ChangeNotifier {
     );
 
     await _monitoringProvider.setDestination(destination);
-    await _transitProvider.recordRecentStation(destination);
     notifyListeners();
   }
 
   Future<void> selectRecentDestination(Destination destination) async {
     await _monitoringProvider.setDestination(destination);
-    await _transitProvider.recordRecentStation(destination);
 
     final line = _currentLine;
     _selectedDestinationStation = line == null

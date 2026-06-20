@@ -74,8 +74,44 @@ See [docs/PLAY_STORE_RELEASE.md](docs/PLAY_STORE_RELEASE.md) for signing, buildi
 
 For sideloading and a public download page, see [docs/APK_RELEASE.md](docs/APK_RELEASE.md).
 
+### One-command release (recommended)
+
+From the project root in PowerShell:
+
 ```powershell
-# Build APK and copy to website/downloads/
+# If you see "running scripts is disabled on this system", either run once with Bypass:
+powershell -ExecutionPolicy Bypass -File .\tools\release.ps1
+
+# Or allow scripts for your user account (one-time setup):
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Clean, analyze, test, build APK, copy to website/downloads/
+.\tools\release.ps1
+
+# Same + commit, push to GitHub, and create a GitHub Release with the APK
+.\tools\release.ps1 -CommitMessage "Release 1.0.1" -Push -CreateGitHubRelease
+
+# Google Play App Bundle instead of (or in addition to) APK
+.\tools\release.ps1 -Target aab
+.\tools\release.ps1 -Target both -CommitMessage "Release 1.0.1" -Push
+```
+
+| Flag | Purpose |
+| --- | --- |
+| `-Target apk` | Website APK (default) |
+| `-Target aab` | Google Play `.aab` |
+| `-Target both` | APK + AAB |
+| `-SkipClean` | Skip `flutter clean` (faster rebuild) |
+| `-SkipTests` | Skip `flutter test` |
+| `-CommitMessage "..."` | Stage safe files, commit (never `key.properties` / `.env`) |
+| `-Push` | Push current branch to `origin` |
+| `-CreateGitHubRelease` | `gh release create` with APK asset (needs [GitHub CLI](https://cli.github.com/)) |
+
+**Before your first signed release:** configure `android/key.properties` — see [docs/PLAY_STORE_RELEASE.md](docs/PLAY_STORE_RELEASE.md).
+
+### Build APK only (no tests / clean)
+
+```powershell
 .\tools\build_apk.ps1
 ```
 
@@ -84,7 +120,9 @@ Host the `website/` folder on any static site; users install via the APK link an
 Store assets and listing copy are in `play-store/`. Release notes: `RELEASE_NOTES.txt`.
 
 ```powershell
-# After configuring android/key.properties
+# Play Store bundle only (includes clean + branding assets)
+.\tools\release.ps1 -Target aab
+# or legacy script:
 .\tools\build_release.ps1
 ```
 

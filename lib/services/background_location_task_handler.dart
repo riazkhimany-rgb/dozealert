@@ -28,6 +28,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   int _radiusMeters = 1000;
   bool _testModeEnabled = false;
   bool _arrivalTriggered = false;
+  int? _monitoringStartedAtMs;
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
@@ -70,6 +71,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _testModeEnabled = prefs.getBool(_testModeKey) ?? false;
     _arrivalTriggered =
         prefs.getBool(MonitoringStorageService.arrivalTriggeredKey) ?? false;
+    _monitoringStartedAtMs =
+        prefs.getInt(MonitoringStorageService.monitoringStartedAtKey);
   }
 
   Future<void> _startLocationStream() async {
@@ -103,6 +106,10 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   }
 
   Future<void> _handlePosition(Position position) async {
+    if (_isStalePosition(position)) {
+      return;
+    }
+
     FlutterForegroundTask.sendDataToMain(<String, Object>{
       'type': 'location',
       'latitude': position.latitude,
@@ -169,5 +176,14 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       notificationText:
           'Monitoring your trip...\n$_destinationName · $distanceLabel',
     );
+  }
+
+  bool _isStalePosition(Position position) {
+    final startedAtMs = _monitoringStartedAtMs;
+    if (startedAtMs == null) {
+      return false;
+    }
+
+    return position.timestamp.millisecondsSinceEpoch < startedAtMs;
   }
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/mock_destinations.dart';
+import '../models/favorite_destination.dart';
 import '../models/destination.dart';
+import '../providers/destination_history_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../widgets/home_card.dart';
 import 'map_picker_screen.dart';
@@ -36,16 +37,18 @@ class _DestinationScreenState extends State<DestinationScreen> {
 
   bool get _isSearching => _query.isNotEmpty;
 
-  List<DestinationCatalogItem> get _filteredDestinations {
+  List<FavoriteDestination> _filteredFavorites(
+    List<FavoriteDestination> favorites,
+  ) {
     if (!_isSearching) {
-      return MockDestinations.favorites;
+      return favorites;
     }
 
-    return MockDestinations.favorites
+    return favorites
         .where(
           (item) => item.destination.name.toLowerCase().contains(_query),
         )
-        .toList();
+        .toList(growable: false);
   }
 
   Future<void> _selectDestination(Destination destination) async {
@@ -59,7 +62,8 @@ class _DestinationScreenState extends State<DestinationScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final destinations = _filteredDestinations;
+    final favorites = context.watch<DestinationHistoryProvider>().favorites;
+    final destinations = _filteredFavorites(favorites);
     final selectedDestination =
         context.watch<MonitoringProvider>().selectedDestination;
 
@@ -153,7 +157,7 @@ class _DestinationListCard extends StatelessWidget {
     required this.onTap,
   });
 
-  final DestinationCatalogItem item;
+  final FavoriteDestination item;
   final bool isSelected;
   final VoidCallback onTap;
 

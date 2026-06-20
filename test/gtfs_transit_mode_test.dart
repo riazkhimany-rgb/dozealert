@@ -84,6 +84,7 @@ void main() {
       latitude: 43.4553,
       longitude: -79.6829,
       routeId: 'go_transit_lakeshore_west',
+      maxStopProximityMeters: 1000,
     );
 
     expect(snapshot.isActive, isTrue);
@@ -91,5 +92,24 @@ void main() {
     expect(snapshot.destinationStop?.stopName, 'Bronte GO');
     expect(snapshot.stopsRemaining, 1);
     expect(snapshot.nextStop?.stopName, 'Bronte GO');
+  });
+
+  test('transit mode stays inactive when far from the route at home', () {
+    const destination = Destination(
+      name: 'Bronte GO',
+      latitude: 43.4039,
+      longitude: -79.7589,
+    );
+
+    // Residential Mississauga — roughly 13+ km from Bronte, not at a GO platform.
+    final snapshot = transitModeService.evaluate(
+      destination: destination,
+      latitude: 43.589,
+      longitude: -79.644,
+      routeId: 'go_transit_lakeshore_west',
+      maxStopProximityMeters: 1000,
+    );
+
+    expect(snapshot.isActive, isFalse);
   });
 }

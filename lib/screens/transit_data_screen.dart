@@ -8,6 +8,7 @@ import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
+import '../utils/user_facing_errors.dart';
 import '../widgets/home_card.dart';
 
 class TransitDataScreen extends StatefulWidget {
@@ -95,7 +96,7 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Feed action failed: $error')),
+        SnackBar(content: Text(UserFacingErrors.from(error))),
       );
     } finally {
       if (mounted) {
@@ -148,7 +149,7 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Import failed: $error')),
+        SnackBar(content: Text(UserFacingErrors.from(error))),
       );
     } finally {
       if (mounted) {

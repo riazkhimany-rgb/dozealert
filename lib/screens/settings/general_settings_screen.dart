@@ -6,6 +6,7 @@ import '../../providers/theme_provider.dart';
 import '../../utils/app_branding.dart';
 import '../../widgets/settings_section_tile.dart';
 import '../about_screen.dart';
+import '../our_story_screen.dart';
 
 class GeneralSettingsScreen extends StatefulWidget {
   const GeneralSettingsScreen({super.key});
@@ -90,6 +91,22 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const AboutScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.auto_stories_outlined, color: colorScheme.primary),
+            title: const Text('Our Story'),
+            subtitle: Text(
+              'Why DozeAlert exists and about the creator',
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const OurStoryScreen(),
                 ),
               );
             },

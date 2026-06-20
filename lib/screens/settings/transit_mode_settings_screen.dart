@@ -24,8 +24,8 @@ class TransitModeSettingsScreen extends StatelessWidget {
             secondary: Icon(Icons.directions_transit, color: colorScheme.primary),
             title: const Text('Enable Transit Mode'),
             subtitle: Text(
-              'Wake up based on stops remaining for trains, buses, subway, '
-              'and streetcars.',
+              'Wake up based on stops remaining while you are on a route. '
+              'Uses your wake radius to detect when you are near the line.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             value: settingsProvider.transitModeEnabled,
@@ -65,8 +65,8 @@ class TransitModeSettingsScreen extends StatelessWidget {
             leading: Icon(Icons.location_on_outlined, color: colorScheme.primary),
             title: const Text('Distance fallback'),
             subtitle: Text(
-              'When stop sequence is unavailable, DozeAlert falls back to '
-              'distance-based wake alarms.',
+              'When you are not near a transit route (e.g. at home), DozeAlert '
+              'uses your wake radius and straight-line distance instead.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
           ),

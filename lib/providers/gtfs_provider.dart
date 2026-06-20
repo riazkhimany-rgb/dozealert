@@ -209,7 +209,6 @@ class GtfsProvider extends ChangeNotifier {
     );
 
     await _monitoringProvider.setDestination(destination);
-    await _transitProvider.recordRecentStation(destination);
     await detectAndApplyForDestination(destination);
     notifyListeners();
   }

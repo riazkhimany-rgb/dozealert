@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 
+import 'providers/destination_history_provider.dart';
 import 'providers/gtfs_feed_provider.dart';
 import 'providers/gtfs_provider.dart';
 import 'providers/location_provider.dart';
@@ -12,6 +13,7 @@ import 'providers/settings_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/transit_mode_provider.dart';
 import 'providers/transit_line_provider.dart';
+import 'providers/trip_history_provider.dart';
 import 'providers/transit_provider.dart';
 import 'screens/app_startup_screen.dart';
 import 'cache/gtfs_cache_store.dart';
@@ -25,6 +27,7 @@ import 'services/gtfs_parser_service.dart';
 import 'services/gtfs_service.dart';
 import 'services/location_service.dart';
 import 'services/monitoring_storage_service.dart';
+import 'services/onboarding_service.dart';
 import 'services/place_search_service.dart';
 import 'services/preferences_service.dart';
 import 'services/settings_service.dart';
@@ -63,9 +66,14 @@ Future<void> main() async {
   final transitProvider = TransitProvider(preferencesService);
   await transitProvider.loadPreferences();
 
+  final destinationHistoryProvider =
+      DestinationHistoryProvider(preferencesService);
+  await destinationHistoryProvider.load();
+
   final monitoringProvider = MonitoringProvider(
     destinationStorageService,
     monitoringStorageService,
+    destinationHistory: destinationHistoryProvider,
   );
 
   await monitoringProvider.loadSavedDestination();
@@ -91,7 +99,6 @@ Future<void> main() async {
     monitoringProvider,
     transitModeProvider,
   );
-  await gtfsProvider.initialize();
 
   final gtfsFeedProvider = GtfsFeedProvider(
     gtfsDownloadService,
@@ -100,10 +107,14 @@ Future<void> main() async {
     gtfsCacheStore,
     gtfsService,
   );
-  await gtfsFeedProvider.initialize();
 
   final tripHistoryService = TripHistoryService();
   await tripHistoryService.loadActiveTripId();
+
+  final tripHistoryProvider = TripHistoryProvider(tripHistoryService);
+  await tripHistoryProvider.load();
+
+  final onboardingService = OnboardingService();
 
   runApp(
     DozeAlertApp(
@@ -126,7 +137,10 @@ Future<void> main() async {
       gtfsFeedProvider: gtfsFeedProvider,
       destinationStorageService: destinationStorageService,
       monitoringProvider: monitoringProvider,
+      destinationHistoryProvider: destinationHistoryProvider,
       tripHistoryService: tripHistoryService,
+      tripHistoryProvider: tripHistoryProvider,
+      onboardingService: onboardingService,
     ),
   );
 }
@@ -166,8 +180,12 @@ class DozeAlertApp extends StatelessWidget {
     required this.gtfsFeedProvider,
     required this.destinationStorageService,
     required this.monitoringProvider,
+    required this.destinationHistoryProvider,
     required this.tripHistoryService,
+    required this.tripHistoryProvider,
+    required this.onboardingService,
     this.skipSplash = false,
+    this.skipBootstrap = false,
   });
 
   final SettingsService settingsService;
@@ -189,8 +207,12 @@ class DozeAlertApp extends StatelessWidget {
   final GtfsFeedProvider gtfsFeedProvider;
   final DestinationStorageService destinationStorageService;
   final MonitoringProvider monitoringProvider;
+  final DestinationHistoryProvider destinationHistoryProvider;
   final TripHistoryService tripHistoryService;
+  final TripHistoryProvider tripHistoryProvider;
+  final OnboardingService onboardingService;
   final bool skipSplash;
+  final bool skipBootstrap;
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +235,7 @@ class DozeAlertApp extends StatelessWidget {
         Provider<GtfsParserService>.value(value: gtfsParserService),
         Provider<GtfsImportService>.value(value: gtfsImportService),
         Provider<TripHistoryService>.value(value: tripHistoryService),
+        Provider<OnboardingService>.value(value: onboardingService),
         Provider<DestinationStorageService>.value(
           value: destinationStorageService,
         ),
@@ -255,6 +278,12 @@ class DozeAlertApp extends StatelessWidget {
         ChangeNotifierProvider<GtfsFeedProvider>.value(
           value: gtfsFeedProvider,
         ),
+        ChangeNotifierProvider<DestinationHistoryProvider>.value(
+          value: destinationHistoryProvider,
+        ),
+        ChangeNotifierProvider<TripHistoryProvider>.value(
+          value: tripHistoryProvider,
+        ),
         ChangeNotifierProvider(
           create: (context) => LocationProvider(
             context.read<LocationService>(),
@@ -265,6 +294,7 @@ class DozeAlertApp extends StatelessWidget {
             monitoringStorageService,
             transitModeProvider,
             context.read<TripHistoryService>(),
+            tripHistoryProvider: tripHistoryProvider,
           ),
         ),
       ],
@@ -276,7 +306,10 @@ class DozeAlertApp extends StatelessWidget {
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
             themeMode: themeProvider.themeMode,
-            home: AppStartupScreen(skipSplash: skipSplash),
+            home: AppStartupScreen(
+              skipSplash: skipSplash,
+              skipBootstrap: skipBootstrap,
+            ),
           );
         },
       ),

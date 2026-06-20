@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/settings_section_tile.dart';
 import '../../widgets/transit_preferences_section.dart';
-import '../gtfs_import_screen.dart';
 import '../transit_data_screen.dart';
 import 'transit_mode_settings_screen.dart';
 
@@ -68,20 +67,6 @@ class TransitSettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.star_outline),
             title: const Text('Favorite Stops'),
             subtitle: const Text('Manage favorites from the Trips tab.'),
-          ),
-          const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Advanced'),
-          SettingsNavTile(
-            icon: Icons.upload_file_outlined,
-            title: 'Import GTFS Zip',
-            subtitle: 'Manually import a transit feed file',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const GtfsImportScreen(),
-                ),
-              );
-            },
           ),
         ],
       ),

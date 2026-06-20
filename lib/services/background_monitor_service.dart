@@ -181,6 +181,7 @@ class BackgroundMonitorService {
     switch (result) {
       case ServiceRequestSuccess():
         _foregroundServiceRunning = true;
+        FlutterForegroundTask.sendDataToTask('refresh_session');
         return BackgroundMonitorStartResult.success;
       case ServiceRequestFailure(:final error):
         AppLog.d('BackgroundMonitorService: start failed: $error');

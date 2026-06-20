@@ -5,10 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../models/arrival_context.dart';
 import '../models/current_location.dart';
 import '../models/monitoring_state.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/transit_mode_provider.dart';
+import '../providers/trip_history_provider.dart';
 import '../services/alarm_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/location_service.dart';
@@ -37,8 +39,9 @@ class LocationProvider extends ChangeNotifier {
     this._backgroundMonitorService,
     this._monitoringStorage,
     this._transitModeProvider,
-    this._tripHistoryService,
-  ) {
+    this._tripHistoryService, {
+    this._tripHistoryProvider,
+  }) {
     _locationSubscription = _locationService.locationStream.listen(
       _onLocationUpdate,
     );
@@ -61,6 +64,7 @@ class LocationProvider extends ChangeNotifier {
   final MonitoringStorageService _monitoringStorage;
   final TransitModeProvider _transitModeProvider;
   final TripHistoryService _tripHistoryService;
+  final TripHistoryProvider? _tripHistoryProvider;
 
   StreamSubscription<CurrentLocation>? _locationSubscription;
   StreamSubscription<CurrentLocation>? _backgroundLocationSubscription;
@@ -72,12 +76,19 @@ class LocationProvider extends ChangeNotifier {
   bool _trackingEnabled = false;
   bool _arrivalDialogVisible = false;
   bool _usingBackgroundService = false;
+  bool _awaitingFreshLocation = false;
+  DateTime? _monitoringStartedAt;
+  double _closestApproachMeters = double.infinity;
+  ArrivalContext? _arrivalContext;
 
   CurrentLocation? get currentLocation => _currentLocation;
   double get distanceRemainingMeters => _distanceRemainingMeters;
   double get distanceRemainingKm => _distanceRemainingKm;
+  bool get distanceIsReady =>
+      _trackingEnabled && !_awaitingFreshLocation && _currentLocation != null;
   bool get trackingEnabled => _trackingEnabled;
   bool get arrivalDialogVisible => _arrivalDialogVisible;
+  ArrivalContext? get arrivalContext => _arrivalContext;
   bool get usingBackgroundService => _usingBackgroundService;
 
   BackgroundMonitorDiagnostics get backgroundDiagnostics =>
@@ -151,6 +162,19 @@ class LocationProvider extends ChangeNotifier {
 
     final destination = _monitoringProvider.selectedDestination!;
 
+    await _monitoringStorage.setArrivalTriggered(false);
+    if (!resume) {
+      final startedAt = DateTime.now();
+      _monitoringStartedAt = startedAt;
+      await _monitoringStorage.markMonitoringStarted(startedAt);
+      _resetLocationState(awaitingFresh: true);
+    } else {
+      _monitoringStartedAt = await _monitoringStorage.loadMonitoringStartedAt();
+      _awaitingFreshLocation = false;
+    }
+
+    _monitoringProvider.startMonitoring();
+
     if (Platform.isAndroid) {
       final backgroundResult = await _backgroundMonitorService.startMonitoring(
         destinationName: destination.name,
@@ -181,12 +205,12 @@ class LocationProvider extends ChangeNotifier {
       return LocationStartResult.permissionDenied;
     }
 
-    await _monitoringStorage.setArrivalTriggered(false);
     _transitModeProvider.resetApproachAlarm();
+    _closestApproachMeters = double.infinity;
     _trackingEnabled = true;
-    _monitoringProvider.startMonitoring();
     await _tripHistoryService.startTrip(destination.name);
     await _backgroundMonitorService.syncServiceState();
+    unawaited(refreshLocation());
     notifyListeners();
     return LocationStartResult.success;
   }
@@ -201,7 +225,8 @@ class LocationProvider extends ChangeNotifier {
     }
 
     if (_monitoringProvider.currentState == MonitoringState.monitoring) {
-      await _tripHistoryService.endTrip(missed: true);
+      await _tripHistoryService.endTrip();
+      await _tripHistoryProvider?.refresh();
     }
 
     _arrivalDialogVisible = false;
@@ -210,6 +235,7 @@ class LocationProvider extends ChangeNotifier {
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
     _usingBackgroundService = false;
+    _resetLocationState();
     await _monitoringStorage.clearSession();
     _monitoringProvider.stopMonitoring();
     notifyListeners();
@@ -218,7 +244,9 @@ class LocationProvider extends ChangeNotifier {
   Future<void> dismissArrival() async {
     await _alarmService.stopAlarm();
     await _tripHistoryService.recordAlarmDismissed();
+    await _tripHistoryProvider?.refresh();
     _arrivalDialogVisible = false;
+    _arrivalContext = null;
     _transitModeProvider.resetApproachAlarm();
     await _monitoringStorage.setArrivalTriggered(false);
     _monitoringProvider.resetToIdle();
@@ -226,15 +254,35 @@ class LocationProvider extends ChangeNotifier {
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
     _usingBackgroundService = false;
+    _resetLocationState();
     await _monitoringStorage.clearSession();
     notifyListeners();
+  }
+
+  void _resetLocationState({bool awaitingFresh = false}) {
+    _currentLocation = null;
+    _distanceRemainingMeters = 0;
+    _distanceRemainingKm = 0;
+    _awaitingFreshLocation = awaitingFresh;
+    if (!awaitingFresh) {
+      _monitoringStartedAt = null;
+    }
+  }
+
+  bool _isStaleLocation(CurrentLocation location) {
+    final startedAt = _monitoringStartedAt;
+    if (startedAt == null) {
+      return false;
+    }
+
+    return location.timestamp.isBefore(startedAt);
   }
 
   void updateDistance() {
     final destination = _monitoringProvider.selectedDestination;
     final current = _currentLocation;
 
-    if (destination == null || current == null) {
+    if (destination == null || current == null || _awaitingFreshLocation) {
       _distanceRemainingMeters = 0;
       _distanceRemainingKm = 0;
       return;
@@ -247,9 +295,24 @@ class LocationProvider extends ChangeNotifier {
       destination.longitude,
     );
     _distanceRemainingKm = _distanceRemainingMeters / 1000;
+
+    if (_trackingEnabled &&
+        _monitoringProvider.currentState == MonitoringState.monitoring) {
+      _closestApproachMeters = _distanceRemainingMeters < _closestApproachMeters
+          ? _distanceRemainingMeters
+          : _closestApproachMeters;
+    }
   }
 
   Future<void> _onLocationUpdate(CurrentLocation location) async {
+    if (_awaitingFreshLocation && _isStaleLocation(location)) {
+      return;
+    }
+
+    if (_awaitingFreshLocation) {
+      _awaitingFreshLocation = false;
+    }
+
     _currentLocation = location;
     updateDistance();
     _transitModeProvider.updateFromLocation(
@@ -266,6 +329,7 @@ class LocationProvider extends ChangeNotifier {
     }
 
     await _checkArrival();
+    await _checkMissedStop();
     notifyListeners();
   }
 
@@ -294,13 +358,17 @@ class LocationProvider extends ChangeNotifier {
 
     await _alarmService.playAlarm();
     await _tripHistoryService.recordAlarmTriggered();
+    _setArrivalContext(
+      usedTransitMode: false,
+      detailMessage: 'Distance wake — within wake radius',
+    );
     _monitoringProvider.markArrived();
     _arrivalDialogVisible = true;
     notifyListeners();
   }
 
   Future<void> _checkArrival() async {
-    if (!_trackingEnabled) {
+    if (!_trackingEnabled || _awaitingFreshLocation) {
       return;
     }
 
@@ -322,6 +390,11 @@ class LocationProvider extends ChangeNotifier {
 
     if (_settingsService.settings.transitModeEnabled) {
       if (_transitModeProvider.shouldTriggerApproachAlarm) {
+        final thresholdMeters = _monitoringProvider.radiusMeters.toDouble();
+        if (_distanceRemainingMeters > thresholdMeters) {
+          return;
+        }
+
         await _monitoringStorage.setArrivalTriggered(true);
         final message = _transitModeProvider.approachAlarmMessage;
         await _alarmService.playApproachAlarm(
@@ -330,6 +403,10 @@ class LocationProvider extends ChangeNotifier {
         );
         await _tripHistoryService.recordAlarmTriggered();
         _transitModeProvider.markApproachAlarmTriggered();
+        _setArrivalContext(
+          usedTransitMode: true,
+          detailMessage: message,
+        );
         _monitoringProvider.markArrived();
         _arrivalDialogVisible = true;
         notifyListeners();
@@ -352,8 +429,69 @@ class LocationProvider extends ChangeNotifier {
     await _monitoringStorage.setArrivalTriggered(true);
     await _alarmService.playAlarm();
     await _tripHistoryService.recordAlarmTriggered();
+    _setArrivalContext(
+      usedTransitMode: false,
+      detailMessage: 'Distance wake — within wake radius',
+    );
     _monitoringProvider.markArrived();
     _arrivalDialogVisible = true;
+    notifyListeners();
+  }
+
+  void _setArrivalContext({
+    required bool usedTransitMode,
+    required String detailMessage,
+  }) {
+    final destination = _monitoringProvider.selectedDestination;
+    _arrivalContext = ArrivalContext(
+      destinationName: destination?.name ?? 'Destination',
+      usedTransitMode: usedTransitMode,
+      detailMessage: detailMessage,
+      distanceKm: _distanceRemainingKm,
+      stopsRemaining: usedTransitMode
+          ? _transitModeProvider.snapshot.stopsRemaining
+          : null,
+    );
+  }
+
+  Future<void> _checkMissedStop() async {
+    if (!_trackingEnabled || _awaitingFreshLocation) {
+      return;
+    }
+
+    if (_monitoringProvider.currentState != MonitoringState.monitoring) {
+      return;
+    }
+
+    if (_alarmService.alarmActive || _arrivalDialogVisible) {
+      return;
+    }
+
+    final radiusMeters = _monitoringProvider.radiusMeters.toDouble();
+    final approached = _closestApproachMeters <= radiusMeters * 3;
+    final movingAway = _distanceRemainingMeters > radiusMeters &&
+        _distanceRemainingMeters > _closestApproachMeters + 200;
+
+    if (!approached || !movingAway) {
+      return;
+    }
+
+    await _handleMissedStop();
+  }
+
+  Future<void> _handleMissedStop() async {
+    await _tripHistoryService.recordMissedTrip();
+    await _tripHistoryProvider?.refresh();
+    _monitoringProvider.markMissed();
+    _arrivalDialogVisible = false;
+    _arrivalContext = null;
+    await _alarmService.stopAlarm();
+    await _locationService.stopTracking();
+    await _backgroundMonitorService.stopMonitoring();
+    _trackingEnabled = false;
+    _usingBackgroundService = false;
+    _resetLocationState();
+    await _monitoringStorage.clearSession();
     notifyListeners();
   }
 

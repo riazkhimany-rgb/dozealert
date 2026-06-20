@@ -6,7 +6,6 @@ import '../providers/location_provider.dart';
 import '../providers/navigation_provider.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
-import 'share_screen.dart';
 import 'trips_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -33,18 +32,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       selectedIcon: Icon(Icons.settings),
       label: 'Settings',
     ),
-    NavigationDestination(
-      icon: Icon(Icons.share_outlined),
-      selectedIcon: Icon(Icons.share),
-      label: 'Share',
-    ),
   ];
 
   static const _screens = [
     HomeScreen(),
     TripsScreen(),
     SettingsScreen(),
-    ShareScreen(),
   ];
 
   @override
