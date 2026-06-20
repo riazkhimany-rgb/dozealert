@@ -104,21 +104,40 @@
       vertical-align: top;
     }
     th { color: var(--cyan); background: rgba(0,0,0,0.2); }
-    a { color: var(--cyan); }
+    a {
+      color: var(--cyan);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    a:hover { color: var(--white); }
+    .nav a {
+      display: inline-block;
+      min-height: 44px;
+      line-height: 44px;
+      text-decoration: underline;
+    }
     footer {
+      position: relative;
+      z-index: 2;
       text-align: center;
       margin-top: 2rem;
-      padding-top: 1.5rem;
+      padding: 1.5rem 0 2.5rem;
       border-top: 1px solid rgba(255,255,255,0.08);
       font-size: 0.8125rem;
       color: var(--muted);
+    }
+    footer a {
+      display: inline-block;
+      min-height: 44px;
+      line-height: 44px;
+      padding: 0 0.25rem;
     }
   </style>
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
   <div class="wrap">
-    <nav class="nav"><a href="../">← DozeAlert home</a></nav>
+    <nav class="nav"><a href="../index.html">← DozeAlert home</a></nav>
 
     <h1>Privacy Policy</h1>
     <p class="meta">
@@ -292,7 +311,7 @@
     </section>
 
     <footer>
-      <p><a href="../">dozealert.app</a> · © DozeAlert</p>
+      <p><a href="../index.html">dozealert.app</a> · © DozeAlert · App version synced with release build</p>
     </footer>
   </div>
 </body>

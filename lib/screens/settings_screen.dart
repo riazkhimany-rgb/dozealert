@@ -2,10 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/settings_section_tile.dart';
+import 'settings/about_settings_screen.dart';
 import 'settings/alarm_settings_screen.dart';
 import 'settings/developer_tools_screen.dart';
-import 'settings/general_settings_screen.dart';
 import 'settings/location_settings_screen.dart';
+import 'settings/theme_settings_screen.dart';
 import 'settings/transit_settings_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -23,11 +24,23 @@ class SettingsScreen extends StatelessWidget {
           SettingsNavTile(
             icon: Icons.palette_outlined,
             title: 'Theme',
-            subtitle: 'Appearance, about, and version',
+            subtitle: 'Light, dark, and system appearance',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const GeneralSettingsScreen(),
+                  builder: (_) => const ThemeSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          SettingsNavTile(
+            icon: Icons.info_outline,
+            title: 'About',
+            subtitle: 'App info, our story, and version',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AboutSettingsScreen(),
                 ),
               );
             },

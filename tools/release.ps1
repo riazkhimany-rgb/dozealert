@@ -98,10 +98,35 @@ function Copy-ApkToWebsite {
     Copy-Item $apkSource (Join-Path $downloadsDir $versioned) -Force
     Copy-Item $apkSource (Join-Path $downloadsDir 'dozealert-latest.apk') -Force
 
+    Update-WebsiteVersion -Version $Version
+
     Write-Host ""
     Write-Host "APK copied to website/downloads/:" -ForegroundColor Green
     Write-Host "  $versioned"
     Write-Host "  dozealert-latest.apk"
+}
+
+function Update-WebsiteVersion {
+    param([hashtable]$Version)
+
+    $versionJsonPath = Join-Path $projectRoot 'website/app-version.json'
+    $versionLabel = "$($Version.Name)+$($Version.Code)"
+    @"
+{"version":"$($Version.Name)","build":$($Version.Code),"label":"$versionLabel"}
+"@ | Set-Content -Path $versionJsonPath -Encoding utf8
+
+    $indexPath = Join-Path $projectRoot 'website/index.html'
+    if (Test-Path $indexPath) {
+        $indexHtml = Get-Content $indexPath -Raw
+        $indexHtml = [regex]::Replace(
+            $indexHtml,
+            '(<span id="app-version">)[^<]*(</span>)',
+            "`${1}$versionLabel`${2}"
+        )
+        Set-Content -Path $indexPath -Value $indexHtml -Encoding utf8 -NoNewline
+    }
+
+    Write-Host "  Website version set to $versionLabel" -ForegroundColor Green
 }
 
 function Invoke-GitRelease {

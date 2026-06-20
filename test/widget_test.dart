@@ -223,11 +223,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('General'), findsOneWidget);
+    expect(find.text('Theme'), findsOneWidget);
+    expect(find.text('About'), findsOneWidget);
     expect(find.text('Transit'), findsWidgets);
     expect(find.text('Location'), findsWidgets);
-    expect(find.text('Alarm'), findsOneWidget);
 
-    await tester.tap(find.text('Theme').first);
+    await tester.tap(find.text('About'));
     await tester.pumpAndSettle();
 
     expect(find.text('About DozeAlert'), findsOneWidget);

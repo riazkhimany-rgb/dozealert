@@ -37,6 +37,10 @@ $latestName = "dozealert-latest.apk"
 Copy-Item $apkSource (Join-Path $downloadsDir $versionedName) -Force
 Copy-Item $apkSource (Join-Path $downloadsDir $latestName) -Force
 
+$versionLabel = "$versionName+$versionCode"
+@{"version"=$versionName;"build"=[int]$versionCode;"label"=$versionLabel} | ConvertTo-Json -Compress |
+    Set-Content (Join-Path $projectRoot "website/app-version.json") -Encoding utf8
+
 Write-Host ""
 Write-Host "Success:" -ForegroundColor Green
 Write-Host "  $downloadsDir\$versionedName"

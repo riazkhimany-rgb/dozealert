@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:provider/provider.dart';
 
-import '../../providers/theme_provider.dart';
 import '../../utils/app_branding.dart';
 import '../../widgets/settings_section_tile.dart';
 import '../about_screen.dart';
 import '../our_story_screen.dart';
 
-class GeneralSettingsScreen extends StatefulWidget {
-  const GeneralSettingsScreen({super.key});
+class AboutSettingsScreen extends StatefulWidget {
+  const AboutSettingsScreen({super.key});
 
   @override
-  State<GeneralSettingsScreen> createState() => _GeneralSettingsScreenState();
+  State<AboutSettingsScreen> createState() => _AboutSettingsScreenState();
 }
 
-class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
+class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
   String _version = '…';
 
   @override
@@ -34,46 +32,17 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     });
   }
 
-  String _themeModeLabel(ThemeMode mode) {
-    return switch (mode) {
-      ThemeMode.system => 'System default',
-      ThemeMode.light => 'Light',
-      ThemeMode.dark => 'Dark',
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('General'),
+        title: const Text('About'),
       ),
       body: ListView(
         children: [
-          const SettingsSectionHeader(title: 'Theme'),
-          RadioGroup<ThemeMode>(
-            groupValue: themeProvider.themeMode,
-            onChanged: (value) {
-              if (value != null) {
-                themeProvider.setThemeMode(value);
-              }
-            },
-            child: Column(
-              children: ThemeMode.values
-                  .map(
-                    (mode) => RadioListTile<ThemeMode>(
-                      title: Text(_themeModeLabel(mode)),
-                      value: mode,
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-          const Divider(height: 32),
-          const SettingsSectionHeader(title: 'About'),
+          const SettingsSectionHeader(title: 'App'),
           ListTile(
             leading: CircleAvatar(
               backgroundColor: colorScheme.primaryContainer,

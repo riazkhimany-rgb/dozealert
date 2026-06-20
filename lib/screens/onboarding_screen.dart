@@ -3,17 +3,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/app_settings.dart';
-import '../providers/settings_provider.dart';
 import '../services/alarm_service.dart';
 import '../services/onboarding_service.dart';
 import '../utils/app_branding.dart';
+import '../widgets/alarm_test_page.dart';
 import '../widgets/onboarding_permissions_page.dart';
 import '../widgets/transit_preferences_section.dart';
 import 'main_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({
+    super.key,
+    this.popOnComplete = false,
+  });
+
+  /// When true, finishing or skipping returns to the previous screen instead
+  /// of replacing the app root (used from the home first-time setup checklist).
+  final bool popOnComplete;
 
   static const pageCount = 4;
   static const permissionsPageIndex = 1;
@@ -51,6 +57,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await context.read<AlarmService>().stopAlarm();
     await _onboardingService.markComplete();
     if (!mounted) {
+      return;
+    }
+    if (widget.popOnComplete) {
+      Navigator.of(context).pop();
       return;
     }
     Navigator.of(context).pushReplacement(
@@ -127,11 +137,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Welcome'),
+        title: Text(widget.popOnComplete ? 'Setup guide' : 'Welcome'),
         actions: [
           TextButton(
             onPressed: _finish,
-            child: const Text('Skip'),
+            child: Text(widget.popOnComplete ? 'Close' : 'Skip'),
           ),
         ],
       ),
@@ -186,11 +196,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ],
             ),
           ),
-          _AlarmTestPage(
+          AlarmTestPage(
             alarmPlaying: _alarmTestPlaying,
             alarmTestCompleted: _alarmTestCompleted,
-            onPlay: _playTestAlarm,
-            onStop: _stopTestAlarm,
+            onPlay: () => unawaited(_playTestAlarm()),
+            onStop: () => unawaited(_stopTestAlarm()),
+            completionMessage:
+                'Volume saved. Tap Get started when you are ready.',
           ),
         ],
       ),
@@ -260,167 +272,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _AlarmTestPage extends StatelessWidget {
-  const _AlarmTestPage({
-    required this.alarmPlaying,
-    required this.alarmTestCompleted,
-    required this.onPlay,
-    required this.onStop,
-  });
-
-  final bool alarmPlaying;
-  final bool alarmTestCompleted;
-  final VoidCallback onPlay;
-  final VoidCallback onStop;
-
-  static int _percentLabel(double value) => (value * 100).round();
-
-  Future<void> _applyVolumeChange(
-    AlarmService alarmService,
-    Future<void> Function(double) saveVolume,
-    double value,
-  ) async {
-    await saveVolume(value);
-    await alarmService.updateActiveAlarmVolume();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final settingsProvider = context.read<SettingsProvider>();
-    final alarmService = context.read<AlarmService>();
-    final alarmVolume = context.select<SettingsProvider, double>(
-      (provider) => provider.alarmVolume,
-    );
-    final approachSystemVolume = context.select<SettingsProvider, double>(
-      (provider) => provider.approachSystemVolume,
-    );
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-      children: [
-        Icon(
-          Icons.volume_up_outlined,
-          size: 64,
-          color: colorScheme.primary,
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'Test the alarm',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Play the alert, adjust the sliders until it is easy to hear, '
-          'then stop the test before continuing.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Phone speaker volume during alert',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Row(
-          children: [
-            Icon(Icons.volume_down, color: colorScheme.onSurfaceVariant),
-            Expanded(
-              child: Slider(
-                value: approachSystemVolume,
-                min: AppSettings.minApproachSystemVolume,
-                max: 1.0,
-                divisions: 18,
-                label: '${_percentLabel(approachSystemVolume)}%',
-                onChanged: (value) => unawaited(
-                  _applyVolumeChange(
-                    alarmService,
-                    settingsProvider.setApproachSystemVolume,
-                    value,
-                  ),
-                ),
-              ),
-            ),
-            Icon(Icons.volume_up, color: colorScheme.onSurfaceVariant),
-          ],
-        ),
-        Text(
-          'Temporarily raises media volume while the alert plays.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'Voice and tone level',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Row(
-          children: [
-            Icon(Icons.volume_down, color: colorScheme.onSurfaceVariant),
-            Expanded(
-              child: Slider(
-                value: alarmVolume,
-                divisions: 10,
-                label: '${_percentLabel(alarmVolume)}%',
-                onChanged: (value) => unawaited(
-                  _applyVolumeChange(
-                    alarmService,
-                    settingsProvider.setAlarmVolume,
-                    value,
-                  ),
-                ),
-              ),
-            ),
-            Icon(Icons.volume_up, color: colorScheme.onSurfaceVariant),
-          ],
-        ),
-        const SizedBox(height: 24),
-        FilledButton.icon(
-          onPressed: alarmPlaying ? null : onPlay,
-          icon: const Icon(Icons.play_arrow_rounded),
-          label: const Text('Play test alarm'),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: alarmPlaying ? onStop : null,
-          icon: const Icon(Icons.stop_circle_outlined),
-          label: const Text('Stop test alarm'),
-        ),
-        if (alarmTestCompleted) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Volume saved. Tap Get started when you are ready.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-        const SizedBox(height: 16),
-        Text(
-          AppBranding.tagline,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: colorScheme.secondary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
     );
   }
 }

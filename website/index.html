@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="DozeAlert wakes you before you reach your destination. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
-  <title>DozeAlert — Sleep peacefully. Arrive confidently.</title>
+  <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
   <link rel="icon" type="image/png" href="assets/icon-512.png">
   <style>
     :root {
@@ -116,20 +116,22 @@
     .download-btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.6rem;
       background: var(--cyan);
-      color: var(--midnight);
+      color: var(--midnight) !important;
       font-size: 1.0625rem;
       font-weight: 700;
       text-decoration: none;
       padding: 1rem 2rem;
       border-radius: 999px;
-      transition: background 0.15s, transform 0.15s;
+      transition: background 0.15s, transform 0.15s, color 0.15s;
       box-shadow: 0 4px 20px rgba(76, 201, 240, 0.35);
     }
 
     .download-btn:hover {
       background: var(--cyan-dim);
+      color: var(--midnight) !important;
       transform: translateY(-1px);
     }
 
@@ -219,27 +221,40 @@
     }
 
     footer {
+      position: relative;
+      z-index: 2;
       text-align: center;
       margin-top: 2.5rem;
-      padding-top: 1.5rem;
+      padding: 1.5rem 0 2.5rem;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
       font-size: 0.8125rem;
       color: var(--muted);
     }
 
-    footer a {
+    footer a,
+    .text-link {
       color: var(--cyan);
-      text-decoration: none;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      padding: 0.35rem 0.15rem;
+      display: inline-block;
+      min-height: 44px;
+      line-height: 1.4;
+    }
+
+    footer a:hover,
+    .text-link:hover {
+      color: var(--white);
     }
 
     .card a {
       color: var(--cyan);
-      text-decoration: none;
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
 
-    .card a:hover,
-    footer a:hover {
-      text-decoration: underline;
+    .card a:hover {
+      color: var(--white);
     }
 
     @media (min-width: 600px) {
@@ -269,11 +284,11 @@
         Download APK
       </a>
       <p class="meta" style="margin-top: 1rem;">
-        Also on <strong>Google Play</strong> — search for <strong>DozeAlert</strong>
+        Also on <strong>Google Play</strong> â€” search for <strong>DozeAlert</strong>
         (<code>app.dozealert</code>) when the listing is live in your region.
       </p>
       <p class="meta">
-        Version <span id="app-version">1.0.1</span> · Android 8.0+ · Package <code>app.dozealert</code>
+        Version <span id="app-version">1.0.1+2</span> Â· Android 8.0+ Â· Package <code>app.dozealert</code>
       </p>
     </section>
 
@@ -290,7 +305,7 @@
         <li>Background monitoring while you rest</li>
         <li>Voice, vibration, and alarm alerts</li>
         <li>Map picker and saved destinations</li>
-        <li>No account required — trip data stays on your device</li>
+        <li>No account required â€” trip data stays on your device</li>
       </ul>
     </section>
 
@@ -310,7 +325,7 @@
         We do not show ads, sell personal data, or require an account. Map search uses
         Google Maps Platform; optional transit downloads use public open-data hosts.
         Read the full policy:
-        <a href="privacy/">Privacy Policy</a>
+        <a class="text-link" href="privacy/index.html">Privacy Policy</a>
       </p>
     </section>
 
@@ -327,7 +342,7 @@
           Wait until the download finishes (check your notification shade or Downloads folder).
         </li>
         <li>
-          <strong>Open the downloaded file</strong> — tap the notification, or open
+          <strong>Open the downloaded file</strong> â€” tap the notification, or open
           <em>Files</em> / <em>Downloads</em> and tap <code>dozealert-latest.apk</code>.
         </li>
         <li>
@@ -337,9 +352,9 @@
           <em>Install</em>.
         </li>
         <li>
-          <strong>Complete setup in the app</strong> — grant permissions as prompted
+          <strong>Complete setup in the app</strong> â€” grant permissions as prompted
           (location all the time, notifications, GPS on). See
-          <a href="privacy/">Privacy Policy</a> for details.
+          <a class="text-link" href="privacy/index.html">Privacy Policy</a> for details.
         </li>
         <li>
           <strong>Open DozeAlert</strong>, pick a destination, set your wake radius, and
@@ -348,20 +363,20 @@
       </ol>
 
       <div class="note">
-        <strong>Tip:</strong> After installing, you can turn off “Install unknown apps” again
+        <strong>Tip:</strong> After installing, you can turn off â€œInstall unknown appsâ€ again
         for your browser. It only needs to be enabled during installation.
       </div>
 
       <details>
         <summary>Android version-specific help</summary>
-        <p><strong>Android 13 and newer:</strong> Settings → Security & privacy →
-        More security settings → Install unknown apps → select your browser → Allow.</p>
-        <p><strong>Android 12:</strong> Settings → Apps → Special app access →
-        Install unknown apps → your browser → Allow.</p>
-        <p><strong>Samsung Galaxy:</strong> Settings → Biometrics and security →
-        Install unknown apps → select the app you downloaded with → Allow.</p>
-        <p><strong>“App not installed” error:</strong> Uninstall any older test build first,
-        or download the APK again — the file may have been corrupted during download.</p>
+        <p><strong>Android 13 and newer:</strong> Settings â†’ Security & privacy â†’
+        More security settings â†’ Install unknown apps â†’ select your browser â†’ Allow.</p>
+        <p><strong>Android 12:</strong> Settings â†’ Apps â†’ Special app access â†’
+        Install unknown apps â†’ your browser â†’ Allow.</p>
+        <p><strong>Samsung Galaxy:</strong> Settings â†’ Biometrics and security â†’
+        Install unknown apps â†’ select the app you downloaded with â†’ Allow.</p>
+        <p><strong>â€œApp not installedâ€ error:</strong> Uninstall any older test build first,
+        or download the APK again â€” the file may have been corrupted during download.</p>
       </details>
     </section>
 
@@ -376,18 +391,27 @@
     </section>
 
     <footer>
-      <p>
-        <a href="privacy/">Privacy Policy</a>
-        · <a href="mailto:support@dozealert.app">support@dozealert.app</a>
-        · No ads · No sale of personal data
+      <p class="footer-links">
+        <a href="privacy/index.html">Privacy Policy</a>
+        <span aria-hidden="true"> Â· </span>
+        <a href="mailto:support@dozealert.app">support@dozealert.app</a>
       </p>
-      <p style="margin-top: 0.5rem;">© DozeAlert · Developer: Riaz</p>
+      <p style="margin-top: 0.75rem;">No ads Â· No sale of personal data</p>
+      <p style="margin-top: 0.5rem;">Â© DozeAlert Â· Developer: Riaz</p>
     </footer>
   </div>
 
   <script>
-    // Update version label when you ship a new APK (or generate from build script).
-    document.getElementById('app-version').textContent = '1.0.1';
+    fetch('app-version.json')
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!data) {
+          return;
+        }
+        const label = data.label || (data.build ? `${data.version}+${data.build}` : data.version);
+        document.getElementById('app-version').textContent = label;
+      })
+      .catch(() => {});
   </script>
 </body>
 </html>

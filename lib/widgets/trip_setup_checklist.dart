@@ -10,8 +10,9 @@ import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/transit_provider.dart';
+import '../screens/alarm_test_screen.dart';
+import '../screens/onboarding_screen.dart';
 import '../screens/transit_data_screen.dart';
-import '../services/alarm_service.dart';
 import '../services/app_permissions_service.dart';
 import '../services/onboarding_service.dart';
 import '../widgets/onboarding_permissions_page.dart';
@@ -83,6 +84,24 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
     }
   }
 
+  Future<void> _openSetupGuide() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => const OnboardingScreen(popOnComplete: true),
+      ),
+    );
+    await _refreshChecks();
+  }
+
+  Future<void> _openAlarmTest() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => const AlarmTestScreen(),
+      ),
+    );
+    await _refreshChecks();
+  }
+
   Future<void> _openPermissionsSetup() async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
@@ -139,11 +158,7 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
       _ChecklistItem(
         label: 'Alarm tested',
         complete: _alarmTested ?? false,
-        onTap: () async {
-          await context.read<AlarmService>().playAlarm();
-          await OnboardingService().markAlarmTested();
-          await _refreshChecks();
-        },
+        onTap: () => unawaited(_openAlarmTest()),
       ),
     ];
 
@@ -166,7 +181,7 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
                   Expanded(
                     child: HomeCardHeader(
                       icon: Icons.checklist_rtl,
-                      title: 'Trip setup ($completeCount/${items.length})',
+                      title: 'First time setup ($completeCount/${items.length})',
                     ),
                   ),
                   Icon(_expanded ? Icons.expand_less : Icons.expand_more),
@@ -174,7 +189,15 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
               ),
             ),
             if (_expanded) ...[
-              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => unawaited(_openSetupGuide()),
+                  icon: const Icon(Icons.menu_book_outlined),
+                  label: const Text('Open setup guide'),
+                ),
+              ),
+              const SizedBox(height: 4),
               ...items.map(
                 (item) => ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -206,7 +229,7 @@ class _PermissionsSetupScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trip permissions'),
+        title: const Text('Permissions'),
       ),
       body: OnboardingPermissionsPage(
         onStatusChanged: (_) {},
