@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../services/alarm_service.dart';
 import '../services/onboarding_service.dart';
-import '../utils/app_branding.dart';
 import '../widgets/alarm_test_page.dart';
+import '../widgets/branding_logo.dart';
 import '../widgets/onboarding_permissions_page.dart';
 import '../widgets/transit_preferences_section.dart';
 import 'main_screen.dart';
@@ -156,7 +156,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 'you are approaching your destination.\n\n'
                 'Set a wake radius (for example 1 km) so the alert '
                 'fires with enough time to gather your things.',
-            icon: Icons.notifications_active_outlined,
           ),
           OnboardingPermissionsPage(
             onStatusChanged: (snapshot) {
@@ -280,12 +279,10 @@ class _IntroPage extends StatelessWidget {
   const _IntroPage({
     required this.title,
     required this.body,
-    required this.icon,
   });
 
   final String title;
   final String body;
-  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -296,14 +293,8 @@ class _IntroPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            AppBranding.splashLogoAsset,
-            width: 96,
-            height: 96,
-          ),
+          const BrandingLogo(height: 120),
           const SizedBox(height: 24),
-          Icon(icon, size: 48, color: colorScheme.primary),
-          const SizedBox(height: 16),
           Text(
             title,
             textAlign: TextAlign.center,

@@ -215,7 +215,7 @@ class _DestinationCard extends StatelessWidget {
             Text(
               transitModeEnabled
                   ? selectedLine
-                  : '$selectedLine · Wake by distance when monitoring',
+                  : 'Wake by distance when monitoring',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),

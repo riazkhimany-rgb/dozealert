@@ -1,10 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DozeAlert logo">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="62%" r="55%">
+      <stop offset="0%" stop-color="#4CC9F0" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#4CC9F0" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
   <rect width="512" height="512" rx="96" fill="#0D1B2A"/>
-  <ellipse cx="256" cy="292" rx="118" ry="132" fill="#4CC9F0" opacity="0.22"/>
-  <ellipse cx="256" cy="292" rx="86" ry="98" fill="#4CC9F0" opacity="0.12"/>
-  <path d="M256 88c-74 0-134 60-134 134 0 52 36 108 86 158 14 14 32 22 48 22s34-8 48-22c50-50 86-106 86-158 0-74-60-134-134-134z" fill="#FFFFFF"/>
-  <circle cx="256" cy="214" r="58" fill="#0D1B2A"/>
-  <path d="M226 206c8 8 16 8 24 0" stroke="#4CC9F0" stroke-width="7" stroke-linecap="round" fill="none"/>
-  <path d="M262 206c8 8 16 8 24 0" stroke="#4CC9F0" stroke-width="7" stroke-linecap="round" fill="none"/>
-  <path d="M234 236c10 12 34 12 44 0" stroke="#4CC9F0" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <ellipse cx="256" cy="292" rx="150" ry="170" fill="url(#glow)"/>
+  <g filter="url(#softGlow)">
+    <path d="M256 92c-78 0-141 63-141 141 0 55 38 114 91 166 15 15 33 23 50 23s35-8 50-23c53-52 91-111 91-166 0-78-63-141-141-141z" fill="#FFFFFF"/>
+    <circle cx="256" cy="220" r="54" fill="#0D1B2A"/>
+    <circle cx="256" cy="248" r="10" fill="#FFFFFF"/>
+    <path d="M228 214c8 8 16 8 24 0" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M260 214c8 8 16 8 24 0" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <text x="292" y="188" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">Z</text>
+    <text x="312" y="168" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">Z</text>
+    <text x="328" y="152" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700">Z</text>
+  </g>
 </svg>

@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/app_branding.dart';
+import '../widgets/branding_logo.dart';
 import '../widgets/home_card.dart';
 
 class ShareScreen extends StatelessWidget {
@@ -38,11 +39,7 @@ class ShareScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Image.asset(
-                      AppBranding.splashLogoAsset,
-                      width: 56,
-                      height: 56,
-                    ),
+                    const BrandingLogo(height: 56),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(

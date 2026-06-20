@@ -227,6 +227,9 @@ try {
     Invoke-Step 'flutter pub get' { flutter pub get }
 
     if (-not $SkipBranding) {
+        Invoke-Step 'Regenerate branding PNGs from splash' {
+            & (Join-Path $projectRoot 'tool/generate_branding_assets.ps1')
+        }
         Invoke-Step 'Regenerate launcher icons' { dart run flutter_launcher_icons }
         Invoke-Step 'Regenerate native splash' { dart run flutter_native_splash:create }
     }

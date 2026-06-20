@@ -174,205 +174,332 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final placeSearchService = context.read<PlaceSearchService>();
     final selectedPosition = _selectedPosition;
     final canSave = selectedPosition != null;
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final keyboardOpen = keyboardInset > 0;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('Choose Destination'),
       ),
-      body: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: _initialCameraPosition,
-            markers: _markers,
-            onMapCreated: _onMapCreated,
-            onTap: _onMapTap,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            zoomControlsEnabled: false,
-            mapToolbarEnabled: false,
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            top: 16,
-            child: Material(
-              elevation: 3,
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              clipBehavior: Clip.antiAlias,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (!placeSearchService.isConfigured)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Material(
+                elevation: 3,
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!placeSearchService.isConfigured)
+                        Text(
                           EnvConfig.missingApiKeyMessage,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: colorScheme.error,
                           ),
-                        ),
-                      )
-                    else
-                      GooglePlaceAutoCompleteTextField(
-                        textEditingController: _searchController,
-                        googleAPIKey: placeSearchService.apiKey,
-                        debounceTime: 400,
-                        countries: _placeCountries(),
-                        isLatLngRequired: true,
-                        isCrossBtnShown: true,
-                        containerHorizontalPadding: 0,
-                        containerVerticalPadding: 0,
-                        boxDecoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        inputDecoration: InputDecoration(
-                          hintText: PlaceSearchService.searchPlaceholder,
-                          prefixIcon: const Icon(Icons.search),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 14,
+                        )
+                      else
+                        GooglePlaceAutoCompleteTextField(
+                          textEditingController: _searchController,
+                          googleAPIKey: placeSearchService.apiKey,
+                          debounceTime: 400,
+                          countries: _placeCountries(),
+                          isLatLngRequired: true,
+                          isCrossBtnShown: true,
+                          containerHorizontalPadding: 0,
+                          containerVerticalPadding: 0,
+                          boxDecoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          inputDecoration: InputDecoration(
+                            hintText: PlaceSearchService.searchPlaceholder,
+                            prefixIcon: const Icon(Icons.search),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 14,
+                            ),
+                          ),
+                          itemClick: (Prediction prediction) {
+                            _searchController.text =
+                                prediction.description ?? '';
+                            _searchController.selection =
+                                TextSelection.fromPosition(
+                              TextPosition(
+                                offset: _searchController.text.length,
+                              ),
+                            );
+                          },
+                          getPlaceDetailWithLatLng: (Prediction prediction) {
+                            final result =
+                                placeSearchService.parsePrediction(prediction);
+                            if (result != null) {
+                              _selectSearchResult(result);
+                            }
+                          },
+                          itemBuilder: (context, index, Prediction prediction) {
+                            return ListTile(
+                              leading: Icon(
+                                Icons.place_outlined,
+                                color: colorScheme.primary,
+                              ),
+                              title: Text(
+                                prediction.description ?? '',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              dense: true,
+                            );
+                          },
+                          seperatedBuilder: Divider(
+                            height: 1,
+                            color: colorScheme.outlineVariant,
                           ),
                         ),
-                        itemClick: (Prediction prediction) {
-                          _searchController.text = prediction.description ?? '';
-                          _searchController.selection = TextSelection.fromPosition(
-                            TextPosition(
-                              offset: _searchController.text.length,
-                            ),
-                          );
-                        },
-                        getPlaceDetailWithLatLng: (Prediction prediction) {
-                          final result =
-                              placeSearchService.parsePrediction(prediction);
-                          if (result != null) {
-                            _selectSearchResult(result);
-                          }
-                        },
-                        itemBuilder: (context, index, Prediction prediction) {
-                          return ListTile(
-                            leading: Icon(
-                              Icons.place_outlined,
-                              color: colorScheme.primary,
-                            ),
-                            title: Text(
-                              prediction.description ?? '',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            dense: true,
-                          );
-                        },
-                        seperatedBuilder: Divider(
-                          height: 1,
-                          color: colorScheme.outlineVariant,
+                      if (placeSearchService.isConfigured && !keyboardOpen) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          placeSearchService.searchHelperText,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                    if (placeSearchService.isConfigured) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        placeSearchService.searchHelperText,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 24,
-            child: HomeCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Destination Name',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      hintText: MapDefaults.customDestinationName,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                    textInputAction: TextInputAction.done,
-                  ),
-                  const SizedBox(height: 16),
-                  _CoordinateRow(
-                    label: 'Latitude',
-                    value: selectedPosition != null
-                        ? selectedPosition.latitude.toStringAsFixed(4)
-                        : '—',
-                  ),
-                  const SizedBox(height: 8),
-                  _CoordinateRow(
-                    label: 'Longitude',
-                    value: selectedPosition != null
-                        ? selectedPosition.longitude.toStringAsFixed(4)
-                        : '—',
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    selectedPosition == null
-                        ? 'Search above or tap the map to place a marker.'
-                        : 'Tap the map to fine-tune the marker position.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: FilledButton.icon(
-                      onPressed: canSave ? _saveDestination : null,
-                      icon: const Icon(Icons.save_outlined),
-                      label: const Text('Save Destination'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: canSave ? _saveAndFavorite : null,
-                      icon: const Icon(Icons.star_outline),
-                      label: const Text('Save & Add to Favorites'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                ],
+            Expanded(
+              child: GoogleMap(
+                initialCameraPosition: _initialCameraPosition,
+                markers: _markers,
+                onMapCreated: _onMapCreated,
+                onTap: _onMapTap,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: !keyboardOpen,
+                zoomControlsEnabled: false,
+                mapToolbarEnabled: false,
               ),
             ),
-          ),
-        ],
+            AnimatedPadding(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(bottom: keyboardInset),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: HomeCard(
+                  child: keyboardOpen
+                    ? _CompactDestinationPanel(
+                        nameController: _nameController,
+                        canSave: canSave,
+                        onSave: _saveDestination,
+                        onSaveAndFavorite: _saveAndFavorite,
+                        onCancel: () => Navigator.of(context).pop(),
+                      )
+                    : _DestinationPanel(
+                        nameController: _nameController,
+                        selectedPosition: selectedPosition,
+                        canSave: canSave,
+                        onSave: _saveDestination,
+                        onSaveAndFavorite: _saveAndFavorite,
+                        onCancel: () => Navigator.of(context).pop(),
+                      ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _DestinationPanel extends StatelessWidget {
+  const _DestinationPanel({
+    required this.nameController,
+    required this.selectedPosition,
+    required this.canSave,
+    required this.onSave,
+    required this.onSaveAndFavorite,
+    required this.onCancel,
+  });
+
+  final TextEditingController nameController;
+  final LatLng? selectedPosition;
+  final bool canSave;
+  final VoidCallback onSave;
+  final VoidCallback onSaveAndFavorite;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Destination Name',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: nameController,
+          decoration: InputDecoration(
+            hintText: MapDefaults.customDestinationName,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+          ),
+          textInputAction: TextInputAction.done,
+        ),
+        const SizedBox(height: 16),
+        _CoordinateRow(
+          label: 'Latitude',
+          value: selectedPosition != null
+              ? selectedPosition!.latitude.toStringAsFixed(4)
+              : '—',
+        ),
+        const SizedBox(height: 8),
+        _CoordinateRow(
+          label: 'Longitude',
+          value: selectedPosition != null
+              ? selectedPosition!.longitude.toStringAsFixed(4)
+              : '—',
+        ),
+        const SizedBox(height: 12),
+        Text(
+          selectedPosition == null
+              ? 'Search above or tap the map to place a marker.'
+              : 'Tap the map to fine-tune the marker position.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: FilledButton.icon(
+            onPressed: canSave ? onSave : null,
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('Save Destination'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton.icon(
+            onPressed: canSave ? onSaveAndFavorite : null,
+            icon: const Icon(Icons.star_outline),
+            label: const Text('Save & Add to Favorites'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton(
+            onPressed: onCancel,
+            child: const Text('Cancel'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CompactDestinationPanel extends StatelessWidget {
+  const _CompactDestinationPanel({
+    required this.nameController,
+    required this.canSave,
+    required this.onSave,
+    required this.onSaveAndFavorite,
+    required this.onCancel,
+  });
+
+  final TextEditingController nameController;
+  final bool canSave;
+  final VoidCallback onSave;
+  final VoidCallback onSaveAndFavorite;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextField(
+          controller: nameController,
+          decoration: InputDecoration(
+            labelText: 'Destination name',
+            hintText: MapDefaults.customDestinationName,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+          ),
+          textInputAction: TextInputAction.done,
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton(
+                onPressed: canSave ? onSave : null,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: const Text('Save'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: canSave ? onSaveAndFavorite : null,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: const Text('Save & Favorite'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          height: 40,
+          child: TextButton(
+            onPressed: onCancel,
+            child: const Text('Cancel'),
+          ),
+        ),
+      ],
     );
   }
 }

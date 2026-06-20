@@ -19,6 +19,12 @@ abstract final class AppBranding {
   static const Color white = Color(0xFFFFFFFF);
 
   static const String splashLogoAsset = 'assets/branding/splash_logo.png';
+
+  /// Master artwork used only by [tool/generate_branding_assets.ps1].
   static const String splashScreenAsset = 'assets/branding/splash_screen.png';
+
+  /// Width / height of [splashLogoAsset] (pin is taller than wide).
+  static const double logoAspectRatio = 432 / 514;
+
   static const Duration splashDisplayDuration = Duration(milliseconds: 2000);
 }

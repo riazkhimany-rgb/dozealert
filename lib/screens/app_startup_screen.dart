@@ -10,6 +10,7 @@ import '../providers/gtfs_provider.dart';
 import '../providers/trip_history_provider.dart';
 import '../services/onboarding_service.dart';
 import '../utils/app_branding.dart';
+import '../widgets/branding_logo.dart';
 import 'branded_splash_screen.dart';
 import 'main_screen.dart';
 import 'onboarding_screen.dart';
@@ -122,24 +123,9 @@ class _BootstrapLoadingScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              AppBranding.splashLogoAsset,
-              width: 96,
-              height: 96,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              AppBranding.appName,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              AppBranding.tagline,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+            const BrandingHero(
+              logoHeight: 96,
+              showDarkBadge: true,
             ),
             const SizedBox(height: 32),
             const CircularProgressIndicator(),

@@ -21,9 +21,11 @@ class OurStoryScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Our Story'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-        children: [
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          children: [
           Text(
             'Why DozeAlert Exists?',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -113,7 +115,7 @@ class OurStoryScreen extends StatelessWidget {
               children: [
                 const TextSpan(
                   text:
-                      'Riaz is a technology enthusiast based in Canada who enjoys using technology to solve everyday problems and create practical tools that improve people\'s lives.',
+                      'I am a technology enthusiast based in Canada who enjoys using technology to solve everyday problems and create practical tools that improve people\'s lives.',
                 ),
               ],
             ),
@@ -157,7 +159,8 @@ class OurStoryScreen extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

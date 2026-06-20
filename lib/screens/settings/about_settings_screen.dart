@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../utils/app_branding.dart';
+import '../../widgets/branding_logo.dart';
 import '../../widgets/settings_section_tile.dart';
 import '../about_screen.dart';
 import '../our_story_screen.dart';
@@ -44,12 +45,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
         children: [
           const SettingsSectionHeader(title: 'App'),
           ListTile(
-            leading: CircleAvatar(
-              backgroundColor: colorScheme.primaryContainer,
-              backgroundImage: const AssetImage(
-                'assets/branding/splash_logo.png',
-              ),
-            ),
+            leading: const BrandingLogo(height: 44),
             title: const Text('About DozeAlert'),
             subtitle: Text(
               AppBranding.tagline,

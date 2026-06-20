@@ -8,7 +8,6 @@ import '../data/transit_catalog.dart';
 import '../models/app_permission_snapshot.dart';
 import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
-import '../providers/monitoring_provider.dart';
 import '../providers/transit_provider.dart';
 import '../screens/alarm_test_screen.dart';
 import '../screens/onboarding_screen.dart';
@@ -16,7 +15,6 @@ import '../screens/transit_data_screen.dart';
 import '../services/app_permissions_service.dart';
 import '../services/onboarding_service.dart';
 import '../widgets/onboarding_permissions_page.dart';
-import 'destination_picker_sheet.dart';
 import 'home_card.dart';
 
 class TripSetupChecklist extends StatefulWidget {
@@ -114,9 +112,6 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
   @override
   Widget build(BuildContext context) {
     final permissions = _permissions;
-    final hasDestination = context.select<MonitoringProvider, bool>(
-      (provider) => provider.selectedDestination != null,
-    );
     final transitSystem = context.select<TransitProvider, String>(
       (provider) => provider.preferences.transitSystem,
     );
@@ -131,11 +126,6 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
     final permissionsReady = permissions?.allRequiredForMonitoring ?? false;
 
     final items = <_ChecklistItem>[
-      _ChecklistItem(
-        label: 'Destination set',
-        complete: hasDestination,
-        onTap: () => DestinationPickerSheet.show(context),
-      ),
       if (needsGtfs)
         _ChecklistItem(
           label: 'GTFS downloaded',

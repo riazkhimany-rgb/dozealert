@@ -58,10 +58,11 @@
     }
 
     .logo {
-      width: 120px;
       height: 120px;
-      border-radius: 28px;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      width: auto;
+      max-width: 100%;
+      border-radius: 0;
+      box-shadow: none;
       margin-bottom: 1.25rem;
     }
 
@@ -247,13 +248,13 @@
       color: var(--white);
     }
 
-    .card a {
+    .card a:not(.download-btn) {
       color: var(--cyan);
       text-decoration: underline;
       text-underline-offset: 2px;
     }
 
-    .card a:hover {
+    .card a:not(.download-btn):hover {
       color: var(--white);
     }
 
@@ -268,7 +269,7 @@
 
   <div class="wrap">
     <header>
-      <img class="logo" src="assets/icon-512.png" width="120" height="120" alt="DozeAlert app icon">
+      <img class="logo" src="assets/logo.png" height="120" alt="DozeAlert logo">
       <h1>DozeAlert</h1>
       <p class="tagline">Sleep peacefully. Arrive confidently.</p>
     </header>
@@ -284,11 +285,11 @@
         Download APK
       </a>
       <p class="meta" style="margin-top: 1rem;">
-        Also on <strong>Google Play</strong> â€” search for <strong>DozeAlert</strong>
+        Also on <strong>Google Play</strong> &mdash; search for <strong>DozeAlert</strong>
         (<code>app.dozealert</code>) when the listing is live in your region.
       </p>
       <p class="meta">
-        Version <span id="app-version">1.0.1+2</span> Â· Android 8.0+ Â· Package <code>app.dozealert</code>
+        Version <span id="app-version">1.0.1+2</span> &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
 
@@ -305,7 +306,7 @@
         <li>Background monitoring while you rest</li>
         <li>Voice, vibration, and alarm alerts</li>
         <li>Map picker and saved destinations</li>
-        <li>No account required â€” trip data stays on your device</li>
+        <li>No account required &mdash; trip data stays on your device</li>
       </ul>
     </section>
 
@@ -342,7 +343,7 @@
           Wait until the download finishes (check your notification shade or Downloads folder).
         </li>
         <li>
-          <strong>Open the downloaded file</strong> â€” tap the notification, or open
+          <strong>Open the downloaded file</strong> &mdash; tap the notification, or open
           <em>Files</em> / <em>Downloads</em> and tap <code>dozealert-latest.apk</code>.
         </li>
         <li>
@@ -352,7 +353,7 @@
           <em>Install</em>.
         </li>
         <li>
-          <strong>Complete setup in the app</strong> â€” grant permissions as prompted
+          <strong>Complete setup in the app</strong> &mdash; grant permissions as prompted
           (location all the time, notifications, GPS on). See
           <a class="text-link" href="privacy/index.html">Privacy Policy</a> for details.
         </li>
@@ -363,20 +364,20 @@
       </ol>
 
       <div class="note">
-        <strong>Tip:</strong> After installing, you can turn off â€œInstall unknown appsâ€ again
+        <strong>Tip:</strong> After installing, you can turn off &ldquo;Install unknown apps&rdquo; again
         for your browser. It only needs to be enabled during installation.
       </div>
 
       <details>
         <summary>Android version-specific help</summary>
-        <p><strong>Android 13 and newer:</strong> Settings â†’ Security & privacy â†’
-        More security settings â†’ Install unknown apps â†’ select your browser â†’ Allow.</p>
-        <p><strong>Android 12:</strong> Settings â†’ Apps â†’ Special app access â†’
-        Install unknown apps â†’ your browser â†’ Allow.</p>
-        <p><strong>Samsung Galaxy:</strong> Settings â†’ Biometrics and security â†’
-        Install unknown apps â†’ select the app you downloaded with â†’ Allow.</p>
-        <p><strong>â€œApp not installedâ€ error:</strong> Uninstall any older test build first,
-        or download the APK again â€” the file may have been corrupted during download.</p>
+        <p><strong>Android 13 and newer:</strong> Settings &rarr; Security &amp; privacy &rarr;
+        More security settings &rarr; Install unknown apps &rarr; select your browser &rarr; Allow.</p>
+        <p><strong>Android 12:</strong> Settings &rarr; Apps &rarr; Special app access &rarr;
+        Install unknown apps &rarr; your browser &rarr; Allow.</p>
+        <p><strong>Samsung Galaxy:</strong> Settings &rarr; Biometrics and security &rarr;
+        Install unknown apps &rarr; select the app you downloaded with &rarr; Allow.</p>
+        <p><strong>&ldquo;App not installed&rdquo; error:</strong> Uninstall any older test build first,
+        or download the APK again &mdash; the file may have been corrupted during download.</p>
       </details>
     </section>
 
@@ -393,11 +394,11 @@
     <footer>
       <p class="footer-links">
         <a href="privacy/index.html">Privacy Policy</a>
-        <span aria-hidden="true"> Â· </span>
+        <span aria-hidden="true"> &middot; </span>
         <a href="mailto:support@dozealert.app">support@dozealert.app</a>
       </p>
-      <p style="margin-top: 0.75rem;">No ads Â· No sale of personal data</p>
-      <p style="margin-top: 0.5rem;">Â© DozeAlert Â· Developer: Riaz</p>
+      <p style="margin-top: 0.75rem;">No ads &middot; No sale of personal data</p>
+      <p style="margin-top: 0.5rem;">&copy; DozeAlert &middot; Developer: Riaz</p>
     </footer>
   </div>
 

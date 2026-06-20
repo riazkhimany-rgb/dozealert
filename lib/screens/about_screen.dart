@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/app_branding.dart';
+import '../widgets/branding_logo.dart';
 import 'privacy_policy_screen.dart';
 import 'share_screen.dart';
 
@@ -33,26 +34,13 @@ class AboutScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.asset(
-                    'assets/branding/splash_logo.png',
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                  ),
+              const Center(
+                child: BrandingHero(
+                  logoHeight: 120,
+                  showDarkBadge: true,
                 ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                AppBranding.appName,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               Text(
                 'Version $version ($buildNumber)',
                 textAlign: TextAlign.center,
@@ -61,15 +49,6 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                AppBranding.tagline,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: colorScheme.secondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 24),
               Text(
                 AppBranding.description,
                 textAlign: TextAlign.center,
