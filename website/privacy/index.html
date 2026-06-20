@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DozeAlert Privacy Policy — how we handle location, on-device storage, and third-party services.">
+  <meta name="theme-color" content="#0D1B2A">
+  <title>Privacy Policy — DozeAlert</title>
+  <link rel="icon" type="image/png" href="../assets/icon-512.png">
+  <style>
+    :root {
+      --midnight: #0D1B2A;
+      --cyan: #4CC9F0;
+      --white: #FFFFFF;
+      --muted: #94a3b8;
+      --card: #1B3147;
+      --radius: 16px;
+      --max-width: 720px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--midnight);
+      color: var(--white);
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+    .glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(76, 201, 240, 0.15), transparent);
+      z-index: 0;
+    }
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+    .nav {
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .nav a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+    .nav a:hover { text-decoration: underline; }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(76, 201, 240, 0.12);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 {
+      font-size: 1.125rem;
+      color: var(--cyan);
+      margin-bottom: 0.75rem;
+    }
+    .card h3 {
+      font-size: 1rem;
+      margin: 1.25rem 0 0.5rem;
+      color: var(--white);
+    }
+    .card p, .card li, .card td, .card th {
+      color: #cbd5e1;
+      font-size: 0.9375rem;
+    }
+    .card ul, .card ol {
+      padding-left: 1.25rem;
+      margin-top: 0.5rem;
+    }
+    .card li + li { margin-top: 0.35rem; }
+    .summary {
+      background: rgba(76, 201, 240, 0.08);
+      border-left: 3px solid var(--cyan);
+      padding: 1rem 1.125rem;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 1rem;
+    }
+    .summary li { color: #e2e8f0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.75rem;
+      font-size: 0.875rem;
+    }
+    th, td {
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 0.5rem 0.625rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--cyan); background: rgba(0,0,0,0.2); }
+    a { color: var(--cyan); }
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="wrap">
+    <nav class="nav"><a href="../">← DozeAlert home</a></nav>
+
+    <h1>Privacy Policy</h1>
+    <p class="meta">
+      Effective date: June 18, 2026 · App: DozeAlert (<code>app.dozealert</code>) ·
+      Developer: Riaz ·
+      <a href="mailto:support@dozealert.app">support@dozealert.app</a>
+    </p>
+
+    <section class="card">
+      <p>
+        DozeAlert helps you wake up before you reach a selected destination using
+        location-based alerts. This policy describes what information the app uses,
+        where it is stored, and which third-party services are involved.
+      </p>
+      <ul class="summary">
+        <li><strong>No account required</strong> — we do not operate a login system.</li>
+        <li><strong>No advertising</strong> — we do not show ads or sell your data.</li>
+        <li><strong>No DozeAlert cloud</strong> — trip data stays on your device.</li>
+        <li><strong>Location is essential</strong> for trip monitoring and map features.</li>
+        <li><strong>Google Maps Platform</strong> may receive data when you use map search or the map picker.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Information we collect</h2>
+
+      <h3>1. Precise location (GPS)</h3>
+      <p>
+        Latitude, longitude, speed, accuracy, and timestamps from your device while
+        you use maps, pick a destination, or run trip monitoring (including in the
+        background when monitoring is active). Used to measure distance to your
+        destination and trigger alerts. Stored <strong>on your device only</strong> —
+        not uploaded to DozeAlert servers.
+      </p>
+
+      <h3>2. Destinations and trip data you choose</h3>
+      <p>
+        Destination names, coordinates, wake radius, favorites, recent destinations,
+        trip history (destination, times, alarm events), and monitoring settings.
+        Stored on your device only.
+      </p>
+
+      <h3>3. App settings</h3>
+      <p>
+        Alarm volumes, transit agency preferences, theme, and onboarding progress.
+        Stored on your device only.
+      </p>
+
+      <h3>4. Transit data (GTFS) you download</h3>
+      <p>
+        Public schedule/stop files downloaded from agency or open-data URLs you select.
+        Cached on your device. Downloads use HTTPS to third-party hosts we do not operate.
+      </p>
+
+      <h3>5. Third-party services</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>When</th>
+            <th>What may be sent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Google Maps Platform</td>
+            <td>Map picker, place search</td>
+            <td>Search text, map requests, location-related data per <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Google’s policy</a></td>
+          </tr>
+          <tr>
+            <td>GTFS / open data hosts</td>
+            <td>Feed download</td>
+            <td>Standard HTTP request metadata (URL, IP address)</td>
+          </tr>
+          <tr>
+            <td>Share targets you choose</td>
+            <td>When you tap Share</td>
+            <td>Only what you send via Android’s share sheet</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 0.75rem;">
+        We do <strong>not</strong> use analytics, advertising, or crash-reporting SDKs in the production app.
+      </p>
+
+      <h3>6. Support email</h3>
+      <p>
+        If you contact <a href="mailto:support@dozealert.app">support@dozealert.app</a>,
+        we receive what you include in your message to respond to you.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Android permissions</h2>
+      <table>
+        <thead>
+          <tr><th>Permission</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Location (while in use)</td><td>Maps and first step of monitoring setup</td></tr>
+          <tr><td>Location (all the time)</td><td>Background trip monitoring when screen is off</td></tr>
+          <tr><td>Notifications</td><td>Ongoing monitoring notification and arrival alerts</td></tr>
+          <tr><td>Internet</td><td>Maps, place search, GTFS downloads</td></tr>
+          <tr><td>Vibrate</td><td>Approach alerts</td></tr>
+          <tr><td>Foreground service (location)</td><td>Reliable monitoring on Android</td></tr>
+          <tr><td>Modify audio settings</td><td>Temporary volume boost during alerts</td></tr>
+          <tr><td>Battery optimization (optional)</td><td>Improved reliability if you allow it</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 0.75rem;">
+        You can revoke permissions in Android Settings; monitoring may stop working without location and notifications.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>How we use information</h2>
+      <ul>
+        <li>Monitor progress toward your selected destination</li>
+        <li>Deliver voice, vibration, and optional alarm alerts</li>
+        <li>Provide maps, place search, and transit features you enable</li>
+        <li>Save preferences and trip history on your device</li>
+        <li>Respond to support requests</li>
+      </ul>
+      <p style="margin-top: 0.75rem;">
+        We do not use your data for targeted advertising or selling personal information.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Retention and deletion</h2>
+      <ul>
+        <li>On-device data remains until you clear it or uninstall the app.</li>
+        <li>Clear your destination from the Home screen anytime.</li>
+        <li><strong>Android Settings → Apps → DozeAlert → Storage → Clear storage</strong> deletes local data.</li>
+        <li>Uninstalling removes app data from your device.</li>
+      </ul>
+      <p style="margin-top: 0.75rem;">We do not maintain a separate DozeAlert account database.</p>
+    </section>
+
+    <section class="card">
+      <h2>Security, children, and international use</h2>
+      <p>
+        Third-party API calls use HTTPS where supported. DozeAlert is not directed at
+        children under 13. The app is developed in Canada; third-party processors such
+        as Google may handle data under their own policies. Users in the EEA/UK may have
+        additional rights — contact us at
+        <a href="mailto:support@dozealert.app">support@dozealert.app</a>.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Google Play Data safety (summary)</h2>
+      <ul>
+        <li><strong>Collected:</strong> Precise location; on-device trip/destination data; permissions as needed.</li>
+        <li><strong>Shared:</strong> Location-related data with Google when using Maps/Places.</li>
+        <li><strong>Not collected in-app:</strong> Account email, payments, ads profiles, health data.</li>
+        <li><strong>Purpose:</strong> App functionality only.</li>
+        <li><strong>Deletion:</strong> Uninstall or clear app storage.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Changes and contact</h2>
+      <p>
+        We may update this policy and change the “Last updated” date. The current version
+        is always available here and inside the app (Settings → About → Privacy Policy).
+      </p>
+      <p style="margin-top: 0.75rem;">
+        Questions: <a href="mailto:support@dozealert.app">support@dozealert.app</a>
+      </p>
+    </section>
+
+    <footer>
+      <p><a href="../">dozealert.app</a> · © DozeAlert</p>
+    </footer>
+  </div>
+</body>
+</html>

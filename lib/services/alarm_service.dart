@@ -148,6 +148,23 @@ class AlarmService {
     await _volumeService.restoreSavedVolume();
   }
 
+  /// Updates TTS, tone, and temporary system volume while an alert is playing.
+  Future<void> updateActiveAlarmVolume() async {
+    if (!_alarmActive) {
+      return;
+    }
+
+    final volume = _settingsService.settings.alarmVolume.clamp(0.0, 1.0);
+    final approachSystemVolume =
+        _settingsService.settings.approachSystemVolume;
+
+    await _volumeService.applyApproachAlertVolume(
+      targetVolume: approachSystemVolume,
+    );
+    await _tts.setVolume(volume);
+    await _audioPlayer.setVolume(volume);
+  }
+
   Future<void> showArrivalNotification({
     String title = 'Approaching Destination',
     String body = _approachPhrase,
@@ -249,7 +266,7 @@ class AlarmService {
       _ttsRepeatTimer?.cancel();
       _ttsRepeatTimer = Timer.periodic(const Duration(seconds: 5), (_) {
         if (_alarmActive) {
-          unawaited(_speakApproachOnce(volume: volume));
+          unawaited(_speakApproachOnce());
         }
       });
     } catch (error, stackTrace) {
@@ -258,13 +275,15 @@ class AlarmService {
     }
   }
 
-  Future<void> _speakApproachOnce({required double volume}) async {
+  Future<void> _speakApproachOnce({double? volume}) async {
     if (!_alarmActive) {
       return;
     }
 
     try {
-      await _tts.setVolume(volume);
+      final effectiveVolume = (volume ?? _settingsService.settings.alarmVolume)
+          .clamp(0.0, 1.0);
+      await _tts.setVolume(effectiveVolume);
       await _tts.stop();
       await _tts.speak(_approachPhrase);
     } catch (error, stackTrace) {

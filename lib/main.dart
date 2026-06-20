@@ -18,6 +18,7 @@ import 'providers/transit_provider.dart';
 import 'screens/app_startup_screen.dart';
 import 'cache/gtfs_cache_store.dart';
 import 'services/alarm_service.dart';
+import 'services/app_permissions_service.dart';
 import 'services/background_monitor_service.dart';
 import 'services/destination_storage_service.dart';
 import 'services/developer_diagnostics_service.dart';
@@ -242,6 +243,12 @@ class DozeAlertApp extends StatelessWidget {
         Provider<LocationService>(
           create: (_) => LocationService(),
           dispose: (_, service) => service.dispose(),
+        ),
+        Provider<AppPermissionsService>(
+          create: (context) => AppPermissionsService(
+            context.read<LocationService>(),
+            context.read<BackgroundMonitorService>(),
+          ),
         ),
         Provider<DeveloperDiagnosticsService>(
           create: (context) => DeveloperDiagnosticsService(

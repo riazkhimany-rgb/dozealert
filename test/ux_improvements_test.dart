@@ -1,3 +1,4 @@
+import 'package:dozealert/models/app_permission_snapshot.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/models/favorite_destination.dart';
 import 'package:dozealert/models/monitoring_state.dart';
@@ -39,6 +40,20 @@ void main() {
 
     final removed = await preferencesService.removeFavorite(destination);
     expect(removed, isEmpty);
+  });
+
+  test('AppPermissionSnapshot detects incomplete monitoring permissions', () {
+    const snapshot = AppPermissionSnapshot(
+      locationWhenInUseGranted: false,
+      backgroundLocationGranted: false,
+      notificationsGranted: false,
+      locationServicesEnabled: true,
+      batteryOptimizationEnabled: true,
+    );
+
+    expect(snapshot.allRequiredForMonitoring, isFalse);
+    expect(snapshot.batteryUnrestricted, isFalse);
+    expect(snapshot.missingRequiredLabels, isNotEmpty);
   });
 
   test('OnboardingService tracks completion and alarm test', () async {

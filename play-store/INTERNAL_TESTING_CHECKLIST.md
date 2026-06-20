@@ -20,7 +20,9 @@
 - [ ] notification-icon.png (reference)
 - [ ] SHORT_DESCRIPTION.txt
 - [ ] FULL_DESCRIPTION.txt
-- [ ] PRIVACY_POLICY_URL.txt (update before production)
+- [ ] PRIVACY_POLICY_URL.txt → `https://dozealert.app/privacy` (live before production)
+- [ ] Deploy `website/privacy/index.html` with main site
+- [ ] Complete Data safety in Play Console (`play-store/DATA_SAFETY_PLAY_CONSOLE.md`)
 
 ## Release Notes
 - [ ] RELEASE_NOTES.txt (paste into Play Console)
@@ -40,7 +42,8 @@
 ## Play Console Upload
 1. Create app in Google Play Console
 2. Complete store listing with assets above
-3. Set Privacy Policy URL
-4. Upload `app-release.aab` to **Internal testing**
+3. Set Privacy Policy URL to `https://dozealert.app/privacy`
+4. Complete Data safety (see `DATA_SAFETY_PLAY_CONSOLE.md`)
+5. Upload `app-release.aab` to **Internal testing**
 5. Add internal testers
 6. Roll out release

@@ -85,3 +85,17 @@ version: 1.0.0+1   # versionName+versionCode
 | Feature graphic | `play-store/feature-graphic-1024x500.png` |
 | Short description | `play-store/SHORT_DESCRIPTION.txt` |
 | Full description | `play-store/FULL_DESCRIPTION.txt` |
+| Privacy policy (source) | `privacy_policy.md` |
+| Privacy policy (public URL) | `https://dozealert.app/privacy` |
+| Data safety form guide | `play-store/DATA_SAFETY_PLAY_CONSOLE.md` |
+
+## Privacy policy and Data safety
+
+Before publishing:
+
+1. Deploy `website/` so **https://dozealert.app/privacy** loads (`website/privacy/index.html`).
+2. In Play Console → **App content** → **Privacy policy**, enter `https://dozealert.app/privacy`.
+3. Complete **Data safety** using `play-store/DATA_SAFETY_PLAY_CONSOLE.md` (must match `privacy_policy.md`).
+4. Declare **Precise location** (collected + shared with Google for Maps/Places), **no ads**, **no account**.
+
+The in-app policy (Settings → About → Privacy Policy) loads `privacy_policy.md` from the app bundle — keep it in sync with the website.

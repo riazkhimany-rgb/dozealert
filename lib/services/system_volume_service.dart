@@ -13,18 +13,21 @@ class SystemVolumeService {
   bool _overrideActive = false;
 
   Future<void> applyApproachAlertVolume({required double targetVolume}) async {
-    if (_overrideActive || !Platform.isAndroid) {
+    if (!Platform.isAndroid) {
       return;
     }
 
     try {
-      final current = await _channel.invokeMethod<double>('getVolume');
-      _savedVolume = current ?? 0.0;
+      if (!_overrideActive) {
+        final current = await _channel.invokeMethod<double>('getVolume');
+        _savedVolume = current ?? 0.0;
+        _overrideActive = true;
+      }
+
       await _channel.invokeMethod<void>(
         'setVolume',
         {'volume': AppSettings.clampApproachSystemVolume(targetVolume)},
       );
-      _overrideActive = true;
     } catch (error, stackTrace) {
       AppLog.d('SystemVolumeService: failed to apply alert volume: $error');
       AppLog.d('$stackTrace');

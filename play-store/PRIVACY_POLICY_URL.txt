@@ -1,4 +1,4 @@
 https://dozealert.app/privacy
 
-Replace with your live Privacy Policy URL before publishing to production.
-Hosted policy source file: privacy_policy.md
+Source of truth: privacy_policy.md (bundled in the app and published at the URL above).
+Data safety form guide: play-store/DATA_SAFETY_PLAY_CONSOLE.md

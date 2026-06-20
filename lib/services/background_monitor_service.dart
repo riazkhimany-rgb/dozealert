@@ -136,7 +136,7 @@ class BackgroundMonitorService {
     await FlutterForegroundTask.requestIgnoreBatteryOptimization();
   }
 
-  Future<bool> ensureNotificationPermission() async {
+  Future<bool> ensureNotificationPermission({bool requestIfMissing = true}) async {
     if (!Platform.isAndroid) {
       return true;
     }
@@ -144,6 +144,10 @@ class BackgroundMonitorService {
     final permission = await FlutterForegroundTask.checkNotificationPermission();
     if (permission == NotificationPermission.granted) {
       return true;
+    }
+
+    if (!requestIfMissing) {
+      return false;
     }
 
     final requested = await FlutterForegroundTask.requestNotificationPermission();

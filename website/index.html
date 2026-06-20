@@ -232,6 +232,12 @@
       text-decoration: none;
     }
 
+    .card a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+
+    .card a:hover,
     footer a:hover {
       text-decoration: underline;
     }
@@ -253,7 +259,7 @@
     </header>
 
     <section class="card download-block">
-      <h2 style="margin-bottom: 1rem;">Download for Android</h2>
+      <h2 style="margin-bottom: 1rem;">Get DozeAlert for Android</h2>
       <a class="download-btn" href="downloads/dozealert-latest.apk" download="dozealert.apk">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -262,9 +268,12 @@
         </svg>
         Download APK
       </a>
+      <p class="meta" style="margin-top: 1rem;">
+        Also on <strong>Google Play</strong> — search for <strong>DozeAlert</strong>
+        (<code>app.dozealert</code>) when the listing is live in your region.
+      </p>
       <p class="meta">
-        Version <span id="app-version">1.0.0</span> · Android 8.0+ ·
-        <code>app.dozealert</code>
+        Version <span id="app-version">1.0.1</span> · Android 8.0+ · Package <code>app.dozealert</code>
       </p>
     </section>
 
@@ -281,15 +290,35 @@
         <li>Background monitoring while you rest</li>
         <li>Voice, vibration, and alarm alerts</li>
         <li>Map picker and saved destinations</li>
-        <li>No account required — data stays on your device</li>
+        <li>No account required — trip data stays on your device</li>
       </ul>
     </section>
 
     <section class="card">
-      <h2>Install instructions</h2>
+      <h2>Permissions &amp; privacy</h2>
+      <p>
+        DozeAlert needs clear permission choices to monitor trips reliably. During
+        first-time setup the app explains each step. For monitoring on Android, set:
+      </p>
+      <ul>
+        <li><strong>Location:</strong> Allow <strong>all the time</strong> (not only while using the app)</li>
+        <li><strong>Notifications:</strong> Allowed (ongoing trip notification and alerts)</li>
+        <li><strong>GPS:</strong> Location services turned on</li>
+        <li><strong>Battery:</strong> Unrestricted recommended on some phones</li>
+      </ul>
+      <p style="margin-top: 0.75rem;">
+        We do not show ads, sell personal data, or require an account. Map search uses
+        Google Maps Platform; optional transit downloads use public open-data hosts.
+        Read the full policy:
+        <a href="privacy/">Privacy Policy</a>
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Install from APK (sideload)</h2>
       <p style="margin-bottom: 1rem;">
-        DozeAlert is not on the Play Store yet. You install it directly from the APK file.
-        Android will ask you to allow installs from your browser or file manager — that is normal.
+        Prefer Google Play when available. Use a direct APK if you sideload or need a
+        build before the store listing appears in your region.
       </p>
 
       <ol class="steps">
@@ -308,9 +337,9 @@
           <em>Install</em>.
         </li>
         <li>
-          <strong>Grant permissions</strong> when you first use the app — location is
-          required for destination monitoring. Optional notification permission helps
-          background alerts work reliably.
+          <strong>Complete setup in the app</strong> — grant permissions as prompted
+          (location all the time, notifications, GPS on). See
+          <a href="privacy/">Privacy Policy</a> for details.
         </li>
         <li>
           <strong>Open DozeAlert</strong>, pick a destination, set your wake radius, and
@@ -341,22 +370,24 @@
       <ul>
         <li>Android 8.0 (Oreo) or later</li>
         <li>GPS / location services enabled</li>
-        <li>Internet for map search and optional GTFS transit data downloads</li>
+        <li>Internet for map search and optional GTFS transit downloads</li>
+        <li>Background location and notifications for trip monitoring (Android)</li>
       </ul>
     </section>
 
     <footer>
       <p>
-        <a href="mailto:support@dozealert.app">support@dozealert.app</a>
-        · Privacy-first · No ads
+        <a href="privacy/">Privacy Policy</a>
+        · <a href="mailto:support@dozealert.app">support@dozealert.app</a>
+        · No ads · No sale of personal data
       </p>
-      <p style="margin-top: 0.5rem;">© DozeAlert</p>
+      <p style="margin-top: 0.5rem;">© DozeAlert · Developer: Riaz</p>
     </footer>
   </div>
 
   <script>
     // Update version label when you ship a new APK (or generate from build script).
-    document.getElementById('app-version').textContent = '1.0.0';
+    document.getElementById('app-version').textContent = '1.0.1';
   </script>
 </body>
 </html>
