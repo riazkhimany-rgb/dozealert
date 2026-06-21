@@ -9,11 +9,14 @@
 
 ## 1. Create upload keystore
 
-From the project root:
+From the `android/app` folder (keystore lives next to `build.gradle.kts`):
 
 ```bash
-keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+cd android/app
+keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 ```
+
+In `android/key.properties`, use `storeFile=upload-keystore.jks` (not `app/upload-keystore.jks`).
 
 **Never commit the keystore or passwords to git.**
 
@@ -31,7 +34,7 @@ Edit `android/key.properties`:
 storePassword=YOUR_STORE_PASSWORD
 keyPassword=YOUR_KEY_PASSWORD
 keyAlias=upload
-storeFile=app/upload-keystore.jks
+storeFile=upload-keystore.jks
 ```
 
 ## 3. Configure Google Maps key

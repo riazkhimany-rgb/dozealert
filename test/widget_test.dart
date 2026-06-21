@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dozealert/cache/gtfs_cache_store.dart';
 import 'package:dozealert/main.dart';
 import 'package:dozealert/models/destination.dart';
+import 'package:dozealert/screens/home_screen.dart';
 import 'package:dozealert/providers/destination_history_provider.dart';
 import 'package:dozealert/providers/gtfs_feed_provider.dart';
 import 'package:dozealert/providers/gtfs_provider.dart';
@@ -33,6 +34,7 @@ import 'package:dozealert/services/transit_mode_service.dart';
 import 'package:dozealert/services/transit_data_service.dart';
 import 'package:dozealert/services/trip_history_service.dart';
 import 'package:dozealert/utils/app_branding.dart';
+import 'package:dozealert/widgets/branded_app_bar_title.dart';
 
 class _FakePathProvider {
   static void install() {
@@ -166,7 +168,7 @@ void main() {
     await tester.pumpWidget(app);
     await tester.pumpAndSettle();
 
-    expect(find.text('DozeAlert'), findsOneWidget);
+    expect(find.byType(BrandedAppBarTitle), findsOneWidget);
     expect(find.text('Monitoring'), findsOneWidget);
     expect(find.text('Start'), findsOneWidget);
     expect(find.text('Stop'), findsOneWidget);
@@ -180,10 +182,24 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Destination'), findsOneWidget);
-    expect(find.text('Set destination'), findsOneWidget);
-    expect(find.text('No destination selected'), findsWidgets);
+    expect(
+      find.descendant(
+        of: find.byType(HomeScreen),
+        matching: find.text('Set destination'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Pick where you want to wake up'),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.text('Set destination'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(HomeScreen),
+        matching: find.text('Set destination'),
+      ).first,
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Favorites'), findsOneWidget);
@@ -245,7 +261,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(
-      find.text('Transit data, transit mode, agencies, favorites'),
+      find.text('Transit data, transit mode, and agencies'),
     );
     await tester.pumpAndSettle();
 

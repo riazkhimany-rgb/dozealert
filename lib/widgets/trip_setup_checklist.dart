@@ -26,7 +26,7 @@ class TripSetupChecklist extends StatefulWidget {
 
 class _TripSetupChecklistState extends State<TripSetupChecklist>
     with WidgetsBindingObserver {
-  bool _expanded = true;
+  bool _expanded = false;
   AppPermissionSnapshot? _permissions;
   bool? _alarmTested;
   bool _checksInitialized = false;
@@ -174,6 +174,13 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
                       title: 'First time setup ($completeCount/${items.length})',
                     ),
                   ),
+                  Text(
+                    _expanded ? 'Hide' : 'Show',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   Icon(_expanded ? Icons.expand_less : Icons.expand_more),
                 ],
               ),

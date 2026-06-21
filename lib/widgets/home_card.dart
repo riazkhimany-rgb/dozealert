@@ -11,13 +11,17 @@ class HomeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
+    return Material(
       color: colorScheme.surfaceContainerLow,
+      elevation: isDark ? 4 : 0,
+      shadowColor: Colors.black.withValues(alpha: 0.22),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: isDark ? 0.35 : 0.5),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -33,19 +37,31 @@ class HomeCardHeader extends StatelessWidget {
     required this.icon,
     required this.title,
     this.trailing,
+    this.iconColor,
   });
 
   final IconData icon;
   final String title;
   final Widget? trailing;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final tint = iconColor ?? colorScheme.primary;
 
     return Row(
       children: [
-        Icon(icon, color: colorScheme.primary),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: tint.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, color: tint, size: 22),
+          ),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(

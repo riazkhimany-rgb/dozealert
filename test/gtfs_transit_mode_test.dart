@@ -72,6 +72,34 @@ void main() {
     expect(filtered.any((stop) => stop.stopName == 'Bronte GO'), isTrue);
   });
 
+  test('getStopsFromCurrentToDestination lists segment along route', () {
+    const destination = Destination(
+      name: 'Bronte GO',
+      latitude: 43.4039,
+      longitude: -79.7589,
+    );
+
+    final snapshot = transitModeService.evaluate(
+      destination: destination,
+      latitude: 43.4553,
+      longitude: -79.6829,
+      routeId: 'go_transit_lakeshore_west',
+      maxStopProximityMeters: 1000,
+    );
+
+    expect(snapshot.isActive, isTrue);
+
+    final segment = transitModeService.getStopsFromCurrentToDestination(
+      currentStop: snapshot.currentStop!,
+      destinationStop: snapshot.destinationStop!,
+      routeId: snapshot.route!.routeId,
+    );
+
+    expect(segment.length, 2);
+    expect(segment.first.stopName, 'Oakville GO');
+    expect(segment.last.stopName, 'Bronte GO');
+  });
+
   test('transit mode calculates stops remaining', () {
     const destination = Destination(
       name: 'Bronte GO',

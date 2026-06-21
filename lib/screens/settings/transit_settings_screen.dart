@@ -61,13 +61,6 @@ class TransitSettingsScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Favorite Stops'),
-          ListTile(
-            leading: const Icon(Icons.star_outline),
-            title: const Text('Favorite Stops'),
-            subtitle: const Text('Manage favorites from the Trips tab.'),
-          ),
         ],
       ),
     );

@@ -3,25 +3,35 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../data/transit_catalog.dart';
 import '../models/destination.dart';
+import '../models/gtfs_feed_info.dart';
 import '../models/monitoring_state.dart';
-import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
-import '../models/transit_vehicle_type.dart';
+import '../models/transit_mode_snapshot.dart';
+import '../models/transit_stop.dart';
+import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/transit_mode_provider.dart';
+import '../providers/transit_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
+import '../utils/transit_wake_message.dart';
 import '../utils/wake_radius_format.dart';
+import '../widgets/app_gradient_background.dart';
 import '../widgets/arrival_dialog.dart';
+import '../widgets/branded_app_bar_title.dart';
 import '../widgets/destination_picker_sheet.dart';
+import '../widgets/empty_state_message.dart';
 import '../widgets/gtfs_readiness_banner.dart';
 import '../widgets/home_card.dart';
 import '../widgets/metric_row.dart';
+import '../widgets/monitoring_distance_progress.dart';
+import '../widgets/transit_route_progress_line.dart';
 import '../widgets/trip_setup_checklist.dart';
 import 'settings/location_settings_screen.dart';
 import 'settings/transit_mode_settings_screen.dart';
@@ -41,6 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final arrivalVisible = context.select<LocationProvider, bool>(
       (provider) => provider.arrivalDialogVisible,
     );
+    final isMonitoring = context.select<MonitoringProvider, MonitoringState>(
+      (provider) => provider.currentState,
+    ) == MonitoringState.monitoring;
+    final hasDestination = context.select<MonitoringProvider, bool>(
+      (provider) => provider.selectedDestination != null,
+    );
+    final monitoringFirst = isMonitoring || hasDestination;
 
     if (arrivalVisible && !_showingArrivalDialog) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,17 +67,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DozeAlert'),
+        title: const BrandedAppBarTitle(),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        children: [
-          const _MonitoringCard(),
-          const SizedBox(height: 16),
-          const TripSetupChecklist(),
-          const GtfsReadinessBanner(),
-          const _DestinationCard(),
-        ],
+      body: AppGradientBackground(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: monitoringFirst
+              ? [
+                  const _MonitoringCard(),
+                  const SizedBox(height: 16),
+                  _DestinationCard(compact: hasDestination),
+                  const TripSetupChecklist(),
+                  const GtfsReadinessBanner(),
+                ]
+              : [
+                  const _DestinationCard(compact: false),
+                  const SizedBox(height: 16),
+                  const _MonitoringCard(),
+                  const TripSetupChecklist(),
+                  const GtfsReadinessBanner(),
+                ],
+        ),
       ),
     );
   }
@@ -93,8 +120,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+bool _isGtfsReadyForTransitMode(BuildContext context) {
+  if (context.read<GtfsProvider>().hasStopsForSelectedLine()) {
+    return true;
+  }
+
+  final transitSystem =
+      context.read<TransitProvider>().preferences.transitSystem;
+  if (!TransitCatalog.hasCatalogLines(transitSystem)) {
+    return false;
+  }
+
+  final feed =
+      context.read<GtfsFeedProvider>().feedForTransitSystem(transitSystem);
+  return feed?.status == GtfsFeedStatus.downloaded;
+}
+
 class _DestinationCard extends StatelessWidget {
-  const _DestinationCard();
+  const _DestinationCard({required this.compact});
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -115,111 +160,111 @@ class _DestinationCard extends StatelessWidget {
       (provider) => provider.currentState,
     );
     final isMonitoring = state == MonitoringState.monitoring;
+    final gtfsReady = _isGtfsReadyForTransitMode(context);
+    final routeSegmentStops = context.select<TransitModeProvider, List<TransitStop>>(
+      (provider) => provider.routeSegmentStops,
+    );
+    final wakeMessage = TransitWakeMessage.forHome(
+      transitModeEnabled: transitModeEnabled,
+      gtfsReady: gtfsReady,
+      snapshot: snapshot,
+      isMonitoring: isMonitoring,
+      selectedLine: selectedLine,
+    );
 
     return HomeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const HomeCardHeader(
+          HomeCardHeader(
             icon: Icons.location_on_outlined,
-            title: 'Destination',
-          ),
-          const SizedBox(height: 16),
-          Text(
-            destination?.name ?? 'No destination selected',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: destination == null
-                  ? colorScheme.onSurfaceVariant
-                  : colorScheme.onSurface,
-            ),
+            title: compact ? 'Your stop' : 'Destination',
+            iconColor: colorScheme.secondary,
           ),
           const SizedBox(height: 12),
-          if (transitModeEnabled) ...[
-            MetricRow(
-              label: 'Current Stop',
-              value: snapshot.isActive
-                  ? snapshot.currentStop?.stopName ?? '—'
-                  : '—',
-            ),
-            const SizedBox(height: 8),
-            MetricRow(
-              label: 'Next Stop',
-              value: snapshot.isActive
-                  ? snapshot.nextStop?.stopName ?? '—'
-                  : '—',
-            ),
-            const SizedBox(height: 8),
-            MetricRow(
-              label: 'Destination Stop',
-              value: snapshot.isActive
-                  ? snapshot.destinationStop?.stopName ?? '—'
-                  : '—',
-            ),
-            const SizedBox(height: 8),
-            MetricRow(
-              label: 'Stops Remaining',
-              value: snapshot.isActive
-                  ? snapshot.stopsRemaining.toString()
-                  : '—',
-            ),
-            const SizedBox(height: 8),
-            MetricRow(
-              label: 'Vehicle Type',
-              value: snapshot.isActive
-                  ? snapshot.vehicleType?.label ?? '—'
-                  : '—',
-            ),
-            const SizedBox(height: 12),
-          ],
-          Semantics(
-            button: true,
-            label: destination == null
-                ? 'Set destination'
-                : 'Change destination',
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: isMonitoring
-                    ? null
-                    : () => DestinationPickerSheet.show(context),
-                icon: Icon(
-                  destination == null
-                      ? Icons.add_location_alt_outlined
-                      : Icons.edit_location_alt_outlined,
-                ),
-                label: Text(
-                  destination == null ? 'Set destination' : 'Change destination',
-                ),
+          if (destination == null)
+            const EmptyStateMessage(
+              message:
+                  'Pick where you want to wake up — a station, address, or map pin.',
+            )
+          else ...[
+            Text(
+              destination.name,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
               ),
             ),
-          ),
-          if (destination != null && !isMonitoring) ...[
+            const SizedBox(height: 8),
+            Text(
+              wakeMessage,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ],
+          if (destination != null &&
+              transitModeEnabled &&
+              gtfsReady) ...[
+            const SizedBox(height: 16),
+            TransitRouteProgressLine(
+              isActive: snapshot.isActive,
+              stops: routeSegmentStops,
+              stopsRemaining: snapshot.stopsRemaining,
+              lineLabel: compact ? null : selectedLine,
+              inactiveMessage: isMonitoring
+                  ? 'Waiting for GPS near your line to place you on the route…'
+                  : 'Start monitoring on your line to see stop-by-stop progress.',
+            ),
+            if (snapshot.isActive && snapshot.nextStop != null) ...[
+              const SizedBox(height: 8),
+              MetricRow(
+                label: 'Next stop',
+                value: snapshot.nextStop!.stopName,
+              ),
+            ],
+          ],
+          if (!isMonitoring) ...[
             const SizedBox(height: 12),
             Semantics(
               button: true,
-              label: 'Clear destination',
+              label: destination == null
+                  ? 'Set destination'
+                  : 'Change destination',
               child: SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () =>
-                      context.read<MonitoringProvider>().clearDestination(),
-                  icon: const Icon(Icons.clear),
-                  label: const Text('Clear destination'),
+                child: FilledButton.icon(
+                  onPressed: () => DestinationPickerSheet.show(context),
+                  icon: Icon(
+                    destination == null
+                        ? Icons.add_location_alt_outlined
+                        : Icons.edit_location_alt_outlined,
+                  ),
+                  label: Text(
+                    destination == null
+                        ? 'Set destination'
+                        : 'Change destination',
+                  ),
                 ),
               ),
             ),
-          ],
-          if (destination != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              transitModeEnabled
-                  ? selectedLine
-                  : 'Wake by distance when monitoring',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+            if (destination != null) ...[
+              const SizedBox(height: 12),
+              Semantics(
+                button: true,
+                label: 'Clear destination',
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        context.read<MonitoringProvider>().clearDestination(),
+                    icon: const Icon(Icons.clear),
+                    label: const Text('Clear destination'),
+                  ),
+                ),
               ),
-            ),
+            ],
           ],
         ],
       ),
@@ -248,6 +293,9 @@ class _MonitoringCard extends StatelessWidget {
     final distanceKm = context.select<LocationProvider, double>(
       (provider) => provider.distanceRemainingKm,
     );
+    final tripProgress = context.select<LocationProvider, double?>(
+      (provider) => provider.tripProgressFraction,
+    );
     final speedLabel = context.select<LocationProvider, String>(
       (provider) {
         final location = provider.currentLocation;
@@ -261,103 +309,91 @@ class _MonitoringCard extends StatelessWidget {
       (provider) => provider.transitModeEnabled,
     );
     final transitWakeLabel = context.select<SettingsProvider, String>(
-      (provider) => provider.transitModeWake.label,
+      (provider) => provider.transitModeWake.wakeByLabel,
     );
+    final wakeSettingLabel = transitModeEnabled
+        ? 'Wake by $transitWakeLabel'
+        : WakeRadiusFormat.wakeByDescription(radiusMeters);
+    final settingsActionLabel =
+        transitModeEnabled ? 'Wake Stops' : 'Wake Distance';
+    final settingsActionIcon = transitModeEnabled
+        ? Icons.tune
+        : Icons.radar_outlined;
     final canStart = hasDestination && state == MonitoringState.idle;
     final canStop = state == MonitoringState.monitoring ||
         state == MonitoringState.arrived;
+    final isMonitoring = state == MonitoringState.monitoring;
 
     return HomeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const HomeCardHeader(
+          HomeCardHeader(
             icon: Icons.sensors,
             title: 'Monitoring',
-          ),
-          const SizedBox(height: 16),
-          Semantics(
-            label: 'Monitoring status ${MonitoringFormat.homeStatusLabel(state)}',
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: statusColor.withValues(alpha: 0.35)),
-              ),
-              child: Row(
-                children: [
-                  Icon(_statusIcon(state), color: statusColor),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Status: ${MonitoringFormat.homeStatusLabel(state)}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: statusColor,
-                      ),
+            trailing: hasDestination
+                ? TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => transitModeEnabled
+                              ? const TransitModeSettingsScreen()
+                              : const LocationSettingsScreen(),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
                     ),
-                  ),
-                ],
+                    icon: Icon(settingsActionIcon, size: 18),
+                    label: Text(settingsActionLabel),
+                  )
+                : null,
+          ),
+          const SizedBox(height: 10),
+          MonitoringStatusChip(
+            label: 'Status: ${MonitoringFormat.homeStatusLabel(state)}',
+            icon: _statusIcon(state),
+            color: statusColor,
+            active: isMonitoring,
+          ),
+          const SizedBox(height: 10),
+          if (!hasDestination)
+            const EmptyStateMessage(
+              message: 'Set a destination below, then tap Start to begin monitoring.',
+            )
+          else if (hasDistance)
+            MonitoringDistanceProgress(
+              distanceKm: distanceKm,
+              progress: tripProgress,
+              accentColor: statusColor,
+            )
+          else
+            Text(
+              state == MonitoringState.monitoring
+                  ? 'Waiting for GPS fix…'
+                  : 'Ready when you tap Start',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            !hasDestination
-                ? 'No destination selected'
-                : hasDistance
-                    ? '${distanceKm.toStringAsFixed(1)} km remaining'
-                    : state == MonitoringState.monitoring
-                        ? 'Waiting for GPS fix…'
-                        : '—',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: hasDistance
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
-            ),
-          ),
-          if (hasDestination) ...[
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: ActionChip(
-                avatar: Icon(
-                  Icons.radar_outlined,
-                  size: 18,
-                  color: colorScheme.primary,
-                ),
-                label: Text(WakeRadiusFormat.alertDescription(radiusMeters)),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const LocationSettingsScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
           const SizedBox(height: 8),
-          MetricRow(label: 'Current speed', value: speedLabel),
-          const SizedBox(height: 12),
+          MetricRow(label: 'Speed', value: speedLabel),
+          const SizedBox(height: 4),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
             secondary: Icon(
               Icons.directions_transit_outlined,
               color: colorScheme.primary,
+              size: 22,
             ),
             title: const Text('Transit Mode'),
-            subtitle: Text(
-              transitModeEnabled
-                  ? 'Wake by stops ($transitWakeLabel)'
-                  : 'Wake by distance to destination',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
+            subtitle: Text(wakeSettingLabel),
             value: transitModeEnabled,
             onChanged: state == MonitoringState.monitoring
                 ? null
@@ -371,22 +407,7 @@ class _MonitoringCard extends StatelessWidget {
                     }
                   },
           ),
-          if (transitModeEnabled)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const TransitModeSettingsScreen(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.tune, size: 18),
-                label: const Text('Wake timing'),
-              ),
-            ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
@@ -401,7 +422,7 @@ class _MonitoringCard extends StatelessWidget {
                     icon: const Icon(Icons.play_arrow_rounded, size: 20),
                     label: const Text('Start'),
                     style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 40),
+                      minimumSize: const Size(0, 44),
                     ),
                   ),
                 ),
@@ -418,22 +439,13 @@ class _MonitoringCard extends StatelessWidget {
                     icon: const Icon(Icons.stop_rounded, size: 20),
                     label: const Text('Stop'),
                     style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 40),
+                      minimumSize: const Size(0, 44),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          if (!hasDestination) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Set a destination before starting monitoring.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
         ],
       ),
     );

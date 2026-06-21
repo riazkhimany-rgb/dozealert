@@ -24,12 +24,13 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     with WidgetsBindingObserver {
   AppPermissionSnapshot? _snapshot;
   bool _loading = true;
+  bool _autoFlowRunning = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_refresh());
+    unawaited(_refresh().then((_) => _scheduleAutomaticFlow()));
   }
 
   @override
@@ -41,7 +42,47 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_refresh());
+      unawaited(_refresh().then((_) => _scheduleAutomaticFlow()));
+    }
+  }
+
+  Future<void> _scheduleAutomaticFlow() async {
+    if (!mounted || _autoFlowRunning) {
+      return;
+    }
+
+    final snapshot = _snapshot;
+    if (snapshot == null || snapshot.allRequiredForMonitoring) {
+      return;
+    }
+
+    // Brief pause so the on-screen disclosure is visible before system prompts.
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!mounted) {
+      return;
+    }
+
+    await _runAutomaticFlow();
+  }
+
+  Future<void> _runAutomaticFlow() async {
+    if (!mounted || _autoFlowRunning) {
+      return;
+    }
+
+    final snapshot = _snapshot;
+    if (snapshot == null || snapshot.allRequiredForMonitoring) {
+      return;
+    }
+
+    setState(() => _autoFlowRunning = true);
+
+    final permissions = context.read<AppPermissionsService>();
+    await permissions.runAutomaticSetupFlow();
+    await _refresh();
+
+    if (mounted) {
+      setState(() => _autoFlowRunning = false);
     }
   }
 
@@ -87,17 +128,52 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         const SizedBox(height: 12),
         Text(
           Platform.isAndroid
-              ? 'DozeAlert needs the settings below before your first trip. '
-                  'Tap each item to grant access or open the correct system screen.'
-              : 'DozeAlert needs location access before your first trip. '
-                  'Tap each item to grant access or open Settings.',
+              ? 'DozeAlert will prompt you for each permission needed for '
+                  'trip monitoring. Allow access when asked — background '
+                  'location is required when the screen is off.'
+              : 'DozeAlert will ask for location access before your first trip.',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurfaceVariant,
             height: 1.4,
           ),
         ),
+        if (_autoFlowRunning) ...[
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Waiting for permission prompts…',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 24),
+        if (!snapshot.allRequiredForMonitoring)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _autoFlowRunning ? null : () => unawaited(_runAutomaticFlow()),
+                icon: const Icon(Icons.security),
+                label: const Text('Grant permissions now'),
+              ),
+            ),
+          ),
         _PermissionTile(
           complete: snapshot.locationServicesEnabled,
           title: 'Phone GPS',
@@ -277,8 +353,8 @@ class _PermissionTile extends StatelessWidget {
               runSpacing: 8,
               children: [
                 FilledButton.tonal(
-                  onPressed: onAction,
-                  child: Text(actionLabel),
+                  onPressed: complete ? null : onAction,
+                  child: Text(complete ? 'Granted' : actionLabel),
                 ),
                 if (secondaryActionLabel != null && onSecondaryAction != null)
                   OutlinedButton(

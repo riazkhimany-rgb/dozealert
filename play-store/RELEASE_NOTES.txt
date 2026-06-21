@@ -1,0 +1,8 @@
+Version 1.0.2
+
+• Redesigned home screen with clearer monitoring status and trip progress
+• One-tap start from Trips, improved destination flow, and branded UI polish
+• Faster GPS lock when monitoring starts
+• Transit settings cleanup and improved wake distance / wake stops controls
+
+Sleep peacefully. Arrive confidently.

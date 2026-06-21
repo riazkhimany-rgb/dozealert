@@ -20,24 +20,22 @@ Assets live in `assets/branding/`:
 
 ## Features
 
-- **Location alarms** — wake up before your stop
-- **Background monitoring** — track progress while you rest
-- **Favorite locations** — Home, Work, and saved stops
+- **Location alarms** — wake before your stop using distance or transit stops
+- **Background monitoring** — track your trip while you rest (foreground notification on Android)
+- **Transit mode** — GTFS stop-by-stop progress on supported Ontario/GTA lines
+- **Favorite locations & trip history** — quick picks for Home, Work, and saved stops
 - **Map picker** — choose any destination on Google Maps
-- **Mock destinations** — quick picks for stations and landmarks
-- **Wake-up radius** — 250 m to 2 km alert distance
-- **Smart sleep mode** — peaceful travel monitoring (in progress)
-- **Missed-stop detection** — coming soon
-- **Train mode** — coming soon
-- **AI commute assistant** — coming soon
+- **First-time setup guide** — permissions, alarm test, and optional agency setup
+- **Wake-up radius** — adjustable alert distance (250 m to 2 km)
+- **Missed-trip detection** — records trips where the alarm was not dismissed in time
 
 ## Tech Stack
 
 - Flutter (Material 3)
 - Provider state management
-- SharedPreferences (local destination storage)
-- Google Maps (`google_maps_flutter`)
-- Geolocator & permission handling (upcoming live tracking)
+- SharedPreferences (local settings, favorites, trip history)
+- Google Maps (`google_maps_flutter`) & Google Places search
+- Geolocator, foreground service, and permission handling
 
 ## Getting Started
 

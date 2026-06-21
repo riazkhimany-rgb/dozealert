@@ -73,6 +73,7 @@ class LocationProvider extends ChangeNotifier {
   CurrentLocation? _currentLocation;
   double _distanceRemainingMeters = 0;
   double _distanceRemainingKm = 0;
+  double? _tripStartDistanceMeters;
   bool _trackingEnabled = false;
   bool _arrivalDialogVisible = false;
   bool _usingBackgroundService = false;
@@ -84,6 +85,14 @@ class LocationProvider extends ChangeNotifier {
   CurrentLocation? get currentLocation => _currentLocation;
   double get distanceRemainingMeters => _distanceRemainingMeters;
   double get distanceRemainingKm => _distanceRemainingKm;
+  double? get tripProgressFraction {
+    final start = _tripStartDistanceMeters;
+    if (start == null || start <= 0 || !distanceIsReady) {
+      return null;
+    }
+
+    return (1 - (_distanceRemainingMeters / start)).clamp(0.0, 1.0);
+  }
   bool get distanceIsReady =>
       _trackingEnabled && !_awaitingFreshLocation && _currentLocation != null;
   bool get trackingEnabled => _trackingEnabled;
@@ -194,9 +203,7 @@ class LocationProvider extends ChangeNotifier {
     }
 
     try {
-      if (!_usingBackgroundService) {
-        await _locationService.startTracking();
-      }
+      await _locationService.startTracking();
     } on LocationServiceDisabledException {
       await _backgroundMonitorService.stopMonitoring();
       return LocationStartResult.locationServiceDisabled;
@@ -210,9 +217,18 @@ class LocationProvider extends ChangeNotifier {
     _trackingEnabled = true;
     await _tripHistoryService.startTrip(destination.name);
     await _backgroundMonitorService.syncServiceState();
-    unawaited(refreshLocation());
+    unawaited(_bootstrapLocation());
     notifyListeners();
     return LocationStartResult.success;
+  }
+
+  Future<void> _bootstrapLocation() async {
+    final lastKnown = await _locationService.fetchLastKnownLocation();
+    if (lastKnown != null) {
+      await _onLocationUpdate(lastKnown, allowStale: true);
+    }
+
+    await refreshLocation();
   }
 
   Future<void> stopTracking() async {
@@ -263,6 +279,8 @@ class LocationProvider extends ChangeNotifier {
     _currentLocation = null;
     _distanceRemainingMeters = 0;
     _distanceRemainingKm = 0;
+    _tripStartDistanceMeters = null;
+    _closestApproachMeters = double.infinity;
     _awaitingFreshLocation = awaitingFresh;
     if (!awaitingFresh) {
       _monitoringStartedAt = null;
@@ -297,6 +315,12 @@ class LocationProvider extends ChangeNotifier {
     _distanceRemainingKm = _distanceRemainingMeters / 1000;
 
     if (_trackingEnabled &&
+        _tripStartDistanceMeters == null &&
+        _distanceRemainingMeters > 0) {
+      _tripStartDistanceMeters = _distanceRemainingMeters;
+    }
+
+    if (_trackingEnabled &&
         _monitoringProvider.currentState == MonitoringState.monitoring) {
       _closestApproachMeters = _distanceRemainingMeters < _closestApproachMeters
           ? _distanceRemainingMeters
@@ -304,8 +328,11 @@ class LocationProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _onLocationUpdate(CurrentLocation location) async {
-    if (_awaitingFreshLocation && _isStaleLocation(location)) {
+  Future<void> _onLocationUpdate(
+    CurrentLocation location, {
+    bool allowStale = false,
+  }) async {
+    if (_awaitingFreshLocation && _isStaleLocation(location) && !allowStale) {
       return;
     }
 
@@ -500,6 +527,12 @@ class LocationProvider extends ChangeNotifier {
       final location = await _locationService.fetchCurrentLocation();
       if (location != null) {
         await _onLocationUpdate(location);
+        return;
+      }
+
+      final lastKnown = await _locationService.fetchLastKnownLocation();
+      if (lastKnown != null) {
+        await _onLocationUpdate(lastKnown, allowStale: true);
       }
     } catch (error) {
       AppLog.d('LocationProvider: refreshLocation failed: $error');

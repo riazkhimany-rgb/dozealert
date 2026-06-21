@@ -19,8 +19,9 @@ class MetricRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
             color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
           ),
         ),
         Flexible(
@@ -28,7 +29,7 @@ class MetricRow extends StatelessWidget {
             value,
             textAlign: TextAlign.end,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

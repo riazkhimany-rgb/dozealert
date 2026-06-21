@@ -21,6 +21,14 @@ extension TransitModeWakeSettingX on TransitModeWakeSetting {
     };
   }
 
+  String get wakeByLabel {
+    return switch (this) {
+      TransitModeWakeSetting.atDestination => 'at destination',
+      TransitModeWakeSetting.oneStopBefore => '1 stop',
+      TransitModeWakeSetting.twoStopsBefore => '2 stops',
+    };
+  }
+
   static TransitModeWakeSetting fromIndex(int index) {
     if (index < 0 || index >= TransitModeWakeSetting.values.length) {
       return TransitModeWakeSetting.oneStopBefore;

@@ -14,12 +14,12 @@ enum LocationPermissionStatus {
 }
 
 class LocationService {
-  static const _updateInterval = Duration(seconds: 10);
+  static const _lastKnownMaxAge = Duration(minutes: 5);
 
   final StreamController<CurrentLocation> _controller =
       StreamController<CurrentLocation>.broadcast();
 
-  Timer? _updateTimer;
+  StreamSubscription<Position>? _positionSubscription;
   bool _tracking = false;
 
   Stream<CurrentLocation> get locationStream => _controller.stream;
@@ -84,36 +84,70 @@ class LocationService {
     }
 
     _tracking = true;
+
+    final lastKnown = await fetchLastKnownLocation();
+    if (lastKnown != null) {
+      _emitLocation(lastKnown);
+    }
+
     await _emitCurrentLocation();
 
-    _updateTimer?.cancel();
-    _updateTimer = Timer.periodic(_updateInterval, (_) {
-      unawaited(_emitCurrentLocation());
-    });
+    await _positionSubscription?.cancel();
+    _positionSubscription = Geolocator.getPositionStream(
+      locationSettings: Platform.isAndroid
+          ? AndroidSettings(
+              accuracy: LocationAccuracy.medium,
+              distanceFilter: 5,
+              intervalDuration: const Duration(seconds: 5),
+            )
+          : AppleSettings(
+              accuracy: LocationAccuracy.medium,
+              distanceFilter: 5,
+            ),
+    ).listen(
+      (position) => _emitLocation(_locationFromPosition(position)),
+      onError: (Object error) {
+        AppLog.d('LocationService: position stream error: $error');
+      },
+    );
   }
 
   Future<void> stopTracking() async {
     _tracking = false;
-    _updateTimer?.cancel();
-    _updateTimer = null;
+    await _positionSubscription?.cancel();
+    _positionSubscription = null;
+  }
+
+  Future<CurrentLocation?> fetchLastKnownLocation() async {
+    try {
+      final position = await Geolocator.getLastKnownPosition();
+      if (position == null) {
+        return null;
+      }
+
+      final location = _locationFromPosition(position);
+      final age = DateTime.now().difference(location.timestamp);
+      if (age > _lastKnownMaxAge) {
+        return null;
+      }
+
+      return location;
+    } catch (error) {
+      AppLog.d('LocationService: fetchLastKnownLocation failed: $error');
+      return null;
+    }
   }
 
   Future<CurrentLocation?> fetchCurrentLocation() async {
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 8),
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 12),
         ),
       );
 
-      return CurrentLocation(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        speed: position.speed,
-        accuracy: position.accuracy,
-        timestamp: position.timestamp,
-      );
+      return _locationFromPosition(position);
     } on LocationServiceDisabledException {
       rethrow;
     } on PermissionDeniedException {
@@ -130,31 +164,33 @@ class LocationService {
     }
 
     try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 8),
-        ),
-      );
-
-      if (!_tracking || _controller.isClosed) {
-        return;
+      final location = await fetchCurrentLocation();
+      if (location != null) {
+        _emitLocation(location);
       }
-
-      _controller.add(
-        CurrentLocation(
-          latitude: position.latitude,
-          longitude: position.longitude,
-          speed: position.speed,
-          accuracy: position.accuracy,
-          timestamp: position.timestamp,
-        ),
-      );
     } on LocationServiceDisabledException {
       rethrow;
     } on PermissionDeniedException {
       rethrow;
     }
+  }
+
+  CurrentLocation _locationFromPosition(Position position) {
+    return CurrentLocation(
+      latitude: position.latitude,
+      longitude: position.longitude,
+      speed: position.speed,
+      accuracy: position.accuracy,
+      timestamp: position.timestamp,
+    );
+  }
+
+  void _emitLocation(CurrentLocation location) {
+    if (!_tracking || _controller.isClosed) {
+      return;
+    }
+
+    _controller.add(location);
   }
 
   void dispose() {

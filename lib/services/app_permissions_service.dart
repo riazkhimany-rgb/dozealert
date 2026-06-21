@@ -75,4 +75,53 @@ class AppPermissionsService {
   Future<void> openBatterySettings() async {
     await _backgroundMonitorService.openBatteryOptimizationSettings();
   }
+
+  /// Requests missing **required** permissions in Android's required order.
+  /// Opens system settings when a runtime dialog cannot be shown (GPS off).
+  Future<AppPermissionSnapshot> runAutomaticSetupFlow() async {
+    var snapshot = await this.snapshot();
+
+    if (!snapshot.locationServicesEnabled) {
+      await openLocationSettings();
+      return this.snapshot();
+    }
+
+    if (!snapshot.locationWhenInUseGranted) {
+      final whenInUse = await ph.Permission.locationWhenInUse.status;
+      if (whenInUse.isPermanentlyDenied) {
+        return snapshot;
+      }
+
+      await requestLocationWhenInUse();
+      snapshot = await this.snapshot();
+      if (!snapshot.locationWhenInUseGranted) {
+        return snapshot;
+      }
+    }
+
+    if (Platform.isAndroid && !snapshot.backgroundLocationGranted) {
+      final background = await ph.Permission.locationAlways.status;
+      if (background.isPermanentlyDenied) {
+        return snapshot;
+      }
+
+      await requestBackgroundLocation();
+      snapshot = await this.snapshot();
+      if (!snapshot.backgroundLocationGranted) {
+        return snapshot;
+      }
+    }
+
+    if (Platform.isAndroid && !snapshot.notificationsGranted) {
+      final notifications = await ph.Permission.notification.status;
+      if (notifications.isPermanentlyDenied) {
+        return snapshot;
+      }
+
+      await requestNotifications();
+      snapshot = await this.snapshot();
+    }
+
+    return snapshot;
+  }
 }

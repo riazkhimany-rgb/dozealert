@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
+import '../models/transit_stop.dart';
 import '../services/settings_service.dart';
 import '../services/transit_mode_service.dart';
 import 'monitoring_provider.dart';
@@ -25,6 +26,23 @@ class TransitModeProvider extends ChangeNotifier {
 
   TransitModeSnapshot get snapshot => _snapshot;
   bool get isActive => _snapshot.isActive;
+
+  /// Route stops from the user's current stop through the destination, inclusive.
+  List<TransitStop> get routeSegmentStops {
+    final route = _snapshot.route;
+    final current = _snapshot.currentStop;
+    final destination = _snapshot.destinationStop;
+    if (!_snapshot.isActive || route == null || current == null || destination == null) {
+      return const [];
+    }
+
+    return _transitModeService.getStopsFromCurrentToDestination(
+      currentStop: current,
+      destinationStop: destination,
+      routeId: route.routeId,
+    );
+  }
+
   bool get shouldUseDistanceFallback =>
       _settingsService.settings.transitModeEnabled && !_snapshot.isActive;
 

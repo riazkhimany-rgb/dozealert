@@ -180,6 +180,33 @@ class TransitModeService {
     return (destinationStop.stopSequence - currentStop.stopSequence).abs();
   }
 
+  /// Stops from [currentStop] through [destinationStop] along the route, inclusive.
+  List<TransitStop> getStopsFromCurrentToDestination({
+    required TransitStop currentStop,
+    required TransitStop destinationStop,
+    required String routeId,
+  }) {
+    final routeStops = _sortedStops(routeId);
+    final travelingForward =
+        destinationStop.stopSequence >= currentStop.stopSequence;
+
+    final segment = routeStops.where((stop) {
+      if (travelingForward) {
+        return stop.stopSequence >= currentStop.stopSequence &&
+            stop.stopSequence <= destinationStop.stopSequence;
+      }
+      return stop.stopSequence <= currentStop.stopSequence &&
+          stop.stopSequence >= destinationStop.stopSequence;
+    }).toList();
+
+    segment.sort(
+      (a, b) => travelingForward
+          ? a.stopSequence.compareTo(b.stopSequence)
+          : b.stopSequence.compareTo(a.stopSequence),
+    );
+    return segment;
+  }
+
   List<TransitStop> _sortedStops(String routeId) {
     final routeStops = List<TransitStop>.from(
       _gtfsService.stopsForRoute(routeId),

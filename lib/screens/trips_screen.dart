@@ -1,12 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/destination.dart';
 import '../models/favorite_destination.dart';
+import '../models/monitoring_state.dart';
 import '../models/trip_history_entry.dart';
 import '../providers/destination_history_provider.dart';
+import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../providers/trip_history_provider.dart';
+import '../services/background_monitor_service.dart';
+import '../utils/location_format.dart';
+import '../widgets/destination_picker_sheet.dart';
+import '../widgets/empty_state_message.dart';
 import '../widgets/home_card.dart';
 
 String _formatTripTimestamp(DateTime value) {
@@ -36,6 +45,10 @@ class TripsScreen extends StatelessWidget {
     final missedTrips = context.select<TripHistoryProvider, List<TripHistoryEntry>>(
       (provider) => provider.missedTrips.take(10).toList(growable: false),
     );
+    final hasAnyTrips = recentDestinations.isNotEmpty ||
+        favorites.isNotEmpty ||
+        history.isNotEmpty ||
+        missedTrips.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -44,6 +57,17 @@ class TripsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
+          if (!hasAnyTrips)
+            HomeCard(
+              child: EmptyStateMessage(
+                showLogo: true,
+                message:
+                    'Save favorite stops or complete a trip and they will appear here.',
+                actionLabel: 'Set destination',
+                onAction: () => DestinationPickerSheet.show(context),
+              ),
+            ),
+          if (!hasAnyTrips) const SizedBox(height: 16),
           _TripSection(
             title: 'Recent Destinations',
             icon: Icons.history,
@@ -103,13 +127,7 @@ class _TripSection extends StatelessWidget {
             )
           else
             ...destinations.map(
-              (destination) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.place_outlined),
-                title: Text(destination.name),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _selectDestination(context, destination),
-              ),
+              (destination) => _DestinationListTile(destination: destination),
             ),
         ],
       ),
@@ -131,6 +149,7 @@ class _FavoriteSection extends StatelessWidget {
           const HomeCardHeader(
             icon: Icons.star_outline,
             title: 'Favorite Destinations',
+            iconColor: Color(0xFF4CC9F0),
           ),
           const SizedBox(height: 12),
           if (favorites.isEmpty)
@@ -142,29 +161,60 @@ class _FavoriteSection extends StatelessWidget {
             )
           else
             ...favorites.map(
-              (item) {
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.star_outline),
-                  title: Text(item.destination.name),
-                  subtitle: item.badges.isEmpty
-                      ? null
-                      : Text(item.badges.join(', ')),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Remove favorite',
-                    onPressed: () async {
-                      await context
-                          .read<DestinationHistoryProvider>()
-                          .removeFavorite(item.destination);
-                    },
-                  ),
-                  onTap: () => _selectDestination(context, item.destination),
-                );
-              },
+              (item) => _DestinationListTile(
+                destination: item.destination,
+                subtitle: item.badges.isEmpty ? null : item.badges.join(', '),
+                onDelete: () async {
+                  await context
+                      .read<DestinationHistoryProvider>()
+                      .removeFavorite(item.destination);
+                },
+              ),
             ),
         ],
       ),
+    );
+  }
+}
+
+class _DestinationListTile extends StatelessWidget {
+  const _DestinationListTile({
+    required this.destination,
+    this.subtitle,
+    this.onDelete,
+  });
+
+  final Destination destination;
+  final String? subtitle;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMonitoring = context.select<MonitoringProvider, MonitoringState>(
+      (provider) => provider.currentState,
+    ) == MonitoringState.monitoring;
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.place_outlined),
+      title: Text(destination.name),
+      subtitle: subtitle == null ? null : Text(subtitle!),
+      trailing: !isMonitoring
+          ? IconButton(
+              icon: const Icon(Icons.play_arrow_rounded),
+              tooltip: 'Use and start monitoring',
+              onPressed: () => unawaited(
+                _selectAndStartMonitoring(context, destination),
+              ),
+            )
+          : onDelete != null
+              ? IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Remove favorite',
+                  onPressed: onDelete,
+                )
+              : null,
+      onTap: () => unawaited(_selectDestination(context, destination)),
     );
   }
 }
@@ -240,7 +290,59 @@ Future<void> _selectDestination(
   if (!context.mounted) {
     return;
   }
+
+  final isMonitoring = context.read<MonitoringProvider>().currentState ==
+      MonitoringState.monitoring;
+
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Selected ${destination.name}')),
+    SnackBar(
+      content: Text('Selected ${destination.name}'),
+      action: isMonitoring
+          ? null
+          : SnackBarAction(
+              label: 'Start',
+              onPressed: () {
+                context.read<NavigationProvider>().setIndex(0);
+                unawaited(_startMonitoringFromTrips(context));
+              },
+            ),
+    ),
   );
+}
+
+Future<void> _selectAndStartMonitoring(
+  BuildContext context,
+  Destination destination,
+) async {
+  await context.read<MonitoringProvider>().setDestination(destination);
+  if (!context.mounted) {
+    return;
+  }
+
+  context.read<NavigationProvider>().setIndex(0);
+  await _startMonitoringFromTrips(context);
+}
+
+Future<void> _startMonitoringFromTrips(BuildContext context) async {
+  final locationProvider = context.read<LocationProvider>();
+  final backgroundMonitorService = context.read<BackgroundMonitorService>();
+
+  Future<void> tryStart({bool resume = false}) async {
+    final result = await locationProvider.startTracking(resume: resume);
+    if (!context.mounted) {
+      return;
+    }
+
+    await LocationFeedback.handleStartResult(
+      context,
+      result,
+      backgroundMonitorService: backgroundMonitorService,
+      onContinueAfterBatteryPrompt:
+          result == LocationStartResult.batteryOptimizationRequired
+              ? () => tryStart(resume: true)
+              : null,
+    );
+  }
+
+  await tryStart();
 }
