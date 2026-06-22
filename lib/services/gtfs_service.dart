@@ -89,17 +89,63 @@ class GtfsService {
     }
 
     for (final stop in feed.stops) {
-      final routeStops = _stopsByRouteId.putIfAbsent(stop.routeId, () => []);
-      routeStops.removeWhere((existing) => existing.stopId == stop.stopId);
-      routeStops.add(stop);
-      _stops.removeWhere((existing) => existing.stopId == stop.stopId);
-      _stops.add(stop);
+      _mergeStop(stop);
     }
 
     AppLog.d(
       'GtfsService: merged cached feed ${feed.info.feedName} '
       '(${feed.stops.length} stops)',
     );
+  }
+
+  Future<void> mergeCachedFeedAsync(GtfsCachedFeed feed) async {
+    for (final agency in feed.agencies) {
+      _agenciesById[agency.agencyId] = agency;
+      if (!_agencies.any((entry) => entry.agencyId == agency.agencyId)) {
+        _agencies.add(agency);
+      }
+    }
+
+    for (final route in feed.routes) {
+      _routesById[route.routeId] = route;
+      if (!_routes.any((entry) => entry.routeId == route.routeId)) {
+        _routes.add(route);
+      }
+      _stopsByRouteId.putIfAbsent(route.routeId, () => []);
+    }
+
+    var processed = 0;
+    for (final stop in feed.stops) {
+      _mergeStop(stop);
+      processed++;
+      if (processed % 1000 == 0) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    AppLog.d(
+      'GtfsService: merged cached feed ${feed.info.feedName} '
+      '(${feed.stops.length} stops)',
+    );
+  }
+
+  void _mergeStop(TransitStop stop) {
+    final routeStops = _stopsByRouteId.putIfAbsent(stop.routeId, () => []);
+    final existingIndex =
+        routeStops.indexWhere((existing) => existing.stopId == stop.stopId);
+    if (existingIndex >= 0) {
+      routeStops[existingIndex] = stop;
+    } else {
+      routeStops.add(stop);
+    }
+
+    final flatIndex =
+        _stops.indexWhere((existing) => existing.stopId == stop.stopId);
+    if (flatIndex >= 0) {
+      _stops[flatIndex] = stop;
+    } else {
+      _stops.add(stop);
+    }
   }
 
   Future<void> reloadCachedFeeds(List<GtfsCachedFeed> cachedFeeds) async {

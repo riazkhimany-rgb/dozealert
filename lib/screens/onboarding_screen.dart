@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../services/alarm_service.dart';
+import '../providers/gtfs_feed_provider.dart';
+import '../providers/gtfs_provider.dart';
+import '../providers/transit_provider.dart';
 import '../services/onboarding_service.dart';
-import '../widgets/alarm_test_page.dart';
 import '../widgets/branding_logo.dart';
 import '../widgets/onboarding_permissions_page.dart';
-import '../widgets/transit_preferences_section.dart';
 import 'main_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -21,9 +21,9 @@ class OnboardingScreen extends StatefulWidget {
   /// of replacing the app root (used from the home first-time setup checklist).
   final bool popOnComplete;
 
-  static const pageCount = 4;
+  static const pageCount = 2;
   static const permissionsPageIndex = 1;
-  static const alarmPageIndex = 3;
+  static const lastPageIndex = pageCount - 1;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -34,27 +34,44 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final OnboardingService _onboardingService = OnboardingService();
   int _pageIndex = 0;
   bool _permissionsReady = false;
-  bool _alarmTestPlaying = false;
-  bool _alarmTestCompleted = false;
-  AlarmService? _alarmService;
+  bool _onboardingSetupStarted = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _alarmService ??= context.read<AlarmService>();
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_startOnboardingSetup());
+    });
+  }
+
+  Future<void> _startOnboardingSetup() async {
+    if (_onboardingSetupStarted || !mounted) {
+      return;
+    }
+    _onboardingSetupStarted = true;
+
+    final transitProvider = context.read<TransitProvider>();
+    final gtfsFeedProvider = context.read<GtfsFeedProvider>();
+    final gtfsProvider = context.read<GtfsProvider>();
+
+    await transitProvider.applyGoTransitDefaultsIfUnset();
+    if (!mounted) {
+      return;
+    }
+
+    gtfsFeedProvider.preloadGoTransitIfNeeded(
+      onComplete: gtfsProvider.notifyDataUpdated,
+    );
   }
 
   @override
   void dispose() {
-    if (_alarmTestPlaying) {
-      unawaited(_alarmService?.stopAlarm());
-    }
     _pageController.dispose();
     super.dispose();
   }
 
   Future<void> _finish() async {
-    await context.read<AlarmService>().stopAlarm();
+    await _startOnboardingSetup();
     await _onboardingService.markComplete();
     if (!mounted) {
       return;
@@ -68,24 +85,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Future<void> _playTestAlarm() async {
-    await context.read<AlarmService>().playAlarm();
-    if (!mounted) {
+  Future<void> _confirmSkipSetup() async {
+    if (widget.popOnComplete) {
+      await _finish();
       return;
     }
-    setState(() => _alarmTestPlaying = true);
-  }
 
-  Future<void> _stopTestAlarm() async {
-    await context.read<AlarmService>().stopAlarm();
-    await _onboardingService.markAlarmTested();
-    if (!mounted) {
-      return;
+    final skip = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Skip setup?'),
+          content: const Text(
+            'You can use DozeAlert later, but trip monitoring needs location, '
+            'notification, and battery permissions first.\n\n'
+            'You can finish setup anytime from Home → First time setup or '
+            'Settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Keep setup'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Skip for now'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (skip == true && mounted) {
+      await _finish();
     }
-    setState(() {
-      _alarmTestPlaying = false;
-      _alarmTestCompleted = true;
-    });
   }
 
   Future<void> _onPrimaryAction() async {
@@ -94,26 +127,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Grant the required permissions on this screen before continuing.',
+            'Complete permission setup on this screen before continuing.',
           ),
         ),
       );
       return;
     }
 
-    if (_pageIndex < OnboardingScreen.alarmPageIndex) {
+    if (_pageIndex < OnboardingScreen.lastPageIndex) {
       await _pageController.nextPage(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
-      );
-      return;
-    }
-
-    if (_alarmTestPlaying) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Stop the test alarm before continuing.'),
-        ),
       );
       return;
     }
@@ -125,10 +149,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (_pageIndex == OnboardingScreen.permissionsPageIndex) {
       return _permissionsReady;
     }
-    if (_pageIndex == OnboardingScreen.alarmPageIndex) {
-      return !_alarmTestPlaying;
-    }
     return true;
+  }
+
+  ScrollPhysics get _pagePhysics {
+    if (_pageIndex == OnboardingScreen.permissionsPageIndex &&
+        !_permissionsReady) {
+      return const NeverScrollableScrollPhysics();
+    }
+    return const PageScrollPhysics();
   }
 
   @override
@@ -140,13 +169,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         title: Text(widget.popOnComplete ? 'Setup guide' : 'Welcome'),
         actions: [
           TextButton(
-            onPressed: _finish,
-            child: Text(widget.popOnComplete ? 'Close' : 'Skip'),
+            onPressed: _confirmSkipSetup,
+            child: Text(widget.popOnComplete ? 'Close' : 'Skip setup'),
           ),
         ],
       ),
       body: PageView(
         controller: _pageController,
+        physics: _pagePhysics,
         onPageChanged: (index) => setState(() => _pageIndex = index),
         children: [
           const _IntroPage(
@@ -155,7 +185,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 'DozeAlert monitors your trip and sounds an alarm when '
                 'you are approaching your destination.\n\n'
                 'Set a wake radius (for example 1 km) so the alert '
-                'fires with enough time to gather your things.',
+                'sounds with enough time to gather your things.\n\n'
+                'GO Transit stop data downloads in the background while '
+                'you finish setup.',
           ),
           OnboardingPermissionsPage(
             onStatusChanged: (snapshot) {
@@ -166,42 +198,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 _permissionsReady = snapshot.allRequiredForMonitoring;
               });
             },
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Choose your transit agency',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Optional — helps pick stops and download the right '
-                  'GTFS feed.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Expanded(
-                  child: SingleChildScrollView(
-                    child: TransitPreferencesSection(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          AlarmTestPage(
-            alarmPlaying: _alarmTestPlaying,
-            alarmTestCompleted: _alarmTestCompleted,
-            onPlay: () => unawaited(_playTestAlarm()),
-            onStop: () => unawaited(_stopTestAlarm()),
-            completionMessage:
-                'Volume saved. Tap Get started when you are ready.',
           ),
         ],
       ),
@@ -237,7 +233,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: FilledButton(
                   onPressed: _canPressPrimary ? _onPrimaryAction : null,
                   child: Text(
-                    _pageIndex < OnboardingScreen.alarmPageIndex
+                    _pageIndex < OnboardingScreen.lastPageIndex
                         ? 'Continue'
                         : 'Get started',
                   ),
@@ -248,19 +244,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'Allow the permission prompts above to continue.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              if (_pageIndex == OnboardingScreen.alarmPageIndex &&
-                  _alarmTestPlaying)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Stop the test alarm when the volume feels right.',
+                    'Tap Start permission setup, then return here when done.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,

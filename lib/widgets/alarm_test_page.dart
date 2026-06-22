@@ -18,6 +18,7 @@ class AlarmTestPage extends StatelessWidget {
     this.showCompletionHint = true,
     this.completionMessage =
         'Volume saved. You can close this screen when ready.',
+    this.showVolumeControls = true,
   });
 
   final bool alarmPlaying;
@@ -26,6 +27,7 @@ class AlarmTestPage extends StatelessWidget {
   final VoidCallback onStop;
   final bool showCompletionHint;
   final String completionMessage;
+  final bool showVolumeControls;
 
   static int _percentLabel(double value) => (value * 100).round();
 
@@ -68,76 +70,81 @@ class AlarmTestPage extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          'Play the alert, adjust the sliders until it is easy to hear, '
-          'then stop the test when you are done.',
+          showVolumeControls
+              ? 'Play the alert, adjust the sliders until it is easy to hear, '
+                  'then stop the test when you are done.'
+              : 'Play the alert to hear what you will get when approaching '
+                  'your destination, then stop the test when you are done.',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurfaceVariant,
             height: 1.4,
           ),
         ),
-        const SizedBox(height: 24),
-        Text(
-          'Phone speaker volume during alert',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
+        if (showVolumeControls) ...[
+          const SizedBox(height: 24),
+          Text(
+            'Phone speaker volume during alert',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        Row(
-          children: [
-            Icon(Icons.volume_down, color: colorScheme.onSurfaceVariant),
-            Expanded(
-              child: Slider(
-                value: approachSystemVolume,
-                min: AppSettings.minApproachSystemVolume,
-                max: 1.0,
-                divisions: 18,
-                label: '${_percentLabel(approachSystemVolume)}%',
-                onChanged: (value) => unawaited(
-                  _applyVolumeChange(
-                    alarmService,
-                    settingsProvider.setApproachSystemVolume,
-                    value,
+          Row(
+            children: [
+              Icon(Icons.volume_down, color: colorScheme.onSurfaceVariant),
+              Expanded(
+                child: Slider(
+                  value: approachSystemVolume,
+                  min: AppSettings.minApproachSystemVolume,
+                  max: 1.0,
+                  divisions: 18,
+                  label: '${_percentLabel(approachSystemVolume)}%',
+                  onChanged: (value) => unawaited(
+                    _applyVolumeChange(
+                      alarmService,
+                      settingsProvider.setApproachSystemVolume,
+                      value,
+                    ),
                   ),
                 ),
               ),
+              Icon(Icons.volume_up, color: colorScheme.onSurfaceVariant),
+            ],
+          ),
+          Text(
+            'Temporarily raises media volume while the alert plays.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
-            Icon(Icons.volume_up, color: colorScheme.onSurfaceVariant),
-          ],
-        ),
-        Text(
-          'Temporarily raises media volume while the alert plays.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
           ),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'Voice and tone level',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
+          const SizedBox(height: 20),
+          Text(
+            'Voice and tone level',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        Row(
-          children: [
-            Icon(Icons.volume_down, color: colorScheme.onSurfaceVariant),
-            Expanded(
-              child: Slider(
-                value: alarmVolume,
-                divisions: 10,
-                label: '${_percentLabel(alarmVolume)}%',
-                onChanged: (value) => unawaited(
-                  _applyVolumeChange(
-                    alarmService,
-                    settingsProvider.setAlarmVolume,
-                    value,
+          Row(
+            children: [
+              Icon(Icons.volume_down, color: colorScheme.onSurfaceVariant),
+              Expanded(
+                child: Slider(
+                  value: alarmVolume,
+                  divisions: 10,
+                  label: '${_percentLabel(alarmVolume)}%',
+                  onChanged: (value) => unawaited(
+                    _applyVolumeChange(
+                      alarmService,
+                      settingsProvider.setAlarmVolume,
+                      value,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Icon(Icons.volume_up, color: colorScheme.onSurfaceVariant),
-          ],
-        ),
+              Icon(Icons.volume_up, color: colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ],
         const SizedBox(height: 24),
         FilledButton.icon(
           onPressed: alarmPlaying ? null : onPlay,

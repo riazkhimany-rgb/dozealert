@@ -39,6 +39,12 @@ class PreferencesService {
     );
   }
 
+  Future<bool> hasConfiguredTransitPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.containsKey(_countryKey) &&
+        prefs.containsKey(_transitSystemKey);
+  }
+
   Future<void> saveTransitPreferences(TransitPreferences preferences) async {
     final normalized = TransitCatalog.normalize(preferences);
     final prefs = await SharedPreferences.getInstance();

@@ -22,7 +22,9 @@ class AppPermissionSnapshot {
     }
 
     if (Platform.isAndroid) {
-      return backgroundLocationGranted && notificationsGranted;
+      return backgroundLocationGranted &&
+          notificationsGranted &&
+          batteryUnrestricted;
     }
 
     return true;
@@ -47,6 +49,9 @@ class AppPermissionSnapshot {
     }
     if (Platform.isAndroid && !notificationsGranted) {
       missing.add('Notifications: Allowed');
+    }
+    if (Platform.isAndroid && !batteryUnrestricted) {
+      missing.add('Battery: Unrestricted / not optimized');
     }
     return missing;
   }

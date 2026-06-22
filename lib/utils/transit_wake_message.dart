@@ -27,6 +27,6 @@ abstract final class TransitWakeMessage {
       return 'Waiting for GPS on your line — $selectedLine';
     }
 
-    return 'Start monitoring to match your line — $selectedLine';
+    return 'Start monitoring to see stop-by-stop progress.';
   }
 }

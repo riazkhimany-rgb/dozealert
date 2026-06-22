@@ -103,7 +103,6 @@ Future<void> main() async {
 
   final gtfsFeedProvider = GtfsFeedProvider(
     gtfsDownloadService,
-    gtfsParserService,
     gtfsImportService,
     gtfsCacheStore,
     gtfsService,

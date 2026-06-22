@@ -59,14 +59,16 @@ class TransitRouteProgressLine extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            inactiveMessage,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.4,
+          if (inactiveMessage.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              inactiveMessage,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
             ),
-          ),
+          ],
         ],
       );
     }

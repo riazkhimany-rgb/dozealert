@@ -56,6 +56,14 @@ class GtfsProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> notifyDataUpdated() async {
+    if (!_initialized) {
+      return;
+    }
+    await _syncDefaultLineIfNeeded();
+    notifyListeners();
+  }
+
   Future<void> refreshFromCache() async {
     final cachedFeeds = await _gtfsImportService.loadCache();
     await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);

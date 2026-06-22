@@ -9,11 +9,9 @@ import '../models/app_permission_snapshot.dart';
 import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/transit_provider.dart';
-import '../screens/alarm_test_screen.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/transit_data_screen.dart';
 import '../services/app_permissions_service.dart';
-import '../services/onboarding_service.dart';
 import '../widgets/onboarding_permissions_page.dart';
 import 'home_card.dart';
 
@@ -28,7 +26,6 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
     with WidgetsBindingObserver {
   bool _expanded = false;
   AppPermissionSnapshot? _permissions;
-  bool? _alarmTested;
   bool _checksInitialized = false;
 
   @override
@@ -63,13 +60,11 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
     try {
       final permissions = context.read<AppPermissionsService>();
       final snapshot = await permissions.snapshot();
-      final alarmTested = await OnboardingService().isAlarmTested();
       if (!mounted) {
         return;
       }
       setState(() {
         _permissions = snapshot;
-        _alarmTested = alarmTested;
       });
     } catch (_) {
       if (!mounted) {
@@ -77,7 +72,6 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
       }
       setState(() {
         _permissions = null;
-        _alarmTested = false;
       });
     }
   }
@@ -86,15 +80,6 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (context) => const OnboardingScreen(popOnComplete: true),
-      ),
-    );
-    await _refreshChecks();
-  }
-
-  Future<void> _openAlarmTest() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (context) => const AlarmTestScreen(),
       ),
     );
     await _refreshChecks();
@@ -140,15 +125,10 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
         ),
       _ChecklistItem(
         label: Platform.isAndroid
-            ? 'Permissions (GPS, All the time location, Notifications)'
+            ? 'Permissions (GPS, All the time location, Notifications, Battery)'
             : 'Permissions (GPS and location access)',
         complete: permissionsReady,
         onTap: _openPermissionsSetup,
-      ),
-      _ChecklistItem(
-        label: 'Alarm tested',
-        complete: _alarmTested ?? false,
-        onTap: () => unawaited(_openAlarmTest()),
       ),
     ];
 
@@ -158,7 +138,7 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(top: 16, bottom: 16),
       child: HomeCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,14 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/gtfs_feed_info.dart';
-import '../utils/app_log.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_route.dart';
 import '../models/transit_stop.dart';
-import '../models/transit_vehicle_type.dart';
+import '../utils/app_log.dart';
+import '../utils/gtfs_isolate_worker.dart';
 
 class GtfsCachedFeed {
   const GtfsCachedFeed({
@@ -28,6 +28,13 @@ class GtfsCacheStore {
   static const _cacheFolderName = 'gtfs_cache';
 
   Directory? _cacheDirectory;
+
+  static bool get _useBackgroundIsolate {
+    if (kIsWeb) {
+      return false;
+    }
+    return Platform.environment['FLUTTER_TEST'] != 'true';
+  }
 
   Future<Directory> _resolveCacheDirectory() async {
     if (_cacheDirectory != null) {
@@ -56,23 +63,33 @@ class GtfsCacheStore {
     }
     feedDir.createSync(recursive: true);
 
-    await File('${feedDir.path}/feed_info.json').writeAsString(
-      jsonEncode(info.toJson()),
+    final encodeRequest = GtfsCacheEncodeRequest(
+      feedInfoJson: info.toJson(),
+      agenciesJson: agencies.map(agencyToJson).toList(growable: false),
+      routesJson: routes.map(routeToJson).toList(growable: false),
+      stopsJson: stops.map(stopToJson).toList(growable: false),
     );
-    await File('${feedDir.path}/agencies.json').writeAsString(
-      jsonEncode(agencies.map(_agencyToJson).toList()),
-    );
-    await File('${feedDir.path}/routes.json').writeAsString(
-      jsonEncode(routes.map(_routeToJson).toList()),
-    );
-    await File('${feedDir.path}/stops.json').writeAsString(
-      jsonEncode(stops.map(_stopToJson).toList()),
-    );
+    final encodedFiles = _useBackgroundIsolate
+        ? await compute(encodeGtfsCacheFilesInIsolate, encodeRequest)
+        : encodeGtfsCacheFilesInIsolate(encodeRequest);
+
+    for (final entry in encodedFiles.entries) {
+      await File('${feedDir.path}/${entry.key}').writeAsString(entry.value);
+    }
 
     AppLog.d(
       'GtfsCacheStore: saved ${info.feedName} '
       '(${stops.length} stops, ${routes.length} routes)',
     );
+  }
+
+  Future<GtfsCachedFeed> loadFeed(String feedId) async {
+    final cacheDir = await _resolveCacheDirectory();
+    final feedDir = Directory('${cacheDir.path}/$feedId');
+    if (_useBackgroundIsolate) {
+      return compute(loadGtfsCachedFeedInIsolate, feedDir.path);
+    }
+    return loadGtfsCachedFeedInIsolate(feedDir.path);
   }
 
   Future<List<GtfsCachedFeed>> loadAllFeeds() async {
@@ -82,44 +99,9 @@ class GtfsCacheStore {
         return const [];
       }
 
-      final feeds = <GtfsCachedFeed>[];
-      for (final entity in cacheDir.listSync()) {
-        if (entity is! Directory) {
-          continue;
-        }
-
-        final infoFile = File('${entity.path}/feed_info.json');
-        if (!infoFile.existsSync()) {
-          continue;
-        }
-
-        try {
-          final info = GtfsFeedInfo.fromJson(
-            jsonDecode(await infoFile.readAsString()) as Map<String, dynamic>,
-          );
-          final agencies = _readAgencies('${entity.path}/agencies.json');
-          final routes = _readRoutes('${entity.path}/routes.json');
-          final stops = _readStops('${entity.path}/stops.json');
-          feeds.add(
-            GtfsCachedFeed(
-              info: info,
-              agencies: agencies,
-              routes: routes,
-              stops: stops,
-            ),
-          );
-        } catch (error) {
-          AppLog.d('GtfsCacheStore: failed to load ${entity.path}: $error');
-        }
-      }
-
-      feeds.sort((a, b) {
-        final aDate =
-            a.info.lastUpdated ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate =
-            b.info.lastUpdated ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bDate.compareTo(aDate);
-      });
+      final feeds = _useBackgroundIsolate
+          ? await compute(loadAllGtfsCachedFeedsInIsolate, cacheDir.path)
+          : loadAllGtfsCachedFeedsInIsolate(cacheDir.path);
       AppLog.d('GtfsCacheStore: loaded ${feeds.length} cached feeds');
       return feeds;
     } catch (error) {
@@ -140,100 +122,5 @@ class GtfsCacheStore {
       feedDir.deleteSync(recursive: true);
       AppLog.d('GtfsCacheStore: deleted cached feed $feedId');
     }
-  }
-
-  List<TransitAgency> _readAgencies(String path) {
-    final file = File(path);
-    if (!file.existsSync()) {
-      return const [];
-    }
-    final decoded = jsonDecode(file.readAsStringSync()) as List<dynamic>;
-    return decoded
-        .map(
-          (entry) => TransitAgency(
-            agencyId: entry['agencyId'] as String,
-            agencyName: entry['agencyName'] as String,
-            country: entry['country'] as String,
-            city: entry['city'] as String,
-            supportsRealtime: entry['supportsRealtime'] as bool? ?? false,
-          ),
-        )
-        .toList(growable: false);
-  }
-
-  List<TransitRoute> _readRoutes(String path) {
-    final file = File(path);
-    if (!file.existsSync()) {
-      return const [];
-    }
-    final decoded = jsonDecode(file.readAsStringSync()) as List<dynamic>;
-    return decoded
-        .map(
-          (entry) => TransitRoute(
-            routeId: entry['routeId'] as String,
-            routeName: entry['routeName'] as String,
-            agencyId: entry['agencyId'] as String,
-            country: entry['country'] as String,
-            lineName: entry['lineName'] as String,
-            transitSystem: entry['transitSystem'] as String,
-            vehicleType: TransitVehicleTypeX.fromName(
-              entry['vehicleType'] as String?,
-            ),
-          ),
-        )
-        .toList(growable: false);
-  }
-
-  List<TransitStop> _readStops(String path) {
-    final file = File(path);
-    if (!file.existsSync()) {
-      return const [];
-    }
-    final decoded = jsonDecode(file.readAsStringSync()) as List<dynamic>;
-    return decoded
-        .map(
-          (entry) => TransitStop(
-            stopId: entry['stopId'] as String,
-            stopName: entry['stopName'] as String,
-            latitude: (entry['latitude'] as num).toDouble(),
-            longitude: (entry['longitude'] as num).toDouble(),
-            routeId: entry['routeId'] as String,
-            stopSequence: entry['stopSequence'] as int,
-          ),
-        )
-        .toList(growable: false);
-  }
-
-  Map<String, dynamic> _agencyToJson(TransitAgency agency) {
-    return {
-      'agencyId': agency.agencyId,
-      'agencyName': agency.agencyName,
-      'country': agency.country,
-      'city': agency.city,
-      'supportsRealtime': agency.supportsRealtime,
-    };
-  }
-
-  Map<String, dynamic> _routeToJson(TransitRoute route) {
-    return {
-      'routeId': route.routeId,
-      'routeName': route.routeName,
-      'agencyId': route.agencyId,
-      'country': route.country,
-      'lineName': route.lineName,
-      'transitSystem': route.transitSystem,
-      'vehicleType': route.vehicleType.name,
-    };
-  }
-
-  Map<String, dynamic> _stopToJson(TransitStop stop) {
-    return {
-      'stopId': stop.stopId,
-      'stopName': stop.stopName,
-      'latitude': stop.latitude,
-      'longitude': stop.longitude,
-      'routeId': stop.routeId,
-      'stopSequence': stop.stopSequence,
-    };
   }
 }

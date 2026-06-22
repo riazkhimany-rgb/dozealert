@@ -88,6 +88,10 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
       if (!mounted) {
         return;
       }
+      await context.read<GtfsProvider>().notifyDataUpdated();
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Transit feed updated.')),
       );
@@ -225,10 +229,16 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
             )
           else
             ...regionFeeds.map(
-              (feed) => _FeedCard(
-                feed: feed,
-                isBusy: _busyFeedId == feed.feedId,
-                errorMessage: feedProvider.errorFor(feed.feedId),
+              (feed) {
+                final progress = feedProvider.progressFor(feed.feedId);
+                final isBusy = feedProvider.isFeedBusy(feed.feedId) ||
+                    _busyFeedId == feed.feedId;
+
+                return _FeedCard(
+                  feed: feed,
+                  isBusy: isBusy,
+                  progress: progress,
+                  errorMessage: feedProvider.errorFor(feed.feedId),
                 onDownload: feed.hasDirectDownload
                     ? () => _runFeedAction(
                         feed.feedId,
@@ -250,7 +260,8 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
                 onOpenDataPage: feed.hasOpenDataPage
                     ? () => _openDataPage(feed)
                     : null,
-              ),
+                );
+              },
             ),
         ],
       ),
@@ -262,6 +273,7 @@ class _FeedCard extends StatelessWidget {
   const _FeedCard({
     required this.feed,
     required this.isBusy,
+    this.progress,
     this.onDownload,
     this.onUpdate,
     this.onDelete,
@@ -271,6 +283,7 @@ class _FeedCard extends StatelessWidget {
 
   final GtfsFeedInfo feed;
   final bool isBusy;
+  final GtfsFeedProgress? progress;
   final VoidCallback? onDownload;
   final VoidCallback? onUpdate;
   final VoidCallback? onDelete;
@@ -327,6 +340,25 @@ class _FeedCard extends StatelessWidget {
                 style: TextStyle(color: colorScheme.error),
               ),
             ],
+            if (isBusy) ...[
+              const SizedBox(height: 12),
+              Text(
+                progress?.phase ?? feed.status.label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (progress?.downloadFraction != null)
+                LinearProgressIndicator(
+                  value: progress!.downloadFraction!.clamp(0, 1),
+                  minHeight: 6,
+                  borderRadius: BorderRadius.circular(999),
+                )
+              else
+                const LinearProgressIndicator(minHeight: 6),
+            ],
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
@@ -350,7 +382,16 @@ class _FeedCard extends StatelessWidget {
                 if (onUpdate != null)
                   OutlinedButton.icon(
                     onPressed: isBusy ? null : onUpdate,
-                    icon: const Icon(Icons.refresh, size: 18),
+                    icon: isBusy
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.primary,
+                            ),
+                          )
+                        : const Icon(Icons.refresh, size: 18),
                     label: const Text('Update'),
                   ),
                 if (onDelete != null)

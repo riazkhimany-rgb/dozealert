@@ -49,6 +49,57 @@ class _FakePathProvider {
   }
 }
 
+class _FakePlatformChannels {
+  static void install() {
+    const geolocatorChannel = MethodChannel('flutter.baseflow.com/geolocator');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(geolocatorChannel, (call) async {
+      switch (call.method) {
+        case 'isLocationServiceEnabled':
+          return true;
+        default:
+          return null;
+      }
+    });
+
+    const permissionsChannel =
+        MethodChannel('flutter.baseflow.com/permissions/methods');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(permissionsChannel, (call) async {
+      switch (call.method) {
+        case 'checkPermissionStatus':
+        case 'checkServiceStatus':
+          return 0;
+        default:
+          return 0;
+      }
+    });
+  }
+}
+
+Future<void> _pumpUntilSettled(
+  WidgetTester tester, {
+  Duration timeout = const Duration(seconds: 5),
+}) async {
+  final end = DateTime.now().add(timeout);
+  var settledFrames = 0;
+
+  while (DateTime.now().isBefore(end)) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (tester.binding.hasScheduledFrame) {
+      settledFrames = 0;
+      continue;
+    }
+
+    settledFrames++;
+    if (settledFrames >= 2) {
+      return;
+    }
+  }
+
+  fail('Timed out waiting for UI to settle after $timeout');
+}
+
 Future<DozeAlertApp> _createTestApp() async {
   SharedPreferences.setMockInitialValues({'onboarding_complete': true});
   dotenv.loadFromString(envString: 'GOOGLE_MAPS_API_KEY=test_key');
@@ -112,7 +163,6 @@ Future<DozeAlertApp> _createTestApp() async {
 
   final gtfsFeedProvider = GtfsFeedProvider(
     gtfsDownloadService,
-    gtfsParserService,
     gtfsImportService,
     gtfsCacheStore,
     gtfsService,
@@ -160,13 +210,14 @@ Future<DozeAlertApp> _createTestApp() async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   _FakePathProvider.install();
+  _FakePlatformChannels.install();
 
   testWidgets('DozeAlert shows simplified home and navigation tabs', (
     WidgetTester tester,
   ) async {
     final app = await _createTestApp();
     await tester.pumpWidget(app);
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.byType(BrandedAppBarTitle), findsOneWidget);
     expect(find.text('Monitoring'), findsOneWidget);
@@ -179,7 +230,7 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('Destination'), findsOneWidget);
     expect(
@@ -200,17 +251,17 @@ void main() {
         matching: find.text('Set destination'),
       ).first,
     );
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('Favorites'), findsOneWidget);
 
     await tester.tap(find.text('Favorites'));
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('Union Station'), findsWidgets);
 
     await tester.tap(find.text('Union Station').last);
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('Union Station'), findsWidgets);
     expect(find.text('No destination selected'), findsNothing);
@@ -221,7 +272,7 @@ void main() {
     expect(find.text('Recent Destinations'), findsNothing);
 
     await tester.tap(find.text('Trips'));
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('Favorite Destinations'), findsOneWidget);
 
@@ -230,13 +281,13 @@ void main() {
       500,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('Trip History'), findsOneWidget);
     expect(find.text('Missed Trips'), findsOneWidget);
 
     await tester.tap(find.text('Settings'));
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('General'), findsOneWidget);
     expect(find.text('Theme'), findsOneWidget);
@@ -245,53 +296,53 @@ void main() {
     expect(find.text('Location'), findsWidgets);
 
     await tester.tap(find.text('About'));
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('About DozeAlert'), findsOneWidget);
     expect(find.text('App Version'), findsOneWidget);
 
     await tester.tap(find.text('About DozeAlert'));
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
     expect(find.text('Share DozeAlert'), findsOneWidget);
     expect(find.text(AppBranding.tagline), findsWidgets);
     await tester.pageBack();
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     await tester.pageBack();
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     await tester.tap(
       find.text('Transit data, transit mode, and agencies'),
     );
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('Transit Data'), findsOneWidget);
     expect(find.text('Transit Mode'), findsOneWidget);
     expect(find.text('Import GTFS Zip'), findsNothing);
 
     await tester.tap(find.text('Transit Mode'));
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     await tester.scrollUntilVisible(
       find.text('Enable Transit Mode'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('Enable Transit Mode'), findsOneWidget);
 
     await tester.pageBack();
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     await tester.tap(find.text('Transit Data'));
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
 
     expect(find.text('Download'), findsWidgets);
     expect(find.text('Import GTFS Zip'), findsOneWidget);
 
     await tester.pageBack();
-    await tester.pumpAndSettle();
+    await _pumpUntilSettled(tester);
   });
 
   testWidgets('persists and clears selected destination', (

@@ -12,28 +12,40 @@ import '../providers/transit_provider.dart';
 import '../widgets/home_card.dart';
 
 class TransitPreferencesSection extends StatelessWidget {
-  const TransitPreferencesSection({super.key});
+  const TransitPreferencesSection({
+    super.key,
+    this.compact = false,
+  });
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final preferences = context.watch<TransitProvider>().preferences;
+    final headerPadding = compact
+        ? const EdgeInsets.fromLTRB(0, 0, 0, 8)
+        : const EdgeInsets.fromLTRB(24, 16, 24, 8);
+    final cardPadding = compact
+        ? const EdgeInsets.fromLTRB(0, 0, 0, 12)
+        : const EdgeInsets.fromLTRB(20, 0, 20, 12);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-          child: Text(
-            'Transit Preferences',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w600,
+        if (!compact)
+          Padding(
+            padding: headerPadding,
+            child: Text(
+              'Transit Preferences',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          padding: cardPadding,
           child: _TransitPreferenceCard(
             title: 'Country',
             value: preferences.country,
@@ -44,7 +56,7 @@ class TransitPreferencesSection extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          padding: cardPadding,
           child: _TransitPreferenceCard(
             title: TransitCatalog.regionLabelForCountry(preferences.country),
             value: preferences.region,
@@ -55,7 +67,7 @@ class TransitPreferencesSection extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          padding: cardPadding,
           child: _TransitPreferenceCard(
             title: 'Transit Agency',
             value: preferences.transitSystem,
@@ -68,19 +80,45 @@ class TransitPreferencesSection extends StatelessWidget {
             },
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: _DefaultLinePickerCard(
-            transitSystem: preferences.transitSystem,
-            selectedLine: preferences.defaultLine,
+        if (compact)
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: EdgeInsets.zero,
+            title: Text(
+              'Advanced options',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle: const Text('Default line and GTFS download'),
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _DefaultLinePickerCard(
+                  transitSystem: preferences.transitSystem,
+                  selectedLine: preferences.defaultLine,
+                ),
+              ),
+              _PreferredAgencyGtfsCard(
+                transitSystem: preferences.transitSystem,
+              ),
+            ],
+          )
+        else ...[
+          Padding(
+            padding: cardPadding,
+            child: _DefaultLinePickerCard(
+              transitSystem: preferences.transitSystem,
+              selectedLine: preferences.defaultLine,
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: _PreferredAgencyGtfsCard(
-            transitSystem: preferences.transitSystem,
+          Padding(
+            padding: cardPadding,
+            child: _PreferredAgencyGtfsCard(
+              transitSystem: preferences.transitSystem,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -101,15 +139,6 @@ class _PreferredAgencyGtfsCard extends StatefulWidget {
 class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
   bool _actionInFlight = false;
 
-  bool get _isBusy {
-    final feed = context.read<GtfsFeedProvider>().feedForTransitSystem(
-      widget.transitSystem,
-    );
-    return _actionInFlight ||
-        feed?.status == GtfsFeedStatus.downloading ||
-        feed?.status == GtfsFeedStatus.updating;
-  }
-
   Future<void> _runDownload(GtfsFeedProvider feedProvider, String feedId) async {
     setState(() => _actionInFlight = true);
     try {
@@ -117,7 +146,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
       if (!mounted) {
         return;
       }
-      await context.read<GtfsProvider>().refreshFromCache();
+      await context.read<GtfsProvider>().notifyDataUpdated();
       if (!mounted) {
         return;
       }
@@ -152,7 +181,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
       if (!mounted) {
         return;
       }
-      await context.read<GtfsProvider>().refreshFromCache();
+      await context.read<GtfsProvider>().notifyDataUpdated();
       if (!mounted) {
         return;
       }
@@ -235,7 +264,11 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
     final errorMessage = feed == null
         ? null
         : feedProvider.errorFor(feed.feedId) ?? feed.errorMessage;
-    final isBusy = _isBusy;
+    final isBusy = feed == null
+        ? _actionInFlight
+        : _actionInFlight || feedProvider.isFeedBusy(feed.feedId);
+    final progress =
+        feed == null ? null : feedProvider.progressFor(feed.feedId);
 
     return HomeCard(
       child: Column(
@@ -279,12 +312,18 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
             ],
             if (isBusy) ...[
               const SizedBox(height: 16),
-              LinearProgressIndicator(
-                borderRadius: BorderRadius.circular(4),
-              ),
+              if (progress?.downloadFraction != null)
+                LinearProgressIndicator(
+                  value: progress!.downloadFraction!.clamp(0, 1),
+                  borderRadius: BorderRadius.circular(4),
+                )
+              else
+                LinearProgressIndicator(
+                  borderRadius: BorderRadius.circular(4),
+                ),
               const SizedBox(height: 8),
               Text(
-                feed.status.label,
+                progress?.phase ?? feed.status.label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: colorScheme.primary,
                 ),

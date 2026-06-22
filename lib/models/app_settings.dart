@@ -4,7 +4,7 @@ import '../models/alarm_sound_mode.dart';
 import '../models/transit_mode_wake_setting.dart';
 
 class AppSettings {
-  static const defaultApproachSystemVolume = 0.25;
+  static const defaultApproachSystemVolume = 0.50;
   static const minApproachSystemVolume = 0.10;
 
   const AppSettings({

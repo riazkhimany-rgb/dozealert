@@ -14,13 +14,19 @@ class StopPickerSheet extends StatefulWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
       showDragHandle: true,
       builder: (sheetContext) {
-        final sheetHeight = MediaQuery.sizeOf(sheetContext).height * 0.75;
+        final mediaQuery = MediaQuery.of(sheetContext);
+        final viewPadding = mediaQuery.viewPadding;
+        final sheetHeight = (mediaQuery.size.height -
+                viewPadding.top -
+                viewPadding.bottom) *
+            0.75;
+
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+            top: viewPadding.top,
+            bottom: viewPadding.bottom + mediaQuery.viewInsets.bottom,
           ),
           child: SizedBox(
             height: sheetHeight,
@@ -220,9 +226,8 @@ class _RouteStopList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       itemCount: stops.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
@@ -260,9 +265,8 @@ class _AgencyStopList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       itemCount: results.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {

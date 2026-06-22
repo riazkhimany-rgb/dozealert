@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import '../models/gtfs_feed_info.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_catalog_agency.dart';
@@ -430,6 +432,26 @@ abstract final class TransitCatalog {
 
   static bool isValidLineForSystem(String transitSystem, String line) {
     return linesForSystem(transitSystem).contains(line);
+  }
+
+  /// Picks a sensible default country/region/agency from the device locale.
+  static TransitPreferences preferencesForLocale(Locale locale) {
+    final countryCode = locale.countryCode?.toUpperCase();
+    if (countryCode == 'US') {
+      const country = 'United States';
+      final region = defaultRegionForCountry(country);
+      final transitSystem = defaultAgencyForRegion(country, region);
+      return normalize(
+        TransitPreferences(
+          country: country,
+          region: region,
+          transitSystem: transitSystem,
+          defaultLine: defaultLineForSystem(transitSystem),
+        ),
+      );
+    }
+
+    return normalize(TransitPreferences.defaults);
   }
 
   static TransitPreferences normalize(TransitPreferences preferences) {

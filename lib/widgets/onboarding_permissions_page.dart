@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../models/app_permission_snapshot.dart';
 import '../services/app_permissions_service.dart';
+import '../utils/permission_setup_steps.dart';
+import 'permission_step_confirm_dialog.dart';
 
 class OnboardingPermissionsPage extends StatefulWidget {
   const OnboardingPermissionsPage({
@@ -24,13 +26,16 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     with WidgetsBindingObserver {
   AppPermissionSnapshot? _snapshot;
   bool _loading = true;
+  bool _setupStarted = false;
+  bool _showAllDetails = false;
   bool _autoFlowRunning = false;
+  PermissionSetupStep? _activeStep;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_refresh().then((_) => _scheduleAutomaticFlow()));
+    unawaited(_refresh());
   }
 
   @override
@@ -42,26 +47,38 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_refresh().then((_) => _scheduleAutomaticFlow()));
+      unawaited(_refresh().then((_) => _scheduleAutomaticFlow(resume: true)));
     }
   }
 
-  Future<void> _scheduleAutomaticFlow() async {
-    if (!mounted || _autoFlowRunning) {
+  bool _needsAutomaticFlow(AppPermissionSnapshot snapshot) {
+    return _setupStarted && !snapshot.allRequiredForMonitoring;
+  }
+
+  Future<void> _scheduleAutomaticFlow({bool resume = false}) async {
+    if (!mounted || _autoFlowRunning || !_setupStarted) {
       return;
     }
 
     final snapshot = _snapshot;
-    if (snapshot == null || snapshot.allRequiredForMonitoring) {
+    if (snapshot == null || !_needsAutomaticFlow(snapshot)) {
       return;
     }
 
-    // Brief pause so the on-screen disclosure is visible before system prompts.
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!resume) {
+      return;
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 350));
     if (!mounted) {
       return;
     }
 
+    await _runAutomaticFlow();
+  }
+
+  Future<void> _startSetup() async {
+    setState(() => _setupStarted = true);
     await _runAutomaticFlow();
   }
 
@@ -71,18 +88,34 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     }
 
     final snapshot = _snapshot;
-    if (snapshot == null || snapshot.allRequiredForMonitoring) {
+    if (snapshot == null || !_needsAutomaticFlow(snapshot)) {
       return;
     }
 
     setState(() => _autoFlowRunning = true);
 
     final permissions = context.read<AppPermissionsService>();
-    await permissions.runAutomaticSetupFlow();
+    await permissions.runAutomaticSetupFlow(
+      onStep: (step) {
+        if (!mounted) {
+          return;
+        }
+        setState(() => _activeStep = step);
+      },
+      onBeforeStep: (step) async {
+        if (!mounted) {
+          return false;
+        }
+        return showPermissionStepConfirmDialog(context, step);
+      },
+    );
     await _refresh();
 
     if (mounted) {
-      setState(() => _autoFlowRunning = false);
+      setState(() {
+        _autoFlowRunning = false;
+        _activeStep = null;
+      });
     }
   }
 
@@ -99,15 +132,71 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     widget.onStatusChanged(next);
   }
 
+  Future<void> _runStepAction(String itemId) async {
+    final permissions = context.read<AppPermissionsService>();
+    final step = setupStepForItemId(itemId);
+
+    if (step != null) {
+      final proceed = await showPermissionStepConfirmDialog(context, step);
+      if (!proceed || !mounted) {
+        return;
+      }
+      setState(() => _activeStep = step);
+    }
+
+    switch (itemId) {
+      case 'gps':
+        await permissions.openLocationSettings();
+      case 'location_when_in_use':
+        await permissions.requestLocationWhenInUse();
+      case 'background_location':
+        await permissions.requestBackgroundLocation();
+      case 'notifications':
+        await permissions.requestNotifications();
+      case 'battery':
+        await permissions.requestBatteryOptimization();
+    }
+
+    await _refresh();
+    if (mounted) {
+      setState(() => _activeStep = null);
+    }
+  }
+
+  Future<void> _openAppSettingsForBackground() async {
+    final proceed = await showPermissionStepConfirmDialog(
+      context,
+      PermissionSetupStep.backgroundLocation,
+    );
+    if (!proceed || !mounted) {
+      return;
+    }
+
+    setState(() => _activeStep = PermissionSetupStep.backgroundLocation);
+    await context.read<AppPermissionsService>().openAppSettingsPage();
+    await _refresh();
+    if (mounted) {
+      setState(() => _activeStep = null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final permissions = context.read<AppPermissionsService>();
     final snapshot = _snapshot;
 
     if (_loading || snapshot == null) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    final requiredComplete = snapshot.allRequiredForMonitoring;
+    final stepProgress = completedRequiredSetupStepCount(snapshot);
+    final stepTotal = requiredSetupStepCount();
+    final nextItem = nextIncompleteSetupItem(snapshot);
+    final showSuccess = _setupStarted && requiredComplete && !_autoFlowRunning;
+    final inStepMode = _setupStarted && !_showAllDetails;
+    final showRecovery = needsBackgroundLocationRecovery(snapshot);
+    final showDetailedTiles = _setupStarted && _showAllDetails;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
@@ -128,18 +217,29 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         const SizedBox(height: 12),
         Text(
           Platform.isAndroid
-              ? 'DozeAlert will prompt you for each permission needed for '
-                  'trip monitoring. Allow access when asked — background '
-                  'location is required when the screen is off.'
-              : 'DozeAlert will ask for location access before your first trip.',
+              ? 'Tap Start below. We will walk you through each permission '
+                  'one at a time — read the short prompt before each Android '
+                  'screen and choose the option shown in bold.'
+              : 'Tap Start to grant location access before your first trip.',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurfaceVariant,
             height: 1.4,
           ),
         ),
+        if (_setupStarted) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Progress: $stepProgress of $stepTotal required steps complete',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
         if (_autoFlowRunning) ...[
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -152,112 +252,95 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                'Waiting for permission prompts…',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+              Expanded(
+                child: Text(
+                  _activeStep == PermissionSetupStep.backgroundLocation
+                      ? 'Choose Allow all the time on the next screen…'
+                      : _activeStep == PermissionSetupStep.batteryOptimization
+                          ? 'Allow battery exemption on the next screen…'
+                          : 'Follow the Android prompts…',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
           ),
         ],
-        const SizedBox(height: 24),
-        if (!snapshot.allRequiredForMonitoring)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _autoFlowRunning ? null : () => unawaited(_runAutomaticFlow()),
-                icon: const Icon(Icons.security),
-                label: const Text('Grant permissions now'),
+        if (showSuccess) ...[
+          const SizedBox(height: 20),
+          _SuccessCard(colorScheme: colorScheme),
+        ],
+        if (showRecovery) ...[
+          const SizedBox(height: 16),
+          _StepCallout(
+            icon: Icons.warning_amber_rounded,
+            title: 'Fix background location',
+            body:
+                'Location step 1 is granted, but step 2 is still missing. '
+                'Open app settings, then Permissions → Location → '
+                'Allow all the time.\n\n'
+                'Do not leave it on "Only while using the app".',
+            color: colorScheme.errorContainer,
+            foreground: colorScheme.onErrorContainer,
+            actionLabel: 'Open app settings',
+            onAction: () => unawaited(_openAppSettingsForBackground()),
+          ),
+        ],
+        const SizedBox(height: 20),
+        PermissionStepProgressList(
+          snapshot: snapshot,
+          activeStep: _activeStep,
+          dimIncomplete: !_setupStarted,
+        ),
+        const SizedBox(height: 16),
+        if (!_setupStarted)
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => unawaited(_startSetup()),
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: const Text('Start permission setup'),
+            ),
+          )
+        else if (_needsAutomaticFlow(snapshot) && !_autoFlowRunning)
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => unawaited(_runAutomaticFlow()),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Resume permission setup'),
+            ),
+          ),
+        if (inStepMode && nextItem != null && !_autoFlowRunning) ...[
+          const SizedBox(height: 16),
+          _CurrentStepCard(
+            item: nextItem,
+            onAction: () => unawaited(_runStepAction(nextItem.id)),
+            onOpenSettings: nextItem.id == 'background_location'
+                ? () => unawaited(_openAppSettingsForBackground())
+                : null,
+          ),
+        ],
+        if (_setupStarted) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.center,
+            child: TextButton(
+              onPressed: () => setState(() => _showAllDetails = !_showAllDetails),
+              child: Text(
+                _showAllDetails
+                    ? 'Hide all permission details'
+                    : 'Show all permission details',
               ),
             ),
           ),
-        _PermissionTile(
-          complete: snapshot.locationServicesEnabled,
-          title: 'Phone GPS',
-          requiredSetting: 'Location services turned on',
-          detail: 'Your phone\'s main Location / GPS switch must be on.',
-          actionLabel: 'Open location settings',
-          onAction: () async {
-            await permissions.openLocationSettings();
-            await _refresh();
-          },
-        ),
-        _PermissionTile(
-          complete: snapshot.locationWhenInUseGranted,
-          title: Platform.isAndroid ? 'Location (step 1)' : 'Location',
-          requiredSetting: Platform.isAndroid
-              ? 'Allow only while using the app'
-              : 'Allow While Using the App',
-          detail: Platform.isAndroid
-              ? 'Android will ask for this first. Choose '
-                  '"While using the app" (not "Don\'t allow").'
-              : 'Choose While Using the App when iOS prompts you.',
-          actionLabel: 'Request location access',
-          onAction: () async {
-            await permissions.requestLocationWhenInUse();
-            await _refresh();
-          },
-        ),
-        if (Platform.isAndroid)
-          _PermissionTile(
-            complete: snapshot.backgroundLocationGranted,
-            title: 'Location (step 2)',
-            requiredSetting: 'Allow all the time',
-            detail: 'Required so monitoring continues when the screen is off '
-                'or you switch apps. Do not leave this on '
-                '"Only while using the app".',
-            actionLabel: 'Request background location',
-            onAction: () async {
-              await permissions.requestBackgroundLocation();
-              await _refresh();
-            },
-            secondaryActionLabel: 'Open app settings',
-            onSecondaryAction: () async {
-              await permissions.openAppSettingsPage();
-            },
-          ),
-        if (Platform.isAndroid)
-          _PermissionTile(
-            complete: snapshot.notificationsGranted,
-            title: 'Notifications',
-            requiredSetting: 'Allowed',
-            detail: 'Shows the ongoing trip monitoring notification while '
-                'DozeAlert tracks your progress in the background.',
-            actionLabel: 'Allow notifications',
-            onAction: () async {
-              await permissions.requestNotifications();
-              await _refresh();
-            },
-          ),
-        if (Platform.isAndroid)
-          _PermissionTile(
-            complete: snapshot.batteryUnrestricted,
-            title: 'Battery (recommended)',
-            requiredSetting: 'Unrestricted / not optimized',
-            detail: 'Helps alarms stay reliable on some phones. Choose '
-                '"Unrestricted" or allow DozeAlert to ignore battery '
-                'optimizations if prompted.',
-            actionLabel: 'Open battery settings',
-            onAction: () async {
-              await permissions.openBatterySettings();
-              await _refresh();
-            },
-            recommended: true,
-          ),
-        const SizedBox(height: 8),
-        if (snapshot.allRequiredForMonitoring)
-          Text(
-            'Required permissions are set. You can continue setup.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          )
-        else
+        ],
+        if (showDetailedTiles) ...[
+          const SizedBox(height: 8),
+          ..._buildDetailedTiles(snapshot),
+        ] else if (_setupStarted && !requiredComplete && inStepMode) ...[
+          const SizedBox(height: 8),
           Text(
             'Still needed:\n${snapshot.missingRequiredLabels.map((item) => '• $item').join('\n')}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -265,7 +348,248 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
               height: 1.5,
             ),
           ),
+        ],
       ],
+    );
+  }
+
+  List<Widget> _buildDetailedTiles(AppPermissionSnapshot snapshot) {
+    final permissions = context.read<AppPermissionsService>();
+
+    return [
+      _PermissionTile(
+        complete: snapshot.locationServicesEnabled,
+        title: 'Phone GPS',
+        requiredSetting: 'Location services turned on',
+        detail: 'Your phone\'s main Location / GPS switch must be on.',
+        actionLabel: 'Open location settings',
+        onAction: () async {
+          await permissions.openLocationSettings();
+          await _refresh();
+        },
+      ),
+      _PermissionTile(
+        complete: snapshot.locationWhenInUseGranted,
+        title: Platform.isAndroid ? 'Location (step 1)' : 'Location',
+        requiredSetting: Platform.isAndroid
+            ? 'Allow only while using the app'
+            : 'Allow While Using the App',
+        detail: Platform.isAndroid
+            ? 'Android will ask for this first. Choose '
+                '"While using the app" (not "Don\'t allow").'
+            : 'Choose While Using the App when iOS prompts you.',
+        actionLabel: 'Request location access',
+        onAction: () => unawaited(_runStepAction('location_when_in_use')),
+      ),
+      if (Platform.isAndroid)
+        _PermissionTile(
+          complete: snapshot.backgroundLocationGranted,
+          title: 'Location (step 2)',
+          requiredSetting: 'Allow all the time',
+          detail: 'On the Android permission screen, choose '
+              '"Allow all the time". If you only see app settings, open '
+              'Permissions → Location → Allow all the time.',
+          actionLabel: 'Request background location',
+          onAction: () => unawaited(_runStepAction('background_location')),
+          secondaryActionLabel: 'Open app settings',
+          onSecondaryAction: () => unawaited(_openAppSettingsForBackground()),
+        ),
+      if (Platform.isAndroid)
+        _PermissionTile(
+          complete: snapshot.notificationsGranted,
+          title: 'Notifications',
+          requiredSetting: 'Allowed',
+          detail: 'Shows the ongoing trip monitoring notification while '
+              'DozeAlert tracks your progress in the background.',
+          actionLabel: 'Allow notifications',
+          onAction: () => unawaited(_runStepAction('notifications')),
+        ),
+      if (Platform.isAndroid)
+        _PermissionTile(
+          complete: snapshot.batteryUnrestricted,
+          title: 'Battery',
+          requiredSetting: 'Unrestricted / not optimized',
+          detail: 'Allow DozeAlert to ignore battery optimizations so '
+              'monitoring and alarms stay reliable in the background.',
+          actionLabel: 'Allow unrestricted battery',
+          onAction: () => unawaited(_runStepAction('battery')),
+        ),
+    ];
+  }
+}
+
+class _SuccessCard extends StatelessWidget {
+  const _SuccessCard({required this.colorScheme});
+
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              size: 48,
+              color: colorScheme.onPrimaryContainer,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'You\'re ready!',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Required permissions are set. Tap Continue to pick your transit '
+              'agency, then set your first destination on Home.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CurrentStepCard extends StatelessWidget {
+  const _CurrentStepCard({
+    required this.item,
+    required this.onAction,
+    this.onOpenSettings,
+  });
+
+  final PermissionSetupItem item;
+  final VoidCallback onAction;
+  final VoidCallback? onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Up next: ${item.title}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              item.required
+                  ? 'Set to: ${item.subtitle}'
+                  : 'Recommended: ${item.subtitle}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.tonal(
+              onPressed: onAction,
+              child: const Text('Continue this step'),
+            ),
+            if (onOpenSettings != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: onOpenSettings,
+                child: const Text('Open app settings'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StepCallout extends StatelessWidget {
+  const _StepCallout({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.color,
+    required this.foreground,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final Color color;
+  final Color foreground;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: foreground),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: foreground,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        body,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: foreground,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 12),
+              FilledButton.tonal(
+                onPressed: onAction,
+                child: Text(actionLabel!),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -280,7 +604,6 @@ class _PermissionTile extends StatelessWidget {
     required this.onAction,
     this.secondaryActionLabel,
     this.onSecondaryAction,
-    this.recommended = false,
   });
 
   final bool complete;
@@ -291,7 +614,6 @@ class _PermissionTile extends StatelessWidget {
   final VoidCallback onAction;
   final String? secondaryActionLabel;
   final VoidCallback? onSecondaryAction;
-  final bool recommended;
 
   @override
   Widget build(BuildContext context) {
@@ -324,9 +646,7 @@ class _PermissionTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        recommended
-                            ? 'Recommended: $requiredSetting'
-                            : 'Set to: $requiredSetting',
+                        'Set to: $requiredSetting',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: complete
                               ? colorScheme.primary

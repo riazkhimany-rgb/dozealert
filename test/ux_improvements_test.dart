@@ -1,3 +1,4 @@
+import 'package:dozealert/data/transit_catalog.dart';
 import 'package:dozealert/models/app_permission_snapshot.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/models/favorite_destination.dart';
@@ -8,6 +9,7 @@ import 'package:dozealert/services/monitoring_storage_service.dart';
 import 'package:dozealert/services/onboarding_service.dart';
 import 'package:dozealert/services/preferences_service.dart';
 import 'package:dozealert/utils/user_facing_errors.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -94,5 +96,15 @@ void main() {
       UserFacingErrors.from(Exception('SocketException: Failed host lookup')),
       contains('network'),
     );
+  });
+
+  test('TransitCatalog maps device locale to transit defaults', () {
+    final canada = TransitCatalog.preferencesForLocale(const Locale('en', 'CA'));
+    expect(canada.country, 'Canada');
+    expect(canada.region, 'Ontario');
+
+    final us = TransitCatalog.preferencesForLocale(const Locale('en', 'US'));
+    expect(us.country, 'United States');
+    expect(us.region, 'New York');
   });
 }

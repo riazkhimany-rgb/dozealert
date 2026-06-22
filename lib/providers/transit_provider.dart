@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../data/transit_catalog.dart';
 import '../models/destination.dart';
@@ -19,6 +20,32 @@ class TransitProvider extends ChangeNotifier {
   Future<void> loadPreferences() async {
     _preferences = await _preferencesService.loadTransitPreferences();
     _recentStations = await _preferencesService.loadRecentStations();
+    notifyListeners();
+  }
+
+  Future<void> applyGoTransitDefaultsIfUnset() async {
+    if (await _preferencesService.hasConfiguredTransitPreferences()) {
+      return;
+    }
+
+    _preferences = const TransitPreferences(
+      country: 'Canada',
+      region: 'Ontario',
+      transitSystem: 'GO Transit',
+      defaultLine: 'Lakeshore West',
+    );
+    await savePreferences();
+    notifyListeners();
+  }
+
+  Future<void> applyDeviceLocaleDefaultsIfUnset() async {
+    if (await _preferencesService.hasConfiguredTransitPreferences()) {
+      return;
+    }
+
+    final locale = SchedulerBinding.instance.platformDispatcher.locale;
+    _preferences = TransitCatalog.preferencesForLocale(locale);
+    await savePreferences();
     notifyListeners();
   }
 

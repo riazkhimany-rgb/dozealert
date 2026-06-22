@@ -171,6 +171,12 @@ class _DestinationCard extends StatelessWidget {
       isMonitoring: isMonitoring,
       selectedLine: selectedLine,
     );
+    final showTransitProgress = destination != null &&
+        transitModeEnabled &&
+        gtfsReady;
+    final idleTransitPrompt = showTransitProgress &&
+        !isMonitoring &&
+        !snapshot.isActive;
 
     return HomeCard(
       child: Column(
@@ -196,26 +202,42 @@ class _DestinationCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              wakeMessage,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: 1.4,
+            if (idleTransitPrompt) ...[
+              Text(
+                'Start monitoring to see stop-by-stop progress.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
               ),
-            ),
+              const SizedBox(height: 4),
+              Text(
+                selectedLine,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                ),
+              ),
+            ] else
+              Text(
+                wakeMessage,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              ),
           ],
-          if (destination != null &&
-              transitModeEnabled &&
-              gtfsReady) ...[
+          if (showTransitProgress) ...[
             const SizedBox(height: 16),
             TransitRouteProgressLine(
               isActive: snapshot.isActive,
               stops: routeSegmentStops,
               stopsRemaining: snapshot.stopsRemaining,
               lineLabel: compact ? null : selectedLine,
-              inactiveMessage: isMonitoring
-                  ? 'Waiting for GPS near your line to place you on the route…'
-                  : 'Start monitoring on your line to see stop-by-stop progress.',
+              inactiveMessage: idleTransitPrompt
+                  ? ''
+                  : 'Waiting for GPS near your line to place you on the route…',
             ),
             if (snapshot.isActive && snapshot.nextStop != null) ...[
               const SizedBox(height: 8),

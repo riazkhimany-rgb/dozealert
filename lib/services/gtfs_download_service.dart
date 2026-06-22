@@ -33,23 +33,42 @@ class GtfsDownloadService {
     return File('${feedDir.path}/feed.zip');
   }
 
-  Future<List<int>> downloadFeed(String downloadUrl) async {
+  Future<List<int>> downloadFeed(
+    String downloadUrl, {
+    void Function(int receivedBytes, int? totalBytes)? onProgress,
+  }) async {
     AppLog.d('GtfsDownloadService: downloading $downloadUrl');
-    final response = await http.get(Uri.parse(downloadUrl)).timeout(
-          const Duration(minutes: 2),
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', Uri.parse(downloadUrl));
+      final response = await client.send(request).timeout(
+            const Duration(minutes: 10),
+          );
+
+      if (response.statusCode != 200) {
+        throw HttpException(
+          'Download failed (${response.statusCode}) for $downloadUrl',
         );
+      }
 
-    if (response.statusCode != 200) {
-      throw HttpException(
-        'Download failed (${response.statusCode}) for $downloadUrl',
-      );
+      final totalBytes = response.contentLength;
+      final bytes = <int>[];
+      await for (final chunk in response.stream) {
+        bytes.addAll(chunk);
+        onProgress?.call(
+          bytes.length,
+          totalBytes != null && totalBytes > 0 ? totalBytes : null,
+        );
+      }
+
+      if (bytes.isEmpty) {
+        throw const HttpException('Downloaded GTFS feed was empty.');
+      }
+
+      return bytes;
+    } finally {
+      client.close();
     }
-
-    if (response.bodyBytes.isEmpty) {
-      throw const HttpException('Downloaded GTFS feed was empty.');
-    }
-
-    return response.bodyBytes;
   }
 
   Future<File> saveFeedZip({

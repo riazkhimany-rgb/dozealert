@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="See DozeAlert in action — destination alerts, Transit stop picking, trip monitoring, and transit mode for commuters.">
+  <meta name="theme-color" content="#0D1B2A">
+  <title>App Tour &mdash; DozeAlert</title>
+  <link rel="icon" type="image/png" href="../assets/icon-512.png">
+  <style>
+    :root {
+      --midnight: #0D1B2A;
+      --midnight-light: #152536;
+      --cyan: #4CC9F0;
+      --cyan-dim: #3aa8cc;
+      --white: #FFFFFF;
+      --muted: #94a3b8;
+      --card: #1B3147;
+      --radius: 16px;
+      --max-width: 960px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--midnight);
+      color: var(--white);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(76, 201, 240, 0.18), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(76, 201, 240, 0.08), transparent);
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    .nav {
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .nav a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    header .tagline {
+      font-size: 1.125rem;
+      color: var(--cyan);
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    header .lead {
+      color: #cbd5e1;
+      font-size: 1rem;
+      max-width: 36rem;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(76, 201, 240, 0.12);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--cyan);
+    }
+
+    .card .section-lead {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .showcase {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 720px) {
+      .showcase.two-col {
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+      }
+
+      .showcase.two-col.reverse .shot-wrap {
+        order: 2;
+      }
+
+      .showcase.two-col.reverse .copy {
+        order: 1;
+      }
+    }
+
+    .shot-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .shot {
+      width: 100%;
+      max-width: 280px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(76, 201, 240, 0.08);
+      display: block;
+    }
+
+    .shot.hero-shot {
+      max-width: 320px;
+    }
+
+    .copy h3 {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--white);
+    }
+
+    .copy p {
+      color: #cbd5e1;
+      font-size: 0.9375rem;
+    }
+
+    .copy ul {
+      margin-top: 0.75rem;
+      padding-left: 1.25rem;
+      color: #cbd5e1;
+      font-size: 0.9375rem;
+    }
+
+    .copy li + li {
+      margin-top: 0.35rem;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .pill {
+      background: rgba(76, 201, 240, 0.12);
+      color: var(--cyan);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(76, 201, 240, 0.2);
+    }
+
+    .cta-block {
+      text-align: center;
+      padding: 2rem 1.5rem;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      background: var(--cyan);
+      color: var(--midnight) !important;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 1rem 2rem;
+      border-radius: 999px;
+      transition: background 0.15s, transform 0.15s;
+      box-shadow: 0 4px 20px rgba(76, 201, 240, 0.35);
+    }
+
+    .download-btn:hover {
+      background: var(--cyan-dim);
+      transform: translateY(-1px);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+
+    footer a {
+      color: var(--cyan);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    footer a:hover {
+      color: var(--white);
+    }
+  </style>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <nav class="nav" aria-label="Breadcrumb">
+      <a href="../index.html">&larr; DozeAlert home</a>
+    </nav>
+
+    <header>
+      <h1>See DozeAlert in action</h1>
+      <p class="tagline">Sleep peacefully. Arrive confidently.</p>
+      <p class="lead">
+        DozeAlert is built for commuters who want to rest without missing their stop.
+        Set a destination, start monitoring, and get a reliable wake-up before you arrive
+        &mdash; on GO Transit, TTC, and other agencies with offline GTFS data.
+      </p>
+    </header>
+
+    <section class="card">
+      <h2>Your commute alarm, simplified</h2>
+      <p class="section-lead">
+        From first launch to your daily routine, DozeAlert keeps the important things upfront:
+        where you&rsquo;re going, how far you have left, and when to wake up.
+      </p>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot hero-shot" src="../assets/screens/shot1.jpg" width="320" height="693" alt="DozeAlert splash screen with logo and tagline Sleep peacefully. Arrive confidently.">
+        </div>
+        <div class="copy">
+          <h3>Wake up before your stop</h3>
+          <p>
+            DozeAlert monitors your trip in the background and sounds an alarm when you are
+            approaching your destination &mdash; on a train, bus, or any ride where GPS works.
+          </p>
+          <div class="pill-row">
+            <span class="pill">No account</span>
+            <span class="pill">On-device data</span>
+            <span class="pill">Voice &amp; vibration</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Set a destination in seconds</h2>
+      <p class="section-lead">
+        Pick a Transit stop from your line, search the map, or choose a saved favorite.
+        Some Transit data is set up automatically during first-time onboarding.
+      </p>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot2.jpg" width="280" height="606" alt="DozeAlert home screen with Set destination and monitoring controls.">
+        </div>
+        <div class="copy">
+          <h3>Home screen</h3>
+          <p>
+            Set your stop, choose a wake radius or transit stop count, and tap Start when you
+            are ready. The monitoring card shows status, speed, and distance at a glance.
+          </p>
+          <ul>
+            <li>One-tap destination setup</li>
+            <li>Transit Mode toggle for stop-based wake-ups</li>
+            <li>Clear idle vs. monitoring status</li>
+          </ul>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot3.jpg" width="280" height="606" alt="Pick Stop sheet listing GO Transit Lakeshore West stations.">
+        </div>
+        <div class="copy">
+          <h3>Pick a stop on your line</h3>
+          <p>
+            Search and filter stops on GO Transit&rsquo;s Lakeshore West line (or browse all
+            routes). GTFS data powers accurate stop lists for offline stop search and Transit Mode.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Monitor your trip live</h2>
+      <p class="section-lead">
+        Once monitoring starts, DozeAlert tracks distance remaining and keeps a persistent
+        notification so Android does not suspend your trip in the background.
+      </p>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot4.jpg" width="280" height="606" alt="Monitoring Bronte GO with 13.3 km remaining on GO Transit Lakeshore West.">
+        </div>
+        <div class="copy">
+          <h3>Distance and status at a glance</h3>
+          <p>
+            Watch kilometers remaining update as you travel toward Bronte GO. When you are near
+            your line, Transit Mode can switch to stop-by-stop progress and wake you one stop
+            before your destination.
+          </p>
+          <ul>
+            <li>Live distance remaining</li>
+            <li>Speed and trip progress</li>
+            <li>Stop when you arrive or cancel anytime</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Favorites and trip history</h2>
+      <p class="section-lead">
+        Stations you use often stay one tap away. Recent destinations appear automatically so
+        you can restart a commute without re-entering details.
+      </p>
+      <div class="showcase two-col reverse">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot5.jpg" width="280" height="606" alt="Trips tab with recent and favorite destinations including Bronte GO and Union Station.">
+        </div>
+        <div class="copy">
+          <h3>Trips tab</h3>
+          <p>
+            Save Home, Union Station, Pearson Airport, and more. Tap any favorite to set it as
+            your destination and start monitoring right away.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Built for transit riders</h2>
+      <p class="section-lead">
+        Transit Mode wakes you by stops remaining, not just straight-line distance. Download
+        agency GTFS feeds for offline stop search across Ontario and beyond.
+      </p>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot8.jpg" width="280" height="606" alt="Transit Mode settings with wake one stop before destination.">
+        </div>
+        <div class="copy">
+          <h3>Transit Mode</h3>
+          <p>
+            Enable stop-based wake-ups while you are on a route. Choose to alert at your
+            destination or one or two stops before. When you are not near a line, DozeAlert
+            falls back to your wake radius.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot7.jpg" width="280" height="606" alt="Transit Data screen showing GO Transit GTFS feed with over 1000 stops.">
+        </div>
+        <div class="copy">
+          <h3>Offline GTFS data</h3>
+          <p>
+            Download GO Transit, TTC, and other Ontario feeds with progress shown in the app.
+            Large feeds load in the background without freezing the UI.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot9.jpg" width="280" height="606" alt="Preferred Agencies set to GO Transit Lakeshore West in Ontario.">
+        </div>
+        <div class="copy">
+          <h3>Your agency and line</h3>
+          <p>
+            Choose country, region, agency, and default line under Settings. Defaults to
+            GO Transit and Lakeshore West for GTA commuters; change anytime for other systems.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Settings you control</h2>
+      <p class="section-lead">
+        Theme, wake radius, alarm sound, battery guidance, and transit preferences live in
+        one place. No account, no ads, no data sale.
+      </p>
+      <div class="showcase two-col reverse">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot6.jpg" width="280" height="606" alt="Settings screen with General, Transit, Location, and Alarm sections.">
+        </div>
+        <div class="copy">
+          <h3>Organized settings</h3>
+          <p>
+            Adjust appearance, transit data, location accuracy, and alarm volume from a simple
+            hub. First-time setup walks through permissions with clear guidance.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot10.jpg" width="280" height="606" alt="About DozeAlert screen with version and privacy links.">
+        </div>
+        <div class="copy">
+          <h3>About &amp; support</h3>
+          <p>
+            Share the app, read the privacy policy, or reach us at
+            <a href="mailto:support@dozealert.app" style="color: var(--cyan);">support@dozealert.app</a>.
+            Trip data stays on your device.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card cta-block">
+      <h2 style="margin-bottom: 0.75rem;">Ready to try it?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.25rem; font-size: 0.95rem;">
+        Download DozeAlert for Android and set your first destination in under a minute.
+      </p>
+      <a class="download-btn" href="../downloads/dozealert-latest.apk" download="dozealert.apk">
+        Download APK
+      </a>
+      <p style="margin-top: 1rem; font-size: 0.8125rem; color: var(--muted);">
+        Also search <strong>DozeAlert</strong> on Google Play when available in your region.
+      </p>
+    </section>
+
+    <footer>
+      <p>
+        <a href="../index.html">Home</a>
+        <span aria-hidden="true"> &middot; </span>
+        <a href="../privacy/index.html">Privacy Policy</a>
+        <span aria-hidden="true"> &middot; </span>
+        <a href="mailto:support@dozealert.app">support@dozealert.app</a>
+      </p>
+      <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
+    </footer>
+  </div>
+</body>
+</html>
