@@ -18,6 +18,7 @@ import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
 import '../services/trip_history_service.dart';
 import '../utils/app_log.dart';
+import '../utils/gps_quality.dart';
 
 enum LocationStartResult {
   success,
@@ -66,6 +67,9 @@ class LocationProvider extends ChangeNotifier {
   final TripHistoryService _tripHistoryService;
   final TripHistoryProvider? _tripHistoryProvider;
 
+  final GpsQualityGate _gpsQualityGate = const GpsQualityGate();
+  final GpsPositionSmoother _gpsSmoother = GpsPositionSmoother();
+
   StreamSubscription<CurrentLocation>? _locationSubscription;
   StreamSubscription<CurrentLocation>? _backgroundLocationSubscription;
   StreamSubscription<void>? _arrivalSubscription;
@@ -75,6 +79,8 @@ class LocationProvider extends ChangeNotifier {
   double _distanceRemainingKm = 0;
   double? _tripStartDistanceMeters;
   bool _trackingEnabled = false;
+  bool _distanceIsStale = false;
+  bool _usingAlongRouteDistance = false;
   bool _arrivalDialogVisible = false;
   bool _usingBackgroundService = false;
   bool _awaitingFreshLocation = false;
@@ -85,6 +91,8 @@ class LocationProvider extends ChangeNotifier {
   CurrentLocation? get currentLocation => _currentLocation;
   double get distanceRemainingMeters => _distanceRemainingMeters;
   double get distanceRemainingKm => _distanceRemainingKm;
+  bool get distanceIsStale => _distanceIsStale;
+  bool get usingAlongRouteDistance => _usingAlongRouteDistance;
   double? get tripProgressFraction {
     final start = _tripStartDistanceMeters;
     if (start == null || start <= 0 || !distanceIsReady) {
@@ -203,7 +211,7 @@ class LocationProvider extends ChangeNotifier {
     }
 
     try {
-      await _locationService.startTracking();
+      await _locationService.startTracking(highAccuracy: true);
     } on LocationServiceDisabledException {
       await _backgroundMonitorService.stopMonitoring();
       return LocationStartResult.locationServiceDisabled;
@@ -281,6 +289,9 @@ class LocationProvider extends ChangeNotifier {
     _distanceRemainingKm = 0;
     _tripStartDistanceMeters = null;
     _closestApproachMeters = double.infinity;
+    _distanceIsStale = false;
+    _usingAlongRouteDistance = false;
+    _gpsSmoother.reset();
     _awaitingFreshLocation = awaitingFresh;
     if (!awaitingFresh) {
       _monitoringStartedAt = null;
@@ -299,19 +310,33 @@ class LocationProvider extends ChangeNotifier {
   void updateDistance() {
     final destination = _monitoringProvider.selectedDestination;
     final current = _currentLocation;
+    final transitSnapshot = _transitModeProvider.displaySnapshot;
 
     if (destination == null || current == null || _awaitingFreshLocation) {
       _distanceRemainingMeters = 0;
       _distanceRemainingKm = 0;
+      _usingAlongRouteDistance = false;
       return;
     }
 
-    _distanceRemainingMeters = Geolocator.distanceBetween(
-      current.latitude,
-      current.longitude,
-      destination.latitude,
-      destination.longitude,
-    );
+    final alongRouteRemaining = transitSnapshot.alongRouteRemainingMeters;
+    final useAlongRoute = _settingsService.settings.transitModeEnabled &&
+        transitSnapshot.isActive &&
+        alongRouteRemaining != null;
+
+    if (useAlongRoute) {
+      _distanceRemainingMeters = alongRouteRemaining;
+      _usingAlongRouteDistance = true;
+    } else {
+      _distanceRemainingMeters = Geolocator.distanceBetween(
+        current.latitude,
+        current.longitude,
+        destination.latitude,
+        destination.longitude,
+      );
+      _usingAlongRouteDistance = false;
+    }
+
     _distanceRemainingKm = _distanceRemainingMeters / 1000;
 
     if (_trackingEnabled &&
@@ -336,16 +361,30 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
+    final allowDegraded = _settingsService.settings.transitModeEnabled &&
+        _transitModeProvider.isActive;
+    if (!_gpsQualityGate.accept(location, allowDegraded: allowDegraded)) {
+      if (_trackingEnabled && _distanceRemainingMeters > 0) {
+        _distanceIsStale = true;
+        notifyListeners();
+      }
+      return;
+    }
+
     if (_awaitingFreshLocation) {
       _awaitingFreshLocation = false;
     }
 
-    _currentLocation = location;
-    updateDistance();
+    final smoothed = _gpsSmoother.smooth(location);
+    _currentLocation = smoothed;
+    _distanceIsStale = false;
     _transitModeProvider.updateFromLocation(
-      latitude: location.latitude,
-      longitude: location.longitude,
+      latitude: smoothed.latitude,
+      longitude: smoothed.longitude,
+      headingDegrees: smoothed.hasHeading ? smoothed.heading : null,
+      speedMps: smoothed.speed >= 0 ? smoothed.speed : null,
     );
+    updateDistance();
 
     final destination = _monitoringProvider.selectedDestination;
     if (destination != null && _usingBackgroundService) {
@@ -417,11 +456,6 @@ class LocationProvider extends ChangeNotifier {
 
     if (_settingsService.settings.transitModeEnabled) {
       if (_transitModeProvider.shouldTriggerApproachAlarm) {
-        final thresholdMeters = _monitoringProvider.radiusMeters.toDouble();
-        if (_distanceRemainingMeters > thresholdMeters) {
-          return;
-        }
-
         await _monitoringStorage.setArrivalTriggered(true);
         final message = _transitModeProvider.approachAlarmMessage;
         await _alarmService.playApproachAlarm(
@@ -443,6 +477,8 @@ class LocationProvider extends ChangeNotifier {
       if (_transitModeProvider.isActive) {
         return;
       }
+
+      // Distance fallback when transit mode cannot place the user on the route.
     }
 
     final thresholdMeters = _settingsService.settings.testModeEnabled
@@ -458,7 +494,9 @@ class LocationProvider extends ChangeNotifier {
     await _tripHistoryService.recordAlarmTriggered();
     _setArrivalContext(
       usedTransitMode: false,
-      detailMessage: 'Distance wake — within wake radius',
+      detailMessage: _settingsService.settings.transitModeEnabled
+          ? 'Distance wake — transit fallback'
+          : 'Distance wake — within wake radius',
     );
     _monitoringProvider.markArrived();
     _arrivalDialogVisible = true;

@@ -5,7 +5,6 @@ import '../models/arrival_context.dart';
 import '../providers/location_provider.dart';
 import '../utils/app_branding.dart';
 import '../widgets/branding_logo.dart';
-import '../widgets/metric_row.dart';
 
 class ArrivalDialog extends StatelessWidget {
   const ArrivalDialog({
@@ -17,15 +16,11 @@ class ArrivalDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final arrivalContext = context.select<LocationProvider, ArrivalContext?>(
       (provider) => provider.arrivalContext,
     );
     final destinationName = arrivalContext?.destinationName ?? 'Destination';
-    final usedTransitMode = arrivalContext?.usedTransitMode ?? false;
     final detailMessage = arrivalContext?.detailMessage;
-    final distanceKm = arrivalContext?.distanceKm;
-    final stopsRemaining = arrivalContext?.stopsRemaining;
 
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -85,50 +80,7 @@ class ArrivalDialog extends StatelessWidget {
                     color: AppBranding.white.withValues(alpha: 0.78),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Theme(
-                  data: Theme.of(context).copyWith(
-                    colorScheme: colorScheme.copyWith(
-                      onSurface: AppBranding.white,
-                      onSurfaceVariant: AppBranding.white.withValues(alpha: 0.72),
-                    ),
-                  ),
-                  child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppBranding.cyanAccent.withValues(alpha: 0.25),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        MetricRow(
-                          label: 'Wake mode',
-                          value: usedTransitMode ? 'Transit mode' : 'Distance',
-                        ),
-                        if (distanceKm != null) ...[
-                          const SizedBox(height: 8),
-                          MetricRow(
-                            label: 'Distance',
-                            value: '${distanceKm.toStringAsFixed(1)} km',
-                          ),
-                        ],
-                        if (usedTransitMode && stopsRemaining != null) ...[
-                          const SizedBox(height: 8),
-                          MetricRow(
-                            label: 'Stops remaining',
-                            value: stopsRemaining.toString(),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 Text(
                   detailMessage ??
                       'Heads up! You are approaching your destination. '

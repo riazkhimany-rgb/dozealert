@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:vibration/vibration.dart';
 
 import '../services/settings_service.dart';
+import '../models/app_settings.dart';
 import '../services/system_volume_service.dart';
 import '../utils/app_log.dart';
 
@@ -163,6 +164,16 @@ class AlarmService {
     );
     await _tts.setVolume(volume);
     await _audioPlayer.setVolume(volume);
+  }
+
+  /// Restarts vibration while an alert is playing (e.g. after slider change).
+  Future<void> updateActiveAlarmVibration() async {
+    if (!_alarmActive) {
+      return;
+    }
+
+    await _stopVibration();
+    await _startVibration();
   }
 
   Future<void> showArrivalNotification({
@@ -330,11 +341,16 @@ class AlarmService {
         return;
       }
 
+      final intensity = AppSettings.clampVibrationIntensity(
+        _settingsService.settings.vibrationIntensity,
+      );
+      final amplitude = (intensity * 255).round().clamp(1, 255);
+
       final hasAmplitudeControl = await Vibration.hasAmplitudeControl();
       if (hasAmplitudeControl == true) {
         await Vibration.vibrate(
           pattern: [500, 500],
-          intensities: [255, 0],
+          intensities: [amplitude, 0],
           repeat: 0,
         );
       } else {

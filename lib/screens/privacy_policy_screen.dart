@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
-import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/app_branding.dart';
+import '../utils/external_link_launcher.dart';
 
 class PrivacyPolicyScreen extends StatefulWidget {
   const PrivacyPolicyScreen({super.key});
@@ -27,17 +27,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       return;
     }
 
-    final uri = Uri.tryParse(href);
-    if (uri == null) {
-      return;
-    }
-
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open $href')),
-      );
-    }
+    await ExternalLinkLauncher.openOrSnackBar(context, href);
   }
 
   MarkdownStyleSheet _styleSheet(BuildContext context) {

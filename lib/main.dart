@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 
+import 'providers/favorite_transit_line_provider.dart';
 import 'providers/destination_history_provider.dart';
 import 'providers/gtfs_feed_provider.dart';
 import 'providers/gtfs_provider.dart';
@@ -37,6 +38,7 @@ import 'services/transit_data_service.dart';
 import 'services/trip_history_service.dart';
 import 'utils/app_log.dart';
 import 'utils/app_theme.dart';
+import 'widgets/wear_command_bridge.dart';
 
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -71,6 +73,10 @@ Future<void> main() async {
       DestinationHistoryProvider(preferencesService);
   await destinationHistoryProvider.load();
 
+  final favoriteTransitLineProvider =
+      FavoriteTransitLineProvider(preferencesService);
+  await favoriteTransitLineProvider.load();
+
   final monitoringProvider = MonitoringProvider(
     destinationStorageService,
     monitoringStorageService,
@@ -92,6 +98,7 @@ Future<void> main() async {
     transitModeService,
     settingsService,
     monitoringProvider,
+    monitoringStorageService,
   );
   final gtfsProvider = GtfsProvider(
     gtfsService,
@@ -138,6 +145,7 @@ Future<void> main() async {
       destinationStorageService: destinationStorageService,
       monitoringProvider: monitoringProvider,
       destinationHistoryProvider: destinationHistoryProvider,
+      favoriteTransitLineProvider: favoriteTransitLineProvider,
       tripHistoryService: tripHistoryService,
       tripHistoryProvider: tripHistoryProvider,
       onboardingService: onboardingService,
@@ -181,6 +189,7 @@ class DozeAlertApp extends StatelessWidget {
     required this.destinationStorageService,
     required this.monitoringProvider,
     required this.destinationHistoryProvider,
+    required this.favoriteTransitLineProvider,
     required this.tripHistoryService,
     required this.tripHistoryProvider,
     required this.onboardingService,
@@ -208,6 +217,7 @@ class DozeAlertApp extends StatelessWidget {
   final DestinationStorageService destinationStorageService;
   final MonitoringProvider monitoringProvider;
   final DestinationHistoryProvider destinationHistoryProvider;
+  final FavoriteTransitLineProvider favoriteTransitLineProvider;
   final TripHistoryService tripHistoryService;
   final TripHistoryProvider tripHistoryProvider;
   final OnboardingService onboardingService;
@@ -287,6 +297,9 @@ class DozeAlertApp extends StatelessWidget {
         ChangeNotifierProvider<DestinationHistoryProvider>.value(
           value: destinationHistoryProvider,
         ),
+        ChangeNotifierProvider<FavoriteTransitLineProvider>.value(
+          value: favoriteTransitLineProvider,
+        ),
         ChangeNotifierProvider<TripHistoryProvider>.value(
           value: tripHistoryProvider,
         ),
@@ -312,9 +325,11 @@ class DozeAlertApp extends StatelessWidget {
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
             themeMode: themeProvider.themeMode,
-            home: AppStartupScreen(
-              skipSplash: skipSplash,
-              skipBootstrap: skipBootstrap,
+            home: WearCommandBridge(
+              child: AppStartupScreen(
+                skipSplash: skipSplash,
+                skipBootstrap: skipBootstrap,
+              ),
             ),
           );
         },

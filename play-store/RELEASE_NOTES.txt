@@ -1,8 +1,12 @@
-Version 1.0.2
+Version 1.0.4
 
-• Redesigned home screen with clearer monitoring status and trip progress
-• One-tap start from Trips, improved destination flow, and branded UI polish
-• Faster GPS lock when monitoring starts
-• Transit settings cleanup and improved wake distance / wake stops controls
+• More accurate along-route distance — GPS is filtered and smoothed during monitoring, with stop-by-stop progress from GTFS route geometry
+• Favorite transit lines — save lines in Settings → Transit for quick switching when setting a destination
+• Cleaner destination flow — pick from map search, stop list, favorite stops, or saved lines; favorite destinations on Trips now support add/delete
+• Simpler home screen — destination card focuses on your trip; Start and Stop sit on one row
+• Open data compliance — agency attribution and license links under About → Open Data; fixed broken Metrolinx, GRT, and other agency terms links on Android
+• Faster startup — single branded splash (no double logo flash); app loads during splash
+• Settings tidy-up — removed duplicate Transit Data Licenses entry from Transit settings
+• Smaller release build — enabled code shrinking for Play Store crash deobfuscation support
 
 Sleep peacefully. Arrive confidently.

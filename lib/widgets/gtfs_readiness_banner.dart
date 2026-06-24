@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/transit_catalog.dart';
-import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../screens/transit_data_screen.dart';
+import '../utils/gtfs_readiness.dart';
 import 'home_card.dart';
 
 class GtfsReadinessBanner extends StatelessWidget {
@@ -14,19 +15,22 @@ class GtfsReadinessBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final feedProvider = context.watch<GtfsFeedProvider>();
+    final gtfsProvider = context.watch<GtfsProvider>();
     final preferences = context.watch<TransitProvider>().preferences;
-    final transitSystem = preferences.transitSystem;
 
-    if (!TransitCatalog.hasCatalogLines(transitSystem)) {
+    if (!TransitCatalog.hasCatalogLines(preferences.transitSystem)) {
       return const SizedBox.shrink();
     }
 
-    if (!feedProvider.isInitialized) {
+    if (!feedProvider.isInitialized || !gtfsProvider.isInitialized) {
       return const SizedBox.shrink();
     }
 
-    final feed = feedProvider.feedForTransitSystem(transitSystem);
-    if (feed == null || feed.status == GtfsFeedStatus.downloaded) {
+    if (!GtfsReadiness.shouldPromptForDownload(
+      gtfsProvider,
+      preferences,
+      feedProvider,
+    )) {
       return const SizedBox.shrink();
     }
 
@@ -46,15 +50,15 @@ class GtfsReadinessBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Download $transitSystem data to pick stops',
+                    'Optional: download full ${preferences.transitSystem} data',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'GTFS feed is required before you can search stops on '
-                    'this agency.',
+                    'Bundled stops work for main lines. Download the full GTFS '
+                    'feed for every route and the latest schedule data.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),

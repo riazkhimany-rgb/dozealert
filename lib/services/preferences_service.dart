@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/mock_destinations.dart';
 import '../data/transit_catalog.dart';
 import '../models/destination.dart';
+import '../models/favorite_transit_line.dart';
 import '../models/favorite_destination.dart';
 import '../models/transit_preferences.dart';
 
@@ -16,6 +17,7 @@ class PreferencesService {
   static const _recentStationsKey = 'transit_recent_stations';
   static const _favoritesKey = 'destination_favorites';
   static const _favoritesSeededKey = 'destination_favorites_seeded';
+  static const _transitLineFavoritesKey = 'transit_line_favorites';
   static const _maxRecentStations = 8;
 
   Future<TransitPreferences> loadTransitPreferences() async {
@@ -182,6 +184,64 @@ class PreferencesService {
     final current = await loadFavorites();
     final updated = transform(current);
     await saveFavorites(updated);
+    return updated;
+  }
+
+  Future<List<FavoriteTransitLine>> loadFavoriteTransitLines() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_transitLineFavoritesKey);
+    if (raw == null || raw.isEmpty) {
+      return const [];
+    }
+
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded
+          .map(
+            (entry) =>
+                FavoriteTransitLine.fromJson(entry as Map<String, dynamic>),
+          )
+          .toList(growable: false);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> saveFavoriteTransitLines(List<FavoriteTransitLine> favorites) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _transitLineFavoritesKey,
+      jsonEncode(favorites.map((item) => item.toJson()).toList()),
+    );
+  }
+
+  Future<List<FavoriteTransitLine>> addFavoriteTransitLine(
+    FavoriteTransitLine favorite,
+  ) {
+    return _updateFavoriteTransitLines((current) {
+      return [
+        favorite,
+        ...current.where((existing) => !existing.sameLine(favorite)),
+      ];
+    });
+  }
+
+  Future<List<FavoriteTransitLine>> removeFavoriteTransitLine(
+    FavoriteTransitLine favorite,
+  ) {
+    return _updateFavoriteTransitLines(
+      (current) =>
+          current.where((existing) => !existing.sameLine(favorite)).toList(),
+    );
+  }
+
+  Future<List<FavoriteTransitLine>> _updateFavoriteTransitLines(
+    List<FavoriteTransitLine> Function(List<FavoriteTransitLine> current)
+        transform,
+  ) async {
+    final current = await loadFavoriteTransitLines();
+    final updated = transform(current);
+    await saveFavoriteTransitLines(updated);
     return updated;
   }
 }

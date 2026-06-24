@@ -34,6 +34,10 @@ abstract final class TransitCatalog {
         downloadUrl:
             'https://assets.metrolinx.com/raw/upload/v1683228856/Documents/Metrolinx/Open%20Data/GO-GTFS.zip',
         supportsRealtime: true,
+        licenseUrl:
+            'https://www.gotransit.com/en/partner-with-us/software-developers',
+        attributionText:
+            'Contains data from GO Transit (Metrolinx) Open Data Catalogue.',
       ),
       lines: [
         'Lakeshore West',
@@ -63,6 +67,9 @@ abstract final class TransitCatalog {
         downloadUrl:
             'https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/7795b45e-e65a-4465-81fc-c36b9dfff169/resource/cfb6b2b8-6191-41e3-bda1-b175c51148cb/download/TTC%20Routes%20and%20Schedules%20Data.zip',
         supportsRealtime: true,
+        licenseUrl: 'https://open.toronto.ca/open-data-licence/',
+        attributionText:
+            'Contains data licensed under the City of Toronto Open Data License.',
       ),
       lines: ['Line 1', 'Line 2', 'Line 4'],
     ),
@@ -84,6 +91,9 @@ abstract final class TransitCatalog {
             'YRT open data requires you to review their terms on the YRT website '
             'before downloading the GTFS feed. Import the downloaded zip using '
             'Import GTFS Zip on this screen.',
+        licenseUrl: 'https://www.yrt.ca/en/about-us/open-data.aspx',
+        attributionText:
+            'Contains data from York Region Transit Open Data (review YRT terms).',
       ),
       lines: ['All routes'],
     ),
@@ -101,8 +111,12 @@ abstract final class TransitCatalog {
           TransitVehicleType.bus,
           TransitVehicleType.lightRail,
         ],
-        openDataPageUrl: 'https://www.grt.ca/en/about-grt/open-data.aspx',
+        openDataPageUrl: 'https://www.grt.ca/about-grt/open-data/',
         openDataPageLabel: 'Open GRT Open Data Page',
+        licenseUrl:
+            'https://www.regionofwaterloo.ca/government-and-council/transparency-and-accountability/open-data/',
+        attributionText:
+            'Contains data from Grand River Transit Open Data (manual download).',
       ),
       lines: ['All routes'],
     ),
@@ -120,6 +134,10 @@ abstract final class TransitCatalog {
         openDataPageUrl:
             'https://geohub.brampton.ca/datasets/a355aabd5a8c490186bdce559c9c75fb',
         openDataPageLabel: 'Open Brampton Transit Data',
+        licenseUrl:
+            'https://geohub.brampton.ca/datasets/a355aabd5a8c490186bdce559c9c75fb',
+        attributionText:
+            'Contains data from Brampton Transit Open Data (manual download).',
       ),
       lines: ['All routes'],
     ),
@@ -139,6 +157,9 @@ abstract final class TransitCatalog {
             'https://www.mississauga.ca/miway-transit/developer-download/',
         openDataPageLabel: 'MiWay Developer Download',
         supportsRealtime: true,
+        licenseUrl:
+            'https://www.mississauga.ca/miway-transit/developer-download/',
+        attributionText: 'Contains data from MiWay Open GTFS.',
       ),
       lines: ['All routes'],
     ),
@@ -159,6 +180,9 @@ abstract final class TransitCatalog {
             'https://www.durham.ca/en/regional-government/open-data.aspx',
         openDataPageLabel: 'Durham Region Open Data',
         supportsRealtime: true,
+        licenseUrl:
+            'https://www.durham.ca/en/regional-government/open-data.aspx',
+        attributionText: 'Contains data from Durham Region Transit Open Data.',
       ),
       lines: ['All routes'],
     ),
@@ -174,6 +198,9 @@ abstract final class TransitCatalog {
         province: 'Ontario',
         vehicleTypes: [TransitVehicleType.bus],
         downloadUrl: 'http://metrolinx.tmix.se/gtfs/gtfs-milton.zip',
+        licenseUrl:
+            'https://www.gotransit.com/en/partner-with-us/software-developers',
+        attributionText: 'Contains data from Milton Transit GTFS (Metrolinx host).',
       ),
       lines: ['All routes'],
     ),
@@ -192,6 +219,8 @@ abstract final class TransitCatalog {
             'https://www.arcgis.com/sharing/rest/content/items/d78a1c1ad6a940009de8b68839a8f606/data',
         openDataPageUrl: 'https://www.oakvilletransit.ca/',
         openDataPageLabel: 'Oakville Transit',
+        licenseUrl: 'https://www.oakvilletransit.ca/',
+        attributionText: 'Contains data from Oakville Transit Open Data.',
       ),
       lines: ['All routes'],
     ),
@@ -209,6 +238,8 @@ abstract final class TransitCatalog {
         downloadUrl: 'https://opendata.burlington.ca/gtfs-rt/GTFS_Data.zip',
         openDataPageUrl: 'https://www.burlington.ca/en/services-for-you/transit',
         openDataPageLabel: 'Burlington Transit Open Data',
+        licenseUrl: 'https://opendata.burlington.ca/',
+        attributionText: 'Contains data from Burlington Transit Open Data.',
       ),
       lines: ['All routes'],
     ),
@@ -231,6 +262,9 @@ abstract final class TransitCatalog {
         openDataPageUrl: 'https://opendata.hamilton.ca/GTFS-Static/',
         openDataPageLabel: 'Hamilton Open Data GTFS',
         supportsRealtime: true,
+        licenseUrl: 'https://opendata.hamilton.ca/GTFS-Static/',
+        attributionText:
+            'Contains data from Hamilton Street Railway Open Data.',
       ),
       lines: ['All routes'],
     ),
@@ -246,6 +280,9 @@ abstract final class TransitCatalog {
         province: 'Ontario',
         vehicleTypes: [TransitVehicleType.bus],
         downloadUrl: 'http://68.71.24.110/gtfs/GTFSExport.zip',
+        licenseUrl: 'https://niagaraopendata.ca/pages/open-government-license-2-0-niagara-region',
+        attributionText:
+            'Contains data from Niagara Region Transit Open Data.',
       ),
       lines: ['All routes'],
     ),
@@ -363,6 +400,24 @@ abstract final class TransitCatalog {
         .where((agency) => agency.gtfsFeed != null)
         .map((agency) => agency.gtfsFeed!)
         .toList(growable: false);
+  }
+
+  /// GO and TTC ship bundled stop JSON in assets for offline bootstrap.
+  static List<TransitCatalogAgency> get agenciesWithBundledStopLists {
+    return _agencies
+        .where(
+          (agency) =>
+              agency.agencyId == 'go_transit' || agency.agencyId == 'ttc',
+        )
+        .toList(growable: false);
+  }
+
+  /// Agencies selectable in the app but without a catalog GTFS feed entry.
+  static List<TransitCatalogAgency> get agenciesListedWithoutGtfsFeed {
+    return _agencies
+        .where((agency) => agency.gtfsFeed == null && agency.lines.isNotEmpty)
+        .toList(growable: false)
+      ..sort((a, b) => a.agencyName.compareTo(b.agencyName));
   }
 
   static List<GtfsFeedInfo> gtfsFeedsForRegion(String country, String region) {

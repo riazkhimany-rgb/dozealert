@@ -3,14 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/transit_catalog.dart';
 import '../models/destination.dart';
-import '../models/gtfs_feed_info.dart';
 import '../models/monitoring_state.dart';
 import '../models/transit_mode_wake_setting.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_stop.dart';
-import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
@@ -20,6 +17,7 @@ import '../providers/transit_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
+import '../utils/gtfs_readiness.dart';
 import '../utils/transit_wake_message.dart';
 import '../utils/wake_radius_format.dart';
 import '../widgets/app_gradient_background.dart';
@@ -121,19 +119,10 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 bool _isGtfsReadyForTransitMode(BuildContext context) {
-  if (context.read<GtfsProvider>().hasStopsForSelectedLine()) {
-    return true;
-  }
-
-  final transitSystem =
-      context.read<TransitProvider>().preferences.transitSystem;
-  if (!TransitCatalog.hasCatalogLines(transitSystem)) {
-    return false;
-  }
-
-  final feed =
-      context.read<GtfsFeedProvider>().feedForTransitSystem(transitSystem);
-  return feed?.status == GtfsFeedStatus.downloaded;
+  return GtfsReadiness.isReadyForSelectedAgency(
+    context.read<GtfsProvider>(),
+    context.read<TransitProvider>().preferences,
+  );
 }
 
 class _DestinationCard extends StatelessWidget {
@@ -148,7 +137,10 @@ class _DestinationCard extends StatelessWidget {
       (provider) => provider.selectedDestination,
     );
     final snapshot = context.select<TransitModeProvider, TransitModeSnapshot>(
-      (provider) => provider.snapshot,
+      (provider) => provider.displaySnapshot,
+    );
+    final gpsSignalLost = context.select<TransitModeProvider, bool>(
+      (provider) => provider.gpsSignalLost,
     );
     final transitModeEnabled = context.select<SettingsProvider, bool>(
       (provider) => provider.transitModeEnabled,
@@ -170,6 +162,7 @@ class _DestinationCard extends StatelessWidget {
       snapshot: snapshot,
       isMonitoring: isMonitoring,
       selectedLine: selectedLine,
+      gpsSignalLost: gpsSignalLost,
     );
     final showTransitProgress = destination != null &&
         transitModeEnabled &&
@@ -235,9 +228,7 @@ class _DestinationCard extends StatelessWidget {
               stops: routeSegmentStops,
               stopsRemaining: snapshot.stopsRemaining,
               lineLabel: compact ? null : selectedLine,
-              inactiveMessage: idleTransitPrompt
-                  ? ''
-                  : 'Waiting for GPS near your line to place you on the route…',
+              inactiveMessage: '',
             ),
             if (snapshot.isActive && snapshot.nextStop != null) ...[
               const SizedBox(height: 8),
@@ -318,13 +309,14 @@ class _MonitoringCard extends StatelessWidget {
     final tripProgress = context.select<LocationProvider, double?>(
       (provider) => provider.tripProgressFraction,
     );
-    final speedLabel = context.select<LocationProvider, String>(
-      (provider) {
-        final location = provider.currentLocation;
-        return location == null
-            ? '—'
-            : '${location.speedKmh.toStringAsFixed(1)} km/h';
-      },
+    final distanceIsStale = context.select<LocationProvider, bool>(
+      (provider) => provider.distanceIsStale,
+    );
+    final usingAlongRoute = context.select<LocationProvider, bool>(
+      (provider) => provider.usingAlongRouteDistance,
+    );
+    final gpsSignalLost = context.select<TransitModeProvider, bool>(
+      (provider) => provider.gpsSignalLost,
     );
     final statusColor = _statusColor(colorScheme, state);
     final transitModeEnabled = context.select<SettingsProvider, bool>(
@@ -341,6 +333,11 @@ class _MonitoringCard extends StatelessWidget {
     final settingsActionIcon = transitModeEnabled
         ? Icons.tune
         : Icons.radar_outlined;
+    final distanceSubtitle = distanceIsStale || gpsSignalLost
+        ? 'Last known distance — GPS signal weak'
+        : usingAlongRoute
+            ? 'Along route'
+            : null;
     final canStart = hasDestination && state == MonitoringState.idle;
     final canStop = state == MonitoringState.monitoring ||
         state == MonitoringState.arrived;
@@ -385,27 +382,32 @@ class _MonitoringCard extends StatelessWidget {
           const SizedBox(height: 10),
           if (!hasDestination)
             const EmptyStateMessage(
-              message: 'Set a destination below, then tap Start to begin monitoring.',
+              message: 'Set a destination, then tap Start to begin monitoring.',
             )
           else if (hasDistance)
             MonitoringDistanceProgress(
               distanceKm: distanceKm,
               progress: tripProgress,
               accentColor: statusColor,
+              subtitle: distanceSubtitle,
             )
-          else
+          else if (!hasDistance && isMonitoring && !transitModeEnabled)
             Text(
-              state == MonitoringState.monitoring
-                  ? 'Waiting for GPS fix…'
-                  : 'Ready when you tap Start',
+              'Waiting for GPS fix…',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else if (!isMonitoring)
+            Text(
+              'Ready when you tap Start',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
               ),
             ),
           const SizedBox(height: 8),
-          MetricRow(label: 'Speed', value: speedLabel),
-          const SizedBox(height: 4),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,

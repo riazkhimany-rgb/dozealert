@@ -120,9 +120,23 @@ class GtfsProvider extends ChangeNotifier {
     }
 
     final preferences = _transitProvider.preferences;
-    return _gtfsService.hasStopsForTransitLine(
+    return hasStopsForLine(
       transitSystem: preferences.transitSystem,
       lineName: preferences.defaultLine,
+    );
+  }
+
+  bool hasStopsForLine({
+    required String transitSystem,
+    required String lineName,
+  }) {
+    if (!_initialized) {
+      return false;
+    }
+
+    return _gtfsService.hasStopsForTransitLine(
+      transitSystem: transitSystem,
+      lineName: lineName,
     );
   }
 
@@ -189,6 +203,22 @@ class GtfsProvider extends ChangeNotifier {
   String get selectedLineLabel {
     final preferences = _transitProvider.preferences;
     return '${preferences.transitSystem} · ${preferences.defaultLine}';
+  }
+
+  Future<void> syncTransitModeRouteForSelectedLine() async {
+    if (!_initialized) {
+      return;
+    }
+
+    final preferences = _transitProvider.preferences;
+    final route = _gtfsService.routeForTransitLine(
+      transitSystem: preferences.transitSystem,
+      lineName: preferences.defaultLine,
+    );
+    if (route != null) {
+      _transitModeProvider.setActiveRouteId(route.routeId);
+    }
+    notifyListeners();
   }
 
   AgencyDetectionResult? detectAgencyFromDestination(String destinationName) {

@@ -14,7 +14,10 @@ class TransitModeSnapshot {
     this.previousStop,
     this.nextStop,
     this.stopsRemaining = 0,
+    this.alongRouteRemainingMeters,
+    this.offRouteMeters,
     this.usesDistanceFallback = false,
+    this.gpsStale = false,
     this.status = 'Inactive',
   });
 
@@ -27,7 +30,11 @@ class TransitModeSnapshot {
   final TransitStop? previousStop;
   final TransitStop? nextStop;
   final int stopsRemaining;
+  final double? alongRouteRemainingMeters;
+  final double? offRouteMeters;
   final bool usesDistanceFallback;
+  /// True when showing the last known route position after a brief GPS loss.
+  final bool gpsStale;
   final String status;
 
   static const inactive = TransitModeSnapshot();
@@ -45,7 +52,10 @@ class TransitModeSnapshot {
             other.previousStop == previousStop &&
             other.nextStop == nextStop &&
             other.stopsRemaining == stopsRemaining &&
+            other.alongRouteRemainingMeters == alongRouteRemainingMeters &&
+            other.offRouteMeters == offRouteMeters &&
             other.usesDistanceFallback == usesDistanceFallback &&
+            other.gpsStale == gpsStale &&
             other.status == status;
   }
 
@@ -60,7 +70,10 @@ class TransitModeSnapshot {
         previousStop,
         nextStop,
         stopsRemaining,
+        alongRouteRemainingMeters,
+        offRouteMeters,
         usesDistanceFallback,
+        gpsStale,
         status,
       );
 }

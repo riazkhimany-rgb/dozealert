@@ -8,9 +8,18 @@ import '../providers/gtfs_provider.dart';
 enum _StopSearchScope { thisRoute, allRoutes }
 
 class StopPickerSheet extends StatefulWidget {
-  const StopPickerSheet({super.key});
+  const StopPickerSheet({
+    super.key,
+    this.onStopSelected,
+  });
 
-  static Future<void> show(BuildContext context) {
+  /// When set, called instead of applying the stop as the active destination.
+  final Future<void> Function(TransitStop stop)? onStopSelected;
+
+  static Future<void> show(
+    BuildContext context, {
+    Future<void> Function(TransitStop stop)? onStopSelected,
+  }) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -30,7 +39,7 @@ class StopPickerSheet extends StatefulWidget {
           ),
           child: SizedBox(
             height: sheetHeight,
-            child: const StopPickerSheet(),
+            child: StopPickerSheet(onStopSelected: onStopSelected),
           ),
         );
       },
@@ -53,7 +62,12 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
   }
 
   Future<void> _selectStop(TransitStop stop) async {
-    await context.read<GtfsProvider>().selectStop(stop);
+    final customHandler = widget.onStopSelected;
+    if (customHandler != null) {
+      await customHandler(stop);
+    } else {
+      await context.read<GtfsProvider>().selectStop(stop);
+    }
     if (mounted) {
       Navigator.of(context).pop();
     }

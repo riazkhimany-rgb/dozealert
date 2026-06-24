@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../models/monitoring_state.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
 import '../models/transit_stop.dart';
+import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
 import '../services/transit_mode_service.dart';
 import 'monitoring_provider.dart';
@@ -12,6 +16,7 @@ class TransitModeProvider extends ChangeNotifier {
     this._transitModeService,
     this._settingsService,
     this._monitoringProvider,
+    this._monitoringStorage,
   ) {
     _monitoringProvider.addListener(_handleMonitoringChanged);
   }
@@ -19,20 +24,39 @@ class TransitModeProvider extends ChangeNotifier {
   final TransitModeService _transitModeService;
   final SettingsService _settingsService;
   final MonitoringProvider _monitoringProvider;
+  final MonitoringStorageService _monitoringStorage;
 
   TransitModeSnapshot _snapshot = TransitModeSnapshot.inactive;
+  TransitModeSnapshot? _lastActiveSnapshot;
   String? _activeRouteId;
   bool _approachAlarmTriggered = false;
 
   TransitModeSnapshot get snapshot => _snapshot;
+
+  /// Snapshot for UI: keeps last known stop progress during brief GPS loss.
+  TransitModeSnapshot get displaySnapshot {
+    if (_snapshot.isActive) {
+      return _snapshot;
+    }
+    if (_lastActiveSnapshot != null &&
+        _monitoringProvider.currentState == MonitoringState.monitoring) {
+      return _lastActiveSnapshot!.copyWith(gpsStale: true);
+    }
+    return _snapshot;
+  }
+
   bool get isActive => _snapshot.isActive;
+  bool get gpsSignalLost => displaySnapshot.gpsStale;
 
   /// Route stops from the user's current stop through the destination, inclusive.
-  List<TransitStop> get routeSegmentStops {
-    final route = _snapshot.route;
-    final current = _snapshot.currentStop;
-    final destination = _snapshot.destinationStop;
-    if (!_snapshot.isActive || route == null || current == null || destination == null) {
+  List<TransitStop> get routeSegmentStops =>
+      _routeSegmentStopsFor(displaySnapshot);
+
+  List<TransitStop> _routeSegmentStopsFor(TransitModeSnapshot source) {
+    final route = source.route;
+    final current = source.currentStop;
+    final destination = source.destinationStop;
+    if (!source.isActive || route == null || current == null || destination == null) {
       return const [];
     }
 
@@ -69,10 +93,13 @@ class TransitModeProvider extends ChangeNotifier {
   void updateFromLocation({
     required double? latitude,
     required double? longitude,
+    double? headingDegrees,
+    double? speedMps,
   }) {
     if (!_settingsService.settings.transitModeEnabled) {
-      if (_snapshot.isActive) {
+      if (_snapshot.isActive || _lastActiveSnapshot != null) {
         _snapshot = TransitModeSnapshot.inactive;
+        _lastActiveSnapshot = null;
         notifyListeners();
       }
       return;
@@ -83,15 +110,39 @@ class TransitModeProvider extends ChangeNotifier {
       latitude: latitude,
       longitude: longitude,
       routeId: _activeRouteId,
-      maxStopProximityMeters: _monitoringProvider.radiusMeters,
+      maxStopProximityMeters: TransitModeService.routeStopMatchMeters,
+      headingDegrees: headingDegrees,
+      speedMps: speedMps,
     );
 
     if (nextSnapshot.route?.routeId != null) {
       _activeRouteId = nextSnapshot.route!.routeId;
     }
 
-    if (nextSnapshot != _snapshot) {
+    if (nextSnapshot.isActive) {
+      _lastActiveSnapshot = nextSnapshot;
+      if (nextSnapshot != _snapshot) {
+        _snapshot = nextSnapshot;
+        unawaited(_monitoringStorage.setTransitOnRouteActive(true));
+        notifyListeners();
+      }
+      return;
+    }
+
+    if (_lastActiveSnapshot != null &&
+        _monitoringProvider.currentState == MonitoringState.monitoring) {
+      if (_snapshot.isActive) {
+        _snapshot = TransitModeSnapshot.inactive;
+        unawaited(_monitoringStorage.setTransitOnRouteActive(false));
+      }
+      notifyListeners();
+      return;
+    }
+
+    if (nextSnapshot != _snapshot || _lastActiveSnapshot != null) {
       _snapshot = nextSnapshot;
+      _lastActiveSnapshot = null;
+      unawaited(_monitoringStorage.setTransitOnRouteActive(false));
       notifyListeners();
     }
   }
@@ -110,8 +161,9 @@ class TransitModeProvider extends ChangeNotifier {
 
   void refreshFromSettings() {
     if (!_settingsService.settings.transitModeEnabled) {
-      if (_snapshot.isActive || _approachAlarmTriggered) {
+      if (_snapshot.isActive || _approachAlarmTriggered || _lastActiveSnapshot != null) {
         _snapshot = TransitModeSnapshot.inactive;
+        _lastActiveSnapshot = null;
         _approachAlarmTriggered = false;
         notifyListeners();
       }
@@ -141,6 +193,7 @@ class TransitModeProvider extends ChangeNotifier {
       stopsRemaining: 1,
       status: 'Simulated (1 remaining)',
     );
+    _lastActiveSnapshot = _snapshot;
     _approachAlarmTriggered = false;
     notifyListeners();
   }
@@ -148,6 +201,7 @@ class TransitModeProvider extends ChangeNotifier {
   void _handleMonitoringChanged() {
     if (_monitoringProvider.selectedDestination == null) {
       _snapshot = TransitModeSnapshot.inactive;
+      _lastActiveSnapshot = null;
       _activeRouteId = null;
       _approachAlarmTriggered = false;
       notifyListeners();
@@ -165,5 +219,30 @@ class TransitModeProvider extends ChangeNotifier {
   void dispose() {
     _monitoringProvider.removeListener(_handleMonitoringChanged);
     super.dispose();
+  }
+}
+
+extension on TransitModeSnapshot {
+  TransitModeSnapshot copyWith({
+    bool? gpsStale,
+    double? alongRouteRemainingMeters,
+  }) {
+    return TransitModeSnapshot(
+      isActive: isActive,
+      agency: agency,
+      route: route,
+      vehicleType: vehicleType,
+      destinationStop: destinationStop,
+      currentStop: currentStop,
+      previousStop: previousStop,
+      nextStop: nextStop,
+      stopsRemaining: stopsRemaining,
+      alongRouteRemainingMeters:
+          alongRouteRemainingMeters ?? this.alongRouteRemainingMeters,
+      offRouteMeters: offRouteMeters,
+      usesDistanceFallback: usesDistanceFallback,
+      gpsStale: gpsStale ?? this.gpsStale,
+      status: gpsStale == true ? 'GPS signal weak' : status,
+    );
   }
 }

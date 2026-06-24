@@ -6,12 +6,14 @@ import 'package:provider/provider.dart';
 
 import '../data/transit_catalog.dart';
 import '../models/app_permission_snapshot.dart';
-import '../models/gtfs_feed_info.dart';
+import '../models/transit_preferences.dart';
 import '../providers/gtfs_feed_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/transit_data_screen.dart';
 import '../services/app_permissions_service.dart';
+import '../utils/gtfs_readiness.dart';
 import '../widgets/onboarding_permissions_page.dart';
 import 'home_card.dart';
 
@@ -100,21 +102,27 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
     final transitSystem = context.select<TransitProvider, String>(
       (provider) => provider.preferences.transitSystem,
     );
+    final preferences = context.select<TransitProvider, TransitPreferences>(
+      (provider) => provider.preferences,
+    );
     final feedProvider = context.watch<GtfsFeedProvider>();
+    final gtfsProvider = context.watch<GtfsProvider>();
 
-    final needsGtfs = TransitCatalog.hasCatalogLines(transitSystem);
-    final gtfsReady = !needsGtfs ||
-        (feedProvider.isInitialized &&
-            feedProvider.feedForTransitSystem(transitSystem)?.status ==
-                GtfsFeedStatus.downloaded);
+    final needsTransitData = TransitCatalog.hasCatalogLines(transitSystem);
+    final transitDataReady = !needsTransitData ||
+        GtfsReadiness.isSetupChecklistComplete(
+          gtfsProvider,
+          preferences,
+          feedProvider,
+        );
 
     final permissionsReady = permissions?.allRequiredForMonitoring ?? false;
 
     final items = <_ChecklistItem>[
-      if (needsGtfs)
+      if (needsTransitData)
         _ChecklistItem(
-          label: 'GTFS downloaded',
-          complete: gtfsReady,
+          label: 'Transit stop data ready',
+          complete: transitDataReady,
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(

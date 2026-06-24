@@ -13,9 +13,14 @@ dart run flutter_native_splash:create
 flutter build appbundle --release
 
 $bundle = "build/app/outputs/bundle/release/app-release.aab"
+$mapping = "build/app/outputs/mapping/release/mapping.txt"
 if (Test-Path $bundle) {
     Write-Host ""
     Write-Host "Success: $bundle" -ForegroundColor Green
+    if (Test-Path $mapping) {
+        Write-Host "Deobfuscation file: $mapping" -ForegroundColor Green
+        Write-Host "Upload mapping.txt in Play Console -> App bundle explorer -> Downloads"
+    }
     Write-Host "Upload to Google Play Console -> Internal testing"
 } else {
     Write-Error "Build failed: $bundle not found"

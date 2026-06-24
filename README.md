@@ -28,6 +28,7 @@ Assets live in `assets/branding/`:
 - **First-time setup guide** — permissions, alarm test, and optional agency setup
 - **Wake-up radius** — adjustable alert distance (250 m to 2 km)
 - **Missed-trip detection** — records trips where the alarm was not dismissed in time
+- **Wear OS companion** — trip status, start/stop, alarm dismiss, tile, and complication on a paired watch (phone runs monitoring)
 
 ## Tech Stack
 
@@ -67,6 +68,30 @@ Set `GMSApiKey` in `ios/Runner/Info.plist` for iOS.
 ## Google Play (Internal Testing)
 
 See [docs/PLAY_STORE_RELEASE.md](docs/PLAY_STORE_RELEASE.md) for signing, building, and uploading.
+
+### Wear OS companion
+
+The phone app syncs trip state to a paired watch over the Wearable Data Layer. The watch shows status, start/stop controls, alarm dismiss, a **tile**, and a **complication**. Monitoring, GPS, and permissions stay on the phone.
+
+Build the Wear bundle (same signing key and package name `app.dozealert`, separate version code):
+
+```powershell
+cd android
+.\gradlew :wear:bundleRelease
+```
+
+Output: `build/wear/outputs/bundle/release/wear-release.aab`
+
+Upload that AAB to the **Wear OS** release track in Play Console (not the phone track). Enable the Wear form factor under **Advanced settings** first.
+
+Install on a dev watch:
+
+```powershell
+cd android
+.\gradlew :wear:installDebug
+```
+
+Pair the watch with the phone, install both apps, set a destination on the phone, then open DozeAlert on the watch.
 
 ## Direct APK download (website)
 

@@ -13,6 +13,7 @@ class SettingsService {
   static const _alarmSoundModeKey = 'alarm_sound_mode';
   static const _alarmVolumeKey = 'alarm_volume';
   static const _approachSystemVolumeKey = 'approach_system_volume';
+  static const _vibrationIntensityKey = 'vibration_intensity';
   static const _legacyTrainModeEnabledKey = 'train_mode_enabled';
   static const _legacyTrainModeWakeKey = 'train_mode_wake';
 
@@ -32,6 +33,7 @@ class SettingsService {
     final alarmSoundModeIndex = prefs.getInt(_alarmSoundModeKey);
     final alarmVolume = prefs.getDouble(_alarmVolumeKey);
     final approachSystemVolume = prefs.getDouble(_approachSystemVolumeKey);
+    final vibrationIntensity = prefs.getDouble(_vibrationIntensityKey);
 
     _settings = AppSettings(
       themeMode: themeIndex != null && themeIndex < ThemeMode.values.length
@@ -50,6 +52,9 @@ class SettingsService {
       approachSystemVolume: AppSettings.clampApproachSystemVolume(
         approachSystemVolume ?? AppSettings.defaultApproachSystemVolume,
       ),
+      vibrationIntensity: AppSettings.clampVibrationIntensity(
+        vibrationIntensity ?? AppSettings.defaultVibrationIntensity,
+      ),
     );
   }
 
@@ -65,6 +70,10 @@ class SettingsService {
     await prefs.setDouble(
       _approachSystemVolumeKey,
       AppSettings.clampApproachSystemVolume(settings.approachSystemVolume),
+    );
+    await prefs.setDouble(
+      _vibrationIntensityKey,
+      AppSettings.clampVibrationIntensity(settings.vibrationIntensity),
     );
   }
 }

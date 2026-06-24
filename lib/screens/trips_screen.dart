@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/destination.dart';
+import '../models/favorite_transit_line.dart';
 import '../models/favorite_destination.dart';
+import '../models/destination.dart';
 import '../models/monitoring_state.dart';
 import '../models/trip_history_entry.dart';
+import '../providers/favorite_transit_line_provider.dart';
 import '../providers/destination_history_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
@@ -14,6 +16,8 @@ import '../providers/navigation_provider.dart';
 import '../providers/trip_history_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
+import '../widgets/add_favorite_destination_sheet.dart';
+import '../widgets/favorite_transit_lines_section.dart';
 import '../widgets/destination_picker_sheet.dart';
 import '../widgets/empty_state_message.dart';
 import '../widgets/home_card.dart';
@@ -39,6 +43,10 @@ class TripsScreen extends StatelessWidget {
         context.select<DestinationHistoryProvider, List<FavoriteDestination>>(
       (provider) => provider.favorites,
     );
+    final lineFavorites =
+        context.select<FavoriteTransitLineProvider, List<FavoriteTransitLine>>(
+      (provider) => provider.favorites,
+    );
     final history = context.select<TripHistoryProvider, List<TripHistoryEntry>>(
       (provider) => provider.completedTrips.take(10).toList(growable: false),
     );
@@ -47,6 +55,7 @@ class TripsScreen extends StatelessWidget {
     );
     final hasAnyTrips = recentDestinations.isNotEmpty ||
         favorites.isNotEmpty ||
+        lineFavorites.isNotEmpty ||
         history.isNotEmpty ||
         missedTrips.isNotEmpty;
 
@@ -76,6 +85,8 @@ class TripsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _FavoriteSection(favorites: favorites),
+          const SizedBox(height: 16),
+          FavoriteTransitLinesSection(favorites: lineFavorites),
           const SizedBox(height: 16),
           _HistorySection(
             title: 'Trip History',
@@ -146,10 +157,29 @@ class _FavoriteSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const HomeCardHeader(
-            icon: Icons.star_outline,
-            title: 'Favorite Destinations',
-            iconColor: Color(0xFF4CC9F0),
+          Row(
+            children: [
+              const Expanded(
+                child: HomeCardHeader(
+                  icon: Icons.star_outline,
+                  title: 'Favorite Destinations',
+                  iconColor: Color(0xFF4CC9F0),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () =>
+                    unawaited(AddFavoriteDestinationSheet.show(context)),
+                icon: const Icon(Icons.add),
+                label: const Text('Add'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Saved stops for quick access when setting your destination.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 12),
           if (favorites.isEmpty)
@@ -199,21 +229,25 @@ class _DestinationListTile extends StatelessWidget {
       leading: const Icon(Icons.place_outlined),
       title: Text(destination.name),
       subtitle: subtitle == null ? null : Text(subtitle!),
-      trailing: !isMonitoring
-          ? IconButton(
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isMonitoring)
+            IconButton(
               icon: const Icon(Icons.play_arrow_rounded),
               tooltip: 'Use and start monitoring',
               onPressed: () => unawaited(
                 _selectAndStartMonitoring(context, destination),
               ),
-            )
-          : onDelete != null
-              ? IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Remove favorite',
-                  onPressed: onDelete,
-                )
-              : null,
+            ),
+          if (onDelete != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Remove favorite',
+              onPressed: onDelete,
+            ),
+        ],
+      ),
       onTap: () => unawaited(_selectDestination(context, destination)),
     );
   }

@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../utils/app_branding.dart';
 import '../../widgets/branding_logo.dart';
 import '../../widgets/settings_section_tile.dart';
+import '../transit_data_licenses_screen.dart';
 import '../about_screen.dart';
 import '../our_story_screen.dart';
 
@@ -72,6 +73,20 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const OurStoryScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 32),
+          const SettingsSectionHeader(title: 'Open Data'),
+          SettingsNavTile(
+            icon: Icons.gavel_outlined,
+            title: 'Transit Data Licenses',
+            subtitle: 'Agency attribution and GTFS terms',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TransitDataLicensesScreen(),
                 ),
               );
             },

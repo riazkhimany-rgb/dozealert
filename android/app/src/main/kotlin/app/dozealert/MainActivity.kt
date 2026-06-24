@@ -1,15 +1,40 @@
 package app.dozealert
 
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
+import android.os.Bundle
+import app.dozealert.wear.WearBridge
+import app.dozealert.wear.WearPaths
+import app.dozealert.wear.WearSyncManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import kotlin.math.roundToInt
 
 class MainActivity : FlutterActivity() {
+    private var wearCommandSink: EventChannel.EventSink? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        deliverWearCommandFromIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        deliverWearCommandFromIntent(intent)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        WearBridge.commandHandler = { command ->
+            runOnUiThread {
+                wearCommandSink?.success(command)
+            }
+        }
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -36,6 +61,62 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            WEAR_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "pushTripState" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val fields = call.arguments as? Map<String, Any?>
+                    if (fields == null) {
+                        result.error("invalid_argument", "state map is required", null)
+                        return@setMethodCallHandler
+                    }
+
+                    WearSyncManager.getInstance(this).pushTripState(fields)
+                    result.success(null)
+                }
+
+                "consumePendingWearCommand" -> {
+                    result.success(WearBridge.consumePendingCommand())
+                }
+
+                else -> result.notImplemented()
+            }
+        }
+
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            WEAR_EVENT_CHANNEL,
+        ).setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    wearCommandSink = events
+                    WearBridge.consumePendingCommand()?.let { command ->
+                        events?.success(command)
+                    }
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    wearCommandSink = null
+                }
+            },
+        )
+    }
+
+    override fun onDestroy() {
+        if (isFinishing) {
+            WearBridge.commandHandler = null
+        }
+        super.onDestroy()
+    }
+
+    private fun deliverWearCommandFromIntent(intent: Intent?) {
+        val command = intent?.getStringExtra(WearPaths.EXTRA_WEAR_COMMAND) ?: return
+        intent.removeExtra(WearPaths.EXTRA_WEAR_COMMAND)
+        WearBridge.deliverCommand(this, command)
     }
 
     private fun readMusicVolume(audioManager: AudioManager): Double {
@@ -65,5 +146,7 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val SYSTEM_VOLUME_CHANNEL = "app.dozealert/system_volume"
+        private const val WEAR_CHANNEL = "app.dozealert/wear"
+        private const val WEAR_EVENT_CHANNEL = "app.dozealert/wear_commands"
     }
 }

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DozeAlert transit open data attributions and agency licence links.">
+  <meta name="theme-color" content="#0D1B2A">
+  <title>Transit Data Licenses &mdash; DozeAlert</title>
+  <link rel="icon" type="image/png" href="../assets/icon-512.png">
+  <style>
+    :root {
+      --midnight: #0D1B2A;
+      --cyan: #4CC9F0;
+      --white: #FFFFFF;
+      --muted: #94a3b8;
+      --card: #1B3147;
+      --radius: 16px;
+      --max-width: 720px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--midnight);
+      color: var(--white);
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+    .glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(76, 201, 240, 0.15), transparent);
+      z-index: 0;
+    }
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+    .nav { margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .nav a { color: var(--cyan); text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .meta { color: var(--muted); font-size: 0.875rem; margin-bottom: 2rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(76, 201, 240, 0.12);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 {
+      font-size: 1.125rem;
+      color: var(--cyan);
+      margin-bottom: 0.75rem;
+    }
+    .card p, .card li { color: #cbd5e1; font-size: 0.9375rem; }
+    .card ul { padding-left: 1.25rem; margin-top: 0.5rem; }
+    .card li + li { margin-top: 0.35rem; }
+    .agency {
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .agency:last-child { border-bottom: none; padding-bottom: 0; }
+    .agency h3 {
+      font-size: 1rem;
+      margin-bottom: 0.35rem;
+      color: var(--white);
+    }
+    .agency p { margin-bottom: 0.5rem; }
+    .agency a {
+      color: var(--cyan);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      word-break: break-word;
+    }
+    .agency a:hover { color: var(--white); }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-left: 0.35rem;
+    }
+    footer {
+      margin-top: 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+    footer a { color: var(--cyan); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="wrap">
+    <nav class="nav"><a href="../index.html">&larr; dozealert.app</a></nav>
+
+    <h1>Transit Data Licenses</h1>
+    <p class="meta">Open data attributions for agencies supported in DozeAlert</p>
+
+    <section class="card">
+      <h2>Open data notice</h2>
+      <p>
+        DozeAlert uses public GTFS schedule and stop data from transit agencies.
+        Data is cached on your device for offline alarms and is not redistributed
+        by DozeAlert. Each agency sets its own open data terms &mdash; review them
+        before downloading or importing feeds.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Bundled stop lists</h2>
+      <p>
+        GO Transit and TTC ship with bundled stop lists so alarms work before you
+        download full GTFS. Bundled data may be older than the agency feed &mdash;
+        download or import GTFS in the app for the latest stops.
+      </p>
+      <div class="agency">
+        <h3>GO Transit</h3>
+        <p>Contains data from GO Transit (Metrolinx) Open Data Catalogue.</p>
+        <a href="https://www.gotransit.com/en/partner-with-us/software-developers" rel="noopener noreferrer">Metrolinx GTFS Access and Use Agreement</a>
+      </div>
+      <div class="agency">
+        <h3>TTC</h3>
+        <p>Contains data licensed under the City of Toronto Open Data License.</p>
+        <a href="https://open.toronto.ca/open-data-licence/" rel="noopener noreferrer">Open Government Licence &ndash; Toronto</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>GTFS catalog agencies</h2>
+      <p style="margin-bottom: 1rem;">Agencies with feeds in the DozeAlert transit catalog.</p>
+
+      <div class="agency">
+        <h3>Brampton Transit</h3>
+        <p>Contains data from Brampton Transit Open Data (manual download).</p>
+        <a href="https://geohub.brampton.ca/datasets/a355aabd5a8c490186bdce559c9c75fb" rel="noopener noreferrer">Brampton Transit GTFS dataset</a>
+      </div>
+      <div class="agency">
+        <h3>Burlington Transit</h3>
+        <p>Contains data from Burlington Transit Open Data.</p>
+        <a href="https://opendata.burlington.ca/" rel="noopener noreferrer">Burlington Open Data</a>
+      </div>
+      <div class="agency">
+        <h3>Durham Region Transit</h3>
+        <p>Contains data from Durham Region Transit Open Data.</p>
+        <a href="https://www.durham.ca/en/regional-government/open-data.aspx" rel="noopener noreferrer">Durham Region Open Data Licence</a>
+      </div>
+      <div class="agency">
+        <h3>GO Transit</h3>
+        <p>Contains data from GO Transit (Metrolinx) Open Data Catalogue.</p>
+        <a href="https://www.gotransit.com/en/partner-with-us/software-developers" rel="noopener noreferrer">Metrolinx GTFS Access and Use Agreement</a>
+      </div>
+      <div class="agency">
+        <h3>Grand River Transit</h3>
+        <p>Contains data from Grand River Transit Open Data (manual download).</p>
+        <a href="https://www.regionofwaterloo.ca/government-and-council/transparency-and-accountability/open-data/" rel="noopener noreferrer">Region of Waterloo Open Data Licence</a>
+      </div>
+      <div class="agency">
+        <h3>Hamilton Street Railway</h3>
+        <p>Contains data from Hamilton Street Railway Open Data.</p>
+        <a href="https://opendata.hamilton.ca/GTFS-Static/" rel="noopener noreferrer">Hamilton Open Data GTFS</a>
+      </div>
+      <div class="agency">
+        <h3>MiWay</h3>
+        <p>Contains data from MiWay Open GTFS.</p>
+        <a href="https://www.mississauga.ca/miway-transit/developer-download/" rel="noopener noreferrer">MiWay Developer Download</a>
+      </div>
+      <div class="agency">
+        <h3>Milton Transit</h3>
+        <p>Contains data from Milton Transit GTFS (Metrolinx host).</p>
+        <a href="https://www.gotransit.com/en/partner-with-us/software-developers" rel="noopener noreferrer">Metrolinx GTFS Access and Use Agreement</a>
+      </div>
+      <div class="agency">
+        <h3>Niagara Region Transit</h3>
+        <p>Contains data from Niagara Region Transit Open Data.</p>
+        <a href="https://niagaraopendata.ca/pages/open-government-license-2-0-niagara-region" rel="noopener noreferrer">Open Government Licence &ndash; Niagara Region</a>
+      </div>
+      <div class="agency">
+        <h3>Oakville Transit</h3>
+        <p>Contains data from Oakville Transit Open Data.</p>
+        <a href="https://www.oakvilletransit.ca/" rel="noopener noreferrer">Oakville Transit</a>
+      </div>
+      <div class="agency">
+        <h3>TTC</h3>
+        <p>Contains data licensed under the City of Toronto Open Data License.</p>
+        <a href="https://open.toronto.ca/open-data-licence/" rel="noopener noreferrer">Open Government Licence &ndash; Toronto</a>
+      </div>
+      <div class="agency">
+        <h3>York Region Transit</h3>
+        <p>Contains data from York Region Transit Open Data (review YRT terms).</p>
+        <a href="https://www.yrt.ca/en/about-us/open-data.aspx" rel="noopener noreferrer">YRT Open Data</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Listed agencies without catalog GTFS</h2>
+      <p style="margin-bottom: 1rem;">
+        Line names are listed for convenience. Schedule and stop data is subject to
+        agency open data terms when you import GTFS.
+      </p>
+
+      <div class="agency">
+        <h3>Amtrak</h3>
+        <a href="https://www.amtrak.com/developer-resources" rel="noopener noreferrer">Amtrak developer resources</a>
+      </div>
+      <div class="agency">
+        <h3>Exo</h3>
+        <a href="https://exo.quebec/fr/a-propos/donnees-ouvertes" rel="noopener noreferrer">Exo open data</a>
+      </div>
+      <div class="agency">
+        <h3>MTA</h3>
+        <a href="https://www.mta.info/developers/developer-data-terms" rel="noopener noreferrer">MTA developer data terms</a>
+      </div>
+      <div class="agency">
+        <h3>OC Transpo</h3>
+        <a href="https://open.ottawa.ca/pages/open-data-licence" rel="noopener noreferrer">City of Ottawa Open Data Licence</a>
+      </div>
+      <div class="agency">
+        <h3>STM Montreal</h3>
+        <a href="https://www.stm.info/en/about/developers" rel="noopener noreferrer">STM developers</a>
+      </div>
+      <div class="agency">
+        <h3>TransLink Vancouver</h3>
+        <a href="https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs/gtfs-data" rel="noopener noreferrer">TransLink GTFS static data</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>In the app</h2>
+      <p>
+        The same attributions and licence links are available in DozeAlert under
+        <strong>Settings &rarr; About &rarr; Open Data</strong>.
+      </p>
+    </section>
+
+    <footer>
+      <p>
+        <a href="../index.html">dozealert.app</a>
+        &middot; <a href="../privacy/index.html">Privacy Policy</a>
+        &middot; &copy; DozeAlert
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

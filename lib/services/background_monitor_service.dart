@@ -240,6 +240,7 @@ class BackgroundMonitorService {
       final longitude = data['longitude'];
       final speed = data['speed'];
       final accuracy = data['accuracy'];
+      final heading = data['heading'];
       final timestamp = data['timestamp'];
 
       if (latitude is! num ||
@@ -257,6 +258,7 @@ class BackgroundMonitorService {
           speed: speed.toDouble(),
           accuracy: accuracy.toDouble(),
           timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp),
+          heading: heading is num ? heading.toDouble() : -1,
         ),
       );
       return;

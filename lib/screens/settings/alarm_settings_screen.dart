@@ -25,6 +25,9 @@ class AlarmSettingsScreen extends StatelessWidget {
     final approachSystemVolume = context.select<SettingsProvider, double>(
       (provider) => provider.approachSystemVolume,
     );
+    final vibrationIntensity = context.select<SettingsProvider, double>(
+      (provider) => provider.vibrationIntensity,
+    );
     final alwaysPlaySound =
         alarmSoundMode == AlarmSoundMode.alwaysPlaySound;
 
@@ -167,14 +170,42 @@ class AlarmSettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 32),
           const SettingsSectionHeader(title: 'Vibration'),
-          ListTile(
-            leading: Icon(Icons.vibration, color: colorScheme.primary),
-            title: const Text('Vibration'),
-            subtitle: Text(
-              'Vibration is always enabled when supported.',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Row(
+              children: [
+                Icon(Icons.vibration, color: colorScheme.onSurfaceVariant),
+                Expanded(
+                  child: Slider(
+                    value: vibrationIntensity,
+                    min: AppSettings.minVibrationIntensity,
+                    max: 1.0,
+                    divisions: 18,
+                    label: '${_percentLabel(vibrationIntensity)}%',
+                    onChanged: (value) async {
+                      await context
+                          .read<SettingsProvider>()
+                          .setVibrationIntensity(value);
+                      if (!context.mounted) {
+                        return;
+                      }
+                      await alarmService.updateActiveAlarmVibration();
+                    },
+                  ),
+                ),
+                Icon(Icons.smartphone, color: colorScheme.onSurfaceVariant),
+              ],
             ),
-            trailing: const Text('On'),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Text(
+              'Vibration is always on when supported. Intensity applies on '
+              'devices with amplitude control.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           const Divider(height: 32),
           const SettingsSectionHeader(title: 'Test Alarm'),

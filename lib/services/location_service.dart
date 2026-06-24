@@ -78,9 +78,9 @@ class LocationService {
     return Geolocator.isLocationServiceEnabled();
   }
 
-  Future<void> startTracking() async {
+  Future<void> startTracking({bool highAccuracy = false}) async {
     if (_tracking) {
-      return;
+      await stopTracking();
     }
 
     _tracking = true;
@@ -90,19 +90,23 @@ class LocationService {
       _emitLocation(lastKnown);
     }
 
-    await _emitCurrentLocation();
+    await _emitCurrentLocation(highAccuracy: highAccuracy);
 
     await _positionSubscription?.cancel();
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: Platform.isAndroid
           ? AndroidSettings(
-              accuracy: LocationAccuracy.medium,
-              distanceFilter: 5,
-              intervalDuration: const Duration(seconds: 5),
+              accuracy: highAccuracy
+                  ? LocationAccuracy.high
+                  : LocationAccuracy.medium,
+              distanceFilter: highAccuracy ? 3 : 5,
+              intervalDuration: Duration(seconds: highAccuracy ? 3 : 5),
             )
           : AppleSettings(
-              accuracy: LocationAccuracy.medium,
-              distanceFilter: 5,
+              accuracy: highAccuracy
+                  ? LocationAccuracy.high
+                  : LocationAccuracy.medium,
+              distanceFilter: highAccuracy ? 3 : 5,
             ),
     ).listen(
       (position) => _emitLocation(_locationFromPosition(position)),
@@ -138,12 +142,13 @@ class LocationService {
     }
   }
 
-  Future<CurrentLocation?> fetchCurrentLocation() async {
+  Future<CurrentLocation?> fetchCurrentLocation({bool highAccuracy = true}) async {
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 12),
+        locationSettings: LocationSettings(
+          accuracy:
+              highAccuracy ? LocationAccuracy.high : LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 12),
         ),
       );
 
@@ -158,13 +163,13 @@ class LocationService {
     }
   }
 
-  Future<void> _emitCurrentLocation() async {
+  Future<void> _emitCurrentLocation({bool highAccuracy = false}) async {
     if (!_tracking) {
       return;
     }
 
     try {
-      final location = await fetchCurrentLocation();
+      final location = await fetchCurrentLocation(highAccuracy: highAccuracy);
       if (location != null) {
         _emitLocation(location);
       }
@@ -182,6 +187,7 @@ class LocationService {
       speed: position.speed,
       accuracy: position.accuracy,
       timestamp: position.timestamp,
+      heading: position.heading,
     );
   }
 

@@ -4,14 +4,22 @@ import '../models/destination.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_stop.dart';
 import 'gtfs_service.dart';
+import 'route_geometry_service.dart';
 
 class TransitModeService {
-  TransitModeService(this._gtfsService);
+  TransitModeService(
+    this._gtfsService, [
+    RouteGeometryService? routeGeometryService,
+  ]) : _routeGeometry = routeGeometryService ?? RouteGeometryService();
 
   final GtfsService _gtfsService;
+  final RouteGeometryService _routeGeometry;
 
-  /// Max GPS distance to a route stop before we treat the user as off-route.
+  /// Max perpendicular distance from the route polyline before off-route.
   static const defaultMaxStopProximityMeters = 1000;
+
+  /// Tighter radius for snapping GPS to a route stop (separate from wake distance).
+  static const routeStopMatchMeters = 400;
 
   TransitModeSnapshot evaluate({
     required Destination? destination,
@@ -19,6 +27,8 @@ class TransitModeService {
     required double? longitude,
     String? routeId,
     int maxStopProximityMeters = defaultMaxStopProximityMeters,
+    double? headingDegrees,
+    double? speedMps,
   }) {
     if (destination == null || latitude == null || longitude == null) {
       return TransitModeSnapshot.inactive;
@@ -43,14 +53,43 @@ class TransitModeService {
       destination: destination,
       routeId: resolvedRouteId,
     );
-    final currentStop = getCurrentStop(
+    if (destinationStop == null) {
+      return TransitModeSnapshot.inactive;
+    }
+
+    final polyline = _routeGeometry.buildPolyline(
+      routeStops: routeStops,
+      destinationStop: destinationStop,
+    );
+    final projection = _routeGeometry.projectOnPolyline(
+      polyline: polyline,
       latitude: latitude,
       longitude: longitude,
-      routeId: resolvedRouteId,
-      maxProximityMeters: maxStopProximityMeters,
     );
 
-    if (destinationStop == null || currentStop == null) {
+    final currentStop = projection == null
+        ? getCurrentStop(
+            latitude: latitude,
+            longitude: longitude,
+            routeId: resolvedRouteId,
+            maxProximityMeters: maxStopProximityMeters,
+          )
+        : _routeGeometry.matchCurrentStop(
+            polyline: polyline,
+            projection: projection,
+            destinationStop: destinationStop,
+            maxOffRouteMeters: maxStopProximityMeters,
+            headingDegrees: headingDegrees,
+            speedMps: speedMps,
+          ) ??
+            getCurrentStop(
+              latitude: latitude,
+              longitude: longitude,
+              routeId: resolvedRouteId,
+              maxProximityMeters: maxStopProximityMeters,
+            );
+
+    if (currentStop == null) {
       return TransitModeSnapshot.inactive;
     }
 
@@ -69,6 +108,17 @@ class TransitModeService {
       destinationStop: destinationStop,
     );
 
+    double? alongRouteRemainingMeters;
+    double? offRouteMeters;
+    if (projection != null) {
+      offRouteMeters = projection.offRouteMeters;
+      alongRouteRemainingMeters = _routeGeometry.alongRouteRemainingMeters(
+        polyline: polyline,
+        projection: projection,
+        destinationStop: destinationStop,
+      );
+    }
+
     final status = stopsRemaining == 0
         ? 'At destination'
         : 'Approaching destination';
@@ -83,6 +133,8 @@ class TransitModeService {
       previousStop: previousStop,
       nextStop: nextStop,
       stopsRemaining: stopsRemaining,
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
+      offRouteMeters: offRouteMeters,
       status: status,
     );
   }

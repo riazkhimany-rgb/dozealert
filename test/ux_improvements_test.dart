@@ -1,6 +1,7 @@
 import 'package:dozealert/data/transit_catalog.dart';
 import 'package:dozealert/models/app_permission_snapshot.dart';
 import 'package:dozealert/models/destination.dart';
+import 'package:dozealert/models/favorite_transit_line.dart';
 import 'package:dozealert/models/favorite_destination.dart';
 import 'package:dozealert/models/monitoring_state.dart';
 import 'package:dozealert/providers/monitoring_provider.dart';
@@ -42,6 +43,35 @@ void main() {
 
     final removed = await preferencesService.removeFavorite(destination);
     expect(removed, isEmpty);
+  });
+
+  test('PreferencesService persists favorite transit lines add and remove', () async {
+    SharedPreferences.setMockInitialValues({});
+
+    const favorite = FavoriteTransitLine(
+      country: 'Canada',
+      region: 'Ontario',
+      transitSystem: 'TTC',
+      lineName: 'Line 1',
+    );
+
+    final preferencesService = PreferencesService();
+    final added = await preferencesService.addFavoriteTransitLine(favorite);
+    expect(added, hasLength(1));
+    expect(added.first.label, 'TTC · Line 1');
+
+    final duplicate = await preferencesService.addFavoriteTransitLine(favorite);
+    expect(duplicate, hasLength(1));
+
+    final removed = await preferencesService.removeFavoriteTransitLine(favorite);
+    expect(removed, isEmpty);
+  });
+
+  test('PreferencesService loads empty favorite transit lines by default', () async {
+    SharedPreferences.setMockInitialValues({});
+
+    final preferencesService = PreferencesService();
+    expect(await preferencesService.loadFavoriteTransitLines(), isEmpty);
   });
 
   test('AppPermissionSnapshot detects incomplete monitoring permissions', () {

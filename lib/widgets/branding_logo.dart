@@ -36,8 +36,19 @@ class BrandingLogo extends StatelessWidget {
     if (!showDarkBadge) {
       return SizedBox(
         width: width,
-        height: height,
-        child: logo,
+        height: height * 1.15,
+        child: Align(
+          alignment: Alignment.center,
+          child: Image.asset(
+            AppBranding.splashLogoAsset,
+            width: width,
+            height: height,
+            fit: BoxFit.contain,
+            alignment: Alignment.center,
+            filterQuality: FilterQuality.high,
+            semanticLabel: '${AppBranding.appName} logo',
+          ),
+        ),
       );
     }
 

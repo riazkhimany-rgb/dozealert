@@ -2,14 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../data/transit_catalog.dart';
 import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
+import '../utils/external_link_launcher.dart';
 import '../widgets/home_card.dart';
+import '../widgets/transit_attribution_notice.dart';
 
 class TransitPreferencesSection extends StatelessWidget {
   const TransitPreferencesSection({
@@ -119,6 +120,13 @@ class TransitPreferencesSection extends StatelessWidget {
             ),
           ),
         ],
+        Padding(
+          padding: cardPadding,
+          child: TransitAttributionNotice(
+            agencyName: preferences.transitSystem,
+            compact: true,
+          ),
+        ),
       ],
     );
   }
@@ -243,17 +251,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
       }
     }
 
-    final uri = Uri.parse(url);
-    if (!await canLaunchUrl(uri)) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open $url')),
-      );
-      return;
-    }
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    await ExternalLinkLauncher.openOrSnackBar(context, url);
   }
 
   @override

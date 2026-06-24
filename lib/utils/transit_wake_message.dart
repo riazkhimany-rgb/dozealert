@@ -7,6 +7,7 @@ abstract final class TransitWakeMessage {
     required TransitModeSnapshot snapshot,
     required bool isMonitoring,
     String? selectedLine,
+    bool gpsSignalLost = false,
   }) {
     if (!transitModeEnabled) {
       return 'Waking by distance to destination';
@@ -17,6 +18,9 @@ abstract final class TransitWakeMessage {
     }
 
     if (snapshot.isActive) {
+      if (gpsSignalLost) {
+        return 'GPS signal weak — showing last known position on $selectedLine';
+      }
       if (snapshot.stopsRemaining == 0) {
         return 'At destination stop on $selectedLine';
       }

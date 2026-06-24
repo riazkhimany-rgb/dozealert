@@ -20,6 +20,7 @@ class MonitoringStorageService {
   static const radiusKey = 'monitoring_radius_meters';
   static const arrivalTriggeredKey = 'monitoring_arrival_triggered';
   static const monitoringStartedAtKey = 'monitoring_started_at_ms';
+  static const transitOnRouteKey = 'transit_on_route_active';
 
   Future<void> saveSession({
     required bool isActive,
@@ -99,5 +100,16 @@ class MonitoringStorageService {
     await prefs.remove(stateKey);
     await prefs.remove(monitoringStartedAtKey);
     await prefs.setBool(arrivalTriggeredKey, false);
+    await prefs.setBool(transitOnRouteKey, false);
+  }
+
+  Future<void> setTransitOnRouteActive(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(transitOnRouteKey, value);
+  }
+
+  Future<bool> isTransitOnRouteActive() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(transitOnRouteKey) ?? false;
   }
 }

@@ -10,6 +10,7 @@ import 'package:dozealert/cache/gtfs_cache_store.dart';
 import 'package:dozealert/main.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/screens/home_screen.dart';
+import 'package:dozealert/providers/favorite_transit_line_provider.dart';
 import 'package:dozealert/providers/destination_history_provider.dart';
 import 'package:dozealert/providers/gtfs_feed_provider.dart';
 import 'package:dozealert/providers/gtfs_provider.dart';
@@ -131,6 +132,10 @@ Future<DozeAlertApp> _createTestApp() async {
       DestinationHistoryProvider(preferencesService);
   await destinationHistoryProvider.load();
 
+  final favoriteTransitLineProvider =
+      FavoriteTransitLineProvider(preferencesService);
+  await favoriteTransitLineProvider.load();
+
   final monitoringProvider = MonitoringProvider(
     destinationStorageService,
     monitoringStorageService,
@@ -152,6 +157,7 @@ Future<DozeAlertApp> _createTestApp() async {
     transitModeService,
     settingsService,
     monitoringProvider,
+    monitoringStorageService,
   );
   final gtfsProvider = GtfsProvider(
     gtfsService,
@@ -199,6 +205,7 @@ Future<DozeAlertApp> _createTestApp() async {
     destinationStorageService: destinationStorageService,
     monitoringProvider: monitoringProvider,
     destinationHistoryProvider: destinationHistoryProvider,
+    favoriteTransitLineProvider: favoriteTransitLineProvider,
     tripHistoryService: tripHistoryService,
     tripHistoryProvider: tripHistoryProvider,
       onboardingService: onboardingService,
@@ -253,9 +260,9 @@ void main() {
     );
     await _pumpUntilSettled(tester);
 
-    expect(find.text('Favorites'), findsOneWidget);
+    expect(find.text('Favorite destinations'), findsOneWidget);
 
-    await tester.tap(find.text('Favorites'));
+    await tester.tap(find.text('Favorite destinations'));
     await _pumpUntilSettled(tester);
 
     expect(find.text('Union Station'), findsWidgets);

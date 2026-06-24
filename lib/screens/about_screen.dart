@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/app_branding.dart';
+import '../utils/external_link_launcher.dart';
 import '../widgets/branding_logo.dart';
 import 'privacy_policy_screen.dart';
 import 'share_screen.dart';
@@ -10,11 +10,8 @@ import 'share_screen.dart';
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+  Future<void> _launchUrl(BuildContext context, String url) async {
+    await ExternalLinkLauncher.openOrSnackBar(context, url);
   }
 
   @override
@@ -83,13 +80,14 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: () => _launchUrl(AppBranding.privacyPolicyUrl),
+                onPressed: () =>
+                    _launchUrl(context, AppBranding.privacyPolicyUrl),
                 icon: const Icon(Icons.language_outlined),
                 label: const Text('Privacy Policy (Web)'),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: () => _launchUrl(AppBranding.githubUrl),
+                onPressed: () => _launchUrl(context, AppBranding.githubUrl),
                 icon: const Icon(Icons.code_outlined),
                 label: const Text('GitHub Repository'),
               ),

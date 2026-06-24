@@ -7,9 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'monitoring_storage_service.dart';
 import '../models/monitoring_state.dart';
+import '../services/monitoring_storage_service.dart';
 
 const _testModeArrivalThresholdMeters = 5000.0;
 const _testModeKey = 'test_mode_enabled';
+const _transitModeEnabledKey = 'transit_mode_enabled';
 const _destinationNameKey = 'selected_destination_name';
 const _destinationLatitudeKey = 'selected_destination_latitude';
 const _destinationLongitudeKey = 'selected_destination_longitude';
@@ -27,6 +29,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   double? _destinationLongitude;
   int _radiusMeters = 1000;
   bool _testModeEnabled = false;
+  bool _transitModeEnabled = false;
+  bool _transitOnRoute = false;
   bool _arrivalTriggered = false;
   int? _monitoringStartedAtMs;
 
@@ -69,6 +73,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _destinationLongitude = prefs.getDouble(_destinationLongitudeKey);
     _radiusMeters = prefs.getInt(MonitoringStorageService.radiusKey) ?? 1000;
     _testModeEnabled = prefs.getBool(_testModeKey) ?? false;
+    _transitModeEnabled = prefs.getBool(_transitModeEnabledKey) ?? false;
+    _transitOnRoute = prefs.getBool(MonitoringStorageService.transitOnRouteKey) ?? false;
     _arrivalTriggered =
         prefs.getBool(MonitoringStorageService.arrivalTriggeredKey) ?? false;
     _monitoringStartedAtMs =
@@ -89,9 +95,9 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
 
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: AndroidSettings(
-        accuracy: LocationAccuracy.medium,
-        distanceFilter: 10,
-        intervalDuration: const Duration(seconds: 10),
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 5,
+        intervalDuration: const Duration(seconds: 5),
         foregroundNotificationConfig: null,
       ),
     ).listen(
@@ -110,12 +116,17 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       return;
     }
 
+    if (position.accuracy > 150) {
+      return;
+    }
+
     FlutterForegroundTask.sendDataToMain(<String, Object>{
       'type': 'location',
       'latitude': position.latitude,
       'longitude': position.longitude,
       'speed': position.speed,
       'accuracy': position.accuracy,
+      'heading': position.heading,
       'timestamp': position.timestamp.millisecondsSinceEpoch,
     });
 
@@ -136,6 +147,11 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     await _refreshNotification(distanceKm: distanceMeters / 1000);
 
     if (_arrivalTriggered) {
+      return;
+    }
+
+    // Transit mode: stop-based wake in foreground. Allow distance only as fallback.
+    if (_transitModeEnabled && _transitOnRoute) {
       return;
     }
 

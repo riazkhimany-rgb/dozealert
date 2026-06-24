@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/destination_history_provider.dart';
+import '../providers/favorite_transit_line_provider.dart';
 import '../providers/gtfs_provider.dart';
-import '../screens/destination_screen.dart';
 import '../screens/map_picker_screen.dart';
+import 'favorite_lines_picker_sheet.dart';
+import 'favorite_stops_picker_sheet.dart';
+import 'accessible_scroll_body.dart';
 import 'stop_picker_sheet.dart';
 
 class DestinationPickerSheet extends StatelessWidget {
@@ -24,14 +28,16 @@ class DestinationPickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final canPickStop = context.watch<GtfsProvider>().canShowStopPicker();
+    final favoriteStopCount =
+        context.watch<DestinationHistoryProvider>().favorites.length;
+    final favoriteLineCount =
+        context.watch<FavoriteTransitLineProvider>().favorites.length;
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return AccessibleSheetBody(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             Text(
               'Set destination',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -59,19 +65,6 @@ class DestinationPickerSheet extends StatelessWidget {
                 );
               },
             ),
-            _PickerOption(
-              icon: Icons.star_outline,
-              title: 'Favorites',
-              subtitle: 'Pick from saved destinations',
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DestinationScreen(),
-                  ),
-                );
-              },
-            ),
             if (canPickStop)
               _PickerOption(
                 icon: Icons.route_outlined,
@@ -82,8 +75,29 @@ class DestinationPickerSheet extends StatelessWidget {
                   StopPickerSheet.show(context);
                 },
               ),
+            _PickerOption(
+              icon: Icons.star_outline,
+              title: 'Favorite destinations',
+              subtitle: favoriteStopCount == 0
+                  ? 'No saved destinations yet'
+                  : '$favoriteStopCount saved destination${favoriteStopCount == 1 ? '' : 's'}',
+              onTap: () {
+                Navigator.of(context).pop();
+                FavoriteStopsPickerSheet.show(context);
+              },
+            ),
+            _PickerOption(
+              icon: Icons.swap_horiz,
+              title: 'Quick switch line',
+              subtitle: favoriteLineCount == 0
+                  ? 'No saved lines yet'
+                  : '$favoriteLineCount saved line${favoriteLineCount == 1 ? '' : 's'}',
+              onTap: () {
+                Navigator.of(context).pop();
+                FavoriteLinesPickerSheet.show(context);
+              },
+            ),
           ],
-        ),
       ),
     );
   }

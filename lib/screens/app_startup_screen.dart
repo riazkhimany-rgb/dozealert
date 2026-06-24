@@ -10,14 +10,13 @@ import '../providers/gtfs_provider.dart';
 import '../providers/trip_history_provider.dart';
 import '../services/onboarding_service.dart';
 import '../utils/app_branding.dart';
-import '../widgets/branding_logo.dart';
 import 'branded_splash_screen.dart';
 import 'main_screen.dart';
 import 'onboarding_screen.dart';
 
 enum _StartupPhase {
   splash,
-  loading,
+  bootstrapping,
   onboarding,
   main,
 }
@@ -43,35 +42,55 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
   void initState() {
     super.initState();
     if (widget.skipSplash) {
-      _phase = widget.skipBootstrap
-          ? _StartupPhase.main
-          : _StartupPhase.loading;
       FlutterNativeSplash.remove();
-      if (!widget.skipBootstrap) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          unawaited(_bootstrap());
-        });
+      if (widget.skipBootstrap) {
+        _phase = _StartupPhase.main;
+        return;
       }
+      _phase = _StartupPhase.bootstrapping;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_bootstrapAndTransition());
+      });
       return;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FlutterNativeSplash.remove();
     });
-    _startSplashTimer();
+    unawaited(_finishSplashAndBootstrap());
   }
 
-  Future<void> _startSplashTimer() async {
-    await Future<void>.delayed(AppBranding.splashDisplayDuration);
+  Future<void> _finishSplashAndBootstrap() async {
+    if (widget.skipBootstrap) {
+      await Future<void>.delayed(AppBranding.splashDisplayDuration);
+      if (!mounted) {
+        return;
+      }
+      setState(() => _phase = _StartupPhase.main);
+      return;
+    }
+
+    final onboardingComplete = await Future.wait([
+      Future<void>.delayed(AppBranding.splashDisplayDuration),
+      _bootstrap(),
+    ]).then((results) => results[1] as bool);
+
     if (!mounted) {
       return;
     }
 
-    setState(() => _phase = _StartupPhase.loading);
-    await _bootstrap();
+    _setPhaseAfterBootstrap(onboardingComplete);
   }
 
-  Future<void> _bootstrap() async {
+  Future<void> _bootstrapAndTransition() async {
+    final onboardingComplete = await _bootstrap();
+    if (!mounted) {
+      return;
+    }
+    _setPhaseAfterBootstrap(onboardingComplete);
+  }
+
+  Future<bool> _bootstrap() async {
     final gtfsProvider = context.read<GtfsProvider>();
     final gtfsFeedProvider = context.read<GtfsFeedProvider>();
     final destinationHistoryProvider =
@@ -86,15 +105,10 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       tripHistoryProvider.load(),
     ]);
 
-    if (!mounted) {
-      return;
-    }
+    return onboardingService.isComplete();
+  }
 
-    final onboardingComplete = await onboardingService.isComplete();
-    if (!mounted) {
-      return;
-    }
-
+  void _setPhaseAfterBootstrap(bool onboardingComplete) {
     setState(() {
       _phase = onboardingComplete ? _StartupPhase.main : _StartupPhase.onboarding;
     });
@@ -104,40 +118,23 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
   Widget build(BuildContext context) {
     return switch (_phase) {
       _StartupPhase.splash => const BrandedSplashScreen(),
-      _StartupPhase.loading => const _BootstrapLoadingScreen(),
+      _StartupPhase.bootstrapping => const _BootstrappingScreen(),
       _StartupPhase.onboarding => const OnboardingScreen(),
       _StartupPhase.main => const MainScreen(),
     };
   }
 }
 
-class _BootstrapLoadingScreen extends StatelessWidget {
-  const _BootstrapLoadingScreen();
+/// Plain navy screen while bootstrapping (tests / skipSplash only).
+class _BootstrappingScreen extends StatelessWidget {
+  const _BootstrappingScreen();
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const BrandingHero(
-              logoHeight: 96,
-              showDarkBadge: true,
-            ),
-            const SizedBox(height: 32),
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(
-              'Loading transit data…',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+    return const ColoredBox(
+      color: AppBranding.midnightBlue,
+      child: Center(
+        child: CircularProgressIndicator(color: AppBranding.cyanAccent),
       ),
     );
   }

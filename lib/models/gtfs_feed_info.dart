@@ -8,6 +8,30 @@ enum GtfsFeedStatus {
   error,
 }
 
+/// How the user is expected to obtain GTFS data for a feed.
+enum TransitDataAccessMode {
+  inAppDownload,
+  manualImport,
+}
+
+extension TransitDataAccessModeX on TransitDataAccessMode {
+  String get label {
+    return switch (this) {
+      TransitDataAccessMode.inAppDownload => 'In-app download',
+      TransitDataAccessMode.manualImport => 'Manual import',
+    };
+  }
+
+  String get description {
+    return switch (this) {
+      TransitDataAccessMode.inAppDownload =>
+        'Download or update directly from Transit Data.',
+      TransitDataAccessMode.manualImport =>
+        'Download from the agency open data page, then use Import GTFS Zip.',
+    };
+  }
+}
+
 extension GtfsFeedStatusX on GtfsFeedStatus {
   String get label {
     return switch (this) {
@@ -32,6 +56,8 @@ class GtfsFeedInfo {
     this.openDataPageLabel,
     this.requiresUserAcknowledgement = false,
     this.acknowledgementMessage,
+    this.licenseUrl,
+    this.attributionText,
     this.agencyCount = 0,
     this.routeCount = 0,
     this.stopCount = 0,
@@ -51,6 +77,8 @@ class GtfsFeedInfo {
   final String? openDataPageLabel;
   final bool requiresUserAcknowledgement;
   final String? acknowledgementMessage;
+  final String? licenseUrl;
+  final String? attributionText;
   final int agencyCount;
   final int routeCount;
   final int stopCount;
@@ -79,6 +107,30 @@ class GtfsFeedInfo {
       status == GtfsFeedStatus.updating ||
       (stopCount > 0 && lastUpdated != null);
 
+  TransitDataAccessMode get dataAccessMode {
+    if (requiresUserAcknowledgement ||
+        (!hasDirectDownload && hasOpenDataPage)) {
+      return TransitDataAccessMode.manualImport;
+    }
+    if (hasDirectDownload) {
+      return TransitDataAccessMode.inAppDownload;
+    }
+    return TransitDataAccessMode.manualImport;
+  }
+
+  String get resolvedAttribution =>
+      attributionText?.trim().isNotEmpty == true
+          ? attributionText!.trim()
+          : 'Transit schedule and stop data provided by $agencyName.';
+
+  String? get resolvedLicenseUrl {
+    final license = licenseUrl?.trim();
+    if (license != null && license.isNotEmpty) {
+      return license;
+    }
+    return hasOpenDataPage ? openDataPageUrl : null;
+  }
+
   GtfsFeedInfo copyWith({
     String? feedId,
     String? agencyName,
@@ -90,6 +142,8 @@ class GtfsFeedInfo {
     String? openDataPageLabel,
     bool? requiresUserAcknowledgement,
     String? acknowledgementMessage,
+    String? licenseUrl,
+    String? attributionText,
     int? agencyCount,
     int? routeCount,
     int? stopCount,
@@ -111,6 +165,8 @@ class GtfsFeedInfo {
           requiresUserAcknowledgement ?? this.requiresUserAcknowledgement,
       acknowledgementMessage:
           acknowledgementMessage ?? this.acknowledgementMessage,
+      licenseUrl: licenseUrl ?? this.licenseUrl,
+      attributionText: attributionText ?? this.attributionText,
       agencyCount: agencyCount ?? this.agencyCount,
       routeCount: routeCount ?? this.routeCount,
       stopCount: stopCount ?? this.stopCount,
@@ -140,6 +196,8 @@ class GtfsFeedInfo {
       requiresUserAcknowledgement:
           json['requiresUserAcknowledgement'] as bool? ?? false,
       acknowledgementMessage: json['acknowledgementMessage'] as String?,
+      licenseUrl: json['licenseUrl'] as String?,
+      attributionText: json['attributionText'] as String?,
       agencyCount: json['agencyCount'] as int? ?? 0,
       routeCount: json['routeCount'] as int? ?? 0,
       stopCount: json['stopCount'] as int? ?? 0,
@@ -168,6 +226,8 @@ class GtfsFeedInfo {
       'openDataPageLabel': openDataPageLabel,
       'requiresUserAcknowledgement': requiresUserAcknowledgement,
       'acknowledgementMessage': acknowledgementMessage,
+      'licenseUrl': licenseUrl,
+      'attributionText': attributionText,
       'agencyCount': agencyCount,
       'routeCount': routeCount,
       'stopCount': stopCount,

@@ -19,6 +19,7 @@ class SettingsProvider extends ChangeNotifier {
   double get alarmVolume => _settingsService.settings.alarmVolume;
   double get approachSystemVolume =>
       _settingsService.settings.approachSystemVolume;
+  double get vibrationIntensity => _settingsService.settings.vibrationIntensity;
 
   Future<void> setTestModeEnabled(bool enabled) async {
     if (enabled == testModeEnabled) {
@@ -84,6 +85,18 @@ class SettingsProvider extends ChangeNotifier {
 
     await _settingsService.saveSettings(
       _settingsService.settings.copyWith(approachSystemVolume: clamped),
+    );
+    notifyListeners();
+  }
+
+  Future<void> setVibrationIntensity(double intensity) async {
+    final clamped = AppSettings.clampVibrationIntensity(intensity);
+    if (clamped == vibrationIntensity) {
+      return;
+    }
+
+    await _settingsService.saveSettings(
+      _settingsService.settings.copyWith(vibrationIntensity: clamped),
     );
     notifyListeners();
   }

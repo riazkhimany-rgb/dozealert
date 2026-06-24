@@ -26,21 +26,25 @@ class MonitoringDistanceProgress extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text(
-              distanceKm.toStringAsFixed(1),
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: accentColor,
-                height: 1,
-                letterSpacing: -0.5,
+            Flexible(
+              child: Text(
+                distanceKm.toStringAsFixed(1),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: accentColor,
+                  height: 1,
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              'km remaining',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
+            Flexible(
+              child: Text(
+                'km remaining',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],

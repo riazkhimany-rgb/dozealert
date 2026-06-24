@@ -1,15 +1,16 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../data/transit_catalog.dart';
 import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
+import '../utils/external_link_launcher.dart';
 import '../utils/user_facing_errors.dart';
 import '../widgets/home_card.dart';
+import 'transit_data_licenses_screen.dart';
 
 class TransitDataScreen extends StatefulWidget {
   const TransitDataScreen({super.key});
@@ -22,17 +23,7 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
   String? _busyFeedId;
 
   Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (!await canLaunchUrl(uri)) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open $url')),
-      );
-      return;
-    }
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    await ExternalLinkLauncher.openOrSnackBar(context, url);
   }
 
   Future<bool> _confirmYrtAcknowledgement(GtfsFeedInfo feed) async {
@@ -179,9 +170,11 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
       appBar: AppBar(
         title: const Text('Transit Data'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        children: [
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: [
           HomeCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,7 +256,22 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
                 );
               },
             ),
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const TransitDataLicensesScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.gavel_outlined),
+              label: const Text('Transit data licenses & attribution'),
+            ),
+          ),
         ],
+        ),
       ),
     );
   }
@@ -318,6 +326,8 @@ class _FeedCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _MetricRow(label: 'Vehicle types', value: feed.vehicleTypesLabel),
+            const SizedBox(height: 8),
+            _MetricRow(label: 'Data access', value: feed.dataAccessMode.label),
             const SizedBox(height: 8),
             _MetricRow(label: 'Last Updated', value: lastUpdated),
             const SizedBox(height: 8),
