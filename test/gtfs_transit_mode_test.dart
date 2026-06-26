@@ -90,6 +90,13 @@ void main() {
       ).badge,
       'GO Transit · Lakeshore West',
     );
+    expect(
+      gtfsService.selectedLineDisplayLabel(
+        transitSystem: 'GO Transit',
+        lineRef: '11',
+      ),
+      'GO Transit - 11 - Lakeshore West',
+    );
   });
 
   test('detectDestinationOnRoute prefers selected line at shared stop', () {

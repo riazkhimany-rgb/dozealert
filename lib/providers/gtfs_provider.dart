@@ -278,7 +278,14 @@ class GtfsProvider extends ChangeNotifier {
 
   String get selectedLineLabel {
     final preferences = _transitProvider.preferences;
-    return '${preferences.transitSystem} · ${preferences.defaultLine}';
+    if (!_initialized) {
+      return '${preferences.transitSystem} · ${preferences.defaultLine}';
+    }
+
+    return _gtfsService.selectedLineDisplayLabel(
+      transitSystem: preferences.transitSystem,
+      lineRef: preferences.defaultLine,
+    );
   }
 
   Future<void> syncTransitModeRouteForSelectedLine() async {

@@ -8,6 +8,7 @@ import '../models/favorite_transit_line.dart';
 import '../models/gtfs_feed_info.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../providers/transit_mode_provider.dart';
 import '../providers/transit_provider.dart';
 import '../widgets/stop_picker_sheet.dart';
@@ -81,6 +82,7 @@ abstract final class TransitLineSwitch {
     BuildContext context,
     FavoriteTransitLine favorite, {
     bool popLinePickerFirst = false,
+    bool navigateHomeAfterStopSelection = false,
   }) async {
     final result = await apply(context, favorite);
     if (!context.mounted) {
@@ -104,7 +106,13 @@ abstract final class TransitLineSwitch {
     }
 
     if (gtfsProvider.canShowStopPicker()) {
-      await StopPickerSheet.show(context);
+      final stopSelected = await StopPickerSheet.show(context);
+      if (!context.mounted) {
+        return;
+      }
+      if (navigateHomeAfterStopSelection && stopSelected) {
+        context.read<NavigationProvider>().setIndex(0);
+      }
       return;
     }
 

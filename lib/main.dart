@@ -30,6 +30,7 @@ import 'services/gtfs_service.dart';
 import 'services/location_service.dart';
 import 'services/monitoring_storage_service.dart';
 import 'services/app_tour_service.dart';
+import 'services/app_update_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/place_search_service.dart';
 import 'services/preferences_service.dart';
@@ -124,6 +125,7 @@ Future<void> main() async {
 
   final onboardingService = OnboardingService();
   final appTourService = AppTourService();
+  final appUpdateService = AppUpdateService();
 
   runApp(
     DozeAlertApp(
@@ -152,6 +154,7 @@ Future<void> main() async {
       tripHistoryProvider: tripHistoryProvider,
       onboardingService: onboardingService,
       appTourService: appTourService,
+      appUpdateService: appUpdateService,
     ),
   );
 }
@@ -197,6 +200,7 @@ class DozeAlertApp extends StatelessWidget {
     required this.tripHistoryProvider,
     required this.onboardingService,
     required this.appTourService,
+    required this.appUpdateService,
     this.skipSplash = false,
     this.skipBootstrap = false,
   });
@@ -226,6 +230,7 @@ class DozeAlertApp extends StatelessWidget {
   final TripHistoryProvider tripHistoryProvider;
   final OnboardingService onboardingService;
   final AppTourService appTourService;
+  final AppUpdateService appUpdateService;
   final bool skipSplash;
   final bool skipBootstrap;
 
@@ -251,6 +256,7 @@ class DozeAlertApp extends StatelessWidget {
         Provider<GtfsImportService>.value(value: gtfsImportService),
         Provider<TripHistoryService>.value(value: tripHistoryService),
         Provider<OnboardingService>.value(value: onboardingService),
+        Provider<AppUpdateService>.value(value: appUpdateService),
         ChangeNotifierProvider<AppTourService>.value(value: appTourService),
         Provider<DestinationStorageService>.value(
           value: destinationStorageService,

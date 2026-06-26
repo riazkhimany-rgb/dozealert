@@ -96,5 +96,9 @@ Future<void> _switchLine(
   BuildContext context,
   FavoriteTransitLine favorite,
 ) async {
-  await TransitLineSwitch.applyAndPickStop(context, favorite);
+  await TransitLineSwitch.applyAndPickStop(
+    context,
+    favorite,
+    navigateHomeAfterStopSelection: true,
+  );
 }

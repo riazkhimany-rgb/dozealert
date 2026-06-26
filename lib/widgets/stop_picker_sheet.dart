@@ -17,11 +17,11 @@ class StopPickerSheet extends StatefulWidget {
   /// When set, called instead of applying the stop as the active destination.
   final Future<void> Function(TransitStop stop)? onStopSelected;
 
-  static Future<void> show(
+  static Future<bool> show(
     BuildContext context, {
     Future<void> Function(TransitStop stop)? onStopSelected,
-  }) {
-    return showModalBottomSheet<void>(
+  }) async {
+    final selected = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -45,6 +45,7 @@ class StopPickerSheet extends StatefulWidget {
         );
       },
     );
+    return selected ?? false;
   }
 
   @override
@@ -70,7 +71,7 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
       await context.read<GtfsProvider>().selectStop(stop);
     }
     if (mounted) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
     }
   }
 

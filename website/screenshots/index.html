@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="See DozeAlert in action — destination alerts, Transit stop picking, trip monitoring, and transit mode for commuters.">
+  <meta name="description" content="See DozeAlert in action — destination setup, Transit Mode, Saved favorites, and wake alerts for commuters.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
   <link rel="icon" type="image/png" href="../assets/icon-512.png">
@@ -89,7 +89,7 @@
     header .lead {
       color: #cbd5e1;
       font-size: 1rem;
-      max-width: 36rem;
+      max-width: 38rem;
       margin: 0 auto;
     }
 
@@ -252,27 +252,27 @@
       <h1>See DozeAlert in action</h1>
       <p class="tagline">Sleep peacefully. Arrive confidently.</p>
       <p class="lead">
-        DozeAlert is built for commuters who want to rest without missing their stop.
-        Set a destination, start monitoring, and get a reliable wake-up before you arrive
-        &mdash; on GO Transit, TTC, and other agencies with offline GTFS data.
+        DozeAlert is a commute alarm for riders who want to rest without missing their stop.
+        Set a destination, start monitoring, and get a reliable wake-up on GO Transit, TTC,
+        and other agencies with offline GTFS data.
       </p>
     </header>
 
     <section class="card">
-      <h2>Your commute alarm, simplified</h2>
+      <h2>Your commute alarm</h2>
       <p class="section-lead">
-        From first launch to your daily routine, DozeAlert keeps the important things upfront:
-        where you&rsquo;re going, how far you have left, and when to wake up.
+        A simple home screen keeps destination, monitoring, and Transit Mode in one place.
+        No account required &mdash; trip data stays on your device.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot hero-shot" src="../assets/screens/shot1.jpg" width="320" height="693" alt="DozeAlert splash screen with logo and tagline Sleep peacefully. Arrive confidently.">
+          <img class="shot hero-shot" src="../assets/screens/shot14.jpg" width="320" height="693" alt="DozeAlert splash screen with logo and tagline Sleep peacefully. Arrive confidently.">
         </div>
         <div class="copy">
           <h3>Wake up before your stop</h3>
           <p>
-            DozeAlert monitors your trip in the background and sounds an alarm when you are
-            approaching your destination &mdash; on a train, bus, or any ride where GPS works.
+            DozeAlert monitors your trip in the background and alerts you as you approach
+            your destination &mdash; on a train, bus, or any ride where GPS works.
           </p>
           <div class="pill-row">
             <span class="pill">No account</span>
@@ -281,86 +281,116 @@
           </div>
         </div>
       </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot4.jpg" width="280" height="606" alt="DozeAlert home screen with Set destination and idle monitoring status.">
+        </div>
+        <div class="copy">
+          <h3>Home screen</h3>
+          <p>
+            Pick a stop, choose wake distance or stop count, and tap Start when you are ready.
+            Transit Mode can wake you by stops remaining; otherwise DozeAlert uses your
+            wake radius.
+          </p>
+          <ul>
+            <li>Clear idle vs. monitoring status</li>
+            <li>Transit Mode toggle on Home</li>
+            <li>Guided app tour for first-time users</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
     <section class="card">
       <h2>Set a destination in seconds</h2>
       <p class="section-lead">
-        Pick a Transit stop from your line, search the map, or choose a saved favorite.
-        Some Transit data is set up automatically during first-time onboarding.
+        Search the map, pick a GTFS stop on your line, switch a saved line, or reuse a recent
+        or favorite destination.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot2.jpg" width="280" height="606" alt="DozeAlert home screen with Set destination and monitoring controls.">
+          <img class="shot" src="../assets/screens/shot6.jpg" width="280" height="606" alt="Set destination sheet with map search, pick stop, favorites, saved lines, and recents.">
         </div>
         <div class="copy">
-          <h3>Home screen</h3>
+          <h3>Five ways to pick your stop</h3>
           <p>
-            Set your stop, choose a wake radius or transit stop count, and tap Start when you
-            are ready. The monitoring card shows status, speed, and distance at a glance.
+            Open <strong>Set destination</strong> from Home to search on the map, filter stops
+            on your route, jump to a favorite, switch a saved line, or pick from recents.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot5.jpg" width="280" height="606" alt="Choose agency and line sheet with GO Transit route search and bus or train filters.">
+        </div>
+        <div class="copy">
+          <h3>Choose agency &amp; line</h3>
+          <p>
+            Filter routes by bus or train, then search by route number or name. Your selection
+            shows on Home as the full line label &mdash; for example
+            <strong>GO Transit - LW - Lakeshore West</strong>.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot3.jpg" width="280" height="606" alt="Pick Stop sheet listing GO Transit Lakeshore West stations with route filter.">
+        </div>
+        <div class="copy">
+          <h3>Pick a stop on your line</h3>
+          <p>
+            Search and filter stops on your selected route, or browse all routes at a station.
+            GTFS data powers accurate offline stop lists and Transit Mode progress.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot1.jpg" width="280" height="606" alt="Home screen showing St. Catharines GO with GO Transit LW Lakeshore West line details.">
+        </div>
+        <div class="copy">
+          <h3>Your stop, ready to go</h3>
+          <p>
+            Once a stop is set, Home shows your destination and transit line at a glance.
+            Tap Start to begin monitoring and see stop-by-stop progress when Transit Mode is on.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Saved favorites &amp; quick restarts</h2>
+      <p class="section-lead">
+        Stations and lines you use often stay one tap away. Recent destinations appear
+        automatically so you can restart a commute without re-entering details.
+      </p>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot8.jpg" width="280" height="606" alt="Saved tab with recent destinations, favorite stops, and favorite transit lines.">
+        </div>
+        <div class="copy">
+          <h3>Saved tab</h3>
+          <p>
+            Recent destinations, favorite stops, and favorite lines live on the Saved tab.
+            Long lists stay compact &mdash; show a few entries, then expand to see the rest.
+            Tap play on any item to set it and jump back to Home.
           </p>
           <ul>
-            <li>One-tap destination setup</li>
-            <li>Transit Mode toggle for stop-based wake-ups</li>
-            <li>Clear idle vs. monitoring status</li>
+            <li>Favorite destinations with agency badges</li>
+            <li>Favorite lines for quick switching</li>
+            <li>Trip history and missed trips</li>
           </ul>
         </div>
       </div>
       <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot3.jpg" width="280" height="606" alt="Pick Stop sheet listing GO Transit Lakeshore West stations.">
+          <img class="shot" src="../assets/screens/shot2.jpg" width="280" height="606" alt="Home screen with Transit Mode enabled and wake by one stop before destination.">
         </div>
         <div class="copy">
-          <h3>Pick a stop on your line</h3>
+          <h3>Transit Mode on Home</h3>
           <p>
-            Search and filter stops on GO Transit&rsquo;s Lakeshore West line (or browse all
-            routes). GTFS data powers accurate stop lists for offline stop search and Transit Mode.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Monitor your trip live</h2>
-      <p class="section-lead">
-        Once monitoring starts, DozeAlert tracks distance remaining and keeps a persistent
-        notification so Android does not suspend your trip in the background.
-      </p>
-      <div class="showcase two-col">
-        <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot4.jpg" width="280" height="606" alt="Monitoring Bronte GO with 13.3 km remaining on GO Transit Lakeshore West.">
-        </div>
-        <div class="copy">
-          <h3>Distance and status at a glance</h3>
-          <p>
-            Watch kilometers remaining update as you travel toward Bronte GO. When you are near
-            your line, Transit Mode can switch to stop-by-stop progress and wake you one stop
-            before your destination.
-          </p>
-          <ul>
-            <li>Live distance remaining</li>
-            <li>Speed and trip progress</li>
-            <li>Stop when you arrive or cancel anytime</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Favorites and trip history</h2>
-      <p class="section-lead">
-        Stations you use often stay one tap away. Recent destinations appear automatically so
-        you can restart a commute without re-entering details.
-      </p>
-      <div class="showcase two-col reverse">
-        <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot5.jpg" width="280" height="606" alt="Trips tab with recent and favorite destinations including Bronte GO and Union Station.">
-        </div>
-        <div class="copy">
-          <h3>Trips tab</h3>
-          <p>
-            Save Home, Union Station, Pearson Airport, and more. Tap any favorite to set it as
-            your destination and start monitoring right away.
+            Enable Transit Mode to wake by stops remaining instead of straight-line distance.
+            When you are not near a route, DozeAlert falls back to your wake radius automatically.
           </p>
         </div>
       </div>
@@ -369,43 +399,52 @@
     <section class="card">
       <h2>Built for transit riders</h2>
       <p class="section-lead">
-        Transit Mode wakes you by stops remaining, not just straight-line distance. Download
-        agency GTFS feeds for offline stop search across Ontario and beyond.
+        Download agency GTFS feeds for offline stop search. Set your preferred agency, line,
+        and wake timing in Settings.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot8.jpg" width="280" height="606" alt="Transit Mode settings with wake one stop before destination.">
+          <img class="shot" src="../assets/screens/shot13.jpg" width="280" height="606" alt="Transit settings with GTFS downloads, Transit Mode, preferred agencies, and favorite lines.">
         </div>
         <div class="copy">
-          <h3>Transit Mode</h3>
+          <h3>Transit settings</h3>
           <p>
-            Enable stop-based wake-ups while you are on a route. Choose to alert at your
-            destination or one or two stops before. When you are not near a line, DozeAlert
-            falls back to your wake radius.
+            Download and manage GTFS feeds, configure Transit Mode wake timing, set preferred
+            agencies by region, and manage favorite lines for quick switching.
           </p>
         </div>
       </div>
       <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot7.jpg" width="280" height="606" alt="Transit Data screen showing GO Transit GTFS feed with over 1000 stops.">
+          <img class="shot" src="../assets/screens/shot7.jpg" width="280" height="606" alt="Preferred Agencies screen with country, province, agency, and default line pickers.">
         </div>
         <div class="copy">
-          <h3>Offline GTFS data</h3>
+          <h3>Preferred agency &amp; line</h3>
           <p>
-            Download GO Transit, TTC, and other Ontario feeds with progress shown in the app.
-            Large feeds load in the background without freezing the UI.
+            Choose country, province, agency, and default line. Filter by vehicle type and
+            search routes loaded from GTFS &mdash; defaults work well for GTA commuters and
+            can be changed anytime.
           </p>
         </div>
       </div>
-      <div class="showcase two-col" style="margin-top: 1.5rem;">
+    </section>
+
+    <section class="card">
+      <h2>Reliable wake alerts</h2>
+      <p class="section-lead">
+        Voice, vibration, and optional alarm tone wake you before you miss your stop.
+        Volume is boosted during the alert, then restored when you dismiss.
+      </p>
+      <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot9.jpg" width="280" height="606" alt="Preferred Agencies set to GO Transit Lakeshore West in Ontario.">
+          <img class="shot" src="../assets/screens/shot12.jpg" width="280" height="606" alt="Alarm settings with voice approach alert and speaker volume controls.">
         </div>
         <div class="copy">
-          <h3>Your agency and line</h3>
+          <h3>Approach alerts</h3>
           <p>
-            Choose country, region, agency, and default line under Settings. Defaults to
-            GO Transit and Lakeshore West for GTA commuters; change anytime for other systems.
+            A spoken &ldquo;Heads up! Approaching destination.&rdquo; plays with vibration until
+            you dismiss. Adjust speaker volume during the alert and control voice and tone levels
+            separately.
           </p>
         </div>
       </div>
@@ -414,31 +453,43 @@
     <section class="card">
       <h2>Settings you control</h2>
       <p class="section-lead">
-        Theme, wake radius, alarm sound, battery guidance, and transit preferences live in
-        one place. No account, no ads, no data sale.
+        Theme, location accuracy, wake radius, transit preferences, and alarms live in one hub.
+        No ads, no data sale.
       </p>
       <div class="showcase two-col reverse">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot6.jpg" width="280" height="606" alt="Settings screen with General, Transit, Location, and Alarm sections.">
+          <img class="shot" src="../assets/screens/shot9.jpg" width="280" height="606" alt="Settings screen with General, Transit, Location, and Alarm sections.">
         </div>
         <div class="copy">
           <h3>Organized settings</h3>
           <p>
-            Adjust appearance, transit data, location accuracy, and alarm volume from a simple
-            hub. First-time setup walks through permissions with clear guidance.
+            Adjust appearance, replay the guided Home tour, manage transit data, fine-tune
+            location and battery guidance, and configure alarms from a simple menu.
           </p>
         </div>
       </div>
       <div class="showcase two-col" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot10.jpg" width="280" height="606" alt="About DozeAlert screen with version and privacy links.">
+          <img class="shot" src="../assets/screens/shot10.jpg" width="280" height="606" alt="About menu with app info, our story, and transit data licenses.">
         </div>
         <div class="copy">
-          <h3>About &amp; support</h3>
+          <h3>About &amp; open data</h3>
           <p>
-            Share the app, read the privacy policy, or reach us at
+            Read our story, review transit data licenses, and check the app version.
+            Share DozeAlert or reach us at
             <a href="mailto:support@dozealert.app" style="color: var(--cyan);">support@dozealert.app</a>.
-            Trip data stays on your device.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot11.jpg" width="280" height="606" alt="About DozeAlert screen with share, privacy policy, and support links.">
+        </div>
+        <div class="copy">
+          <h3>Share &amp; support</h3>
+          <p>
+            Trip data stays on your device. Open the privacy policy in-app or on the web,
+            and share the app with fellow commuters.
           </p>
         </div>
       </div>

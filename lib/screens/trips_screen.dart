@@ -31,7 +31,7 @@ class TripsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final recentDestinations =
         context.select<DestinationHistoryProvider, List<Destination>>(
-      (provider) => provider.recents.take(5).toList(growable: false),
+      (provider) => provider.recents,
     );
     final favorites =
         context.select<DestinationHistoryProvider, List<FavoriteDestination>>(
@@ -42,10 +42,10 @@ class TripsScreen extends StatelessWidget {
       (provider) => provider.favorites,
     );
     final history = context.select<TripHistoryProvider, List<TripHistoryEntry>>(
-      (provider) => provider.completedTrips.take(10).toList(growable: false),
+      (provider) => provider.completedTrips,
     );
     final missedTrips = context.select<TripHistoryProvider, List<TripHistoryEntry>>(
-      (provider) => provider.missedTrips.take(10).toList(growable: false),
+      (provider) => provider.missedTrips,
     );
     final hasAnyTrips = recentDestinations.isNotEmpty ||
         favorites.isNotEmpty ||
@@ -103,7 +103,7 @@ class TripsScreen extends StatelessWidget {
   }
 }
 
-class _TripSection extends StatelessWidget {
+class _TripSection extends StatefulWidget {
   const _TripSection({
     required this.title,
     required this.icon,
@@ -111,28 +111,51 @@ class _TripSection extends StatelessWidget {
     required this.destinations,
   });
 
+  static const _collapsedVisibleCount = 2;
+
   final String title;
   final IconData icon;
   final String emptyMessage;
   final List<Destination> destinations;
 
   @override
+  State<_TripSection> createState() => _TripSectionState();
+}
+
+class _TripSectionState extends State<_TripSection> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final destinations = widget.destinations;
+    final hiddenCount =
+        destinations.length - _TripSection._collapsedVisibleCount;
+    final visibleDestinations = _expanded || hiddenCount <= 0
+        ? destinations
+        : destinations
+            .take(_TripSection._collapsedVisibleCount)
+            .toList(growable: false);
+
     return HomeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HomeCardHeader(icon: icon, title: title),
+          HomeCardHeader(
+            icon: widget.icon,
+            title: destinations.length > _TripSection._collapsedVisibleCount
+                ? '${widget.title} (${destinations.length})'
+                : widget.title,
+          ),
           const SizedBox(height: 12),
           if (destinations.isEmpty)
             Text(
-              emptyMessage,
+              widget.emptyMessage,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             )
-          else
-            ...destinations.map(
+          else ...[
+            ...visibleDestinations.map(
               (destination) => _DestinationListTile(
                 destination: destination,
                 onDelete: () async {
@@ -142,6 +165,17 @@ class _TripSection extends StatelessWidget {
                 },
               ),
             ),
+            if (hiddenCount > 0)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  child: Text(
+                    _expanded ? 'Show less' : 'Show $hiddenCount more',
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -264,7 +298,7 @@ class _DestinationListTile extends StatelessWidget {
   }
 }
 
-class _HistorySection extends StatelessWidget {
+class _HistorySection extends StatefulWidget {
   const _HistorySection({
     required this.title,
     required this.icon,
@@ -273,6 +307,8 @@ class _HistorySection extends StatelessWidget {
     this.highlightMissed = false,
   });
 
+  static const _collapsedVisibleCount = 1;
+
   final String title;
   final IconData icon;
   final String emptyMessage;
@@ -280,49 +316,95 @@ class _HistorySection extends StatelessWidget {
   final bool highlightMissed;
 
   @override
+  State<_HistorySection> createState() => _HistorySectionState();
+}
+
+class _HistorySectionState extends State<_HistorySection> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final dateFormat = TripHistoryFormat.friendlyTimestamp;
+    final entries = widget.entries;
+    final hiddenCount =
+        entries.length - _HistorySection._collapsedVisibleCount;
+    final visibleEntries = _expanded || hiddenCount <= 0
+        ? entries
+        : entries.take(_HistorySection._collapsedVisibleCount).toList();
 
     return HomeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HomeCardHeader(icon: icon, title: title),
+          HomeCardHeader(
+            icon: widget.icon,
+            title: entries.length > 1
+                ? '${widget.title} (${entries.length})'
+                : widget.title,
+          ),
           const SizedBox(height: 12),
           if (entries.isEmpty)
             Text(
-              emptyMessage,
+              widget.emptyMessage,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             )
-          else
-            ...entries.map(
-              (entry) {
-                final end = entry.tripEnd ?? entry.tripStart;
-                final subtitle = highlightMissed
-                    ? 'Missed ${dateFormat(end)}'
-                    : entry.alarmDismissed != null
-                        ? 'Dismissed ${dateFormat(entry.alarmDismissed!)}'
-                        : 'Ended ${dateFormat(end)}';
-
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    highlightMissed
-                        ? Icons.warning_amber_outlined
-                        : Icons.check_circle_outline,
-                    color: highlightMissed
-                        ? Theme.of(context).colorScheme.error
-                        : null,
-                  ),
-                  title: Text(entry.destination),
-                  subtitle: Text(subtitle),
-                );
-              },
+          else ...[
+            ...visibleEntries.map(
+              (entry) => _HistoryEntryTile(
+                entry: entry,
+                highlightMissed: widget.highlightMissed,
+                dateFormat: dateFormat,
+              ),
             ),
+            if (hiddenCount > 0)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  child: Text(
+                    _expanded ? 'Show less' : 'Show $hiddenCount more',
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _HistoryEntryTile extends StatelessWidget {
+  const _HistoryEntryTile({
+    required this.entry,
+    required this.highlightMissed,
+    required this.dateFormat,
+  });
+
+  final TripHistoryEntry entry;
+  final bool highlightMissed;
+  final String Function(DateTime) dateFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final end = entry.tripEnd ?? entry.tripStart;
+    final subtitle = highlightMissed
+        ? 'Missed ${dateFormat(end)}'
+        : entry.alarmDismissed != null
+            ? 'Dismissed ${dateFormat(entry.alarmDismissed!)}'
+            : 'Ended ${dateFormat(end)}';
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(
+        highlightMissed
+            ? Icons.warning_amber_outlined
+            : Icons.check_circle_outline,
+        color: highlightMissed ? Theme.of(context).colorScheme.error : null,
+      ),
+      title: Text(entry.destination),
+      subtitle: Text(subtitle),
     );
   }
 }

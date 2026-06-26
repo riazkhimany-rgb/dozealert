@@ -28,6 +28,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final FocusNode _nameFocusNode = FocusNode();
 
   GoogleMapController? _mapController;
   LatLng? _selectedPosition;
@@ -66,6 +67,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   void dispose() {
     _searchController.dispose();
     _nameController.dispose();
+    _nameFocusNode.dispose();
     _mapController?.dispose();
     super.dispose();
   }
@@ -103,10 +105,14 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   }
 
   void _onMapTap(LatLng position) {
-    setState(() {
-      _selectedPosition = position;
-      if (_nameController.text.trim().isEmpty) {
-        _nameController.text = MapDefaults.customDestinationName;
+    setState(() => _selectedPosition = position);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _nameFocusNode.requestFocus();
+      if (_nameController.text == MapDefaults.customDestinationName) {
+        _nameController.clear();
       }
     });
   }
@@ -301,22 +307,16 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: HomeCard(
-                  child: keyboardOpen
-                    ? _CompactDestinationPanel(
-                        nameController: _nameController,
-                        canSave: canSave,
-                        onSave: _saveDestination,
-                        onSaveAndFavorite: _saveAndFavorite,
-                        onCancel: () => Navigator.of(context).pop(),
-                      )
-                    : _DestinationPanel(
-                        nameController: _nameController,
-                        selectedPosition: selectedPosition,
-                        canSave: canSave,
-                        onSave: _saveDestination,
-                        onSaveAndFavorite: _saveAndFavorite,
-                        onCancel: () => Navigator.of(context).pop(),
-                      ),
+                  child: _DestinationPanel(
+                    nameController: _nameController,
+                    nameFocusNode: _nameFocusNode,
+                    selectedPosition: selectedPosition,
+                    canSave: canSave,
+                    keyboardOpen: keyboardOpen,
+                    onSave: _saveDestination,
+                    onSaveAndFavorite: _saveAndFavorite,
+                    onCancel: () => Navigator.of(context).pop(),
+                  ),
                 ),
               ),
             ),
@@ -330,16 +330,20 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 class _DestinationPanel extends StatelessWidget {
   const _DestinationPanel({
     required this.nameController,
+    required this.nameFocusNode,
     required this.selectedPosition,
     required this.canSave,
+    required this.keyboardOpen,
     required this.onSave,
     required this.onSaveAndFavorite,
     required this.onCancel,
   });
 
   final TextEditingController nameController;
+  final FocusNode nameFocusNode;
   final LatLng? selectedPosition;
   final bool canSave;
+  final bool keyboardOpen;
   final VoidCallback onSave;
   final VoidCallback onSaveAndFavorite;
   final VoidCallback onCancel;
@@ -352,156 +356,122 @@ class _DestinationPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Destination Name',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
+        if (!keyboardOpen) ...[
+          Text(
+            'Destination Name',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
+        ],
         TextField(
           controller: nameController,
+          focusNode: nameFocusNode,
           decoration: InputDecoration(
+            labelText: keyboardOpen ? 'Destination name' : null,
             hintText: MapDefaults.customDestinationName,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            contentPadding: const EdgeInsets.symmetric(
+            isDense: keyboardOpen,
+            contentPadding: EdgeInsets.symmetric(
               horizontal: 16,
-              vertical: 12,
+              vertical: keyboardOpen ? 10 : 12,
             ),
           ),
           textInputAction: TextInputAction.done,
         ),
-        const SizedBox(height: 16),
-        _CoordinateRow(
-          label: 'Latitude',
-          value: selectedPosition != null
-              ? selectedPosition!.latitude.toStringAsFixed(4)
-              : '—',
-        ),
-        const SizedBox(height: 8),
-        _CoordinateRow(
-          label: 'Longitude',
-          value: selectedPosition != null
-              ? selectedPosition!.longitude.toStringAsFixed(4)
-              : '—',
-        ),
-        const SizedBox(height: 12),
-        Text(
-          selectedPosition == null
-              ? 'Search above or tap the map to place a marker.'
-              : 'Tap the map to fine-tune the marker position.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+        if (!keyboardOpen) ...[
+          const SizedBox(height: 16),
+          _CoordinateRow(
+            label: 'Latitude',
+            value: selectedPosition != null
+                ? selectedPosition!.latitude.toStringAsFixed(4)
+                : '—',
           ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: FilledButton.icon(
-            onPressed: canSave ? onSave : null,
-            icon: const Icon(Icons.save_outlined),
-            label: const Text('Save Destination'),
+          const SizedBox(height: 8),
+          _CoordinateRow(
+            label: 'Longitude',
+            value: selectedPosition != null
+                ? selectedPosition!.longitude.toStringAsFixed(4)
+                : '—',
           ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: OutlinedButton.icon(
-            onPressed: canSave ? onSaveAndFavorite : null,
-            icon: const Icon(Icons.star_outline),
-            label: const Text('Save & Add to Favorites'),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: OutlinedButton(
-            onPressed: onCancel,
-            child: const Text('Cancel'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CompactDestinationPanel extends StatelessWidget {
-  const _CompactDestinationPanel({
-    required this.nameController,
-    required this.canSave,
-    required this.onSave,
-    required this.onSaveAndFavorite,
-    required this.onCancel,
-  });
-
-  final TextEditingController nameController;
-  final bool canSave;
-  final VoidCallback onSave;
-  final VoidCallback onSaveAndFavorite;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          controller: nameController,
-          decoration: InputDecoration(
-            labelText: 'Destination name',
-            hintText: MapDefaults.customDestinationName,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
+          const SizedBox(height: 12),
+          Text(
+            selectedPosition == null
+                ? 'Search above or tap the map to place a marker.'
+                : 'Tap the map to fine-tune the marker position.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
-          textInputAction: TextInputAction.done,
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton(
-                onPressed: canSave ? onSave : null,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(0, 40),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton.icon(
+              onPressed: canSave ? onSave : null,
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('Save Destination'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: canSave ? onSaveAndFavorite : null,
+              icon: const Icon(Icons.star_outline),
+              label: const Text('Save & Add to Favorites'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton(
+              onPressed: onCancel,
+              child: const Text('Cancel'),
+            ),
+          ),
+        ] else ...[
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: canSave ? onSave : null,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  child: const Text('Save'),
                 ),
-                child: const Text('Save'),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: canSave ? onSaveAndFavorite : null,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 40),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: canSave ? onSaveAndFavorite : null,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  child: const Text('Save & Favorite'),
                 ),
-                child: const Text('Save & Favorite'),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          height: 40,
-          child: TextButton(
-            onPressed: onCancel,
-            child: const Text('Cancel'),
+            ],
           ),
-        ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: TextButton(
+              onPressed: onCancel,
+              child: const Text('Cancel'),
+            ),
+          ),
+        ],
       ],
     );
   }

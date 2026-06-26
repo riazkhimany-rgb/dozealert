@@ -597,6 +597,27 @@ class GtfsService {
     return lineName;
   }
 
+  /// Home-screen label: agency, route code, and long name when available.
+  /// Example: `GO Transit - LW - Lakeshore West`.
+  String selectedLineDisplayLabel({
+    required String transitSystem,
+    required String lineRef,
+  }) {
+    final route = routeForTransitLine(
+      transitSystem: transitSystem,
+      lineName: lineRef,
+    );
+    if (route != null) {
+      final option = TransitLineOption.fromRoute(route);
+      final parts = <String>[transitSystem, option.displayLabel];
+      if (option.subtitle != null && option.subtitle!.isNotEmpty) {
+        parts.add(option.subtitle!);
+      }
+      return parts.join(' - ');
+    }
+    return '$transitSystem · $lineRef';
+  }
+
   List<TransitLineOption> _lineOptionsFromRoutes(
     Iterable<TransitRoute> routes,
   ) {

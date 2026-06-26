@@ -12,6 +12,10 @@ abstract final class AppBranding {
   static const String websiteUrl = 'https://dozealert.app';
   static const String apkDownloadUrl =
       'https://dozealert.app/downloads/dozealert-latest.apk';
+  static const String appVersionJsonUrl =
+      'https://dozealert.app/app-version.json';
+  static const String playStoreUrl =
+      'https://play.google.com/store/apps/details?id=app.dozealert';
   static const String privacyPolicyUrl = 'https://dozealert.app/privacy';
 
   static const Color midnightBlue = Color(0xFF0D1B2A);

@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/location_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../services/app_update_service.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
 import 'trips_screen.dart';
@@ -46,6 +49,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<LocationProvider>().resumeMonitoringIfNeeded();
+      unawaited(
+        context.read<AppUpdateService>().checkAndPromptIfNeeded(context),
+      );
     });
   }
 
