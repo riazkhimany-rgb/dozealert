@@ -67,9 +67,10 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
     final customHandler = widget.onStopSelected;
     if (customHandler != null) {
       await customHandler(stop);
-    } else {
-      await context.read<GtfsProvider>().selectStop(stop);
+      return;
     }
+
+    await context.read<GtfsProvider>().selectStop(stop);
     if (mounted) {
       Navigator.of(context).pop(true);
     }

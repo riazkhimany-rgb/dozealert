@@ -55,7 +55,7 @@ class TripsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Saved'),
+        title: const Text('Favorites'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -71,16 +71,16 @@ class TripsScreen extends StatelessWidget {
               ),
             )
           else ...[
+            _FavoriteSection(favorites: favorites),
+            const SizedBox(height: 16),
+            FavoriteTransitLinesSection(favorites: lineFavorites),
+            const SizedBox(height: 16),
             _TripSection(
               title: 'Recent Destinations',
               icon: Icons.history,
               emptyMessage: 'No recent destinations yet.',
               destinations: recentDestinations,
             ),
-            const SizedBox(height: 16),
-            _FavoriteSection(favorites: favorites),
-            const SizedBox(height: 16),
-            FavoriteTransitLinesSection(favorites: lineFavorites),
             const SizedBox(height: 16),
             _HistorySection(
               title: 'Trip History',

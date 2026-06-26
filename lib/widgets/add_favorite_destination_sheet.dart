@@ -12,14 +12,22 @@ import 'stop_picker_sheet.dart';
 import 'accessible_scroll_body.dart';
 
 class AddFavoriteDestinationSheet extends StatelessWidget {
-  const AddFavoriteDestinationSheet({super.key});
+  const AddFavoriteDestinationSheet({
+    super.key,
+    required this.hostContext,
+  });
+
+  /// Context below this sheet (e.g. the Favorites tab) for providers and snackbars.
+  final BuildContext hostContext;
 
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => const AddFavoriteDestinationSheet(),
+      builder: (sheetContext) => AddFavoriteDestinationSheet(
+        hostContext: context,
+      ),
     );
   }
 
@@ -39,92 +47,94 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Add favorite stop',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Save a stop for quick access when setting your destination.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (currentDestination != null)
+            _AddOption(
+              icon: Icons.my_location_outlined,
+              title: 'Add current destination',
+              subtitle: currentDestination.name,
+              onTap: () => unawaited(
+                _addDestination(hostContext, currentDestination),
+              ),
+            ),
+          _AddOption(
+            icon: Icons.route_outlined,
+            title: 'Pick stop',
+            subtitle: 'Search GTFS stops on your route',
+            onTap: () {
+              unawaited(
+                StopPickerSheet.show(
+                  context,
+                  onStopSelected: (stop) async {
+                    await _addFromStop(hostContext, stop);
+                  },
+                ),
+              );
+            },
+          ),
+          if (recents.isNotEmpty) ...[
+            const SizedBox(height: 8),
             Text(
-              'Add favorite stop',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
+              'Recent destinations',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Save a stop for quick access when setting your destination.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (currentDestination != null)
-              _AddOption(
-                icon: Icons.my_location_outlined,
-                title: 'Add current destination',
-                subtitle: currentDestination.name,
-                onTap: () => unawaited(
-                  _addDestination(context, currentDestination),
-                ),
-              ),
-            _AddOption(
-              icon: Icons.route_outlined,
-              title: 'Pick stop',
-              subtitle: 'Search GTFS stops on your route',
-              onTap: () {
-                Navigator.of(context).pop();
-                unawaited(
-                  StopPickerSheet.show(
-                    context,
-                    onStopSelected: (stop) async {
-                      await _addFromStop(context, stop);
-                    },
-                  ),
-                );
-              },
-            ),
-            if (recents.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Recent destinations',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...recents.take(8).map((destination) {
-                final alreadySaved = favorites.any(
-                  (item) => item.matches(destination),
-                );
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.history),
-                  title: Text(destination.name),
-                  trailing: alreadySaved
-                      ? Text(
-                          'Saved',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.add),
-                          tooltip: 'Add to favorites',
-                          onPressed: () =>
-                              unawaited(_addDestination(context, destination)),
+            ...recents.take(8).map((destination) {
+              final alreadySaved = favorites.any(
+                (item) => item.matches(destination),
+              );
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.history),
+                title: Text(destination.name),
+                trailing: alreadySaved
+                    ? Text(
+                        'Saved',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
-                  onTap: alreadySaved
-                      ? null
-                      : () => unawaited(_addDestination(context, destination)),
-                );
-              }),
-            ],
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.add),
+                        tooltip: 'Add to favorites',
+                        onPressed: () => unawaited(
+                          _addDestination(hostContext, destination),
+                        ),
+                      ),
+                onTap: alreadySaved
+                    ? null
+                    : () => unawaited(
+                        _addDestination(hostContext, destination),
+                      ),
+              );
+            }),
           ],
+        ],
       ),
     );
   }
 
   static Future<void> _addFromStop(
-    BuildContext context,
+    BuildContext hostContext,
     TransitStop stop,
   ) async {
     await _addDestination(
-      context,
+      hostContext,
       Destination(
         name: stop.stopName,
         latitude: stop.latitude,
@@ -135,40 +145,51 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
   }
 
   static Future<void> _addDestination(
-    BuildContext context,
+    BuildContext hostContext,
     Destination destination, {
     TransitStop? stop,
   }) async {
-    final history = context.read<DestinationHistoryProvider>();
+    final history = hostContext.read<DestinationHistoryProvider>();
     if (history.isFavorite(destination)) {
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${destination.name} is already a favorite'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      _closeAddFlow(hostContext);
+      if (!hostContext.mounted) {
+        return;
       }
+      ScaffoldMessenger.of(hostContext).showSnackBar(
+        SnackBar(
+          content: Text('${destination.name} is already a favorite'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
 
     await history.addFavoriteItem(
-      context.read<GtfsProvider>().buildFavoriteDestination(
+      hostContext.read<GtfsProvider>().buildFavoriteDestination(
         destination,
         stop: stop,
       ),
     );
-    if (!context.mounted) {
+    if (!hostContext.mounted) {
       return;
     }
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
+
+    _closeAddFlow(hostContext);
+    ScaffoldMessenger.of(hostContext).showSnackBar(
       SnackBar(
         content: Text('Added ${destination.name}'),
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  static void _closeAddFlow(BuildContext hostContext) {
+    final navigator = Navigator.of(hostContext);
+    var sheetsClosed = 0;
+    while (navigator.canPop() && sheetsClosed < 2) {
+      navigator.pop();
+      sheetsClosed++;
+    }
   }
 }
 

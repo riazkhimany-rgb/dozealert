@@ -60,7 +60,7 @@ class FavoriteLinesPickerSheet extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
           child: Text(
             favorites.isEmpty
-                ? 'Save lines on the Saved tab for quick switching.'
+                ? 'Save lines on the Favorites tab for quick switching.'
                 : '${favorites.length} saved line${favorites.length == 1 ? '' : 's'}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
@@ -74,7 +74,7 @@ class FavoriteLinesPickerSheet extends StatelessWidget {
                     padding: const EdgeInsets.all(20),
                     child: Text(
                       'No favorite lines yet. Add them from Settings → Transit '
-                      'or the Saved tab.',
+                      'or the Favorites tab.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),

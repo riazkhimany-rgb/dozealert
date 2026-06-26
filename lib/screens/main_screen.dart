@@ -23,9 +23,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       label: 'Home',
     ),
     NavigationDestination(
-      icon: Icon(Icons.route_outlined),
-      selectedIcon: Icon(Icons.route),
-      label: 'Saved',
+      icon: Icon(Icons.favorite_border),
+      selectedIcon: Icon(Icons.favorite),
+      label: 'Favorites',
     ),
     NavigationDestination(
       icon: Icon(Icons.settings_outlined),

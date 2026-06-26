@@ -74,7 +74,7 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Text(
-                      'No favorite destinations yet. Add them from the Saved tab.',
+                      'No favorite destinations yet. Add them from the Favorites tab.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),

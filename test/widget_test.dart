@@ -293,7 +293,7 @@ void main() {
     expect(find.text('Distance'), findsNothing);
     expect(find.text('Recent Destinations'), findsNothing);
 
-    await tester.tap(find.text('Saved'));
+    await tester.tap(find.text('Favorites'));
     await _pumpUntilSettled(tester);
 
     expect(find.text('Favorite Destinations'), findsOneWidget);
