@@ -57,7 +57,6 @@ dependencies:
   flutter_markdown_plus: ^1.0.7
   markdown: ^7.3.1
   showcaseview: ^5.1.0
-  in_app_update: ^4.2.5
 
 dev_dependencies:
   flutter_test:

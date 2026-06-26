@@ -54,8 +54,5 @@ android/key.properties
 # Built APKs (host on website / GitHub Releases instead)
 website/downloads/*.apk
 
-# Local Maven mirror for Play In-App Update (seed via tools/seed-local-play-maven.ps1)
-android/local-play-maven/
-
 # Android build artifact (unmerged manifest output)
 base/

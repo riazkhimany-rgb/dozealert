@@ -28,7 +28,6 @@ import 'package:dozealert/services/gtfs_parser_service.dart';
 import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/monitoring_storage_service.dart';
 import 'package:dozealert/services/app_tour_service.dart';
-import 'package:dozealert/services/app_update_service.dart';
 import 'package:dozealert/services/onboarding_service.dart';
 import 'package:dozealert/services/place_search_service.dart';
 import 'package:dozealert/services/preferences_service.dart';
@@ -198,7 +197,6 @@ Future<DozeAlertApp> _createTestApp() async {
 
   final onboardingService = OnboardingService();
   final appTourService = AppTourService();
-  final appUpdateService = AppUpdateService();
 
   return DozeAlertApp(
     settingsService: settingsService,
@@ -226,7 +224,6 @@ Future<DozeAlertApp> _createTestApp() async {
     tripHistoryProvider: tripHistoryProvider,
       onboardingService: onboardingService,
       appTourService: appTourService,
-      appUpdateService: appUpdateService,
     skipSplash: true,
     skipBootstrap: true,
   );
