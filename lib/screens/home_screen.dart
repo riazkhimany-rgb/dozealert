@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../models/destination.dart';
 import '../models/monitoring_state.dart';
@@ -15,6 +16,8 @@ import '../providers/settings_provider.dart';
 import '../providers/transit_mode_provider.dart';
 import '../providers/transit_provider.dart';
 import '../services/background_monitor_service.dart';
+import '../services/app_tour_service.dart';
+import '../utils/app_branding.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
 import '../utils/gtfs_readiness.dart';
@@ -27,12 +30,14 @@ import '../widgets/destination_picker_sheet.dart';
 import '../widgets/empty_state_message.dart';
 import '../widgets/gtfs_readiness_banner.dart';
 import '../widgets/home_card.dart';
+import '../widgets/home_tour.dart';
 import '../widgets/metric_row.dart';
 import '../widgets/monitoring_distance_progress.dart';
 import '../widgets/transit_route_progress_line.dart';
 import '../widgets/trip_setup_checklist.dart';
-import 'settings/location_settings_screen.dart';
-import 'settings/transit_mode_settings_screen.dart';
+import '../screens/settings/location_settings_screen.dart';
+import '../widgets/transit_agency_line_picker_sheet.dart';
+import '../screens/settings/transit_mode_settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -43,6 +48,150 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _showingArrivalDialog = false;
+  bool _homeTourVisible = false;
+  AppTourService? _appTourService;
+  ShowcaseView? _showcaseView;
+
+  final _chooseAgencyKey = GlobalKey();
+  final _setDestinationKey = GlobalKey();
+  final _wakeSettingsKey = GlobalKey();
+  final _startMonitoringKey = GlobalKey();
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _showcaseView = ShowcaseView.register(
+      onFinish: () => unawaited(_finishHomeTour()),
+      onDismiss: (_) => unawaited(_finishHomeTour()),
+      enableAutoScroll: true,
+      scrollDuration: const Duration(milliseconds: 450),
+      disableBarrierInteraction: true,
+      disableMovingAnimation: true,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _appTourService = context.read<AppTourService>();
+      _appTourService!.addListener(_handleTourRequest);
+      unawaited(_maybeStartHomeTour());
+    });
+  }
+
+  @override
+  void dispose() {
+    _appTourService?.removeListener(_handleTourRequest);
+    _showcaseView?.unregister();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleTourRequest() {
+    unawaited(_maybeStartHomeTour());
+  }
+
+  Future<void> _maybeStartHomeTour() async {
+    if (!mounted || _homeTourVisible) {
+      return;
+    }
+
+    final shouldShow = await context.read<AppTourService>().shouldShowHomeTour();
+    if (!mounted || !shouldShow) {
+      return;
+    }
+
+    final transitModeEnabled =
+        context.read<SettingsProvider>().transitModeEnabled;
+
+    setState(() => _homeTourVisible = true);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _showcaseView?.startShowCase(
+        [
+          if (transitModeEnabled) _chooseAgencyKey,
+          _setDestinationKey,
+          _wakeSettingsKey,
+          _startMonitoringKey,
+        ],
+        delay: const Duration(milliseconds: 300),
+      );
+    });
+  }
+
+  Future<void> _finishHomeTour() async {
+    await context.read<AppTourService>().markHomeTourComplete();
+    if (mounted) {
+      setState(() => _homeTourVisible = false);
+    }
+  }
+
+  Future<void> _openAgencyLinePicker() async {
+    await TransitAgencyLinePickerSheet.show(context);
+  }
+
+  Future<void> _openWakeSettings() async {
+    final transitModeEnabled = context.read<SettingsProvider>().transitModeEnabled;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => transitModeEnabled
+            ? const TransitModeSettingsScreen()
+            : const LocationSettingsScreen(),
+      ),
+    );
+  }
+
+  List<HomeTourStepContent> _tourStepContents(bool transitModeEnabled) => [
+        if (transitModeEnabled)
+          const HomeTourStepContent(
+            id: HomeTourStepId.chooseAgency,
+            title: 'Choose your agency & line',
+            body:
+                'Pick the transit agency and default line you ride most often. '
+                'You can filter by vehicle type and search route numbers.',
+          ),
+        const HomeTourStepContent(
+          id: HomeTourStepId.setDestination,
+          title: 'Set your destination',
+          body:
+              'Choose a stop, search the map, or pick a saved favorite — '
+              'DozeAlert wakes you before you arrive.',
+        ),
+        const HomeTourStepContent(
+          id: HomeTourStepId.wakeSettings,
+          title: 'Choose when to wake',
+          body:
+              'Open Wake Stops to set how many stops before yours the alarm '
+              'should sound.',
+        ),
+        const HomeTourStepContent(
+          id: HomeTourStepId.startMonitoring,
+          title: 'Start your trip',
+          body:
+              'When you are ready, tap Start. DozeAlert tracks your journey '
+              'and wakes you in time.',
+        ),
+      ];
+
+  HomeTourCard _tourCard(
+    HomeTourStepId id,
+    List<HomeTourStepContent> steps,
+  ) {
+    final index = steps.indexWhere((step) => step.id == id);
+    final content = index >= 0 ? steps[index] : null;
+    return HomeTourCard(
+      title: content?.title ?? '',
+      body: content?.body ?? '',
+      stepIndex: index < 0 ? 0 : index,
+      stepCount: steps.length,
+      onNext: () => _showcaseView?.next(),
+      onBack: index <= 0 ? null : () => _showcaseView?.previous(),
+      onSkip: () => _showcaseView?.dismiss(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +204,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final hasDestination = context.select<MonitoringProvider, bool>(
       (provider) => provider.selectedDestination != null,
     );
-    final monitoringFirst = isMonitoring || hasDestination;
+    final transitModeEnabled = context.select<SettingsProvider, bool>(
+      (provider) => provider.transitModeEnabled,
+    );
+    final monitoringFirst = !_homeTourVisible &&
+        (isMonitoring || hasDestination);
+    final tourSteps = _tourStepContents(transitModeEnabled);
 
     if (arrivalVisible && !_showingArrivalDialog) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -63,28 +217,46 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
+    final destinationCard = _DestinationCard(
+      compact: !monitoringFirst ? false : hasDestination,
+      setDestinationKey: _setDestinationKey,
+      chooseAgencyKey: _chooseAgencyKey,
+      onChooseAgency: () => unawaited(_openAgencyLinePicker()),
+      setDestinationTourCard: _tourCard(HomeTourStepId.setDestination, tourSteps),
+      chooseAgencyTourCard: _tourCard(HomeTourStepId.chooseAgency, tourSteps),
+    );
+    final monitoringCard = _MonitoringCard(
+      wakeSettingsKey: _wakeSettingsKey,
+      onOpenWakeSettings: () => unawaited(_openWakeSettings()),
+      startMonitoringKey: _startMonitoringKey,
+      wakeSettingsTourCard: _tourCard(HomeTourStepId.wakeSettings, tourSteps),
+      startMonitoringTourCard:
+          _tourCard(HomeTourStepId.startMonitoring, tourSteps),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const BrandedAppBarTitle(),
       ),
       body: AppGradientBackground(
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          children: monitoringFirst
-              ? [
-                  const _MonitoringCard(),
-                  const SizedBox(height: 16),
-                  _DestinationCard(compact: hasDestination),
-                  const TripSetupChecklist(),
-                  const GtfsReadinessBanner(),
-                ]
-              : [
-                  const _DestinationCard(compact: false),
-                  const SizedBox(height: 16),
-                  const _MonitoringCard(),
-                  const TripSetupChecklist(),
-                  const GtfsReadinessBanner(),
-                ],
+          children: [
+            if (monitoringFirst) ...[
+              monitoringCard,
+              const SizedBox(height: 16),
+              destinationCard,
+            ] else ...[
+              destinationCard,
+              const SizedBox(height: 16),
+              monitoringCard,
+            ],
+            if (!_homeTourVisible) ...[
+              const TripSetupChecklist(),
+              const GtfsReadinessBanner(),
+            ],
+          ],
         ),
       ),
     );
@@ -125,10 +297,42 @@ bool _isGtfsReadyForTransitMode(BuildContext context) {
   );
 }
 
+/// Wraps a Home control as a guided-tour target with the branded tooltip card.
+Widget _tourTarget({
+  required GlobalKey key,
+  required Widget container,
+  required Widget child,
+}) {
+  return Showcase.withWidget(
+    key: key,
+    container: container,
+    overlayColor: Colors.black,
+    overlayOpacity: 0.82,
+    targetPadding: const EdgeInsets.all(6),
+    targetShapeBorder: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: const BorderSide(color: AppBranding.cyanAccent, width: 2),
+    ),
+    child: child,
+  );
+}
+
 class _DestinationCard extends StatelessWidget {
-  const _DestinationCard({required this.compact});
+  const _DestinationCard({
+    required this.compact,
+    required this.setDestinationKey,
+    required this.chooseAgencyKey,
+    required this.onChooseAgency,
+    required this.setDestinationTourCard,
+    required this.chooseAgencyTourCard,
+  });
 
   final bool compact;
+  final GlobalKey setDestinationKey;
+  final GlobalKey chooseAgencyKey;
+  final VoidCallback onChooseAgency;
+  final Widget setDestinationTourCard;
+  final Widget chooseAgencyTourCard;
 
   @override
   Widget build(BuildContext context) {
@@ -181,12 +385,23 @@ class _DestinationCard extends StatelessWidget {
             iconColor: colorScheme.secondary,
           ),
           const SizedBox(height: 12),
-          if (destination == null)
+          if (destination == null) ...[
             const EmptyStateMessage(
               message:
                   'Pick where you want to wake up — a station, address, or map pin.',
-            )
-          else ...[
+            ),
+            if (transitModeEnabled) ...[
+              const SizedBox(height: 12),
+              Text(
+                selectedLine,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ] else ...[
             Text(
               destination.name,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -239,7 +454,6 @@ class _DestinationCard extends StatelessWidget {
             ],
           ],
           if (!isMonitoring) ...[
-            const SizedBox(height: 12),
             Semantics(
               button: true,
               label: destination == null
@@ -247,17 +461,21 @@ class _DestinationCard extends StatelessWidget {
                   : 'Change destination',
               child: SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => DestinationPickerSheet.show(context),
-                  icon: Icon(
-                    destination == null
-                        ? Icons.add_location_alt_outlined
-                        : Icons.edit_location_alt_outlined,
-                  ),
-                  label: Text(
-                    destination == null
-                        ? 'Set destination'
-                        : 'Change destination',
+                child: _tourTarget(
+                  key: setDestinationKey,
+                  container: setDestinationTourCard,
+                  child: FilledButton.icon(
+                    onPressed: () => DestinationPickerSheet.show(context),
+                    icon: Icon(
+                      destination == null
+                          ? Icons.add_location_alt_outlined
+                          : Icons.edit_location_alt_outlined,
+                    ),
+                    label: Text(
+                      destination == null
+                          ? 'Set destination'
+                          : 'Change destination',
+                    ),
                   ),
                 ),
               ),
@@ -278,6 +496,21 @@ class _DestinationCard extends StatelessWidget {
                 ),
               ),
             ],
+            if (transitModeEnabled) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: _tourTarget(
+                  key: chooseAgencyKey,
+                  container: chooseAgencyTourCard,
+                  child: OutlinedButton.icon(
+                    onPressed: onChooseAgency,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Choose agency & line'),
+                  ),
+                ),
+              ),
+            ],
           ],
         ],
       ),
@@ -286,7 +519,19 @@ class _DestinationCard extends StatelessWidget {
 }
 
 class _MonitoringCard extends StatelessWidget {
-  const _MonitoringCard();
+  const _MonitoringCard({
+    required this.wakeSettingsKey,
+    required this.onOpenWakeSettings,
+    required this.startMonitoringKey,
+    required this.wakeSettingsTourCard,
+    required this.startMonitoringTourCard,
+  });
+
+  final GlobalKey wakeSettingsKey;
+  final VoidCallback onOpenWakeSettings;
+  final GlobalKey startMonitoringKey;
+  final Widget wakeSettingsTourCard;
+  final Widget startMonitoringTourCard;
 
   @override
   Widget build(BuildContext context) {
@@ -350,27 +595,23 @@ class _MonitoringCard extends StatelessWidget {
           HomeCardHeader(
             icon: Icons.sensors,
             title: 'Monitoring',
-            trailing: hasDestination
-                ? TextButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => transitModeEnabled
-                              ? const TransitModeSettingsScreen()
-                              : const LocationSettingsScreen(),
-                        ),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    icon: Icon(settingsActionIcon, size: 18),
-                    label: Text(settingsActionLabel),
-                  )
-                : null,
+            trailing: _tourTarget(
+              key: wakeSettingsKey,
+              container: wakeSettingsTourCard,
+              child: TextButton.icon(
+                onPressed: onOpenWakeSettings,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  minimumSize: const Size(0, 44),
+                  tapTargetSize: MaterialTapTargetSize.padded,
+                ),
+                icon: Icon(settingsActionIcon, size: 18),
+                label: Text(settingsActionLabel),
+              ),
+            ),
           ),
           const SizedBox(height: 10),
           MonitoringStatusChip(
@@ -417,7 +658,11 @@ class _MonitoringCard extends StatelessWidget {
               size: 22,
             ),
             title: const Text('Transit Mode'),
-            subtitle: Text(wakeSettingLabel),
+            subtitle: Text(
+              transitModeEnabled
+                  ? wakeSettingLabel
+                  : 'Off — uses wake distance',
+            ),
             value: transitModeEnabled,
             onChanged: state == MonitoringState.monitoring
                 ? null
@@ -439,14 +684,18 @@ class _MonitoringCard extends StatelessWidget {
                   button: true,
                   label: 'Start monitoring',
                   enabled: canStart,
-                  child: FilledButton.icon(
-                    onPressed: canStart
-                        ? () => _handleStartMonitoring(context)
-                        : null,
-                    icon: const Icon(Icons.play_arrow_rounded, size: 20),
-                    label: const Text('Start'),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 44),
+                  child: _tourTarget(
+                    key: startMonitoringKey,
+                    container: startMonitoringTourCard,
+                    child: FilledButton.icon(
+                      onPressed: canStart
+                          ? () => _handleStartMonitoring(context)
+                          : null,
+                      icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                      label: const Text('Start'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 44),
+                      ),
                     ),
                   ),
                 ),

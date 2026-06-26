@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/transit_stop.dart';
 import '../models/transit_stop_search_result.dart';
 import '../providers/gtfs_provider.dart';
+import '../screens/transit_data_screen.dart';
 
 enum _StopSearchScope { thisRoute, allRoutes }
 
@@ -175,21 +176,11 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
         const SizedBox(height: 8),
         Expanded(
           child: resultCount == 0
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Text(
-                      _emptyMessage(
-                        query: _query,
-                        scope: effectiveScope,
-                        hasAgencyStops: hasAgencyStops,
-                      ),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+              ? _StopPickerEmptyState(
+                  query: _query,
+                  scope: effectiveScope,
+                  hasAgencyStops: hasAgencyStops,
+                  hasLineStops: hasLineStops,
                 )
               : effectiveScope == _StopSearchScope.thisRoute
                   ? _RouteStopList(
@@ -204,27 +195,72 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
       ],
     );
   }
+}
 
-  String _emptyMessage({
-    required String query,
-    required _StopSearchScope scope,
-    required bool hasAgencyStops,
-  }) {
+class _StopPickerEmptyState extends StatelessWidget {
+  const _StopPickerEmptyState({
+    required this.query,
+    required this.scope,
+    required this.hasAgencyStops,
+    required this.hasLineStops,
+  });
+
+  final String query;
+  final _StopSearchScope scope;
+  final bool hasAgencyStops;
+  final bool hasLineStops;
+
+  bool get _needsGtfsDownload => query.isEmpty && !hasAgencyStops;
+
+  String get _message {
     if (query.isNotEmpty) {
       return 'No stops match "$query".';
     }
-
-    if (scope == _StopSearchScope.allRoutes && !hasAgencyStops) {
-      return 'Download GTFS data for this agency under Settings → Transit '
-          'to search stops.';
+    if (!hasAgencyStops) {
+      return 'Download transit data for this agency to browse and search stops.';
     }
-
-    if (scope == _StopSearchScope.thisRoute) {
-      return 'No stops available for this line. Try All routes or download '
-          'GTFS data.';
+    if (scope == _StopSearchScope.thisRoute && !hasLineStops) {
+      return 'No stops available for this line. Try All routes.';
     }
-
     return 'No stops available for this agency.';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (_needsGtfsDownload) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const TransitDataScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.cloud_download_outlined),
+                label: const Text('Download transit data'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../utils/app_branding.dart';
+import 'branded_app_name.dart';
 
 /// Canonical DozeAlert pin logo (from splash artwork).
 ///
@@ -107,12 +108,11 @@ class BrandingHero extends StatelessWidget {
           showDarkBadge: showDarkBadge,
         ),
         SizedBox(height: logoHeight * 0.22),
-        Text(
-          AppBranding.appName,
+        BrandedAppName(
           textAlign: TextAlign.center,
+          dozeColor: titleColor,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: titleColor,
             letterSpacing: -0.02,
           ),
         ),

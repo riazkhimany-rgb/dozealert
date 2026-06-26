@@ -202,7 +202,6 @@ class TransitModeProvider extends ChangeNotifier {
     if (_monitoringProvider.selectedDestination == null) {
       _snapshot = TransitModeSnapshot.inactive;
       _lastActiveSnapshot = null;
-      _activeRouteId = null;
       _approachAlarmTriggered = false;
       notifyListeners();
       return;

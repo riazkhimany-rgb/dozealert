@@ -27,7 +27,7 @@ class SettingsService {
     final testModeEnabled = prefs.getBool(_testModeKey) ?? false;
     final transitModeEnabled = prefs.getBool(_transitModeEnabledKey) ??
         prefs.getBool(_legacyTrainModeEnabledKey) ??
-        false;
+        true;
     final transitModeWakeIndex = prefs.getInt(_transitModeWakeKey) ??
         prefs.getInt(_legacyTrainModeWakeKey);
     final alarmSoundModeIndex = prefs.getInt(_alarmSoundModeKey);

@@ -73,7 +73,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _destinationLongitude = prefs.getDouble(_destinationLongitudeKey);
     _radiusMeters = prefs.getInt(MonitoringStorageService.radiusKey) ?? 1000;
     _testModeEnabled = prefs.getBool(_testModeKey) ?? false;
-    _transitModeEnabled = prefs.getBool(_transitModeEnabledKey) ?? false;
+    _transitModeEnabled = prefs.getBool(_transitModeEnabledKey) ?? true;
     _transitOnRoute = prefs.getBool(MonitoringStorageService.transitOnRouteKey) ?? false;
     _arrivalTriggered =
         prefs.getBool(MonitoringStorageService.arrivalTriggeredKey) ?? false;

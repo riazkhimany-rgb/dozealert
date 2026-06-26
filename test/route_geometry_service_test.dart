@@ -8,6 +8,8 @@ import 'package:dozealert/services/transit_mode_service.dart';
 import 'package:dozealert/utils/gps_quality.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/go_transit_test_feed.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -75,6 +77,7 @@ void main() {
     setUp(() async {
       gtfsService = GtfsService(TransitDataService());
       await gtfsService.initializeFromFallbackData();
+      gtfsService.mergeCachedFeed(buildGoTransitTestFeed());
       transitModeService = TransitModeService(gtfsService);
     });
 

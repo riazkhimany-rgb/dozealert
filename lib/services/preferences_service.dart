@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../data/mock_destinations.dart';
 import '../data/transit_catalog.dart';
 import '../models/destination.dart';
 import '../models/favorite_transit_line.dart';
@@ -16,7 +15,6 @@ class PreferencesService {
   static const _defaultLineKey = 'transit_default_line';
   static const _recentStationsKey = 'transit_recent_stations';
   static const _favoritesKey = 'destination_favorites';
-  static const _favoritesSeededKey = 'destination_favorites_seeded';
   static const _transitLineFavoritesKey = 'transit_line_favorites';
   static const _maxRecentStations = 8;
 
@@ -112,6 +110,15 @@ class PreferencesService {
     return updated;
   }
 
+  Future<List<Destination>> removeRecentStation(Destination station) async {
+    final current = await loadRecentStations();
+    final updated = current
+        .where((existing) => existing != station)
+        .toList(growable: false);
+    await saveRecentStations(updated);
+    return updated;
+  }
+
   Future<List<FavoriteDestination>> loadFavorites() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_favoritesKey);
@@ -138,25 +145,6 @@ class PreferencesService {
       _favoritesKey,
       jsonEncode(favorites.map((item) => item.toJson()).toList()),
     );
-  }
-
-  Future<List<FavoriteDestination>> seedFavoritesIfEmpty() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_favoritesSeededKey) ?? false) {
-      return loadFavorites();
-    }
-
-    final seeded = MockDestinations.favorites
-        .map(
-          (item) => FavoriteDestination(
-            destination: item.destination,
-            badges: item.badges,
-          ),
-        )
-        .toList(growable: false);
-    await saveFavorites(seeded);
-    await prefs.setBool(_favoritesSeededKey, true);
-    return seeded;
   }
 
   Future<List<FavoriteDestination>> addFavorite(FavoriteDestination favorite) {

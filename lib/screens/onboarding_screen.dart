@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
+import '../services/app_tour_service.dart';
 import '../services/onboarding_service.dart';
+import '../widgets/branded_app_name.dart';
 import '../widgets/branding_logo.dart';
 import '../widgets/onboarding_permissions_page.dart';
 import 'main_screen.dart';
@@ -73,6 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _finish() async {
     await _startOnboardingSetup();
     await _onboardingService.markComplete();
+    await context.read<AppTourService>().markHomeTourPending();
     if (!mounted) {
       return;
     }
@@ -184,10 +187,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             body:
                 'DozeAlert monitors your trip and sounds an alarm when '
                 'you are approaching your destination.\n\n'
-                'Set a wake radius (for example 1 km) so the alert '
-                'sounds with enough time to gather your things.\n\n'
-                'GO Transit stop data downloads in the background while '
-                'you finish setup.',
+                'Transit Mode is on by default — wake by stops remaining '
+                'on your line. Turn it off on Home to use a distance '
+                'wake radius instead (for example 1 km).\n\n'
+                'Transit stop data downloads in the background while '
+                'you finish setup.\n\n'
+                'On Home, a guided tour will walk you through each step '
+                'one at a time.',
+            useBrandMentions: true,
           ),
           OnboardingPermissionsPage(
             onStatusChanged: (snapshot) {
@@ -263,10 +270,12 @@ class _IntroPage extends StatelessWidget {
   const _IntroPage({
     required this.title,
     required this.body,
+    this.useBrandMentions = false,
   });
 
   final String title;
   final String body;
+  final bool useBrandMentions;
 
   @override
   Widget build(BuildContext context) {
@@ -291,14 +300,25 @@ class _IntroPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  body,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    height: 1.5,
+                if (useBrandMentions)
+                  BrandedMentionText(
+                    body,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                    dozeColor: colorScheme.onSurfaceVariant,
+                  )
+                else
+                  Text(
+                    body,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

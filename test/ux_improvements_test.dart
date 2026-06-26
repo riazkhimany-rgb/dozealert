@@ -15,15 +15,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('PreferencesService seeds favorites once', () async {
+  test('PreferencesService loads empty favorites by default', () async {
     SharedPreferences.setMockInitialValues({});
 
     final preferencesService = PreferencesService();
-    final first = await preferencesService.seedFavoritesIfEmpty();
-    final second = await preferencesService.seedFavoritesIfEmpty();
-
-    expect(first, isNotEmpty);
-    expect(second.length, first.length);
+    expect(await preferencesService.loadFavorites(), isEmpty);
   });
 
   test('PreferencesService persists favorites add and remove', () async {
@@ -37,9 +33,15 @@ void main() {
     );
 
     final added = await preferencesService.addFavorite(
-      FavoriteDestination(destination: destination, badges: ['Home']),
+      const FavoriteDestination(
+        destination: destination,
+        badges: ['GO Transit · Lakeshore West'],
+        transitSystem: 'GO Transit',
+        lineName: 'Lakeshore West',
+      ),
     );
     expect(added.length, 1);
+    expect(added.first.savedTransitLine?.transitSystem, 'GO Transit');
 
     final removed = await preferencesService.removeFavorite(destination);
     expect(removed, isEmpty);

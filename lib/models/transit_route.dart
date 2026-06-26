@@ -8,6 +8,7 @@ class TransitRoute {
     required this.country,
     required this.lineName,
     required this.transitSystem,
+    this.routeShortName,
     this.vehicleType = TransitVehicleType.bus,
   });
 
@@ -17,6 +18,7 @@ class TransitRoute {
   final String country;
   final String lineName;
   final String transitSystem;
+  final String? routeShortName;
   final TransitVehicleType vehicleType;
 
   @override
@@ -29,6 +31,7 @@ class TransitRoute {
             other.country == country &&
             other.lineName == lineName &&
             other.transitSystem == transitSystem &&
+            other.routeShortName == routeShortName &&
             other.vehicleType == vehicleType;
   }
 
@@ -40,6 +43,7 @@ class TransitRoute {
         country,
         lineName,
         transitSystem,
+        routeShortName,
         vehicleType,
       );
 }

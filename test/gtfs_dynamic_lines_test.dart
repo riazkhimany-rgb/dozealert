@@ -10,6 +10,8 @@ import 'package:dozealert/models/transit_vehicle_type.dart';
 import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/transit_data_service.dart';
 
+import 'support/go_transit_test_feed.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -20,11 +22,19 @@ void main() {
     await gtfsService.initializeFromFallbackData();
   });
 
-  test('GO Transit uses curated catalog lines', () {
+  test('GO Transit falls back to curated catalog lines before GTFS download', () {
     expect(TransitCatalog.hasCatalogLines('GO Transit'), isTrue);
     expect(
       gtfsService.linesForTransitSystem('GO Transit'),
-      TransitCatalog.linesForSystem('GO Transit'),
+      unorderedEquals(TransitCatalog.linesForSystem('GO Transit')),
+    );
+  });
+
+  test('GO Transit uses GTFS routes after feed merge', () {
+    gtfsService.mergeCachedFeed(buildGoTransitTestFeed());
+    expect(
+      gtfsService.linesForTransitSystem('GO Transit'),
+      ['Lakeshore West'],
     );
   });
 

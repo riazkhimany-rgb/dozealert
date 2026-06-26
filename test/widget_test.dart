@@ -27,6 +27,7 @@ import 'package:dozealert/services/gtfs_import_service.dart';
 import 'package:dozealert/services/gtfs_parser_service.dart';
 import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/monitoring_storage_service.dart';
+import 'package:dozealert/services/app_tour_service.dart';
 import 'package:dozealert/services/onboarding_service.dart';
 import 'package:dozealert/services/place_search_service.dart';
 import 'package:dozealert/services/preferences_service.dart';
@@ -35,6 +36,7 @@ import 'package:dozealert/services/transit_mode_service.dart';
 import 'package:dozealert/services/transit_data_service.dart';
 import 'package:dozealert/services/trip_history_service.dart';
 import 'package:dozealert/utils/app_branding.dart';
+import 'package:dozealert/widgets/branded_app_name.dart';
 import 'package:dozealert/widgets/branded_app_bar_title.dart';
 
 class _FakePathProvider {
@@ -102,7 +104,10 @@ Future<void> _pumpUntilSettled(
 }
 
 Future<DozeAlertApp> _createTestApp() async {
-  SharedPreferences.setMockInitialValues({'onboarding_complete': true});
+  SharedPreferences.setMockInitialValues({
+    'onboarding_complete': true,
+    'home_tour_complete': true,
+  });
   dotenv.loadFromString(envString: 'GOOGLE_MAPS_API_KEY=test_key');
 
   final settingsService = SettingsService();
@@ -131,6 +136,14 @@ Future<DozeAlertApp> _createTestApp() async {
   final destinationHistoryProvider =
       DestinationHistoryProvider(preferencesService);
   await destinationHistoryProvider.load();
+  await destinationHistoryProvider.addFavorite(
+    const Destination(
+      name: 'Union Station',
+      latitude: 43.6453,
+      longitude: -79.3806,
+    ),
+    badges: ['GO Transit · Lakeshore West'],
+  );
 
   final favoriteTransitLineProvider =
       FavoriteTransitLineProvider(preferencesService);
@@ -183,6 +196,7 @@ Future<DozeAlertApp> _createTestApp() async {
   await tripHistoryProvider.load();
 
   final onboardingService = OnboardingService();
+  final appTourService = AppTourService();
 
   return DozeAlertApp(
     settingsService: settingsService,
@@ -209,6 +223,7 @@ Future<DozeAlertApp> _createTestApp() async {
     tripHistoryService: tripHistoryService,
     tripHistoryProvider: tripHistoryProvider,
       onboardingService: onboardingService,
+      appTourService: appTourService,
     skipSplash: true,
     skipBootstrap: true,
   );
@@ -278,7 +293,7 @@ void main() {
     expect(find.text('Distance'), findsNothing);
     expect(find.text('Recent Destinations'), findsNothing);
 
-    await tester.tap(find.text('Trips'));
+    await tester.tap(find.text('Saved'));
     await _pumpUntilSettled(tester);
 
     expect(find.text('Favorite Destinations'), findsOneWidget);
@@ -305,12 +320,19 @@ void main() {
     await tester.tap(find.text('About'));
     await _pumpUntilSettled(tester);
 
-    expect(find.text('About DozeAlert'), findsOneWidget);
     expect(find.text('App Version'), findsOneWidget);
 
-    await tester.tap(find.text('About DozeAlert'));
+    await tester.tap(
+      find.ancestor(
+        of: find.byType(BrandedAppName),
+        matching: find.byType(ListTile),
+      ),
+    );
     await _pumpUntilSettled(tester);
-    expect(find.text('Share DozeAlert'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.share_outlined));
+    await _pumpUntilSettled(tester);
+    expect(find.byType(BrandedAppName), findsWidgets);
     expect(find.text(AppBranding.tagline), findsWidgets);
     await tester.pageBack();
     await _pumpUntilSettled(tester);
@@ -318,26 +340,23 @@ void main() {
     await tester.pageBack();
     await _pumpUntilSettled(tester);
 
-    await tester.tap(
-      find.text('Transit data, transit mode, and agencies'),
-    );
+    await tester.pageBack();
+    await _pumpUntilSettled(tester);
+
+    await tester.tap(find.text('Transit').last);
     await _pumpUntilSettled(tester);
 
     expect(find.text('Transit Data'), findsOneWidget);
     expect(find.text('Transit Mode'), findsOneWidget);
+    expect(find.text('Favorite Lines'), findsOneWidget);
     expect(find.text('Import GTFS Zip'), findsNothing);
 
     await tester.tap(find.text('Transit Mode'));
     await _pumpUntilSettled(tester);
 
-    await tester.scrollUntilVisible(
-      find.text('Enable Transit Mode'),
-      500,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await _pumpUntilSettled(tester);
-
-    expect(find.text('Enable Transit Mode'), findsOneWidget);
+    expect(find.text('Wake Timing'), findsOneWidget);
+    expect(find.text('Distance fallback'), findsOneWidget);
+    expect(find.text('Enable Transit Mode'), findsNothing);
 
     await tester.pageBack();
     await _pumpUntilSettled(tester);

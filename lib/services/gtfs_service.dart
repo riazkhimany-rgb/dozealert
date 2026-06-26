@@ -1,7 +1,10 @@
+import 'package:geolocator/geolocator.dart';
+
 import '../cache/gtfs_cache_store.dart';
 import '../data/transit_catalog.dart';
 import '../models/agency_detection_result.dart';
 import '../models/transit_agency.dart';
+import '../models/transit_line_option.dart';
 import '../models/transit_route.dart';
 import '../models/transit_stop.dart';
 import '../models/transit_stop_search_result.dart';
@@ -50,18 +53,6 @@ class GtfsService {
       _agenciesById[agency.agencyId] = agency;
     }
 
-    await _loadJsonFallbackForSystem(
-      country: 'Canada',
-      transitSystem: 'GO Transit',
-      agencyId: 'go_transit',
-    );
-    await _loadJsonFallbackForSystem(
-      country: 'Canada',
-      transitSystem: 'TTC',
-      agencyId: 'ttc',
-    );
-    _loadSupplementalStops();
-
     for (final feed in cachedFeeds) {
       mergeCachedFeed(feed);
     }
@@ -73,6 +64,12 @@ class GtfsService {
   }
 
   void mergeCachedFeed(GtfsCachedFeed feed) {
+    final transitSystems =
+        feed.routes.map((route) => route.transitSystem).toSet();
+    for (final transitSystem in transitSystems) {
+      _removeTransitSystemData(transitSystem);
+    }
+
     for (final agency in feed.agencies) {
       _agenciesById[agency.agencyId] = agency;
       if (!_agencies.any((entry) => entry.agencyId == agency.agencyId)) {
@@ -99,6 +96,12 @@ class GtfsService {
   }
 
   Future<void> mergeCachedFeedAsync(GtfsCachedFeed feed) async {
+    final transitSystems =
+        feed.routes.map((route) => route.transitSystem).toSet();
+    for (final transitSystem in transitSystems) {
+      _removeTransitSystemData(transitSystem);
+    }
+
     for (final agency in feed.agencies) {
       _agenciesById[agency.agencyId] = agency;
       if (!_agencies.any((entry) => entry.agencyId == agency.agencyId)) {
@@ -165,6 +168,28 @@ class GtfsService {
     await initializeFromFallbackData(cachedFeeds: cachedFeeds);
   }
 
+  void _removeTransitSystemData(String transitSystem) {
+    final routeIdsToRemove = _routes
+        .where((route) => route.transitSystem == transitSystem)
+        .map((route) => route.routeId)
+        .toSet();
+
+    if (routeIdsToRemove.isEmpty) {
+      return;
+    }
+
+    _routes.removeWhere((route) => routeIdsToRemove.contains(route.routeId));
+    for (final routeId in routeIdsToRemove) {
+      _routesById.remove(routeId);
+      final routeStops = _stopsByRouteId.remove(routeId);
+      if (routeStops == null) {
+        continue;
+      }
+      final stopIds = routeStops.map((stop) => stop.stopId).toSet();
+      _stops.removeWhere((stop) => stopIds.contains(stop.stopId));
+    }
+  }
+
   Future<void> _loadJsonFallbackForSystem({
     required String country,
     required String transitSystem,
@@ -218,79 +243,6 @@ class GtfsService {
         'GtfsService: loaded JSON fallback $routeId (${routeStops.length} stops)',
       );
     }
-  }
-
-  void _loadSupplementalStops() {
-    _addSupplementalRoute(
-      agencyId: 'exo_montreal',
-      transitSystem: 'Exo',
-      lineName: 'Mont-Saint-Hilaire',
-      stops: const [
-        _SupplementalStop(
-          name: 'Montreal Central',
-          latitude: 45.5001,
-          longitude: -73.5694,
-          sequence: 1,
-        ),
-      ],
-    );
-    _addSupplementalRoute(
-      agencyId: 'amtrak',
-      transitSystem: 'Amtrak',
-      lineName: 'Northeast Regional',
-      stops: const [
-        _SupplementalStop(
-          name: 'Penn Station',
-          latitude: 40.7506,
-          longitude: -73.9935,
-          sequence: 1,
-        ),
-      ],
-    );
-  }
-
-  void _addSupplementalRoute({
-    required String agencyId,
-    required String transitSystem,
-    required String lineName,
-    required List<_SupplementalStop> stops,
-  }) {
-    final agency = _agenciesById[agencyId];
-    if (agency == null) {
-      return;
-    }
-
-    final routeId = _routeIdFor(agencyId, lineName);
-    if (_routesById.containsKey(routeId)) {
-      return;
-    }
-
-    final route = TransitRoute(
-      routeId: routeId,
-      routeName: lineName,
-      agencyId: agencyId,
-      country: agency.country,
-      lineName: lineName,
-      transitSystem: transitSystem,
-    );
-    _routes.add(route);
-    _routesById[routeId] = route;
-
-    final routeStops = stops
-        .map(
-          (stop) => TransitStop(
-            stopId: '$routeId:${stop.sequence}',
-            stopName: stop.name,
-            latitude: stop.latitude,
-            longitude: stop.longitude,
-            routeId: routeId,
-            stopSequence: stop.sequence,
-          ),
-        )
-        .toList(growable: false);
-
-    _stops.addAll(routeStops);
-    _stopsByRouteId[routeId] = routeStops;
   }
 
   String _routeIdFor(String agencyId, String lineName) {
@@ -350,6 +302,28 @@ class GtfsService {
   }
 
   AgencyDetectionResult? detectAgencyFromDestination(String destinationName) {
+    return detectAgencyFromDestinationAt(
+      destinationName: destinationName,
+    );
+  }
+
+  AgencyDetectionResult? detectAgencyFromDestinationAt({
+    required String destinationName,
+    double? latitude,
+    double? longitude,
+    double maxDistanceMeters = 250,
+  }) {
+    if (latitude != null && longitude != null) {
+      final nearestStop = findNearestStop(
+        latitude: latitude,
+        longitude: longitude,
+        maxDistanceMeters: maxDistanceMeters,
+      );
+      if (nearestStop != null) {
+        return _detectionForStop(nearestStop);
+      }
+    }
+
     final normalizedName = destinationName.trim().toLowerCase();
     if (normalizedName.isEmpty) {
       return null;
@@ -376,6 +350,124 @@ class GtfsService {
     return _detectFromHeuristics(normalizedName);
   }
 
+  TransitStop? findNearestStop({
+    required double latitude,
+    required double longitude,
+    double maxDistanceMeters = 250,
+  }) {
+    if (_stops.isEmpty) {
+      return null;
+    }
+
+    return _findNearestStopInList(
+      _stops,
+      latitude: latitude,
+      longitude: longitude,
+      maxDistanceMeters: maxDistanceMeters,
+    );
+  }
+
+  TransitStop? findNearestStopOnRoute({
+    required double latitude,
+    required double longitude,
+    required String routeId,
+    double maxDistanceMeters = 250,
+  }) {
+    final routeStops = _stopsByRouteId[routeId] ?? const [];
+    if (routeStops.isEmpty) {
+      return null;
+    }
+
+    return _findNearestStopInList(
+      routeStops,
+      latitude: latitude,
+      longitude: longitude,
+      maxDistanceMeters: maxDistanceMeters,
+    );
+  }
+
+  AgencyDetectionResult? detectDestinationOnRoute({
+    required String destinationName,
+    required String routeId,
+    double? latitude,
+    double? longitude,
+    double maxDistanceMeters = 250,
+  }) {
+    final byName = findStopByName(destinationName, routeId: routeId);
+    if (byName != null) {
+      return _detectionForStop(byName);
+    }
+
+    final normalizedName = destinationName.trim().toLowerCase();
+    if (normalizedName.isNotEmpty) {
+      final routeStops = _stopsByRouteId[routeId] ?? const [];
+      final exactMatches = routeStops
+          .where((stop) => stop.stopName.toLowerCase() == normalizedName)
+          .toList(growable: false);
+      if (exactMatches.isNotEmpty) {
+        return _detectionForStop(
+          _pickBestStopMatch(exactMatches, normalizedName),
+        );
+      }
+
+      final partialMatches = routeStops
+          .where((stop) => stop.stopName.toLowerCase().contains(normalizedName))
+          .toList(growable: false);
+      if (partialMatches.length == 1) {
+        return _detectionForStop(partialMatches.first);
+      }
+    }
+
+    if (latitude != null && longitude != null) {
+      final nearestStop = findNearestStopOnRoute(
+        latitude: latitude,
+        longitude: longitude,
+        routeId: routeId,
+        maxDistanceMeters: maxDistanceMeters,
+      );
+      if (nearestStop != null) {
+        return _detectionForStop(nearestStop);
+      }
+    }
+
+    return null;
+  }
+
+  TransitStop? _findNearestStopInList(
+    Iterable<TransitStop> stops, {
+    required double latitude,
+    required double longitude,
+    required double maxDistanceMeters,
+  }) {
+    TransitStop? nearest;
+    var nearestDistance = maxDistanceMeters;
+
+    for (final stop in stops) {
+      final distance = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        stop.latitude,
+        stop.longitude,
+      );
+      if (distance <= nearestDistance) {
+        nearestDistance = distance;
+        nearest = stop;
+      }
+    }
+
+    return nearest;
+  }
+
+  String? transitBadgeForStop(TransitStop stop) {
+    final route = _routesById[stop.routeId];
+    if (route == null) {
+      return null;
+    }
+    return transitLineInfoForRoute(route).badge;
+  }
+
+  TransitRoute? routeForStop(TransitStop stop) => _routesById[stop.routeId];
+
   TransitStop? findStopByName(String stopName, {String? routeId}) {
     final normalizedName = stopName.trim().toLowerCase();
     Iterable<TransitStop> candidates = _stops;
@@ -396,7 +488,21 @@ class GtfsService {
   TransitAgency? agencyById(String agencyId) => _agenciesById[agencyId];
 
   List<TransitStop> stopsForRoute(String routeId) {
-    return _stopsByRouteId[routeId] ?? const [];
+    return _dedupeStopsByLocation(_stopsByRouteId[routeId] ?? const []);
+  }
+
+  static List<TransitStop> _dedupeStopsByLocation(List<TransitStop> stops) {
+    final seenKeys = <String>{};
+    final deduped = <TransitStop>[];
+    for (final stop in stops) {
+      final key =
+          '${stop.stopName}|${stop.latitude.toStringAsFixed(5)}|${stop.longitude.toStringAsFixed(5)}';
+      if (seenKeys.add(key)) {
+        deduped.add(stop);
+      }
+    }
+    deduped.sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
+    return deduped;
   }
 
   List<TransitRoute> routesForTransitSystem(String transitSystem) {
@@ -405,22 +511,108 @@ class GtfsService {
         .toList(growable: false);
   }
 
-  List<String> linesForTransitSystem(String transitSystem) {
+  List<TransitVehicleType> vehicleTypesForTransitSystem(String transitSystem) {
+    final routes = routesForTransitSystem(transitSystem);
+    if (routes.isNotEmpty) {
+      final types = routes.map((route) => route.vehicleType).toSet().toList()
+        ..sort((a, b) => a.label.compareTo(b.label));
+      return types;
+    }
+
+    final feed = TransitCatalog.feedByAgencyName(transitSystem);
+    return feed?.vehicleTypes ?? const [];
+  }
+
+  bool hasGtfsRoutesForTransitSystem(String transitSystem) {
+    return routesForTransitSystem(transitSystem).isNotEmpty;
+  }
+
+  List<String> linesForTransitSystem(
+    String transitSystem, {
+    TransitVehicleType? vehicleType,
+  }) {
+    return lineOptionsForTransitSystem(
+      transitSystem,
+      vehicleType: vehicleType,
+    ).map((option) => option.lineName).toList(growable: false);
+  }
+
+  List<TransitLineOption> lineOptionsForTransitSystem(
+    String transitSystem, {
+    TransitVehicleType? vehicleType,
+  }) {
+    final routes = routesForTransitSystem(transitSystem);
+    if (routes.isNotEmpty) {
+      final filteredRoutes = vehicleType == null
+          ? routes
+          : routes.where((route) => route.vehicleType == vehicleType);
+      final options = _lineOptionsFromRoutes(filteredRoutes);
+      if (options.isNotEmpty) {
+        return options;
+      }
+      if (vehicleType != null) {
+        return const [];
+      }
+    }
+
     if (TransitCatalog.hasCatalogLines(transitSystem)) {
-      return TransitCatalog.linesForSystem(transitSystem);
+      final catalogLines = TransitCatalog.linesForSystem(transitSystem);
+      if (vehicleType == null ||
+          vehicleType == _defaultVehicleTypeForSystem(transitSystem)) {
+        return catalogLines
+            .map(
+              (line) => TransitLineOption(
+                lineName: line,
+                displayLabel: line,
+              ),
+            )
+            .toList(growable: false);
+      }
+      return const [];
     }
 
-    final gtfsLines = routesForTransitSystem(transitSystem)
-        .map((route) => route.lineName)
-        .toSet()
-        .toList(growable: false)
-      ..sort(_compareLineNames);
-
-    if (gtfsLines.isNotEmpty) {
-      return gtfsLines;
+    final options = _lineOptionsFromRoutes(routes);
+    if (options.isNotEmpty) {
+      return options;
     }
 
-    return TransitCatalog.linesForSystem(transitSystem);
+    return TransitCatalog.linesForSystem(transitSystem)
+        .map(
+          (line) => TransitLineOption(
+            lineName: line,
+            displayLabel: line,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  String displayLabelForLine(String transitSystem, String lineName) {
+    for (final route in routesForTransitSystem(transitSystem)) {
+      if (route.lineName == lineName ||
+          route.routeName == lineName ||
+          route.routeShortName == lineName) {
+        return TransitLineOption.fromRoute(route).displayLabel;
+      }
+    }
+    return lineName;
+  }
+
+  List<TransitLineOption> _lineOptionsFromRoutes(
+    Iterable<TransitRoute> routes,
+  ) {
+    final optionsByLineName = <String, TransitLineOption>{};
+    for (final route in routes) {
+      optionsByLineName.putIfAbsent(
+        route.lineName,
+        () => TransitLineOption.fromRoute(route),
+      );
+    }
+
+    final options = optionsByLineName.values.toList(growable: false)
+      ..sort(
+        (a, b) => _compareLineNames(a.displayLabel, b.displayLabel),
+      );
+    return options;
   }
 
   bool hasStopsForTransitSystem(String transitSystem) {
@@ -487,13 +679,58 @@ class GtfsService {
     required String transitSystem,
     required String lineName,
   }) {
+    final normalized = lineName.trim();
+    if (normalized.isEmpty) {
+      return null;
+    }
+
     for (final route in _routes) {
-      if (route.transitSystem == transitSystem &&
-          (route.lineName == lineName || route.routeName == lineName)) {
+      if (route.transitSystem != transitSystem) {
+        continue;
+      }
+      if (_routeMatchesLineRef(route, normalized)) {
         return route;
       }
     }
     return null;
+  }
+
+  String? resolvePreferenceLineName({
+    required String transitSystem,
+    required String lineRef,
+  }) {
+    return routeForTransitLine(
+      transitSystem: transitSystem,
+      lineName: lineRef,
+    )?.lineName;
+  }
+
+  bool routeExistsForLineRef({
+    required String transitSystem,
+    required String lineRef,
+  }) {
+    return routeForTransitLine(
+      transitSystem: transitSystem,
+      lineName: lineRef,
+    ) != null;
+  }
+
+  ({String badge, String lineName}) transitLineInfoForRoute(TransitRoute route) {
+    final displayLabel = route.routeName.isNotEmpty &&
+            route.routeName != route.lineName
+        ? route.routeName
+        : route.lineName;
+    return (
+      badge: '${route.transitSystem} · $displayLabel',
+      lineName: route.lineName,
+    );
+  }
+
+  bool _routeMatchesLineRef(TransitRoute route, String lineRef) {
+    final normalized = lineRef.toLowerCase();
+    return route.lineName.toLowerCase() == normalized ||
+        route.routeName.toLowerCase() == normalized ||
+        (route.routeShortName?.toLowerCase() == normalized);
   }
 
   List<TransitStop> stopsForTransitLine({
@@ -659,18 +896,4 @@ class GtfsService {
 
     return a.toLowerCase().compareTo(b.toLowerCase());
   }
-}
-
-class _SupplementalStop {
-  const _SupplementalStop({
-    required this.name,
-    required this.latitude,
-    required this.longitude,
-    required this.sequence,
-  });
-
-  final String name;
-  final double latitude;
-  final double longitude;
-  final int sequence;
 }

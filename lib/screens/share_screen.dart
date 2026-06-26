@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/app_branding.dart';
+import '../widgets/branded_app_name.dart';
 import '../widgets/branding_logo.dart';
 import '../widgets/home_card.dart';
 
@@ -45,8 +46,7 @@ class ShareScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            AppBranding.appName,
+                          BrandedAppName(
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -65,7 +65,7 @@ class ShareScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text(
+                BrandedMentionText(
                   AppBranding.description,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
@@ -73,7 +73,7 @@ class ShareScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
+                BrandedMentionText(
                   'Help fellow travelers sleep peacefully and arrive confidently. '
                   'Share DozeAlert with friends and family!',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -89,7 +89,10 @@ class ShareScreen extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () => Share.share(_shareMessage),
               icon: const Icon(Icons.ios_share),
-              label: const Text('Share DozeAlert'),
+              label: BrandedAppName.forFilledButton(
+                context,
+                prefix: 'Share ',
+              ),
             ),
           ),
           const SizedBox(height: 24),

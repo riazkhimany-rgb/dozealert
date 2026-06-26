@@ -12,6 +12,27 @@ class TransitModeSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     final colorScheme = Theme.of(context).colorScheme;
+    final transitModeEnabled = settingsProvider.transitModeEnabled;
+
+    final wakeTimingGroup = RadioGroup<TransitModeWakeSetting>(
+      groupValue: settingsProvider.transitModeWake,
+      onChanged: (value) {
+        if (!transitModeEnabled || value == null) {
+          return;
+        }
+        settingsProvider.setTransitModeWake(value);
+      },
+      child: Column(
+        children: TransitModeWakeSetting.values
+            .map(
+              (wakeSetting) => RadioListTile<TransitModeWakeSetting>(
+                title: Text(wakeSetting.label),
+                value: wakeSetting,
+              ),
+            )
+            .toList(),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -20,17 +41,49 @@ class TransitModeSettingsScreen extends StatelessWidget {
       body: ListView(
         children: [
           const SettingsSectionHeader(title: 'Transit Mode'),
-          SwitchListTile(
-            secondary: Icon(Icons.directions_transit, color: colorScheme.primary),
-            title: const Text('Enable Transit Mode'),
-            subtitle: Text(
-              'Wake up based on stops remaining while you are on a route. '
-              'Uses your wake radius to detect when you are near the line.',
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(
+              'Turn Transit Mode on or off from the switch on Home. '
+              'Choose how many stops before your station the alarm should sound.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
-            value: settingsProvider.transitModeEnabled,
-            onChanged: settingsProvider.setTransitModeEnabled,
           ),
+          if (!transitModeEnabled)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Transit Mode is off. Turn it on from the switch on '
+                        'Home to change wake timing.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
             child: Text(
@@ -41,25 +94,15 @@ class TransitModeSettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          RadioGroup<TransitModeWakeSetting>(
-            groupValue: settingsProvider.transitModeWake,
-            onChanged: (value) {
-              if (!settingsProvider.transitModeEnabled || value == null) {
-                return;
-              }
-              settingsProvider.setTransitModeWake(value);
-            },
-            child: Column(
-              children: TransitModeWakeSetting.values
-                  .map(
-                    (wakeSetting) => RadioListTile<TransitModeWakeSetting>(
-                      title: Text(wakeSetting.label),
-                      value: wakeSetting,
-                    ),
-                  )
-                  .toList(),
+          if (transitModeEnabled)
+            wakeTimingGroup
+          else
+            IgnorePointer(
+              child: Opacity(
+                opacity: 0.5,
+                child: wakeTimingGroup,
+              ),
             ),
-          ),
           const Divider(height: 32),
           ListTile(
             leading: Icon(Icons.location_on_outlined, color: colorScheme.primary),

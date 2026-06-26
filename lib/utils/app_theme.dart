@@ -32,7 +32,14 @@ abstract final class AppTheme {
       surfaceContainerHighest: const Color(0xFF1B3147),
     );
 
-    return _baseTheme(colorScheme);
+    return _baseTheme(colorScheme).copyWith(
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF1E3A52),
+          foregroundColor: AppBranding.white,
+        ),
+      ),
+    );
   }
 
   static ThemeData _baseTheme(ColorScheme colorScheme) {

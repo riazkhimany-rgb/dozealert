@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../utils/app_branding.dart';
 import '../utils/external_link_launcher.dart';
+import '../widgets/branded_app_name.dart';
 import '../widgets/branding_logo.dart';
 import 'privacy_policy_screen.dart';
 import 'share_screen.dart';
@@ -46,7 +47,7 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
+              BrandedMentionText(
                 AppBranding.description,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -64,7 +65,10 @@ class AboutScreen extends StatelessWidget {
                   );
                 },
                 icon: const Icon(Icons.share_outlined),
-                label: const Text('Share DozeAlert'),
+                label: BrandedAppName.forFilledButton(
+                  context,
+                  prefix: 'Share ',
+                ),
               ),
               const SizedBox(height: 12),
               FilledButton.tonalIcon(

@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/destination.dart';
-import '../models/favorite_destination.dart';
 import '../providers/destination_history_provider.dart';
-import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
 
-class FavoriteStopsPickerSheet extends StatelessWidget {
-  const FavoriteStopsPickerSheet({super.key});
+class RecentDestinationsPickerSheet extends StatelessWidget {
+  const RecentDestinationsPickerSheet({super.key});
 
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet<void>(
@@ -32,7 +30,7 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
           ),
           child: SizedBox(
             height: sheetHeight,
-            child: const FavoriteStopsPickerSheet(),
+            child: const RecentDestinationsPickerSheet(),
           ),
         );
       },
@@ -42,7 +40,7 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final favorites = context.watch<DestinationHistoryProvider>().favorites;
+    final recents = context.watch<DestinationHistoryProvider>().recents;
     final selected = context.select<MonitoringProvider, Destination?>(
       (provider) => provider.selectedDestination,
     );
@@ -53,7 +51,7 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
           child: Text(
-            'Favorite destinations',
+            'Recent destinations',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -62,19 +60,21 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
           child: Text(
-            '${favorites.length} saved destination${favorites.length == 1 ? '' : 's'}',
+            recents.isEmpty
+                ? 'No recent destinations yet'
+                : '${recents.length} recent destination${recents.length == 1 ? '' : 's'}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
           ),
         ),
         Expanded(
-          child: favorites.isEmpty
+          child: recents.isEmpty
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Text(
-                      'No favorite destinations yet. Add them from the Saved tab.',
+                      'Destinations you pick will appear here for quick reuse.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -84,12 +84,12 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
                 )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                  itemCount: favorites.length,
+                  itemCount: recents.length,
                   separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (context, index) {
-                    final item = favorites[index];
+                    final destination = recents[index];
                     final isSelected =
-                        selected != null && item.matches(selected);
+                        selected != null && selected == destination;
 
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -99,21 +99,18 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
                             ? colorScheme.primaryContainer
                             : colorScheme.secondaryContainer,
                         child: Icon(
-                          Icons.star_outline,
+                          Icons.history,
                           size: 18,
                           color: isSelected
                               ? colorScheme.onPrimaryContainer
                               : colorScheme.onSecondaryContainer,
                         ),
                       ),
-                      title: Text(item.destination.name),
-                      subtitle: item.badges.isEmpty
-                          ? null
-                          : Text(item.badges.join(', ')),
+                      title: Text(destination.name),
                       trailing: isSelected
                           ? Icon(Icons.check, color: colorScheme.primary)
                           : null,
-                      onTap: () => unawaited(_select(context, item)),
+                      onTap: () => unawaited(_select(context, destination)),
                     );
                   },
                 ),
@@ -124,16 +121,16 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
 
   static Future<void> _select(
     BuildContext context,
-    FavoriteDestination item,
+    Destination destination,
   ) async {
-    await context.read<GtfsProvider>().selectFavoriteDestination(item);
+    await context.read<MonitoringProvider>().setDestination(destination);
     if (!context.mounted) {
       return;
     }
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Selected ${item.destination.name}'),
+        content: Text('Selected ${destination.name}'),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),

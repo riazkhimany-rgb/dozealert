@@ -12,7 +12,7 @@ class AppSettings {
   const AppSettings({
     this.themeMode = ThemeMode.system,
     this.testModeEnabled = false,
-    this.transitModeEnabled = false,
+    this.transitModeEnabled = true,
     this.transitModeWake = TransitModeWakeSetting.oneStopBefore,
     this.alarmSoundMode = AlarmSoundMode.followDevice,
     this.alarmVolume = 1.0,

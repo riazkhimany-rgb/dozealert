@@ -11,9 +11,8 @@ abstract final class TransitDataLicenses {
       'downloading or importing feeds.';
 
   static const bundledNotice =
-      'GO Transit and TTC ship with bundled stop lists so alarms work before '
-      'you download full GTFS. Bundled data may be older than the agency feed — '
-      'download or import GTFS on Transit Data for the latest stops.';
+      'GO Transit GTFS downloads automatically on first launch. Other agencies '
+      'require a GTFS download from Transit Data for the latest routes and stops.';
 
   static List<TransitCatalogAgency> get bundledBootstrapAgencies {
     return TransitCatalog.agenciesWithBundledStopLists;

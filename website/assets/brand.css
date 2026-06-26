@@ -1,0 +1,26 @@
+.brand-name {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.brand-doze {
+  color: inherit;
+  font-weight: 700;
+}
+
+.brand-alert {
+  color: var(--cyan, #4CC9F0);
+  font-weight: 700;
+}
+
+h1 .brand-doze,
+h1 .brand-alert,
+h2 .brand-doze,
+h2 .brand-alert {
+  font-weight: 700;
+}
+
+strong .brand-alert {
+  color: var(--cyan, #4CC9F0);
+  font-weight: 700;
+}

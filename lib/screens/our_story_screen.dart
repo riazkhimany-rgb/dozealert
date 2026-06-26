@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../utils/app_branding.dart';
+import '../widgets/branded_app_name.dart';
 
 class OurStoryScreen extends StatelessWidget {
   const OurStoryScreen({super.key});
@@ -26,48 +27,30 @@ class OurStoryScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           children: [
-          Text(
-            'Why DozeAlert Exists?',
+          BrandedAppName(
+            prefix: 'Why ',
+            suffix: ' Exists?',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
-          Text.rich(
-            TextSpan(
-              style: bodyStyle,
-              children: [
-                const TextSpan(
-                  text:
-                      'The idea for DozeAlert came from a real experience. '
-                      'During one of my daily train commutes, I dozed off and '
-                      'woke up just in time to realize that I had reached my '
-                      'stop. The train doors were about to close, and I barely '
-                      'made it off in time. As I walked away, I couldn\'t help '
-                      'but think, ',
-                ),
-                TextSpan(
-                  text:
-                      '"There has to be a technological way to solve this problem."',
-                  style: boldStyle,
-                ),
-              ],
-            ),
+          BrandedMentionText(
+            'The idea for DozeAlert came from a real experience. '
+            'During one of my daily train commutes, I dozed off and '
+            'woke up just in time to realize that I had reached my '
+            'stop. The train doors were about to close, and I barely '
+            'made it off in time. As I walked away, I couldn\'t help '
+            'but think, "There has to be a technological way to solve this problem."',
+            style: bodyStyle,
           ),
           const SizedBox(height: 16),
-          Text.rich(
-            TextSpan(
-              style: bodyStyle,
-              children: [
-                TextSpan(
-                  text: 'That moment sparked the idea for DozeAlert.',
-                  style: boldStyle,
-                ),
-              ],
-            ),
+          BrandedMentionText(
+            'That moment sparked the idea for DozeAlert.',
+            style: boldStyle,
           ),
           const SizedBox(height: 16),
-          Text(
+          BrandedMentionText(
             'What started as a simple thought quickly became a passion project. '
             'I created DozeAlert to help people relax, rest, and travel with '
             'confidence. Whether you\'re commuting to work, taking a long train '
@@ -84,7 +67,7 @@ class OurStoryScreen extends StatelessWidget {
             style: bodyStyle,
           ),
           const SizedBox(height: 16),
-          Text(
+          BrandedMentionText(
             'Thank you for being part of this journey and for supporting '
             'independent app development. Your feedback and encouragement help '
             'shape the future of DozeAlert.',
@@ -125,11 +108,15 @@ class OurStoryScreen extends StatelessWidget {
             TextSpan(
               style: bodyStyle,
               children: [
+                ...BrandedAppName.spans(
+                  style: boldStyle ?? bodyStyle!,
+                  dozeColor: colorScheme.onSurface,
+                ),
                 TextSpan(
-                  text: 'DozeAlert is a passion project',
+                  text: ' is a passion project',
                   style: boldStyle,
                 ),
-                const TextSpan(
+                TextSpan(
                   text:
                       ' inspired by a simple but relatable problem faced by '
                       'commuters everywhere. Built with care and driven by '
@@ -152,12 +139,12 @@ class OurStoryScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            'Creator of DozeAlert',
+          BrandedAppName(
+            prefix: 'Creator of ',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
+            dozeColor: colorScheme.onSurfaceVariant,
           ),
           ],
         ),

@@ -136,6 +136,16 @@ class GtfsFeedProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Removes every cached GTFS feed from device storage.
+  Future<void> clearAllCachedFeeds() async {
+    _errors.clear();
+    _progress.clear();
+    await _cacheStore.clearAllFeeds();
+    await _gtfsService.reinitialize(cachedFeeds: const []);
+    await _refreshFeedList();
+    notifyListeners();
+  }
+
   Future<void> importZipBytes({
     required List<int> bytes,
     required String fileName,

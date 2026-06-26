@@ -5,12 +5,17 @@ import 'package:provider/provider.dart';
 
 import '../data/transit_catalog.dart';
 import '../models/gtfs_feed_info.dart';
+import '../models/transit_line_option.dart';
+import '../models/transit_vehicle_type.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../utils/external_link_launcher.dart';
 import '../widgets/home_card.dart';
+import '../widgets/gtfs_vehicle_type_download_prompt.dart';
+import '../widgets/searchable_line_picker.dart';
 import '../widgets/transit_attribution_notice.dart';
+import '../widgets/vehicle_type_filter_chips.dart';
 
 class TransitPreferencesSection extends StatelessWidget {
   const TransitPreferencesSection({
@@ -47,38 +52,9 @@ class TransitPreferencesSection extends StatelessWidget {
           ),
         Padding(
           padding: cardPadding,
-          child: _TransitPreferenceCard(
-            title: 'Country',
-            value: preferences.country,
-            options: TransitCatalog.countries,
-            onChanged: (value) {
-              unawaited(context.read<TransitProvider>().setCountry(value));
-            },
-          ),
-        ),
-        Padding(
-          padding: cardPadding,
-          child: _TransitPreferenceCard(
-            title: TransitCatalog.regionLabelForCountry(preferences.country),
-            value: preferences.region,
-            options: TransitCatalog.regionsForCountry(preferences.country),
-            onChanged: (value) {
-              unawaited(context.read<TransitProvider>().setRegion(value));
-            },
-          ),
-        ),
-        Padding(
-          padding: cardPadding,
-          child: _TransitPreferenceCard(
-            title: 'Transit Agency',
-            value: preferences.transitSystem,
-            options: TransitCatalog.agenciesForRegion(
-              preferences.country,
-              preferences.region,
-            ),
-            onChanged: (value) {
-              unawaited(context.read<TransitProvider>().setTransitSystem(value));
-            },
+          child: _PreferredAgencySetupCard(
+            key: ValueKey(preferences.transitSystem),
+            includeLocationFields: !compact,
           ),
         ),
         if (compact)
@@ -91,40 +67,294 @@ class TransitPreferencesSection extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            subtitle: const Text('Default line and GTFS download'),
+            subtitle: const Text('GTFS download'),
             children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _DefaultLinePickerCard(
-                  transitSystem: preferences.transitSystem,
-                  selectedLine: preferences.defaultLine,
-                ),
-              ),
               _PreferredAgencyGtfsCard(
                 transitSystem: preferences.transitSystem,
               ),
             ],
           )
-        else ...[
-          Padding(
-            padding: cardPadding,
-            child: _DefaultLinePickerCard(
-              transitSystem: preferences.transitSystem,
-              selectedLine: preferences.defaultLine,
-            ),
-          ),
+        else
           Padding(
             padding: cardPadding,
             child: _PreferredAgencyGtfsCard(
               transitSystem: preferences.transitSystem,
             ),
           ),
-        ],
         Padding(
           padding: cardPadding,
           child: TransitAttributionNotice(
             agencyName: preferences.transitSystem,
             compact: true,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PreferredAgencySetupCard extends StatefulWidget {
+  const _PreferredAgencySetupCard({
+    super.key,
+    required this.includeLocationFields,
+  });
+
+  final bool includeLocationFields;
+
+  @override
+  State<_PreferredAgencySetupCard> createState() =>
+      _PreferredAgencySetupCardState();
+}
+
+class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
+  TransitVehicleType? _vehicleTypeFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final preferences = context.watch<TransitProvider>().preferences;
+    final gtfsProvider = context.watch<GtfsProvider>();
+    final vehicleTypes = gtfsProvider.availableVehicleTypesForSelectedAgency();
+    final lineOptions = gtfsProvider.availableLineOptionsForSelectedAgency(
+      vehicleType: _vehicleTypeFilter,
+    );
+    final lineNames = lineOptions.map((option) => option.lineName).toList();
+    final savedLineInList = lineNames.contains(preferences.defaultLine);
+    final hasVehicleFilter = _vehicleTypeFilter != null;
+    // Display value for the dropdown; must be one of [lineNames] so the
+    // DropdownButton does not assert.
+    final resolvedLine = savedLineInList
+        ? preferences.defaultLine
+        : (lineNames.isNotEmpty ? lineNames.first : preferences.defaultLine);
+    final needsGtfsDownload = lineNames.length == 1 &&
+        lineNames.single == TransitCatalog.allRoutesLine &&
+        !gtfsProvider.hasStopsForSelectedAgency();
+    final showGtfsPrompt = _vehicleTypeFilter != null &&
+        lineOptions.isEmpty &&
+        vehicleTypes.contains(_vehicleTypeFilter);
+    final useSearch = _shouldUseSearchableLinePicker(
+      lineOptions,
+      _vehicleTypeFilter,
+    );
+
+    // Only repair the *saved* line when it genuinely no longer maps to any
+    // route for this agency. A vehicle-type filter is a transient view, so it
+    // must never overwrite the user's stored line (which previously snapped the
+    // selection to the first route, e.g. "11").
+    final lineNeedsRepair = !hasVehicleFilter &&
+        lineNames.isNotEmpty &&
+        !savedLineInList &&
+        !gtfsProvider.selectedAgencyHasRouteForLine(preferences.defaultLine);
+    if (lineNeedsRepair) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        unawaited(
+          context.read<TransitProvider>().setDefaultLine(lineNames.first),
+        );
+      });
+    }
+
+    return HomeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.includeLocationFields
+                ? 'Preferred agency & route'
+                : 'Route preferences',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (widget.includeLocationFields) ...[
+            _InlineDropdown(
+              label: 'Country',
+              value: preferences.country,
+              options: TransitCatalog.countries,
+              onChanged: (value) {
+                unawaited(context.read<TransitProvider>().setCountry(value));
+              },
+            ),
+            const SizedBox(height: 12),
+            _InlineDropdown(
+              label: TransitCatalog.regionLabelForCountry(preferences.country),
+              value: preferences.region,
+              options: TransitCatalog.regionsForCountry(preferences.country),
+              onChanged: (value) {
+                unawaited(context.read<TransitProvider>().setRegion(value));
+              },
+            ),
+            const SizedBox(height: 12),
+            _InlineDropdown(
+              label: 'Transit agency',
+              value: preferences.transitSystem,
+              options: TransitCatalog.agenciesForRegion(
+                preferences.country,
+                preferences.region,
+              ),
+              onChanged: (value) {
+                unawaited(
+                  context.read<TransitProvider>().setTransitSystem(value),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (vehicleTypes.isNotEmpty) ...[
+            Text(
+              'Vehicle type',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            VehicleTypeFilterChips(
+              vehicleTypes: vehicleTypes,
+              selected: _vehicleTypeFilter,
+              onSelected: (type) {
+                setState(() => _vehicleTypeFilter = type);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (showGtfsPrompt && _vehicleTypeFilter != null) ...[
+            GtfsVehicleTypeDownloadPrompt(
+              transitSystem: preferences.transitSystem,
+              vehicleType: _vehicleTypeFilter!,
+              onDownloadComplete: () => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+          ],
+          Text(
+            'Default line',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (lineOptions.isEmpty)
+            Text(
+              _vehicleTypeFilter == null
+                  ? 'Download GTFS data below to load routes for '
+                      '${preferences.transitSystem}.'
+                  : 'No ${_vehicleTypeFilter!.label.toLowerCase()} routes loaded. '
+                      'Try All types or download GTFS data below.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            )
+          else if (useSearch)
+            SearchableLinePicker(
+              value: resolvedLine,
+              options: lineOptions,
+              hintText: 'Search route number or name…',
+              onChanged: (value) {
+                unawaited(context.read<TransitProvider>().setDefaultLine(value));
+              },
+            )
+          else
+            _InlineDropdown(
+              label: 'Line',
+              value: resolvedLine,
+              options: lineNames,
+              onChanged: (value) {
+                unawaited(context.read<TransitProvider>().setDefaultLine(value));
+              },
+            ),
+          if (needsGtfsDownload) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Download GTFS data below to load all routes including buses.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ] else if (gtfsProvider.usesDynamicLinesForSelectedAgency &&
+              gtfsProvider.hasStopsForSelectedAgency()) ...[
+            const SizedBox(height: 12),
+            Text(
+              '${lineOptions.length} routes loaded from GTFS'
+              '${_vehicleTypeFilter == null ? '' : ' (${_vehicleTypeFilter!.label})'}.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  bool _shouldUseSearchableLinePicker(
+    List<TransitLineOption> lineOptions,
+    TransitVehicleType? vehicleType,
+  ) {
+    if (vehicleType == TransitVehicleType.bus ||
+        vehicleType == TransitVehicleType.streetcar) {
+      return lineOptions.isNotEmpty;
+    }
+    return lineOptions.length > 4;
+  }
+}
+
+class _InlineDropdown extends StatelessWidget {
+  const _InlineDropdown({
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String value;
+  final List<String> options;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedValue = options.contains(value) ? value : options.first;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InputDecorator(
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: resolvedValue,
+              items: options
+                  .map(
+                    (option) => DropdownMenuItem<String>(
+                      value: option,
+                      child: Text(option),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (selected) {
+                if (selected != null) {
+                  onChanged(selected);
+                }
+              },
+            ),
           ),
         ),
       ],
@@ -423,326 +653,6 @@ class _StatusRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _DefaultLinePickerCard extends StatelessWidget {
-  const _DefaultLinePickerCard({
-    required this.transitSystem,
-    required this.selectedLine,
-  });
-
-  final String transitSystem;
-  final String selectedLine;
-
-  static const _searchThreshold = 8;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final gtfsProvider = context.watch<GtfsProvider>();
-    final lines = gtfsProvider.availableLinesForSelectedAgency();
-    final options = lines.isEmpty
-        ? TransitCatalog.linesForSystem(transitSystem)
-        : lines;
-    final resolvedValue = options.contains(selectedLine)
-        ? selectedLine
-        : options.first;
-    final needsGtfsDownload = options.length == 1 &&
-        options.single == TransitCatalog.allRoutesLine &&
-        !gtfsProvider.hasStopsForSelectedAgency();
-    final useSearch = options.length > _searchThreshold;
-
-    return HomeCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Default Line',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (useSearch)
-            _SearchableLineButton(
-              value: resolvedValue,
-              options: options,
-              onChanged: (value) {
-                unawaited(context.read<TransitProvider>().setDefaultLine(value));
-              },
-            )
-          else
-            InputDecorator(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  value: resolvedValue,
-                  items: options
-                      .map(
-                        (option) => DropdownMenuItem<String>(
-                          value: option,
-                          child: Text(option),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (selected) {
-                    if (selected != null) {
-                      unawaited(
-                        context.read<TransitProvider>().setDefaultLine(selected),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ),
-          if (needsGtfsDownload) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Download GTFS data below to load routes for $transitSystem.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ] else if (gtfsProvider.usesDynamicLinesForSelectedAgency &&
-              gtfsProvider.hasStopsForSelectedAgency()) ...[
-            const SizedBox(height: 12),
-            Text(
-              '${options.length} routes loaded from GTFS.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SearchableLineButton extends StatelessWidget {
-  const _SearchableLineButton({
-    required this.value,
-    required this.options,
-    required this.onChanged,
-  });
-
-  final String value;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
-
-  Future<void> _openPicker(BuildContext context) async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return _SearchableLineSheet(
-          options: options,
-          selected: value,
-        );
-      },
-    );
-
-    if (selected != null) {
-      onChanged(selected);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        alignment: Alignment.centerLeft,
-      ),
-      onPressed: () => _openPicker(context),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-          ),
-          const Icon(Icons.search),
-        ],
-      ),
-    );
-  }
-}
-
-class _SearchableLineSheet extends StatefulWidget {
-  const _SearchableLineSheet({
-    required this.options,
-    required this.selected,
-  });
-
-  final List<String> options;
-  final String selected;
-
-  @override
-  State<_SearchableLineSheet> createState() => _SearchableLineSheetState();
-}
-
-class _SearchableLineSheetState extends State<_SearchableLineSheet> {
-  final _searchController = TextEditingController();
-  String _query = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final normalizedQuery = _query.trim().toLowerCase();
-    final filtered = normalizedQuery.isEmpty
-        ? widget.options
-        : widget.options
-            .where((line) => line.toLowerCase().contains(normalizedQuery))
-            .toList(growable: false);
-    final sheetHeight = MediaQuery.sizeOf(context).height * 0.7;
-
-    return SizedBox(
-      height: sheetHeight,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Text(
-              'Choose Route',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SearchBar(
-              controller: _searchController,
-              hintText: 'Search routes…',
-              leading: const Icon(Icons.search),
-              trailing: _query.isEmpty
-                  ? null
-                  : [
-                      IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                        },
-                      ),
-                    ],
-              onChanged: (value) => setState(() => _query = value),
-            ),
-          ),
-          Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Text(
-                      'No routes match "$_query".',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final line = filtered[index];
-                      final isSelected = line == widget.selected;
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(line),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check,
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : null,
-                        onTap: () => Navigator.of(context).pop(line),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TransitPreferenceCard extends StatelessWidget {
-  const _TransitPreferenceCard({
-    required this.title,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-  });
-
-  final String title;
-  final String value;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return HomeCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-          InputDecorator(
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 4,
-              ),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: options.contains(value) ? value : options.first,
-                items: options
-                    .map(
-                      (option) => DropdownMenuItem<String>(
-                        value: option,
-                        child: Text(option),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (selected) {
-                  if (selected != null) {
-                    onChanged(selected);
-                  }
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

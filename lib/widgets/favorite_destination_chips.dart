@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/destination.dart';
 import '../models/favorite_destination.dart';
 import '../providers/destination_history_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
 
 /// Quick destination pick from saved favorites on the Home destination card.
@@ -41,7 +42,8 @@ class FavoriteDestinationChips extends StatelessWidget {
               FilterChip(
                 label: Text(_chipLabel(item)),
                 selected: selected != null && item.matches(selected),
-                onSelected: (_) => unawaited(_select(context, item.destination)),
+                onSelected: (_) =>
+                    unawaited(_select(context, item)),
               ),
           ],
         ),
@@ -57,14 +59,17 @@ class FavoriteDestinationChips extends StatelessWidget {
     return '$name · ${item.badges.first}';
   }
 
-  static Future<void> _select(BuildContext context, Destination destination) async {
-    await context.read<MonitoringProvider>().setDestination(destination);
+  static Future<void> _select(
+    BuildContext context,
+    FavoriteDestination item,
+  ) async {
+    await context.read<GtfsProvider>().selectFavoriteDestination(item);
     if (!context.mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Selected ${destination.name}'),
+        content: Text('Selected ${item.destination.name}'),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),

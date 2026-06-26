@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../config/env_config.dart';
 import '../providers/destination_history_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/transit_provider.dart';
 import '../services/location_service.dart';
@@ -158,7 +159,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     if (!mounted) {
       return;
     }
-    await context.read<DestinationHistoryProvider>().addFavorite(destination);
+    await context.read<DestinationHistoryProvider>().addFavoriteItem(
+      context.read<GtfsProvider>().buildFavoriteDestination(destination),
+    );
     if (!mounted) {
       return;
     }

@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/navigation_provider.dart';
+import '../services/app_tour_service.dart';
 import '../widgets/settings_section_tile.dart';
 import 'settings/about_settings_screen.dart';
 import 'settings/alarm_settings_screen.dart';
@@ -41,6 +44,21 @@ class SettingsScreen extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const AboutSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          SettingsNavTile(
+            icon: Icons.explore_outlined,
+            title: 'Show app tour',
+            subtitle: 'Walk through each Home step again',
+            onTap: () {
+              context.read<NavigationProvider>().setIndex(0);
+              context.read<AppTourService>().requestReplay();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tour starting on Home.'),
+                  duration: Duration(seconds: 2),
                 ),
               );
             },

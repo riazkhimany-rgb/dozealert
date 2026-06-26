@@ -136,6 +136,7 @@ List<TransitRoute> _readRoutes(String path) {
           agencyId: entry['agencyId'] as String,
           country: entry['country'] as String,
           lineName: entry['lineName'] as String,
+          routeShortName: entry['routeShortName'] as String?,
           transitSystem: entry['transitSystem'] as String,
           vehicleType: TransitVehicleTypeX.fromName(
             entry['vehicleType'] as String?,
@@ -182,6 +183,7 @@ Map<String, dynamic> routeToJson(TransitRoute route) {
     'agencyId': route.agencyId,
     'country': route.country,
     'lineName': route.lineName,
+    'routeShortName': route.routeShortName,
     'transitSystem': route.transitSystem,
     'vehicleType': route.vehicleType.name,
   };

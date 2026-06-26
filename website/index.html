@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
   <link rel="icon" type="image/png" href="assets/icon-512.png">
+  <link rel="stylesheet" href="assets/brand.css">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -270,7 +271,7 @@
   <div class="wrap">
     <header>
       <img class="logo" src="assets/logo.png" height="120" alt="DozeAlert logo">
-      <h1>DozeAlert</h1>
+      <h1><span class="brand-name"><span class="brand-doze">Doze</span><span class="brand-alert">Alert</span></span></h1>
       <p class="tagline">Sleep peacefully. Arrive confidently.</p>
     </header>
 
@@ -295,7 +296,7 @@
         from the Google account on your phone and we&rsquo;ll send an invite.
       </p>
       <p class="meta">
-        Version <span id="app-version">1.0.4+6</span> &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
+        Version <span id="app-version">1.0.7+9</span> &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
 
@@ -418,16 +419,20 @@
   </div>
 
   <script>
-    fetch('app-version.json')
+    fetch('app-version.json', { cache: 'no-store' })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
         if (!data) {
           return;
         }
         const label = data.label || (data.build ? `${data.version}+${data.build}` : data.version);
-        document.getElementById('app-version').textContent = label;
+        const versionEl = document.getElementById('app-version');
+        if (versionEl) {
+          versionEl.textContent = label;
+        }
       })
       .catch(() => {});
   </script>
+  <script src="assets/brand.js"></script>
 </body>
 </html>

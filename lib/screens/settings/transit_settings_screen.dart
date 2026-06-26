@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../widgets/settings_section_tile.dart';
-import '../../widgets/transit_preferences_section.dart';
+import 'favorite_lines_settings_screen.dart';
 import '../transit_data_screen.dart';
+import 'preferred_agencies_screen.dart';
 import 'transit_mode_settings_screen.dart';
 
 class TransitSettingsScreen extends StatelessWidget {
@@ -31,7 +32,7 @@ class TransitSettingsScreen extends StatelessWidget {
           SettingsNavTile(
             icon: Icons.directions_transit,
             title: 'Transit Mode',
-            subtitle: 'Stop-based wake alarms for all vehicle types',
+            subtitle: 'Wake timing and distance fallback (toggle on Home)',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -56,29 +57,23 @@ class TransitSettingsScreen extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const _PreferredAgenciesScreen(),
+                  builder: (_) => const PreferredAgenciesScreen(),
                 ),
               );
             },
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreferredAgenciesScreen extends StatelessWidget {
-  const _PreferredAgenciesScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Preferred Agencies'),
-      ),
-      body: ListView(
-        children: const [
-          TransitPreferencesSection(),
+          SettingsNavTile(
+            icon: Icons.star_outline,
+            title: 'Favorite Lines',
+            subtitle: 'Saved transit lines for quick switching',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const FavoriteLinesSettingsScreen(),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

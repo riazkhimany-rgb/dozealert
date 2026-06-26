@@ -25,7 +25,7 @@ class FavoriteTransitLineChips extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick switch line',
+          'Switch transit line',
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w600,
           ),

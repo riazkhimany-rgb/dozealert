@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../utils/app_branding.dart';
+import '../../widgets/branded_app_name.dart';
 import '../../widgets/branding_logo.dart';
 import '../../widgets/settings_section_tile.dart';
 import '../transit_data_licenses_screen.dart';
@@ -47,7 +48,11 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           const SettingsSectionHeader(title: 'App'),
           ListTile(
             leading: const BrandingLogo(height: 44),
-            title: const Text('About DozeAlert'),
+            title: BrandedAppName(
+              prefix: 'About ',
+              style: Theme.of(context).textTheme.titleMedium,
+              dozeColor: colorScheme.onSurface,
+            ),
             subtitle: Text(
               AppBranding.tagline,
               style: TextStyle(color: colorScheme.onSurfaceVariant),
@@ -64,7 +69,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           ListTile(
             leading: Icon(Icons.auto_stories_outlined, color: colorScheme.primary),
             title: const Text('Our Story'),
-            subtitle: Text(
+            subtitle: BrandedMentionText(
               'Why DozeAlert exists and about the creator',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),

@@ -4,8 +4,7 @@ import '../models/gtfs_feed_info.dart';
 /// User-facing attribution strings for open-data compliance.
 abstract final class TransitAttribution {
   static const bundledPrefix =
-      'Bundled stop lists are convenience snapshots only — download GTFS for '
-      'the latest agency data. ';
+      'Download GTFS for the latest agency data. ';
 
   static GtfsFeedInfo? feedForAgency(String agencyName) {
     return TransitCatalog.feedByAgencyName(agencyName);
@@ -15,10 +14,6 @@ abstract final class TransitAttribution {
     final feed = feedForAgency(agencyName);
     if (feed != null) {
       return feed.resolvedAttribution;
-    }
-
-    if (_bundledAgencyIds.containsKey(agencyName)) {
-      return bundledPrefix + (_bundledAgencyIds[agencyName] ?? '');
     }
 
     return _listOnlyAttribution[agencyName] ??
@@ -35,15 +30,8 @@ abstract final class TransitAttribution {
   }
 
   static bool usesBundledStops(String agencyName) {
-    return _bundledAgencyIds.containsKey(agencyName);
+    return false;
   }
-
-  static const _bundledAgencyIds = <String, String>{
-    'GO Transit':
-        'Contains data from GO Transit (Metrolinx) Open Data Catalogue.',
-    'TTC':
-        'Contains data licensed under the City of Toronto Open Data License.',
-  };
 
   static const _listOnlyAttribution = <String, String>{
     'OC Transpo':

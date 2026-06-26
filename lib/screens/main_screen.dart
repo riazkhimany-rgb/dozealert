@@ -25,7 +25,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     NavigationDestination(
       icon: Icon(Icons.route_outlined),
       selectedIcon: Icon(Icons.route),
-      label: 'Trips',
+      label: 'Saved',
     ),
     NavigationDestination(
       icon: Icon(Icons.settings_outlined),
@@ -34,7 +34,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ),
   ];
 
-  static const _screens = [
+  static final _screens = [
     HomeScreen(),
     TripsScreen(),
     SettingsScreen(),

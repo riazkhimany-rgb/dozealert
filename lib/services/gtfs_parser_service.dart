@@ -76,15 +76,22 @@ class GtfsParserService {
         .map(
           (row) {
             final routeId = row['route_id'] ?? '';
-            final routeName =
-                row['route_long_name'] ?? row['route_short_name'] ?? routeId;
+            final shortName = (row['route_short_name'] ?? '').trim();
+            final longName = (row['route_long_name'] ?? '').trim();
+            final lineName = shortName.isNotEmpty
+                ? shortName
+                : (longName.isNotEmpty ? longName : routeId);
+            final routeName = longName.isNotEmpty
+                ? longName
+                : (shortName.isNotEmpty ? shortName : routeId);
             final agencyId = row['agency_id'] ?? agencies.first.agencyId;
             return TransitRoute(
               routeId: '${feedId}_$routeId',
               routeName: routeName,
               agencyId: agencyId,
               country: country,
-              lineName: routeName,
+              lineName: lineName,
+              routeShortName: shortName.isEmpty ? null : shortName,
               transitSystem: resolvedFeedName,
               vehicleType: _vehicleTypeForRoute(
                 routeType: row['route_type'],
@@ -130,7 +137,13 @@ class GtfsParserService {
       final sortedEntries = sequenceMap.entries.toList()
         ..sort((a, b) => a.key.compareTo(b.key));
 
+      final seenGtfsStopIds = <String>{};
+      var displaySequence = 0;
       for (final entry in sortedEntries) {
+        if (!seenGtfsStopIds.add(entry.value)) {
+          continue;
+        }
+
         final stopRow = stopLookup[entry.value];
         if (stopRow == null) {
           continue;
@@ -142,14 +155,15 @@ class GtfsParserService {
           continue;
         }
 
+        displaySequence++;
         stops.add(
           TransitStop(
-            stopId: '$routeId:${entry.key}',
+            stopId: '$routeId:$displaySequence',
             stopName: stopRow['stop_name'] ?? entry.value,
             latitude: latitude,
             longitude: longitude,
             routeId: routeId,
-            stopSequence: entry.key,
+            stopSequence: displaySequence,
           ),
         );
       }

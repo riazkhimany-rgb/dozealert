@@ -402,14 +402,9 @@ abstract final class TransitCatalog {
         .toList(growable: false);
   }
 
-  /// GO and TTC ship bundled stop JSON in assets for offline bootstrap.
+  /// Agencies that previously shipped bundled stop JSON (now use GTFS download).
   static List<TransitCatalogAgency> get agenciesWithBundledStopLists {
-    return _agencies
-        .where(
-          (agency) =>
-              agency.agencyId == 'go_transit' || agency.agencyId == 'ttc',
-        )
-        .toList(growable: false);
+    return const [];
   }
 
   /// Agencies selectable in the app but without a catalog GTFS feed entry.
@@ -525,7 +520,9 @@ abstract final class TransitCatalog {
         : defaultAgencyForRegion(country, region);
     var defaultLine = isValidLineForSystem(transitSystem, preferences.defaultLine)
         ? preferences.defaultLine
-        : defaultLineForSystem(transitSystem);
+        : preferences.defaultLine.trim().isEmpty
+            ? defaultLineForSystem(transitSystem)
+            : preferences.defaultLine;
 
     return TransitPreferences(
       country: country,

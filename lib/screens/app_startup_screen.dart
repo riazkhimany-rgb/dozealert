@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/destination_history_provider.dart';
 import '../providers/gtfs_feed_provider.dart';
@@ -105,7 +106,29 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       tripHistoryProvider.load(),
     ]);
 
+    await _purgeStaleGtfsCacheIfNeeded(gtfsFeedProvider, gtfsProvider);
+
+    gtfsFeedProvider.preloadGoTransitIfNeeded(
+      onComplete: gtfsProvider.notifyDataUpdated,
+    );
+
     return onboardingService.isComplete();
+  }
+
+  static const _gtfsStaleCachePurgedKey = 'gtfs_stale_cache_purged_v2';
+
+  Future<void> _purgeStaleGtfsCacheIfNeeded(
+    GtfsFeedProvider gtfsFeedProvider,
+    GtfsProvider gtfsProvider,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_gtfsStaleCachePurgedKey) ?? false) {
+      return;
+    }
+
+    await gtfsFeedProvider.clearAllCachedFeeds();
+    await gtfsProvider.refreshFromCache();
+    await prefs.setBool(_gtfsStaleCachePurgedKey, true);
   }
 
   void _setPhaseAfterBootstrap(bool onboardingComplete) {

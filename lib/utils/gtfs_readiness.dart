@@ -36,13 +36,9 @@ abstract final class GtfsReadiness {
     GtfsProvider gtfsProvider,
     TransitPreferences preferences,
   ) {
-    if (!TransitCatalog.hasCatalogLines(preferences.transitSystem)) {
-      return gtfsProvider.canShowStopPicker();
-    }
     return hasStopDataForPreferences(gtfsProvider, preferences);
   }
 
-  /// First-time setup: bundled line JSON counts as ready for GO/TTC catalog lines.
   static bool isSetupChecklistComplete(
     GtfsProvider gtfsProvider,
     TransitPreferences preferences,
@@ -50,10 +46,6 @@ abstract final class GtfsReadiness {
   ) {
     if (isReadyForSelectedAgency(gtfsProvider, preferences)) {
       return true;
-    }
-
-    if (!TransitCatalog.hasCatalogLines(preferences.transitSystem)) {
-      return false;
     }
 
     if (!feedProvider.isInitialized) {
@@ -64,7 +56,7 @@ abstract final class GtfsReadiness {
     return feed?.status == GtfsFeedStatus.downloaded;
   }
 
-  /// Optional full GTFS zip — only needed when bundled data is missing.
+  /// Prompt when GTFS stop data is missing for the selected agency.
   static bool shouldPromptForDownload(
     GtfsProvider gtfsProvider,
     TransitPreferences preferences,
@@ -74,15 +66,15 @@ abstract final class GtfsReadiness {
       return false;
     }
 
-    if (!TransitCatalog.hasCatalogLines(preferences.transitSystem)) {
-      return true;
-    }
-
     if (!feedProvider.isInitialized) {
       return true;
     }
 
     final feed = feedProvider.feedForTransitSystem(preferences.transitSystem);
-    return feed == null || feed.status != GtfsFeedStatus.downloaded;
+    if (feed == null) {
+      return !TransitCatalog.hasCatalogLines(preferences.transitSystem);
+    }
+
+    return feed.status != GtfsFeedStatus.downloaded;
   }
 }

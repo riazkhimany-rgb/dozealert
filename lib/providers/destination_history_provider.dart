@@ -18,9 +18,6 @@ class DestinationHistoryProvider extends ChangeNotifier {
   Future<void> load() async {
     _recents = await _preferencesService.loadRecentStations();
     _favorites = await _preferencesService.loadFavorites();
-    if (_favorites.isEmpty) {
-      _favorites = await _preferencesService.seedFavoritesIfEmpty();
-    }
     notifyListeners();
   }
 
@@ -32,15 +29,32 @@ class DestinationHistoryProvider extends ChangeNotifier {
   Future<void> addFavorite(
     Destination destination, {
     List<String> badges = const [],
+    String? transitSystem,
+    String? lineName,
   }) async {
     _favorites = await _preferencesService.addFavorite(
-      FavoriteDestination(destination: destination, badges: badges),
+      FavoriteDestination(
+        destination: destination,
+        badges: badges,
+        transitSystem: transitSystem,
+        lineName: lineName,
+      ),
     );
+    notifyListeners();
+  }
+
+  Future<void> addFavoriteItem(FavoriteDestination item) async {
+    _favorites = await _preferencesService.addFavorite(item);
     notifyListeners();
   }
 
   Future<void> removeFavorite(Destination destination) async {
     _favorites = await _preferencesService.removeFavorite(destination);
+    notifyListeners();
+  }
+
+  Future<void> removeRecent(Destination destination) async {
+    _recents = await _preferencesService.removeRecentStation(destination);
     notifyListeners();
   }
 

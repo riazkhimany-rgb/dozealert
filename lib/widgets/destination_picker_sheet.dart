@@ -7,6 +7,7 @@ import '../providers/gtfs_provider.dart';
 import '../screens/map_picker_screen.dart';
 import 'favorite_lines_picker_sheet.dart';
 import 'favorite_stops_picker_sheet.dart';
+import 'recent_destinations_picker_sheet.dart';
 import 'accessible_scroll_body.dart';
 import 'stop_picker_sheet.dart';
 
@@ -32,6 +33,8 @@ class DestinationPickerSheet extends StatelessWidget {
         context.watch<DestinationHistoryProvider>().favorites.length;
     final favoriteLineCount =
         context.watch<FavoriteTransitLineProvider>().favorites.length;
+    final recentCount =
+        context.watch<DestinationHistoryProvider>().recents.length;
 
     return AccessibleSheetBody(
       child: Column(
@@ -88,13 +91,24 @@ class DestinationPickerSheet extends StatelessWidget {
             ),
             _PickerOption(
               icon: Icons.swap_horiz,
-              title: 'Quick switch line',
+              title: 'Switch transit line',
               subtitle: favoriteLineCount == 0
                   ? 'No saved lines yet'
                   : '$favoriteLineCount saved line${favoriteLineCount == 1 ? '' : 's'}',
               onTap: () {
                 Navigator.of(context).pop();
                 FavoriteLinesPickerSheet.show(context);
+              },
+            ),
+            _PickerOption(
+              icon: Icons.history,
+              title: 'Recent destinations',
+              subtitle: recentCount == 0
+                  ? 'No recent destinations yet'
+                  : '$recentCount recent destination${recentCount == 1 ? '' : 's'}',
+              onTap: () {
+                Navigator.of(context).pop();
+                RecentDestinationsPickerSheet.show(context);
               },
             ),
           ],

@@ -44,13 +44,8 @@ void main() {
   });
 
   group('TransitDataLicenses', () {
-    test('lists bundled bootstrap agencies', () {
-      final names = TransitDataLicenses.bundledBootstrapAgencies
-          .map((agency) => agency.agencyName)
-          .toList();
-
-      expect(names, contains('GO Transit'));
-      expect(names, contains('TTC'));
+    test('lists no bundled bootstrap agencies', () {
+      expect(TransitDataLicenses.bundledBootstrapAgencies, isEmpty);
     });
 
     test('includes all catalog GTFS feeds', () {

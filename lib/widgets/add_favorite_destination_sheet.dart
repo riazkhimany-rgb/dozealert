@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/destination.dart';
 import '../models/transit_stop.dart';
 import '../providers/destination_history_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
 import 'stop_picker_sheet.dart';
 import 'accessible_scroll_body.dart';
@@ -122,18 +123,22 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
     BuildContext context,
     TransitStop stop,
   ) async {
-    final destination = Destination(
-      name: stop.stopName,
-      latitude: stop.latitude,
-      longitude: stop.longitude,
+    await _addDestination(
+      context,
+      Destination(
+        name: stop.stopName,
+        latitude: stop.latitude,
+        longitude: stop.longitude,
+      ),
+      stop: stop,
     );
-    await _addDestination(context, destination);
   }
 
   static Future<void> _addDestination(
     BuildContext context,
-    Destination destination,
-  ) async {
+    Destination destination, {
+    TransitStop? stop,
+  }) async {
     final history = context.read<DestinationHistoryProvider>();
     if (history.isFavorite(destination)) {
       if (context.mounted) {
@@ -148,7 +153,12 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
       return;
     }
 
-    await history.addFavorite(destination);
+    await history.addFavoriteItem(
+      context.read<GtfsProvider>().buildFavoriteDestination(
+        destination,
+        stop: stop,
+      ),
+    );
     if (!context.mounted) {
       return;
     }

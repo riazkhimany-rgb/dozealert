@@ -123,4 +123,18 @@ class GtfsCacheStore {
       AppLog.d('GtfsCacheStore: deleted cached feed $feedId');
     }
   }
+
+  Future<void> clearAllFeeds() async {
+    final cacheDir = await _resolveCacheDirectory();
+    if (!cacheDir.existsSync()) {
+      return;
+    }
+
+    for (final entity in cacheDir.listSync()) {
+      if (entity is Directory) {
+        entity.deleteSync(recursive: true);
+      }
+    }
+    AppLog.d('GtfsCacheStore: cleared all cached feeds');
+  }
 }
