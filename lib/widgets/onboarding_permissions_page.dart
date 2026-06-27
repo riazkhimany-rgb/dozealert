@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../models/app_permission_snapshot.dart';
 import '../services/app_permissions_service.dart';
 import '../utils/permission_setup_steps.dart';
+import '../utils/transit_user_copy.dart';
 import 'permission_step_confirm_dialog.dart';
 
 class OnboardingPermissionsPage extends StatefulWidget {
@@ -450,8 +451,7 @@ class _SuccessCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Required permissions are set. Tap Continue to pick your transit '
-              'agency, then set your first destination on Home.',
+              TransitUserCopy.permissionsContinueHint,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onPrimaryContainer,

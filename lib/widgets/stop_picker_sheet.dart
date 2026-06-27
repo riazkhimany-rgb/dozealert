@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../models/transit_stop.dart';
 import '../models/transit_stop_search_result.dart';
 import '../providers/gtfs_provider.dart';
+import '../providers/transit_provider.dart';
 import '../screens/transit_data_screen.dart';
+import '../utils/transit_user_copy.dart';
 
 enum _StopSearchScope { thisRoute, allRoutes }
 
@@ -79,6 +81,7 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final gtfsProvider = context.watch<GtfsProvider>();
+    final transitSystem = context.watch<TransitProvider>().preferences.transitSystem;
     final colorScheme = Theme.of(context).colorScheme;
     final hasLineStops = gtfsProvider.hasStopsForSelectedLine();
     final hasAgencyStops = gtfsProvider.hasStopsForSelectedAgency();
@@ -183,6 +186,7 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
                   scope: effectiveScope,
                   hasAgencyStops: hasAgencyStops,
                   hasLineStops: hasLineStops,
+                  transitSystem: transitSystem,
                 )
               : effectiveScope == _StopSearchScope.thisRoute
                   ? _RouteStopList(
@@ -205,12 +209,14 @@ class _StopPickerEmptyState extends StatelessWidget {
     required this.scope,
     required this.hasAgencyStops,
     required this.hasLineStops,
+    required this.transitSystem,
   });
 
   final String query;
   final _StopSearchScope scope;
   final bool hasAgencyStops;
   final bool hasLineStops;
+  final String transitSystem;
 
   bool get _needsGtfsDownload => query.isEmpty && !hasAgencyStops;
 
@@ -219,12 +225,12 @@ class _StopPickerEmptyState extends StatelessWidget {
       return 'No stops match "$query".';
     }
     if (!hasAgencyStops) {
-      return 'Download transit data for this agency to browse and search stops.';
+      return TransitUserCopy.downloadStopListForTransit(transitSystem);
     }
     if (scope == _StopSearchScope.thisRoute && !hasLineStops) {
       return 'No stops available for this line. Try All routes.';
     }
-    return 'No stops available for this agency.';
+    return TransitUserCopy.noStopsForTransit(transitSystem);
   }
 
   @override

@@ -247,6 +247,32 @@ void main() {
     expect(snapshot.nextStop?.stopName, 'Bronte GO');
   });
 
+  test('isTransitTrackableDestination is true for GTFS stop destinations', () {
+    const destination = Destination(
+      name: 'Bronte GO',
+      latitude: 43.4039,
+      longitude: -79.7589,
+    );
+
+    expect(
+      transitModeService.isTransitTrackableDestination(
+        destination,
+        routeId: 'go_transit_lakeshore_west',
+      ),
+      isTrue,
+    );
+    expect(
+      transitModeService.isTransitTrackableDestination(
+        const Destination(
+          name: 'Custom coffee shop',
+          latitude: 43.65,
+          longitude: -79.38,
+        ),
+      ),
+      isFalse,
+    );
+  });
+
   test('transit mode stays inactive when far from the route at home', () {
     const destination = Destination(
       name: 'Bronte GO',

@@ -10,6 +10,7 @@ import '../models/transit_vehicle_type.dart';
 import '../providers/favorite_transit_line_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
+import '../utils/transit_user_copy.dart';
 import 'accessible_scroll_body.dart';
 import 'gtfs_vehicle_type_download_prompt.dart';
 import 'searchable_line_picker.dart';
@@ -128,7 +129,7 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
           ),
           const SizedBox(height: 8),
           Text(
-            'Save agency and line pairs for quick switching on Home.',
+            TransitUserCopy.saveTransitLinePairsHint,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -166,7 +167,7 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
             },
           ),
           _PickerField(
-            label: 'Transit agency',
+            label: TransitUserCopy.transitLabel,
             value: _transitSystem,
             options: TransitCatalog.agenciesForRegion(_country, _region),
             onChanged: (value) {
@@ -224,7 +225,7 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
             )
           else
             _PickerField(
-              label: 'Line',
+              label: TransitUserCopy.lineLabel,
               value: resolvedLineName,
               options: lineNames,
               onChanged: (value) => setState(() => _lineName = value),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../widgets/settings_section_tile.dart';
+import '../../utils/transit_user_copy.dart';
 import 'favorite_lines_settings_screen.dart';
 import '../transit_data_screen.dart';
 import 'preferred_agencies_screen.dart';
@@ -19,8 +20,8 @@ class TransitSettingsScreen extends StatelessWidget {
         children: [
           SettingsNavTile(
             icon: Icons.cloud_download_outlined,
-            title: 'Transit Data',
-            subtitle: 'Download, update, and delete GTFS feeds',
+            title: 'Transit stops',
+            subtitle: 'Download and update agency stop lists',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -42,18 +43,18 @@ class TransitSettingsScreen extends StatelessWidget {
             },
           ),
           const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Preferred Agencies'),
+          const SettingsSectionHeader(title: TransitUserCopy.transitAndLine),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Choose your country, province or state, and preferred transit agency.',
+              TransitUserCopy.settingsTransitAndLineIntro,
             ),
           ),
           const SizedBox(height: 8),
           SettingsNavTile(
             icon: Icons.apartment_outlined,
-            title: 'Preferred Agencies',
-            subtitle: 'GTA and Ontario agencies by region',
+            title: TransitUserCopy.transitAndLine,
+            subtitle: TransitUserCopy.settingsTransitAndLineSubtitle,
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

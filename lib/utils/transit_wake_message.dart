@@ -14,7 +14,7 @@ abstract final class TransitWakeMessage {
     }
 
     if (!gtfsReady) {
-      return 'Transit mode on — download GTFS to track stops';
+      return 'Download your transit stop list to wake by stops';
     }
 
     if (snapshot.isActive) {
@@ -22,15 +22,15 @@ abstract final class TransitWakeMessage {
         return 'GPS signal weak — showing last known position on $selectedLine';
       }
       if (snapshot.stopsRemaining == 0) {
-        return 'At destination stop on $selectedLine';
+        return 'At your stop on $selectedLine';
       }
       return 'Waking by stops on $selectedLine';
     }
 
     if (isMonitoring) {
-      return 'Waiting for GPS on your line — $selectedLine';
+      return 'Waiting to lock onto your route — $selectedLine';
     }
 
-    return 'Start monitoring to see stop-by-stop progress.';
+    return 'Tap Start to begin tracking your ride.';
   }
 }

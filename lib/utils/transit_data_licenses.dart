@@ -5,14 +5,16 @@ import '../models/transit_catalog_agency.dart';
 /// Copy and helpers for the Transit Data Licenses screen.
 abstract final class TransitDataLicenses {
   static const generalNotice =
-      'DozeAlert uses public GTFS schedule and stop data from transit agencies. '
-      'Data is cached on your device for offline alarms and is not redistributed '
-      'by DozeAlert. Each agency sets its own open data terms — review them before '
-      'downloading or importing feeds.';
+      'DozeAlert uses public transit schedule and stop data (GTFS format) from '
+      'transit agencies. Data is cached on your device for offline alarms and is not '
+      'redistributed by DozeAlert. Each agency sets its own open data terms — review '
+      'them before downloading or importing stop lists.';
 
   static const bundledNotice =
-      'GO Transit GTFS downloads automatically on first launch. Other agencies '
-      'require a GTFS download from Transit Data for the latest routes and stops.';
+      'During first-run setup, DozeAlert downloads stop lists in the background for '
+      'the transit you pick when a direct agency download is available. You can also '
+      'download or update stop lists under Settings → Transit → Transit stops, or '
+      'import a GTFS zip where an agency requires manual import.';
 
   static List<TransitCatalogAgency> get bundledBootstrapAgencies {
     return TransitCatalog.agenciesWithBundledStopLists;

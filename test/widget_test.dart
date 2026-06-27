@@ -263,7 +263,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.textContaining('Pick where you want to wake up'),
+      find.textContaining('Pick the stop where you want to wake up'),
       findsOneWidget,
     );
 
@@ -297,25 +297,28 @@ void main() {
     await _pumpUntilSettled(tester);
 
     expect(find.text('Favorite Destinations'), findsOneWidget);
+    expect(find.text('Trip History'), findsNothing);
+    expect(find.text('Missed Trips'), findsNothing);
 
-    await tester.scrollUntilVisible(
-      find.text('Trip History'),
-      500,
-      scrollable: find.byType(Scrollable).first,
+    await tester.tap(find.text('Settings'));
+    await _pumpUntilSettled(tester);
+
+    expect(find.text('General'), findsOneWidget);
+    expect(find.text('Activity'), findsWidgets);
+
+    await tester.tap(
+      find.widgetWithText(ListTile, 'Activity'),
     );
     await _pumpUntilSettled(tester);
 
     expect(find.text('Trip History'), findsOneWidget);
     expect(find.text('Missed Trips'), findsOneWidget);
 
-    await tester.tap(find.text('Settings'));
+    await tester.pageBack();
     await _pumpUntilSettled(tester);
-
-    expect(find.text('General'), findsOneWidget);
     expect(find.text('Theme'), findsOneWidget);
     expect(find.text('About'), findsOneWidget);
     expect(find.text('Transit'), findsWidgets);
-    expect(find.text('Location'), findsWidgets);
 
     await tester.tap(find.text('About'));
     await _pumpUntilSettled(tester);
@@ -343,10 +346,16 @@ void main() {
     await tester.pageBack();
     await _pumpUntilSettled(tester);
 
-    await tester.tap(find.text('Transit').last);
+    final transitTile = find.widgetWithText(ListTile, 'Transit');
+    await tester.scrollUntilVisible(
+      transitTile,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(transitTile);
     await _pumpUntilSettled(tester);
 
-    expect(find.text('Transit Data'), findsOneWidget);
+    expect(find.text('Transit stops'), findsOneWidget);
     expect(find.text('Transit Mode'), findsOneWidget);
     expect(find.text('Favorite Lines'), findsOneWidget);
     expect(find.text('Import GTFS Zip'), findsNothing);
@@ -361,7 +370,7 @@ void main() {
     await tester.pageBack();
     await _pumpUntilSettled(tester);
 
-    await tester.tap(find.text('Transit Data'));
+    await tester.tap(find.text('Transit stops'));
     await _pumpUntilSettled(tester);
 
     expect(find.text('Download'), findsWidgets);

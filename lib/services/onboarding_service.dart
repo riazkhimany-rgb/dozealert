@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class OnboardingService {
   static const _completeKey = 'onboarding_complete';
   static const _alarmTestedKey = 'onboarding_alarm_tested';
+  static const _firstTripStartedKey = 'first_trip_started';
 
   Future<bool> isComplete() async {
     final prefs = await SharedPreferences.getInstance();
@@ -12,6 +13,16 @@ class OnboardingService {
   Future<void> markComplete() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_completeKey, true);
+  }
+
+  Future<bool> hasStartedFirstTrip() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_firstTripStartedKey) ?? false;
+  }
+
+  Future<void> markFirstTripStarted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_firstTripStartedKey, true);
   }
 
   Future<bool> isAlarmTested() async {
@@ -28,5 +39,6 @@ class OnboardingService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_completeKey);
     await prefs.remove(_alarmTestedKey);
+    await prefs.remove(_firstTripStartedKey);
   }
 }

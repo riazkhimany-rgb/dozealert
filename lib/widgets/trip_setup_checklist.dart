@@ -27,6 +27,7 @@ class TripSetupChecklist extends StatefulWidget {
 class _TripSetupChecklistState extends State<TripSetupChecklist>
     with WidgetsBindingObserver {
   bool _expanded = false;
+  bool _autoExpanded = false;
   AppPermissionSnapshot? _permissions;
   bool _checksInitialized = false;
 
@@ -121,7 +122,7 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
     final items = <_ChecklistItem>[
       if (needsTransitData)
         _ChecklistItem(
-          label: 'Transit stop data ready',
+          label: '${preferences.transitSystem} stop list ready',
           complete: transitDataReady,
           onTap: () {
             Navigator.of(context).push(
@@ -145,6 +146,16 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
       return const SizedBox.shrink();
     }
 
+    final shouldExpand = completeCount < items.length;
+    if (shouldExpand && !_expanded && !_autoExpanded) {
+      _autoExpanded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _expanded = true);
+        }
+      });
+    }
+
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 16),
       child: HomeCard(
@@ -159,7 +170,7 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
                   Expanded(
                     child: HomeCardHeader(
                       icon: Icons.checklist_rtl,
-                      title: 'First time setup ($completeCount/${items.length})',
+                      title: 'Before your first trip ($completeCount/${items.length})',
                     ),
                   ),
                   Text(

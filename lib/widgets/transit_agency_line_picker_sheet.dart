@@ -8,6 +8,7 @@ import '../models/transit_vehicle_type.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../screens/settings/preferred_agencies_screen.dart';
+import '../utils/transit_user_copy.dart';
 import 'gtfs_vehicle_type_download_prompt.dart';
 import 'searchable_line_picker.dart';
 import 'vehicle_type_filter_chips.dart';
@@ -109,7 +110,7 @@ class _TransitAgencyLinePickerSheetState
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Text(
-                'Choose agency & line',
+                TransitUserCopy.chooseTransitAndLine,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -144,7 +145,7 @@ class _TransitAgencyLinePickerSheetState
                   ),
                   TextButton(
                     onPressed: () => unawaited(_openFullSettings()),
-                    child: const Text('Change agency'),
+                    child: Text(TransitUserCopy.changeTransit),
                   ),
                 ],
               ),
@@ -174,8 +175,9 @@ class _TransitAgencyLinePickerSheetState
                 padding: const EdgeInsets.all(20),
                 child: Text(
                   _vehicleTypeFilter == null
-                      ? 'Download GTFS in Preferred Agencies to load routes '
-                          'for ${preferences.transitSystem}.'
+                      ? TransitUserCopy.downloadStopListsForRoutes(
+                          preferences.transitSystem,
+                        )
                       : 'No ${_vehicleTypeFilter!.label.toLowerCase()} routes loaded yet.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
@@ -234,7 +236,7 @@ class _TransitAgencyLinePickerSheetState
               child: OutlinedButton.icon(
                 onPressed: () => unawaited(_openFullSettings()),
                 icon: const Icon(Icons.settings_outlined, size: 18),
-                label: const Text('Preferred agencies & GTFS'),
+                label: Text(TransitUserCopy.transitAndLineSettings),
               ),
             ),
           ],

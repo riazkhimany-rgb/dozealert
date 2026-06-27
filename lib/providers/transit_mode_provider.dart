@@ -68,7 +68,21 @@ class TransitModeProvider extends ChangeNotifier {
   }
 
   bool get shouldUseDistanceFallback =>
-      _settingsService.settings.transitModeEnabled && !_snapshot.isActive;
+      _settingsService.settings.transitModeEnabled &&
+      !_snapshot.isActive &&
+      !isTransitTrackableDestination;
+
+  bool get isTransitTrackableDestination {
+    final destination = _monitoringProvider.selectedDestination;
+    if (destination == null) {
+      return false;
+    }
+
+    return _transitModeService.isTransitTrackableDestination(
+      destination,
+      routeId: _activeRouteId,
+    );
+  }
 
   bool get shouldTriggerApproachAlarm {
     if (!_settingsService.settings.transitModeEnabled || !_snapshot.isActive) {

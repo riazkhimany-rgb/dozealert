@@ -8,6 +8,7 @@ import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../utils/external_link_launcher.dart';
+import '../utils/transit_user_copy.dart';
 import '../utils/user_facing_errors.dart';
 import '../widgets/home_card.dart';
 import 'transit_data_licenses_screen.dart';
@@ -162,13 +163,10 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
       preferences.country,
       preferences.region,
     );
-    final regionLabel = TransitCatalog.regionLabelForCountry(
-      preferences.country,
-    );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transit Data'),
+        title: const Text('Transit stops'),
       ),
       body: SafeArea(
         top: false,
@@ -181,13 +179,13 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
               children: [
                 HomeCardHeader(
                   icon: Icons.cloud_download_outlined,
-                  title: '${preferences.region} GTFS Feeds',
+                  title: '${preferences.transitSystem} stops',
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Download GTFS feeds for agencies in ${preferences.region} '
-                  '(${preferences.country}). Change your $regionLabel under '
-                  'Settings → Transit → Preferred Agencies to browse other regions.',
+                  'Download stop names for ${preferences.transitSystem} and '
+                  'other agencies in ${preferences.region}. One tap for most '
+                  'agencies — no account needed.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -212,9 +210,9 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
           else if (regionFeeds.isEmpty)
             HomeCard(
               child: Text(
-                'No GTFS feeds are configured for ${preferences.region} yet. '
-                'Select another $regionLabel under Preferred Agencies, or import '
-                'a GTFS zip manually.',
+                'No stop lists are configured for ${preferences.region} yet. '
+                '${TransitUserCopy.chooseRegionInTransitAndLineSettings} '
+                'a zip file manually.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),

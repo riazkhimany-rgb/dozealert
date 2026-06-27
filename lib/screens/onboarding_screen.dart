@@ -3,14 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/gtfs_feed_provider.dart';
-import '../providers/gtfs_provider.dart';
-import '../providers/transit_provider.dart';
 import '../services/app_tour_service.dart';
 import '../services/onboarding_service.dart';
+import '../utils/transit_user_copy.dart';
 import '../widgets/branded_app_name.dart';
 import '../widgets/branding_logo.dart';
 import '../widgets/onboarding_permissions_page.dart';
+import '../widgets/transit_agency_choice_page.dart';
 import 'main_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -23,8 +22,10 @@ class OnboardingScreen extends StatefulWidget {
   /// of replacing the app root (used from the home first-time setup checklist).
   final bool popOnComplete;
 
-  static const pageCount = 2;
-  static const permissionsPageIndex = 1;
+  static const pageCount = 3;
+  static const introPageIndex = 0;
+  static const agencyPageIndex = 1;
+  static const permissionsPageIndex = 2;
   static const lastPageIndex = pageCount - 1;
 
   @override
@@ -35,36 +36,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   final OnboardingService _onboardingService = OnboardingService();
   int _pageIndex = 0;
+  final Set<String> _selectedAgencies = {};
+  String? _primaryAgency;
   bool _permissionsReady = false;
-  bool _onboardingSetupStarted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_startOnboardingSetup());
-    });
-  }
-
-  Future<void> _startOnboardingSetup() async {
-    if (_onboardingSetupStarted || !mounted) {
-      return;
-    }
-    _onboardingSetupStarted = true;
-
-    final transitProvider = context.read<TransitProvider>();
-    final gtfsFeedProvider = context.read<GtfsFeedProvider>();
-    final gtfsProvider = context.read<GtfsProvider>();
-
-    await transitProvider.applyGoTransitDefaultsIfUnset();
-    if (!mounted) {
-      return;
-    }
-
-    gtfsFeedProvider.preloadGoTransitIfNeeded(
-      onComplete: gtfsProvider.notifyDataUpdated,
-    );
-  }
 
   @override
   void dispose() {
@@ -72,8 +46,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  void _toggleAgency(String agency) {
+    setState(() {
+      if (_selectedAgencies.contains(agency)) {
+        _selectedAgencies.remove(agency);
+        if (_primaryAgency == agency) {
+          _primaryAgency =
+              _selectedAgencies.isEmpty ? null : _selectedAgencies.first;
+        }
+      } else {
+        _selectedAgencies.add(agency);
+        _primaryAgency ??= agency;
+      }
+    });
+  }
+
+  void _setPrimaryAgency(String agency) {
+    if (!_selectedAgencies.contains(agency)) {
+      return;
+    }
+    setState(() => _primaryAgency = agency);
+  }
+
   Future<void> _finish() async {
-    await _startOnboardingSetup();
+    if (_selectedAgencies.isNotEmpty && _primaryAgency != null) {
+      await TransitAgencyChoicePage.applySelections(
+        context,
+        primaryAgency: _primaryAgency!,
+        selectedAgencies: _selectedAgencies,
+      );
+    }
     await _onboardingService.markComplete();
     await context.read<AppTourService>().markHomeTourPending();
     if (!mounted) {
@@ -125,6 +127,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _onPrimaryAction() async {
+    if (_pageIndex == OnboardingScreen.agencyPageIndex &&
+        _selectedAgencies.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(TransitUserCopy.selectTransitToContinue),
+        ),
+      );
+      return;
+    }
+
+    if (_pageIndex == OnboardingScreen.agencyPageIndex &&
+        _primaryAgency != null) {
+      await TransitAgencyChoicePage.applySelections(
+        context,
+        primaryAgency: _primaryAgency!,
+        selectedAgencies: _selectedAgencies,
+      );
+      if (!mounted) {
+        return;
+      }
+    }
+
     if (_pageIndex == OnboardingScreen.permissionsPageIndex &&
         !_permissionsReady) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -149,6 +173,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   bool get _canPressPrimary {
+    if (_pageIndex == OnboardingScreen.agencyPageIndex) {
+      return _selectedAgencies.isNotEmpty && _primaryAgency != null;
+    }
     if (_pageIndex == OnboardingScreen.permissionsPageIndex) {
       return _permissionsReady;
     }
@@ -187,14 +214,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             body:
                 'DozeAlert monitors your trip and sounds an alarm when '
                 'you are approaching your destination.\n\n'
-                'Transit Mode is on by default — wake by stops remaining '
-                'on your line. Turn it off on Home to use a distance '
-                'wake radius instead (for example 1 km).\n\n'
-                'Transit stop data downloads in the background while '
-                'you finish setup.\n\n'
-                'On Home, a guided tour will walk you through each step '
-                'one at a time.',
+                'Next, select the transit you ride — you can pick more '
+                'than one. Then allow location access so we can track '
+                'your ride.\n\n'
+                'On Home, a short guided tour shows you where to tap.',
             useBrandMentions: true,
+          ),
+          TransitAgencyChoicePage(
+            selectedAgencies: _selectedAgencies,
+            primaryAgency: _primaryAgency,
+            onAgencyToggled: _toggleAgency,
+            onPrimaryChanged: _setPrimaryAgency,
           ),
           OnboardingPermissionsPage(
             onStatusChanged: (snapshot) {
@@ -238,7 +268,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _canPressPrimary ? _onPrimaryAction : null,
+                  onPressed:
+                      _canPressPrimary ? () => unawaited(_onPrimaryAction()) : null,
                   child: Text(
                     _pageIndex < OnboardingScreen.lastPageIndex
                         ? 'Continue'
@@ -246,6 +277,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
               ),
+              if (_pageIndex == OnboardingScreen.agencyPageIndex &&
+                  _selectedAgencies.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    TransitUserCopy.selectTransitAbove,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               if (_pageIndex == OnboardingScreen.permissionsPageIndex &&
                   !_permissionsReady)
                 Padding(

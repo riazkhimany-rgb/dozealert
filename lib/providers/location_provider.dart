@@ -478,7 +478,12 @@ class LocationProvider extends ChangeNotifier {
         return;
       }
 
-      // Distance fallback when transit mode cannot place the user on the route.
+      if (_transitModeProvider.isTransitTrackableDestination) {
+        // GTFS stop destination — wait for route lock; no straight-line wake.
+        return;
+      }
+
+      // Distance fallback for map-pin destinations when not on a transit route.
     }
 
     final thresholdMeters = _settingsService.settings.testModeEnabled

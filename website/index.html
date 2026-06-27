@@ -3,11 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="description" content="DozeAlert wakes you before you reach your destination. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
   <link rel="icon" type="image/png" href="assets/icon-512.png">
-  <link rel="stylesheet" href="assets/brand.css">
+  <link rel="stylesheet" href="assets/brand.css?v=11">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -312,11 +315,15 @@
       </p>
       <ul>
         <li>Location-based wake alerts with adjustable radius</li>
-        <li>Transit Mode with stop countdown (GO, TTC, and GTFS agencies)</li>
-        <li>Map search, GTFS stop picker, and saved favorites &amp; lines</li>
+        <li>Transit Mode with stop countdown (GO, TTC, and other transit systems)</li>
+        <li>Map search, stop picker, and favorite destinations &amp; lines</li>
+        <li><strong>Choose transit &amp; line</strong> on Home to set your route</li>
         <li>Background monitoring with voice, vibration, and alarm alerts</li>
-        <li>Saved tab for recents, favorites, trip history, and missed trips</li>
-        <li>Guided Home tour and offline GTFS downloads</li>
+        <li><strong>Favorites</strong> tab (heart icon) for recents, favorite stops, and favorite lines</li>
+        <li><strong>Settings &rarr; Activity</strong> for trip history and missed trips</li>
+        <li>First-run setup: welcome, pick your transit, grant permissions, then a guided Home tour</li>
+        <li>Pre-start checklist and &ldquo;Ready to rest?&rdquo; before monitoring begins</li>
+        <li>Download transit stop lists for offline search (Settings &rarr; Transit &rarr; Transit stops)</li>
         <li>No account required &mdash; trip data stays on your device</li>
       </ul>
     </section>
@@ -324,8 +331,9 @@
     <section class="card">
       <h2>Permissions &amp; privacy</h2>
       <p>
-        DozeAlert needs clear permission choices to monitor trips reliably. During
-        first-time setup the app explains each step. For monitoring on Android, set:
+        DozeAlert needs clear permission choices to monitor trips reliably. First-time setup
+        walks you through a short welcome, picking the transit you ride (one or more),
+        granting permissions, and a guided Home tour. For monitoring on Android, set:
       </p>
       <ul>
         <li><strong>Location:</strong> Allow <strong>all the time</strong> (not only while using the app)</li>
@@ -335,10 +343,10 @@
       </ul>
       <p style="margin-top: 0.75rem;">
         We do not show ads, sell personal data, or require an account. Map search uses
-        Google Maps Platform; optional transit downloads use public open-data hosts.
+        Google Maps Platform; optional transit stop list downloads use public open-data hosts.
         Read the full policy:
         <a class="text-link" href="privacy/index.html">Privacy Policy</a>.
-        Transit agency attributions and licence links:
+        Transit open data attributions and licence links:
         <a class="text-link" href="transit-licenses/index.html">Transit Data Licenses</a>.
       </p>
     </section>
@@ -366,13 +374,16 @@
           <em>Install</em>.
         </li>
         <li>
-          <strong>Complete setup in the app</strong> &mdash; grant permissions as prompted
-          (location all the time, notifications, GPS on). See
+          <strong>Complete setup in the app</strong> &mdash; pick the transit you ride
+          (you can select more than one, such as TTC and GO Transit on the same day).
+          Stop lists download in the background when available. Then grant permissions
+          as prompted (location all the time, notifications, GPS on). See
           <a class="text-link" href="privacy/index.html">Privacy Policy</a> for details.
         </li>
         <li>
-          <strong>Open DozeAlert</strong>, pick a destination (map, stop, or Saved favorite),
-          enable Transit Mode if you ride GO or other GTFS lines, and tap Start monitoring.
+          <strong>Open DozeAlert</strong>, tap <strong>Choose transit &amp; line</strong> if needed,
+          pick a destination (map, stop, or Favorites), enable Transit Mode if you ride transit,
+          review the readiness checklist, confirm &ldquo;Ready to rest?&rdquo;, and tap Start monitoring.
         </li>
       </ol>
 
@@ -399,7 +410,7 @@
       <ul>
         <li>Android 8.0 (Oreo) or later</li>
         <li>GPS / location services enabled</li>
-        <li>Internet for map search and optional GTFS transit downloads</li>
+        <li>Internet for map search and optional transit stop list downloads</li>
         <li>Background location and notifications for trip monitoring (Android)</li>
       </ul>
     </section>
@@ -434,6 +445,6 @@
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js"></script>
+  <script src="assets/brand.js?v=11"></script>
 </body>
 </html>

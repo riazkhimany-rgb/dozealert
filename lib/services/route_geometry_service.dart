@@ -188,6 +188,9 @@ class RouteGeometryService {
     return null;
   }
 
+  /// Max along-route lead allowed when snapping GPS to a stop (platform GPS jitter).
+  static const stopSnapAlongToleranceMeters = 50.0;
+
   TransitStop? matchCurrentStop({
     required RoutePolyline polyline,
     required RouteProjection projection,
@@ -206,10 +209,12 @@ class RouteGeometryService {
         return false;
       }
 
+      // Do not snap to stops ahead of the GPS projection — that inflates
+      // progress and can trigger stop-based alarms too early.
       if (polyline.travelingForward) {
-        return along <= projection.alongRouteMeters + 250;
+        return along <= projection.alongRouteMeters + stopSnapAlongToleranceMeters;
       }
-      return along >= projection.alongRouteMeters - 250;
+      return along >= projection.alongRouteMeters - stopSnapAlongToleranceMeters;
     }).toList();
 
     if (candidates.isEmpty) {

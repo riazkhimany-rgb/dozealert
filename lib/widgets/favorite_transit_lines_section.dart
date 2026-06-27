@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/favorite_transit_line.dart';
 import '../providers/favorite_transit_line_provider.dart';
 import '../utils/transit_line_switch.dart';
+import '../utils/transit_user_copy.dart';
 import 'add_favorite_transit_line_sheet.dart';
 import 'home_card.dart';
 
@@ -45,7 +46,7 @@ class FavoriteTransitLinesSection extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Quick-switch agency and line pairs from Home during transfers.',
+            TransitUserCopy.favoriteLinesQuickSwitchHint,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),

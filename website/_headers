@@ -1,0 +1,8 @@
+# Netlify / Cloudflare Pages — revalidate on every visit (304 when unchanged).
+/*
+  Cache-Control: no-cache, must-revalidate
+  Pragma: no-cache
+
+/app-version.json
+  Cache-Control: no-store, must-revalidate
+  Pragma: no-cache

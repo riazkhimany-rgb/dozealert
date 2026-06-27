@@ -21,6 +21,7 @@ import '../utils/app_branding.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
 import '../utils/gtfs_readiness.dart';
+import '../utils/transit_user_copy.dart';
 import '../utils/transit_wake_message.dart';
 import '../utils/wake_radius_format.dart';
 import '../widgets/app_gradient_background.dart';
@@ -34,6 +35,7 @@ import '../widgets/home_tour.dart';
 import '../widgets/metric_row.dart';
 import '../widgets/monitoring_distance_progress.dart';
 import '../widgets/transit_route_progress_line.dart';
+import '../widgets/trip_ready_sheet.dart';
 import '../widgets/trip_setup_checklist.dart';
 import '../screens/settings/location_settings_screen.dart';
 import '../widgets/transit_agency_line_picker_sheet.dart';
@@ -148,31 +150,29 @@ class _HomeScreenState extends State<HomeScreen> {
         if (transitModeEnabled)
           const HomeTourStepContent(
             id: HomeTourStepId.chooseAgency,
-            title: 'Choose your agency & line',
-            body:
-                'Pick the transit agency and default line you ride most often. '
-                'You can filter by vehicle type and search route numbers.',
+            title: TransitUserCopy.homeTourConfirmTransitTitle,
+            body: TransitUserCopy.homeTourConfirmTransitBody,
           ),
         const HomeTourStepContent(
           id: HomeTourStepId.setDestination,
-          title: 'Set your destination',
+          title: 'Set your stop',
           body:
-              'Choose a stop, search the map, or pick a saved favorite — '
-              'DozeAlert wakes you before you arrive.',
+              'Tap Set destination, then Pick stop. Search for the station '
+              'where you want to wake up.',
         ),
         const HomeTourStepContent(
           id: HomeTourStepId.wakeSettings,
-          title: 'Choose when to wake',
+          title: 'When should we wake you?',
           body:
-              'Open Wake Stops to set how many stops before yours the alarm '
-              'should sound.',
+              'Wake Stops controls how many stops before yours the alarm '
+              'sounds. One stop before is a good default.',
         ),
         const HomeTourStepContent(
           id: HomeTourStepId.startMonitoring,
-          title: 'Start your trip',
+          title: 'Start before you sleep',
           body:
-              'When you are ready, tap Start. DozeAlert tracks your journey '
-              'and wakes you in time.',
+              'Tap Start when you sit down on the bus or train. DozeAlert '
+              'runs in the background until you arrive.',
         ),
       ];
 
@@ -386,9 +386,10 @@ class _DestinationCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (destination == null) ...[
-            const EmptyStateMessage(
-              message:
-                  'Pick where you want to wake up — a station, address, or map pin.',
+            EmptyStateMessage(
+              message: TransitUserCopy.pickStopAfterDownloadHint(
+                context.read<TransitProvider>().preferences.transitSystem,
+              ),
             ),
             if (transitModeEnabled) ...[
               const SizedBox(height: 12),
@@ -506,7 +507,7 @@ class _DestinationCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: onChooseAgency,
                     icon: const Icon(Icons.edit_outlined),
-                    label: const Text('Choose agency & line'),
+                    label: const Text(TransitUserCopy.chooseTransitAndLine),
                   ),
                 ),
               ),
@@ -623,7 +624,7 @@ class _MonitoringCard extends StatelessWidget {
           const SizedBox(height: 10),
           if (!hasDestination)
             const EmptyStateMessage(
-              message: 'Set a destination, then tap Start to begin monitoring.',
+              message: 'Set your stop, then tap Start before you fall asleep.',
             )
           else if (hasDistance)
             MonitoringDistanceProgress(
@@ -725,6 +726,11 @@ class _MonitoringCard extends StatelessWidget {
   }
 
   Future<void> _handleStartMonitoring(BuildContext context) async {
+    final proceed = await TripReadySheet.confirmStart(context);
+    if (!proceed || !context.mounted) {
+      return;
+    }
+
     final locationProvider = context.read<LocationProvider>();
     final backgroundMonitorService = context.read<BackgroundMonitorService>();
 
@@ -732,6 +738,10 @@ class _MonitoringCard extends StatelessWidget {
       final result = await locationProvider.startTracking(resume: resume);
       if (!context.mounted) {
         return;
+      }
+
+      if (result == LocationStartResult.success && context.mounted) {
+        await TripReadySheet.markTripStarted(context);
       }
 
       await LocationFeedback.handleStartResult(

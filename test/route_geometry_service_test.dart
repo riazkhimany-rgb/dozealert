@@ -68,6 +68,57 @@ void main() {
       expect(remaining!, greaterThan(0));
       expect(remaining, lessThan(polyline.totalLengthMeters));
     });
+
+    test('matchCurrentStop does not snap to stops ahead on the route', () {
+      final stops = [
+        const TransitStop(
+          stopId: '1',
+          stopName: 'A',
+          latitude: 43.6500,
+          longitude: -79.3800,
+          routeId: 'test',
+          stopSequence: 1,
+        ),
+        const TransitStop(
+          stopId: '2',
+          stopName: 'B',
+          latitude: 43.6600,
+          longitude: -79.3800,
+          routeId: 'test',
+          stopSequence: 2,
+        ),
+        const TransitStop(
+          stopId: '3',
+          stopName: 'C',
+          latitude: 43.6700,
+          longitude: -79.3800,
+          routeId: 'test',
+          stopSequence: 3,
+        ),
+      ];
+
+      final destination = stops.last;
+      final polyline = geometry.buildPolyline(
+        routeStops: stops,
+        destinationStop: destination,
+      );
+      final projection = geometry.projectOnPolyline(
+        polyline: polyline,
+        latitude: 43.6550,
+        longitude: -79.3800,
+      );
+
+      expect(projection, isNotNull);
+
+      final matched = geometry.matchCurrentStop(
+        polyline: polyline,
+        projection: projection!,
+        destinationStop: destination,
+        maxOffRouteMeters: 1000,
+      );
+
+      expect(matched?.stopName, 'A');
+    });
   });
 
   group('TransitModeService geometry integration', () {

@@ -5,6 +5,8 @@ import '../models/transit_catalog_agency.dart';
 import '../utils/external_link_launcher.dart';
 import '../utils/transit_attribution.dart';
 import '../utils/transit_data_licenses.dart';
+import '../utils/transit_user_copy.dart';
+import '../widgets/branded_app_name.dart';
 import '../widgets/home_card.dart';
 
 class TransitDataLicensesScreen extends StatelessWidget {
@@ -39,7 +41,7 @@ class TransitDataLicensesScreen extends StatelessWidget {
                   title: 'Open data notice',
                 ),
                 const SizedBox(height: 12),
-                Text(
+                BrandedMentionText(
                   TransitDataLicenses.generalNotice,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
@@ -55,7 +57,7 @@ class TransitDataLicensesScreen extends StatelessWidget {
               children: [
                 HomeCardHeader(
                   icon: Icons.inventory_2_outlined,
-                  title: 'Bundled stop lists',
+                  title: 'Stop lists in the app',
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -100,7 +102,7 @@ class TransitDataLicensesScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          BrandedMentionText(
             'Attribution and how to obtain GTFS for each Ontario feed in DozeAlert.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
@@ -126,7 +128,8 @@ class TransitDataLicensesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'These appear in Preferred Agencies for line selection. Import a '
+              'These appear in ${TransitUserCopy.transitAndLineSettings} for line '
+              'selection. Import a '
               'GTFS zip manually when you have one from the agency.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -285,7 +288,7 @@ class _ListedAgencyCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          BrandedMentionText(
             'No GTFS feed is configured in DozeAlert yet. Use Import GTFS Zip on '
             'Transit Data when you obtain data from the agency.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(

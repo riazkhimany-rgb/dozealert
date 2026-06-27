@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../models/transit_mode_wake_setting.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/transit_mode_provider.dart';
+import '../../widgets/branded_app_name.dart';
 import '../../widgets/settings_section_tile.dart';
 
 class TransitModeSettingsScreen extends StatelessWidget {
@@ -20,6 +22,7 @@ class TransitModeSettingsScreen extends StatelessWidget {
         if (!transitModeEnabled || value == null) {
           return;
         }
+        context.read<TransitModeProvider>().refreshFromSettings();
         settingsProvider.setTransitModeWake(value);
       },
       child: Column(
@@ -107,9 +110,10 @@ class TransitModeSettingsScreen extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.location_on_outlined, color: colorScheme.primary),
             title: const Text('Distance fallback'),
-            subtitle: Text(
-              'When you are not near a transit route (e.g. at home), DozeAlert '
-              'uses your wake radius and straight-line distance instead.',
+            subtitle: BrandedMentionText(
+              'For map-pin destinations when you are not on a transit route, '
+              'DozeAlert uses your wake radius and straight-line distance instead. '
+              'GTFS stop destinations always wake by stops once you are on the route.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
           ),

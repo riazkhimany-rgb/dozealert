@@ -77,6 +77,8 @@ Upload the entire `website/` folder to any static host:
 
 Ensure `downloads/dozealert-latest.apk` is uploaded with the site.
 
+The `website/` folder includes cache-control config for common hosts (`_headers` for Netlify/Cloudflare Pages, `vercel.json`, `.htaccess`, `firebase.json`) so HTML, CSS, JS, and `app-version.json` revalidate on each visit instead of serving stale copies. HTML pages also include cache meta tags as a fallback on hosts that ignore header files.
+
 ### Option B — GitHub Releases
 
 1. Run `.\tools\build_apk.ps1`
@@ -96,8 +98,8 @@ Open `http://localhost:8080` (APK download works only if the file exists in `dow
 
 After bumping `pubspec.yaml`:
 
-1. Rebuild with `.\tools\build_apk.ps1`
-2. Edit the version in `website/index.html` (search for `app-version` and the script at the bottom)
+1. Rebuild with `.\tools\build_apk.ps1` (updates `app-version.json`, the version label on the home page, and `?v=` on CSS/JS links)
+2. Or run `.\tools\release.ps1` for the same website version sync when cutting a release
 
 ## Play Store vs APK
 

@@ -1,13 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="See DozeAlert in action — destination setup, Transit Mode, Saved favorites, and wake alerts for commuters.">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="description" content="See DozeAlert in action — destination setup, Transit Mode, Favorites, and wake alerts for commuters.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
   <link rel="icon" type="image/png" href="../assets/icon-512.png">
-  <link rel="stylesheet" href="../assets/brand.css">
+  <link rel="stylesheet" href="../assets/brand.css?v=11">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -254,7 +257,7 @@
       <p class="lead">
         DozeAlert is a commute alarm for riders who want to rest without missing their stop.
         Set a destination, start monitoring, and get a reliable wake-up on GO Transit, TTC,
-        and other agencies with offline GTFS data.
+        and other transit systems with offline stop lists.
       </p>
     </header>
 
@@ -295,7 +298,9 @@
           <ul>
             <li>Clear idle vs. monitoring status</li>
             <li>Transit Mode toggle on Home</li>
-            <li>Guided app tour for first-time users</li>
+            <li>Choose transit &amp; line on Home</li>
+            <li>First-run transit picker and guided Home tour</li>
+            <li>Pre-start checklist and &ldquo;Ready to rest?&rdquo; confirmation</li>
           </ul>
         </div>
       </div>
@@ -304,27 +309,27 @@
     <section class="card">
       <h2>Set a destination in seconds</h2>
       <p class="section-lead">
-        Search the map, pick a GTFS stop on your line, switch a saved line, or reuse a recent
+        Search the map, pick a stop on your line, switch a favorite line, or reuse a recent
         or favorite destination.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot6.jpg" width="280" height="606" alt="Set destination sheet with map search, pick stop, favorites, saved lines, and recents.">
+          <img class="shot" src="../assets/screens/shot6.jpg" width="280" height="606" alt="Set destination sheet with map search, pick stop, favorites, favorite lines, and recents.">
         </div>
         <div class="copy">
           <h3>Five ways to pick your stop</h3>
           <p>
             Open <strong>Set destination</strong> from Home to search on the map, filter stops
-            on your route, jump to a favorite, switch a saved line, or pick from recents.
+            on your route, jump to a favorite, switch a favorite line, or pick from recents.
           </p>
         </div>
       </div>
       <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot5.jpg" width="280" height="606" alt="Choose agency and line sheet with GO Transit route search and bus or train filters.">
+          <img class="shot" src="../assets/screens/shot5.jpg" width="280" height="606" alt="Choose transit and line sheet with GO Transit route search and bus or train filters.">
         </div>
         <div class="copy">
-          <h3>Choose agency &amp; line</h3>
+          <h3>Choose transit &amp; line</h3>
           <p>
             Filter routes by bus or train, then search by route number or name. Your selection
             shows on Home as the full line label &mdash; for example
@@ -340,7 +345,7 @@
           <h3>Pick a stop on your line</h3>
           <p>
             Search and filter stops on your selected route, or browse all routes at a station.
-            GTFS data powers accurate offline stop lists and Transit Mode progress.
+            Transit stop lists power accurate offline search and Transit Mode progress.
           </p>
         </div>
       </div>
@@ -359,26 +364,26 @@
     </section>
 
     <section class="card">
-      <h2>Saved favorites &amp; quick restarts</h2>
+      <h2>Favorites &amp; quick restarts</h2>
       <p class="section-lead">
-        Stations and lines you use often stay one tap away. Recent destinations appear
-        automatically so you can restart a commute without re-entering details.
+        Stations and lines you use often stay one tap away on the Favorites tab (heart icon).
+        Recent destinations appear automatically so you can restart a commute without re-entering details.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot8.jpg" width="280" height="606" alt="Saved tab with recent destinations, favorite stops, and favorite transit lines.">
+          <img class="shot" src="../assets/screens/shot8.jpg" width="280" height="606" alt="Favorites tab with recent destinations, favorite stops, and favorite transit lines.">
         </div>
         <div class="copy">
-          <h3>Saved tab</h3>
+          <h3>Favorites tab</h3>
           <p>
-            Recent destinations, favorite stops, and favorite lines live on the Saved tab.
+            Recent destinations, favorite stops, and favorite lines live on the Favorites tab.
             Long lists stay compact &mdash; show a few entries, then expand to see the rest.
             Tap play on any item to set it and jump back to Home.
           </p>
           <ul>
-            <li>Favorite destinations with agency badges</li>
+            <li>Favorite destinations with transit badges</li>
             <li>Favorite lines for quick switching</li>
-            <li>Trip history and missed trips</li>
+            <li>Collapsible sections when lists grow</li>
           </ul>
         </div>
       </div>
@@ -399,31 +404,32 @@
     <section class="card">
       <h2>Built for transit riders</h2>
       <p class="section-lead">
-        Download agency GTFS feeds for offline stop search. Set your preferred agency, line,
-        and wake timing in Settings.
+        On first launch, pick one or more transit systems (for example TTC and GO Transit on
+        the same day). Stop lists download in the background when available. Set wake timing,
+        transit &amp; line defaults, and favorite lines in Settings.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot13.jpg" width="280" height="606" alt="Transit settings with GTFS downloads, Transit Mode, preferred agencies, and favorite lines.">
+          <img class="shot" src="../assets/screens/shot13.jpg" width="280" height="606" alt="Transit settings with stop list downloads, Transit Mode, transit and line, and favorite lines.">
         </div>
         <div class="copy">
-          <h3>Transit settings</h3>
+          <h3>Transit stops</h3>
           <p>
-            Download and manage GTFS feeds, configure Transit Mode wake timing, set preferred
-            agencies by region, and manage favorite lines for quick switching.
+            Download and update stop lists, configure Transit Mode wake timing, and manage
+            favorite lines for quick switching.
           </p>
         </div>
       </div>
       <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot7.jpg" width="280" height="606" alt="Preferred Agencies screen with country, province, agency, and default line pickers.">
+          <img class="shot" src="../assets/screens/shot7.jpg" width="280" height="606" alt="Transit and line screen with country, province, transit, and line pickers.">
         </div>
         <div class="copy">
-          <h3>Preferred agency &amp; line</h3>
+          <h3>Transit &amp; line</h3>
           <p>
-            Choose country, province, agency, and default line. Filter by vehicle type and
-            search routes loaded from GTFS &mdash; defaults work well for GTA commuters and
-            can be changed anytime.
+            Choose country, province, transit, and line. Filter by vehicle type and
+            search routes from downloaded stop lists &mdash; defaults work well for GTA commuters and
+            can be changed anytime from Home or Settings.
           </p>
         </div>
       </div>
@@ -453,18 +459,19 @@
     <section class="card">
       <h2>Settings you control</h2>
       <p class="section-lead">
-        Theme, location accuracy, wake radius, transit preferences, and alarms live in one hub.
+        Theme, Activity, location, transit, and alarms live in one hub.
         No ads, no data sale.
       </p>
       <div class="showcase two-col reverse">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot9.jpg" width="280" height="606" alt="Settings screen with General, Transit, Location, and Alarm sections.">
+          <img class="shot" src="../assets/screens/shot9.jpg" width="280" height="606" alt="Settings screen with General, Activity, Transit, Location, and Alarm sections.">
         </div>
         <div class="copy">
           <h3>Organized settings</h3>
           <p>
-            Adjust appearance, replay the guided Home tour, manage transit data, fine-tune
-            location and battery guidance, and configure alarms from a simple menu.
+            Adjust appearance, replay the guided Home tour, manage transit stop lists, review
+            trip history and missed trips under Activity, fine-tune location and battery guidance,
+            and configure alarms from a simple menu.
           </p>
         </div>
       </div>
@@ -519,6 +526,6 @@
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js"></script>
+  <script src="../assets/brand.js?v=11"></script>
 </body>
 </html>

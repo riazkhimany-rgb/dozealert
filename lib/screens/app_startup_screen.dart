@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/destination_history_provider.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
+import '../providers/transit_provider.dart';
 import '../providers/trip_history_provider.dart';
 import '../services/onboarding_service.dart';
 import '../utils/app_branding.dart';
@@ -108,7 +109,10 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
 
     await _purgeStaleGtfsCacheIfNeeded(gtfsFeedProvider, gtfsProvider);
 
-    gtfsFeedProvider.preloadGoTransitIfNeeded(
+    final transitSystem =
+        context.read<TransitProvider>().preferences.transitSystem;
+    gtfsFeedProvider.preloadForTransitSystemIfNeeded(
+      transitSystem,
       onComplete: gtfsProvider.notifyDataUpdated,
     );
 

@@ -6,6 +6,7 @@ import '../providers/navigation_provider.dart';
 import '../services/app_tour_service.dart';
 import '../widgets/settings_section_tile.dart';
 import 'settings/about_settings_screen.dart';
+import 'settings/activity_settings_screen.dart';
 import 'settings/alarm_settings_screen.dart';
 import 'settings/developer_tools_screen.dart';
 import 'settings/location_settings_screen.dart';
@@ -64,11 +65,25 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           const Divider(height: 32),
+          const SettingsSectionHeader(title: 'Activity'),
+          SettingsNavTile(
+            icon: Icons.history,
+            title: 'Activity',
+            subtitle: 'Trip history and missed trips',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ActivitySettingsScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 32),
           const SettingsSectionHeader(title: 'Transit'),
           SettingsNavTile(
             icon: Icons.directions_transit_outlined,
             title: 'Transit',
-            subtitle: 'Transit data, transit mode, and agencies',
+            subtitle: 'Stop lists, transit mode, and transit & line',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

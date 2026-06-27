@@ -115,15 +115,19 @@ function Update-WebsiteVersion {
 {"version":"$($Version.Name)","build":$($Version.Code),"label":"$versionLabel"}
 "@ | Set-Content -Path $versionJsonPath -Encoding utf8
 
-    $indexPath = Join-Path $projectRoot 'website/index.html'
-    if (Test-Path $indexPath) {
-        $indexHtml = Get-Content $indexPath -Raw
-        $indexHtml = [regex]::Replace(
-            $indexHtml,
-            '(<span id="app-version">)[^<]*(</span>)',
-            "`${1}$versionLabel`${2}"
-        )
-        Set-Content -Path $indexPath -Value $indexHtml -Encoding utf8 -NoNewline
+    $websiteHtml = Get-ChildItem -Path (Join-Path $projectRoot 'website') -Filter 'index.html' -Recurse -File
+    foreach ($htmlPath in $websiteHtml) {
+        $html = Get-Content $htmlPath -Raw
+        $html = [regex]::Replace($html, 'brand\.css\?v=\d+', "brand.css?v=$($Version.Code)")
+        $html = [regex]::Replace($html, 'brand\.js\?v=\d+', "brand.js?v=$($Version.Code)")
+        if ($htmlPath.Name -eq 'index.html' -and $htmlPath.DirectoryName -eq (Join-Path $projectRoot 'website')) {
+            $html = [regex]::Replace(
+                $html,
+                '(<span id="app-version">)[^<]*(</span>)',
+                "`${1}$versionLabel`${2}"
+            )
+        }
+        Set-Content -Path $htmlPath -Value $html -Encoding utf8 -NoNewline
     }
 
     Write-Host "  Website version set to $versionLabel" -ForegroundColor Green

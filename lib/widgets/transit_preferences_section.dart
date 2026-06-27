@@ -11,6 +11,7 @@ import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../utils/external_link_launcher.dart';
+import '../utils/transit_user_copy.dart';
 import '../widgets/home_card.dart';
 import '../widgets/gtfs_vehicle_type_download_prompt.dart';
 import '../widgets/searchable_line_picker.dart';
@@ -43,7 +44,7 @@ class TransitPreferencesSection extends StatelessWidget {
           Padding(
             padding: headerPadding,
             child: Text(
-              'Transit Preferences',
+              TransitUserCopy.transitAndLine,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 color: colorScheme.primary,
                 fontWeight: FontWeight.w600,
@@ -162,8 +163,8 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
         children: [
           Text(
             widget.includeLocationFields
-                ? 'Preferred agency & route'
-                : 'Route preferences',
+                ? TransitUserCopy.transitAndLine
+                : TransitUserCopy.linePreferences,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -189,7 +190,7 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
             ),
             const SizedBox(height: 12),
             _InlineDropdown(
-              label: 'Transit agency',
+              label: TransitUserCopy.transitLabel,
               value: preferences.transitSystem,
               options: TransitCatalog.agenciesForRegion(
                 preferences.country,
@@ -229,7 +230,7 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
             const SizedBox(height: 12),
           ],
           Text(
-            'Default line',
+            TransitUserCopy.lineLabel,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -257,7 +258,7 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
             )
           else
             _InlineDropdown(
-              label: 'Line',
+              label: TransitUserCopy.lineLabel,
               value: resolvedLine,
               options: lineNames,
               onChanged: (value) {

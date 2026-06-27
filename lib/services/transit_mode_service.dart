@@ -149,6 +149,29 @@ class TransitModeService {
     );
   }
 
+  /// True when [destination] resolves to a stop on a known GTFS route.
+  bool isTransitTrackableDestination(
+    Destination destination, {
+    String? routeId,
+  }) {
+    final resolvedRouteId = routeId ??
+        _gtfsService.detectAgencyFromDestination(destination.name)?.route?.routeId ??
+        _gtfsService.detectAgencyFromDestinationAt(
+          destinationName: destination.name,
+          latitude: destination.latitude,
+          longitude: destination.longitude,
+        )?.route?.routeId;
+    if (resolvedRouteId == null) {
+      return false;
+    }
+
+    return getDestinationStop(
+          destination: destination,
+          routeId: resolvedRouteId,
+        ) !=
+        null;
+  }
+
   TransitStop? getCurrentStop({
     required double latitude,
     required double longitude,

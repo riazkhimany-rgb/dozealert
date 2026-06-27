@@ -120,6 +120,17 @@ class GtfsFeedProvider extends ChangeNotifier {
     preloadFeedIfNeeded(goTransitFeedId, onComplete: onComplete);
   }
 
+  void preloadForTransitSystemIfNeeded(
+    String transitSystem, {
+    Future<void> Function()? onComplete,
+  }) {
+    final feed = feedForTransitSystem(transitSystem);
+    if (feed == null || !feed.hasDirectDownload) {
+      return;
+    }
+    preloadFeedIfNeeded(feed.feedId, onComplete: onComplete);
+  }
+
   Future<void> updateFeed(String feedId) async {
     await _fetchFeed(feedId, isUpdate: true);
   }

@@ -56,6 +56,28 @@ class SettingsService {
         vibrationIntensity ?? AppSettings.defaultVibrationIntensity,
       ),
     );
+
+    await _migrateLegacyTransitModePrefs(prefs);
+  }
+
+  Future<void> _migrateLegacyTransitModePrefs(SharedPreferences prefs) async {
+    if (!prefs.containsKey(_transitModeEnabledKey) &&
+        prefs.containsKey(_legacyTrainModeEnabledKey)) {
+      await prefs.setBool(_transitModeEnabledKey, _settings.transitModeEnabled);
+    }
+
+    if (!prefs.containsKey(_transitModeWakeKey) &&
+        prefs.containsKey(_legacyTrainModeWakeKey)) {
+      await prefs.setInt(_transitModeWakeKey, _settings.transitModeWake.index);
+    }
+
+    if (prefs.containsKey(_legacyTrainModeEnabledKey)) {
+      await prefs.remove(_legacyTrainModeEnabledKey);
+    }
+
+    if (prefs.containsKey(_legacyTrainModeWakeKey)) {
+      await prefs.remove(_legacyTrainModeWakeKey);
+    }
   }
 
   Future<void> saveSettings(AppSettings settings) async {
