@@ -218,11 +218,9 @@ class RouteGeometryService {
     }).toList();
 
     if (candidates.isEmpty) {
-      return _nearestStop(
-        latitude: projection.latitude,
-        longitude: projection.longitude,
-        stops: polyline.stops,
-        maxDistanceMeters: maxOffRouteMeters.toDouble(),
+      return bestStopAtOrBehindProjection(
+        polyline: polyline,
+        projection: projection,
       );
     }
 
@@ -261,6 +259,47 @@ class RouteGeometryService {
       if (score < bestScore) {
         bestScore = score;
         best = stop;
+      }
+    }
+
+    return best;
+  }
+
+  /// Picks the stop furthest along the route that is still at or behind [projection].
+  TransitStop? bestStopAtOrBehindProjection({
+    required RoutePolyline polyline,
+    required RouteProjection projection,
+  }) {
+    TransitStop? best;
+    double? bestAlong;
+
+    for (final stop in polyline.stops) {
+      final along = _alongMetersForStop(polyline: polyline, stop: stop);
+      if (along == null) {
+        continue;
+      }
+
+      final atOrBehind = polyline.travelingForward
+          ? along <=
+              projection.alongRouteMeters + stopSnapAlongToleranceMeters
+          : along >=
+              projection.alongRouteMeters - stopSnapAlongToleranceMeters;
+      if (!atOrBehind) {
+        continue;
+      }
+
+      if (best == null) {
+        best = stop;
+        bestAlong = along;
+        continue;
+      }
+
+      final isFurtherAlong = polyline.travelingForward
+          ? along > bestAlong!
+          : along < bestAlong!;
+      if (isFurtherAlong) {
+        best = stop;
+        bestAlong = along;
       }
     }
 

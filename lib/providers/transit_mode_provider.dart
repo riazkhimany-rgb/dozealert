@@ -9,6 +9,7 @@ import '../models/transit_stop.dart';
 import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
 import '../services/transit_mode_service.dart';
+import '../services/transit_stop_progress_tracker.dart';
 import 'monitoring_provider.dart';
 
 class TransitModeProvider extends ChangeNotifier {
@@ -25,6 +26,8 @@ class TransitModeProvider extends ChangeNotifier {
   final SettingsService _settingsService;
   final MonitoringProvider _monitoringProvider;
   final MonitoringStorageService _monitoringStorage;
+  final TransitStopProgressTracker _stopProgressTracker =
+      TransitStopProgressTracker();
 
   TransitModeSnapshot _snapshot = TransitModeSnapshot.inactive;
   TransitModeSnapshot? _lastActiveSnapshot;
@@ -114,12 +117,13 @@ class TransitModeProvider extends ChangeNotifier {
       if (_snapshot.isActive || _lastActiveSnapshot != null) {
         _snapshot = TransitModeSnapshot.inactive;
         _lastActiveSnapshot = null;
+        _stopProgressTracker.reset();
         notifyListeners();
       }
       return;
     }
 
-    final nextSnapshot = _transitModeService.evaluate(
+    final rawSnapshot = _transitModeService.evaluate(
       destination: _monitoringProvider.selectedDestination,
       latitude: latitude,
       longitude: longitude,
@@ -128,6 +132,7 @@ class TransitModeProvider extends ChangeNotifier {
       headingDegrees: headingDegrees,
       speedMps: speedMps,
     );
+    final nextSnapshot = _stabilizeSnapshot(rawSnapshot);
 
     if (nextSnapshot.route?.routeId != null) {
       _activeRouteId = nextSnapshot.route!.routeId;
@@ -179,6 +184,7 @@ class TransitModeProvider extends ChangeNotifier {
         _snapshot = TransitModeSnapshot.inactive;
         _lastActiveSnapshot = null;
         _approachAlarmTriggered = false;
+        _stopProgressTracker.reset();
         notifyListeners();
       }
       return;
@@ -217,14 +223,43 @@ class TransitModeProvider extends ChangeNotifier {
       _snapshot = TransitModeSnapshot.inactive;
       _lastActiveSnapshot = null;
       _approachAlarmTriggered = false;
+      _stopProgressTracker.reset();
       notifyListeners();
       return;
     }
 
     _approachAlarmTriggered = false;
+    _stopProgressTracker.reset();
     updateFromLocation(
       latitude: null,
       longitude: null,
+    );
+  }
+
+  TransitModeSnapshot _stabilizeSnapshot(TransitModeSnapshot rawSnapshot) {
+    if (!rawSnapshot.isActive ||
+        rawSnapshot.currentStop == null ||
+        rawSnapshot.destinationStop == null ||
+        rawSnapshot.route == null) {
+      return rawSnapshot;
+    }
+
+    final routeId = rawSnapshot.route!.routeId;
+    final stabilizedStop = _stopProgressTracker.reconcile(
+      routeId: routeId,
+      destinationStop: rawSnapshot.destinationStop!,
+      rawStop: rawSnapshot.currentStop!,
+      routeStops: _transitModeService.routeStopsFor(routeId),
+    );
+
+    if (stabilizedStop == rawSnapshot.currentStop) {
+      return rawSnapshot;
+    }
+
+    return _transitModeService.rebuildSnapshotWithCurrentStop(
+      snapshot: rawSnapshot,
+      currentStop: stabilizedStop,
+      routeId: routeId,
     );
   }
 

@@ -119,6 +119,55 @@ void main() {
 
       expect(matched?.stopName, 'A');
     });
+
+    test('empty candidate fallback stays at or behind projection', () {
+      final stops = [
+        const TransitStop(
+          stopId: '1',
+          stopName: 'A',
+          latitude: 43.6500,
+          longitude: -79.3800,
+          routeId: 'test',
+          stopSequence: 1,
+        ),
+        const TransitStop(
+          stopId: '2',
+          stopName: 'B',
+          latitude: 43.6600,
+          longitude: -79.3800,
+          routeId: 'test',
+          stopSequence: 2,
+        ),
+        const TransitStop(
+          stopId: '3',
+          stopName: 'C',
+          latitude: 43.6700,
+          longitude: -79.3800,
+          routeId: 'test',
+          stopSequence: 3,
+        ),
+      ];
+
+      final destination = stops.last;
+      final polyline = geometry.buildPolyline(
+        routeStops: stops,
+        destinationStop: destination,
+      );
+      final projection = geometry.projectOnPolyline(
+        polyline: polyline,
+        latitude: 43.6550,
+        longitude: -79.3800,
+      );
+
+      expect(projection, isNotNull);
+
+      final fallback = geometry.bestStopAtOrBehindProjection(
+        polyline: polyline,
+        projection: projection!,
+      );
+
+      expect(fallback?.stopName, 'A');
+    });
   });
 
   group('TransitModeService geometry integration', () {

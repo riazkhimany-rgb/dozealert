@@ -67,27 +67,17 @@ class TransitModeService {
       longitude: longitude,
     );
 
-    final currentStop = projection == null
-        ? getCurrentStop(
-            latitude: latitude,
-            longitude: longitude,
-            routeId: resolvedRouteId,
-            maxProximityMeters: maxStopProximityMeters,
-          )
-        : _routeGeometry.matchCurrentStop(
-            polyline: polyline,
-            projection: projection,
-            destinationStop: destinationStop,
-            maxOffRouteMeters: maxStopProximityMeters,
-            headingDegrees: headingDegrees,
-            speedMps: speedMps,
-          ) ??
-            getCurrentStop(
-              latitude: latitude,
-              longitude: longitude,
-              routeId: resolvedRouteId,
-              maxProximityMeters: maxStopProximityMeters,
-            );
+    final currentStop = _resolveCurrentStop(
+      polyline: polyline,
+      projection: projection,
+      destinationStop: destinationStop,
+      routeId: resolvedRouteId,
+      latitude: latitude,
+      longitude: longitude,
+      maxStopProximityMeters: maxStopProximityMeters,
+      headingDegrees: headingDegrees,
+      speedMps: speedMps,
+    );
 
     if (currentStop == null) {
       return TransitModeSnapshot.inactive;
@@ -177,16 +167,45 @@ class TransitModeService {
     required double longitude,
     required String routeId,
     required int maxProximityMeters,
+    TransitStop? destinationStop,
   }) {
     final routeStops = _gtfsService.stopsForRoute(routeId);
     if (routeStops.isEmpty) {
       return null;
     }
 
+    final candidates = <TransitStop>[];
+    for (final stop in routeStops) {
+      final distance = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        stop.latitude,
+        stop.longitude,
+      );
+      if (distance <= maxProximityMeters) {
+        candidates.add(stop);
+      }
+    }
+
+    if (candidates.isEmpty) {
+      return null;
+    }
+
+    if (destinationStop != null && candidates.length > 1) {
+      final travelingForward =
+          destinationStop.stopSequence >= candidates.first.stopSequence;
+      candidates.sort(
+        (a, b) => travelingForward
+            ? a.stopSequence.compareTo(b.stopSequence)
+            : b.stopSequence.compareTo(a.stopSequence),
+      );
+      return candidates.first;
+    }
+
     TransitStop? nearest;
     var nearestDistance = double.infinity;
 
-    for (final stop in routeStops) {
+    for (final stop in candidates) {
       final distance = Geolocator.distanceBetween(
         latitude,
         longitude,
@@ -199,11 +218,95 @@ class TransitModeService {
       }
     }
 
-    if (nearest == null || nearestDistance > maxProximityMeters) {
-      return null;
+    return nearest;
+  }
+
+  /// Rebuilds an active snapshot after [currentStop] was adjusted downstream.
+  TransitModeSnapshot rebuildSnapshotWithCurrentStop({
+    required TransitModeSnapshot snapshot,
+    required TransitStop currentStop,
+    required String routeId,
+  }) {
+    final destinationStop = snapshot.destinationStop;
+    if (!snapshot.isActive || destinationStop == null) {
+      return snapshot;
     }
 
-    return nearest;
+    final nextStop = getNextStop(
+      currentStop: currentStop,
+      destinationStop: destinationStop,
+      routeId: routeId,
+    );
+    final previousStop = getPreviousStop(
+      currentStop: currentStop,
+      destinationStop: destinationStop,
+      routeId: routeId,
+    );
+    final stopsRemaining = getStopsRemaining(
+      currentStop: currentStop,
+      destinationStop: destinationStop,
+    );
+
+    final status = stopsRemaining == 0
+        ? 'At destination'
+        : 'Approaching destination';
+
+    return TransitModeSnapshot(
+      isActive: true,
+      agency: snapshot.agency,
+      route: snapshot.route,
+      vehicleType: snapshot.vehicleType,
+      destinationStop: destinationStop,
+      currentStop: currentStop,
+      previousStop: previousStop,
+      nextStop: nextStop,
+      stopsRemaining: stopsRemaining,
+      alongRouteRemainingMeters: snapshot.alongRouteRemainingMeters,
+      offRouteMeters: snapshot.offRouteMeters,
+      status: status,
+    );
+  }
+
+  List<TransitStop> routeStopsFor(String routeId) => _sortedStops(routeId);
+
+  TransitStop? _resolveCurrentStop({
+    required RoutePolyline polyline,
+    required RouteProjection? projection,
+    required TransitStop destinationStop,
+    required String routeId,
+    required double latitude,
+    required double longitude,
+    required int maxStopProximityMeters,
+    double? headingDegrees,
+    double? speedMps,
+  }) {
+    if (projection != null &&
+        projection.offRouteMeters <= maxStopProximityMeters) {
+      final matched = _routeGeometry.matchCurrentStop(
+        polyline: polyline,
+        projection: projection,
+        destinationStop: destinationStop,
+        maxOffRouteMeters: maxStopProximityMeters,
+        headingDegrees: headingDegrees,
+        speedMps: speedMps,
+      );
+      if (matched != null) {
+        return matched;
+      }
+
+      return _routeGeometry.bestStopAtOrBehindProjection(
+        polyline: polyline,
+        projection: projection,
+      );
+    }
+
+    return getCurrentStop(
+      latitude: latitude,
+      longitude: longitude,
+      routeId: routeId,
+      maxProximityMeters: maxStopProximityMeters,
+      destinationStop: destinationStop,
+    );
   }
 
   TransitStop? getPreviousStop({
