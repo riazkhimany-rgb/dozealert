@@ -31,7 +31,7 @@ void main() {
     expect(session.lockedPatternKey, 'd:0');
   });
 
-  test('seeds direction immediately from destination pick', () {
+  test('seed marks as seeded but not locked (pending confirmation)', () {
     final session = TransitTripSession()
       ..seedPatternKey(
         routeId: 'route_a',
@@ -39,17 +39,51 @@ void main() {
         patternKey: 'd:1',
       );
 
-    expect(session.isDirectionLocked, isTrue);
+    // Seeded but not yet locked — GPS must confirm.
     expect(session.isSeeded, isTrue);
+    expect(session.isDirectionLocked, isFalse);
+    expect(session.lockedPatternKey, isNull);
+
+    // A single confirming GPS fix promotes the seed to locked.
+    final key = session.updateAndGetPatternKey(
+      routeId: 'route_a',
+      destinationKey: 'union',
+      inferredPatternKey: 'd:1',
+    );
+    expect(key, 'd:1');
+    expect(session.isDirectionLocked, isTrue);
     expect(session.lockedPatternKey, 'd:1');
-    expect(
-      session.updateAndGetPatternKey(
+  });
+
+  test('seed is overridden when GPS consistently infers a different direction',
+      () {
+    final session = TransitTripSession()
+      ..seedPatternKey(
         routeId: 'route_a',
         destinationKey: 'union',
-        inferredPatternKey: 'd:0',
-      ),
-      'd:1',
+        patternKey: 'd:1',
+      );
+
+    // GPS disagrees — direction resets to the GPS-inferred pattern.
+    session.updateAndGetPatternKey(
+      routeId: 'route_a',
+      destinationKey: 'union',
+      inferredPatternKey: 'd:0',
     );
+    expect(session.isDirectionLocked, isFalse);
+
+    session.updateAndGetPatternKey(
+      routeId: 'route_a',
+      destinationKey: 'union',
+      inferredPatternKey: 'd:0',
+    );
+    session.updateAndGetPatternKey(
+      routeId: 'route_a',
+      destinationKey: 'union',
+      inferredPatternKey: 'd:0',
+    );
+    expect(session.isDirectionLocked, isTrue);
+    expect(session.lockedPatternKey, 'd:0');
   });
 
   test('resets when route or destination changes', () {

@@ -26,7 +26,13 @@ class TransitTripSession {
     _seeded = false;
   }
 
-  /// Locks direction immediately from the user's line/destination pick (no GPS).
+  /// Seeds the direction from the user's destination pick (optionally with GPS).
+  ///
+  /// The seed is stored as *pending* rather than immediately locked so that the
+  /// first confirming GPS fix promotes it to locked. If the inferred GPS
+  /// direction disagrees (e.g. the seed was destination-only and the user is on
+  /// a bidirectional bus route), the GPS pattern replaces the pending and the
+  /// session converges to the correct direction within [lockFixCount] fixes.
   void seedPatternKey({
     required String routeId,
     required String destinationKey,
@@ -40,9 +46,9 @@ class TransitTripSession {
       _beginSession(routeId, destinationKey);
     }
 
-    _lockedPatternKey = patternKey;
+    // Pending-only: one agreeing GPS fix locks it; a disagreeing fix resets it.
     _pendingPatternKey = patternKey;
-    _pendingCount = lockFixCount;
+    _pendingCount = lockFixCount - 1;
     _seeded = true;
   }
 
@@ -85,5 +91,6 @@ class TransitTripSession {
     _lockedPatternKey = null;
     _pendingPatternKey = null;
     _pendingCount = 0;
+    _seeded = false;
   }
 }

@@ -39,6 +39,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   int _transitWakeStopCount = 0;
   bool _transitDirectionLocked = false;
   bool _transitHasTripConcern = false;
+  String _transitTripConcernType = '';
   bool _arrivalTriggered = false;
   int? _monitoringStartedAtMs;
   BackgroundTransitPattern? _transitPattern;
@@ -293,6 +294,9 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _transitHasTripConcern =
         prefs.getBool(MonitoringStorageService.transitHasTripConcernKey) ??
             false;
+    _transitTripConcernType =
+        prefs.getString(MonitoringStorageService.transitTripConcernTypeKey) ??
+            '';
     _transitDirectionLocked =
         prefs.getBool(MonitoringStorageService.transitDirectionLockedKey) ??
             false;
@@ -344,6 +348,9 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       'stopsRemaining': stopsRemaining,
       'transitActive': _transitOnRoute,
       'lineLabel': _lineLabel,
+      // Propagate concern type so the watch shows the correct message
+      // ("Wrong direction?" / "Route uncertain") while the phone is backgrounded.
+      'tripConcern': _transitHasTripConcern ? _transitTripConcernType : '',
       'alarmActive': false,
       'hasDestination': true,
       'alarmStopName': _alarmStopName,

@@ -137,15 +137,10 @@ data class TripState(
             StatusKind.Idle -> "Idle"
         }
 
-    val detailLine: String
-        get() = when {
-            headline.isNotBlank() && subline.isNotBlank() -> "$headline · $subline"
-            else -> headline.ifBlank { subline }
-        }
-
     val tileLine: String
         get() = when {
-            alarmActive -> alarmHeadline.ifBlank { alarmPrimaryStopName }.ifBlank { "Wake up!" }
+            // During alarm: show stop name first (most actionable); headline as fallback.
+            alarmActive -> alarmPrimaryStopName.ifBlank { alarmHeadline }.ifBlank { "Wake up!" }
             isMonitoring && hasTripConcern -> "Check route on phone"
             isMonitoring && gpsStale -> "GPS weak"
             isMonitoring && transitActive && stopsRemaining >= 0 -> when (stopsRemaining) {

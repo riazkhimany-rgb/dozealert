@@ -72,10 +72,18 @@ class TransitModeService {
         destination.stationKey ??
         GtfsStopNameUtils.stationDisplayName(destination.name);
 
-    if (!_tripSession.isDirectionLocked) {
+    if (!_tripSession.isDirectionLocked && !_tripSession.isSeeded) {
+      // Pass GPS context so the seed scores the correct direction on any
+      // bidirectional route where the destination stop appears in both patterns
+      // (buses, streetcars, subway, commuter rail). Without GPS the heuristic
+      // may pick the wrong pattern and cause a false Wrong Direction warning.
       final seedPattern = _gtfsService.inferPatternKeyForRoute(
         resolvedRouteId,
         destinationStop: destinationStopCandidate,
+        latitude: latitude,
+        longitude: longitude,
+        headingDegrees: headingDegrees,
+        speedMps: speedMps,
       );
       if (seedPattern != null) {
         _tripSession.seedPatternKey(
@@ -205,23 +213,19 @@ class TransitModeService {
         ) ??
         currentStop;
 
-    final nextStop = getNextStop(
+    // routeStops already in scope — use private helpers to avoid extra GTFS lookups.
+    final nextStop = _nextStopFrom(
+      patternStops: routeStops,
       currentStop: currentStop,
       destinationStop: destinationStop,
-      routeId: resolvedRouteId,
-      latitude: latitude,
-      longitude: longitude,
-      lockedPatternKey: patternKey,
     );
-    final previousStop = getPreviousStop(
+    final previousStop = _previousStopFrom(
+      patternStops: routeStops,
       currentStop: currentStop,
       destinationStop: destinationStop,
-      routeId: resolvedRouteId,
-      latitude: latitude,
-      longitude: longitude,
-      lockedPatternKey: patternKey,
     );
-    final stopsRemaining = getStopsRemaining(
+    final stopsRemaining = _hopsToDestination(
+      patternStops: routeStops,
       currentStop: currentStop,
       destinationStop: destinationStop,
     );
@@ -377,17 +381,24 @@ class TransitModeService {
       return snapshot;
     }
 
-    final nextStop = getNextStop(
+    final patternStops = _sortedStops(
+      routeId,
+      destinationStop: destinationStop,
+      anchorStop: currentStop,
+      lockedPatternKey: _tripSession.lockedPatternKey,
+    );
+    final nextStop = _nextStopFrom(
+      patternStops: patternStops,
       currentStop: currentStop,
       destinationStop: destinationStop,
-      routeId: routeId,
     );
-    final previousStop = getPreviousStop(
+    final previousStop = _previousStopFrom(
+      patternStops: patternStops,
       currentStop: currentStop,
       destinationStop: destinationStop,
-      routeId: routeId,
     );
-    final stopsRemaining = getStopsRemaining(
+    final stopsRemaining = _hopsToDestination(
+      patternStops: patternStops,
       currentStop: currentStop,
       destinationStop: destinationStop,
     );
@@ -549,19 +560,11 @@ class TransitModeService {
       longitude: longitude,
       lockedPatternKey: lockedPatternKey,
     );
-    final travelingForward =
-        destinationStop.stopSequence >= currentStop.stopSequence;
-    final targetSequence = travelingForward
-        ? currentStop.stopSequence - 1
-        : currentStop.stopSequence + 1;
-
-    for (final stop in routeStops) {
-      if (stop.stopSequence == targetSequence) {
-        return stop;
-      }
-    }
-
-    return currentStop;
+    return _previousStopFrom(
+      patternStops: routeStops,
+      currentStop: currentStop,
+      destinationStop: destinationStop,
+    );
   }
 
   TransitStop? getNextStop({
@@ -580,26 +583,116 @@ class TransitModeService {
       longitude: longitude,
       lockedPatternKey: lockedPatternKey,
     );
-    final travelingForward =
-        destinationStop.stopSequence >= currentStop.stopSequence;
-    final targetSequence = travelingForward
-        ? currentStop.stopSequence + 1
-        : currentStop.stopSequence - 1;
-
-    for (final stop in routeStops) {
-      if (stop.stopSequence == targetSequence) {
-        return stop;
-      }
-    }
-
-    return destinationStop;
+    return _nextStopFrom(
+      patternStops: routeStops,
+      currentStop: currentStop,
+      destinationStop: destinationStop,
+    );
   }
 
+  /// Number of stops between [currentStop] and [destinationStop], counted by
+  /// actual hops in [patternStops] rather than raw sequence difference.
+  ///
+  /// Prefer passing [patternStops] (the sorted route stops already in memory)
+  /// so the count is accurate for feeds that use non-consecutive sequences
+  /// (e.g. step-10 or step-100 numbering). Falls back to sequence diff when
+  /// no pattern is available.
   int getStopsRemaining({
     required TransitStop currentStop,
     required TransitStop destinationStop,
+    List<TransitStop>? patternStops,
   }) {
+    if (patternStops != null && patternStops.isNotEmpty) {
+      return _hopsToDestination(
+        patternStops: patternStops,
+        currentStop: currentStop,
+        destinationStop: destinationStop,
+      );
+    }
     return (destinationStop.stopSequence - currentStop.stopSequence).abs();
+  }
+
+  /// Count the number of stop-hops from [currentStop] to [destinationStop]
+  /// using the sorted [patternStops] list. Returns 0 when current == dest.
+  ///
+  /// This is the single source of truth for stops-remaining on both the
+  /// foreground and background paths, replacing the old sequence-diff formula
+  /// that broke for GTFS feeds with non-consecutive stop_sequence values.
+  int _hopsToDestination({
+    required List<TransitStop> patternStops,
+    required TransitStop currentStop,
+    required TransitStop destinationStop,
+  }) {
+    final forward = destinationStop.stopSequence >= currentStop.stopSequence;
+    var count = 0;
+    for (final stop in patternStops) {
+      final seq = stop.stopSequence;
+      if (forward) {
+        if (seq >= currentStop.stopSequence &&
+            seq <= destinationStop.stopSequence) count++;
+      } else {
+        if (seq <= currentStop.stopSequence &&
+            seq >= destinationStop.stopSequence) count++;
+      }
+    }
+    // count includes both endpoints; subtract 1 so at-destination == 0.
+    return (count - 1).clamp(0, patternStops.length);
+  }
+
+  /// Returns the adjacent stop immediately BEFORE [currentStop] in travel
+  /// direction — i.e. the stop that was just passed.
+  ///
+  /// Works for feeds with non-consecutive stop_sequence values by finding the
+  /// nearest sequence that is strictly less-than (forward) or greater-than
+  /// (backward) the current stop.
+  TransitStop _previousStopFrom({
+    required List<TransitStop> patternStops,
+    required TransitStop currentStop,
+    required TransitStop destinationStop,
+  }) {
+    final forward = destinationStop.stopSequence >= currentStop.stopSequence;
+    if (forward) {
+      // patternStops sorted ascending — last stop with seq < current.seq
+      for (final stop in patternStops.reversed) {
+        if (stop.stopSequence < currentStop.stopSequence) return stop;
+      }
+    } else {
+      // traveling backward — first stop with seq > current.seq
+      for (final stop in patternStops) {
+        if (stop.stopSequence > currentStop.stopSequence) return stop;
+      }
+    }
+    return currentStop;
+  }
+
+  /// Returns the adjacent stop immediately AFTER [currentStop] in travel
+  /// direction — i.e. the next stop coming up.
+  ///
+  /// Works for feeds with non-consecutive stop_sequence values by finding the
+  /// nearest sequence that is strictly greater-than (forward) or less-than
+  /// (backward) the current stop, bounded by [destinationStop].
+  TransitStop _nextStopFrom({
+    required List<TransitStop> patternStops,
+    required TransitStop currentStop,
+    required TransitStop destinationStop,
+  }) {
+    final forward = destinationStop.stopSequence >= currentStop.stopSequence;
+    if (forward) {
+      for (final stop in patternStops) {
+        if (stop.stopSequence > currentStop.stopSequence &&
+            stop.stopSequence <= destinationStop.stopSequence) {
+          return stop;
+        }
+      }
+    } else {
+      for (final stop in patternStops.reversed) {
+        if (stop.stopSequence < currentStop.stopSequence &&
+            stop.stopSequence >= destinationStop.stopSequence) {
+          return stop;
+        }
+      }
+    }
+    return destinationStop;
   }
 
   /// Stops from [currentStop] through [destinationStop] along the route, inclusive.

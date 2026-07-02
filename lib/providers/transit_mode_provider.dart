@@ -147,7 +147,23 @@ class TransitModeProvider extends ChangeNotifier {
 
     final wakeCount =
         _settingsService.settings.transitModeWake.wakeStopCount;
-    return _snapshot.stopsRemaining <= wakeCount;
+
+    if (_snapshot.stopsRemaining <= wakeCount) return true;
+
+    // Safety net for atDestination: the progress tracker advances at most
+    // +1 stop per GPS fix. If GPS becomes noisy or sparse exactly at the
+    // destination, stopsRemaining may stick at 1 while the user is physically
+    // at (or has just passed) their stop. Fire the alarm so they are not
+    // silently missed.
+    if (wakeCount == 0 && _snapshot.stopsRemaining == 1) {
+      final offRoute = _snapshot.offRouteMeters;
+      // Only apply the fallback when the user is close enough to be plausibly
+      // on the platform (within 400 m of the route — same threshold used for
+      // on-route snapping elsewhere in the app).
+      if (offRoute != null && offRoute <= 400) return true;
+    }
+
+    return false;
   }
 
   /// Copy for the current approach alarm, based on wake-by-stops setting.
@@ -245,6 +261,7 @@ class TransitModeProvider extends ChangeNotifier {
       wakeStopCount: _settingsService.settings.transitModeWake.wakeStopCount,
       directionLocked: _transitModeService.tripSession.isDirectionLocked,
       hasTripConcern: snapshot.hasTripConcern,
+      tripConcernType: snapshot.tripConcern ?? '',
       alarmHeadline: copy.headline,
       alarmBody: copy.detailMessage,
       alarmTts: copy.ttsPhrase,

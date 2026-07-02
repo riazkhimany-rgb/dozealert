@@ -45,10 +45,10 @@ void main() {
         segmentStops: segment,
       );
 
-      expect(copy.headline, 'Your stop is coming up');
+      expect(copy.headline, 'Arriving at Union Station');
       expect(copy.primaryStopName, 'Union Station');
       expect(copy.secondaryLine, isNull);
-      expect(copy.wearSubline, 'Arriving now');
+      expect(copy.wearSubline, 'Arriving at Union Station');
       expect(copy.detailMessage, contains('Wake by stops'));
       expect(copy.detailMessage, isNot(contains('Distance wake')));
     });
@@ -64,7 +64,7 @@ void main() {
         segmentStops: segment,
       );
 
-      expect(copy.headline, '1 stop before destination');
+      expect(copy.headline, '1 stop before Union Station');
       expect(copy.primaryStopName, 'Queen');
       expect(copy.secondaryLine, 'Final stop: Union Station');
       expect(copy.wearSubline, '1 stop before Union Station');
@@ -82,7 +82,7 @@ void main() {
         segmentStops: segment,
       );
 
-      expect(copy.headline, '2 stops before destination');
+      expect(copy.headline, '2 stops before Union Station');
       expect(copy.primaryStopName, 'King');
       expect(copy.secondaryLine, 'Final stop: Union Station');
       expect(copy.wearSubline, '2 stops before Union Station');
@@ -95,7 +95,7 @@ void main() {
         destinationName: 'Union Station',
       );
 
-      expect(copy.headline, 'Approaching destination');
+      expect(copy.headline, 'Approaching Union Station');
       expect(copy.detailMessage, contains('Distance wake'));
       expect(copy.wearSubline, 'Within wake radius');
     });

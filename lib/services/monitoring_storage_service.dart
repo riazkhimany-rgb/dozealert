@@ -29,6 +29,7 @@ class MonitoringStorageService {
   static const transitWakeStopCountKey = 'transit_wake_stop_count';
   static const transitDirectionLockedKey = 'transit_direction_locked';
   static const transitHasTripConcernKey = 'transit_has_trip_concern';
+  static const transitTripConcernTypeKey = 'transit_trip_concern_type';
   static const transitActiveKey = 'transit_active_snapshot';
   static const transitAlarmHeadlineKey = 'transit_alarm_headline';
   static const transitAlarmBodyKey = 'transit_alarm_body';
@@ -138,6 +139,7 @@ class MonitoringStorageService {
     required int wakeStopCount,
     required bool directionLocked,
     required bool hasTripConcern,
+    required String tripConcernType,
     required String alarmHeadline,
     required String alarmBody,
     required String alarmTts,
@@ -150,6 +152,7 @@ class MonitoringStorageService {
     await prefs.setInt(transitWakeStopCountKey, wakeStopCount);
     await prefs.setBool(transitDirectionLockedKey, directionLocked);
     await prefs.setBool(transitHasTripConcernKey, hasTripConcern);
+    await prefs.setString(transitTripConcernTypeKey, tripConcernType);
     await prefs.setString(transitAlarmHeadlineKey, alarmHeadline);
     await prefs.setString(transitAlarmBodyKey, alarmBody);
     await prefs.setString(transitAlarmTtsKey, alarmTts);
@@ -164,6 +167,7 @@ class MonitoringStorageService {
     await prefs.remove(transitWakeStopCountKey);
     await prefs.remove(transitDirectionLockedKey);
     await prefs.remove(transitHasTripConcernKey);
+    await prefs.remove(transitTripConcernTypeKey);
     await prefs.remove(transitAlarmHeadlineKey);
     await prefs.remove(transitAlarmBodyKey);
     await prefs.remove(transitAlarmTtsKey);

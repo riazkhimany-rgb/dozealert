@@ -103,10 +103,12 @@ abstract final class TransitWakeMessage {
         destinationName;
     final wakeEarly = wakeSetting != TransitModeWakeSetting.atDestination;
 
+    // Include the destination name so users woken from sleep immediately see
+    // where they need to get off, without having to read the body text.
     final headline = switch (wakeSetting) {
-      TransitModeWakeSetting.atDestination => 'Your stop is coming up',
-      TransitModeWakeSetting.oneStopBefore => '1 stop before destination',
-      TransitModeWakeSetting.twoStopsBefore => '2 stops before destination',
+      TransitModeWakeSetting.atDestination => 'Arriving at $destinationName',
+      TransitModeWakeSetting.oneStopBefore => '1 stop before $destinationName',
+      TransitModeWakeSetting.twoStopsBefore => '2 stops before $destinationName',
     };
 
     final secondaryLine = wakeEarly && wakeStopName != destinationName
@@ -137,7 +139,9 @@ abstract final class TransitWakeMessage {
     };
 
     final wearSubline = switch (wakeSetting) {
-      TransitModeWakeSetting.atDestination => 'Arriving now',
+      // For atDestination the headline already names the stop; subline adds
+      // directional confirmation.
+      TransitModeWakeSetting.atDestination => 'Arriving at $destinationName',
       TransitModeWakeSetting.oneStopBefore => '1 stop before $destinationName',
       TransitModeWakeSetting.twoStopsBefore => '2 stops before $destinationName',
     };
@@ -156,7 +160,7 @@ abstract final class TransitWakeMessage {
     required String destinationName,
     bool transitFallback = false,
   }) {
-    final headline = 'Approaching destination';
+    final headline = 'Approaching $destinationName';
     final detailMessage = transitFallback
         ? 'Distance wake — could not track your route, so waking by distance '
             'to $destinationName. Voice alert and vibration continue until you dismiss.'
