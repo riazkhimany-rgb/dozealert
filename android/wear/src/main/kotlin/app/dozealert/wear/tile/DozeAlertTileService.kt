@@ -12,25 +12,33 @@ import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.TileService
 import app.dozealert.wear.TripState
 import app.dozealert.wear.TripStateRepository
-import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.guava.future
 
 class DozeAlertTileService : TileService() {
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onTileRequest(
         requestParams: RequestBuilders.TileRequest,
     ): ListenableFuture<TileBuilders.Tile> {
-        val state = TripStateRepository.getInstance(this).state.value
-        return Futures.immediateFuture(buildTile(state))
+        return serviceScope.future {
+            val repository = TripStateRepository.getInstance(this@DozeAlertTileService)
+            repository.refreshFromPhone()
+            buildTile(repository.state.value)
+        }
     }
 
     override fun onTileResourcesRequest(
         requestParams: RequestBuilders.ResourcesRequest,
     ): ListenableFuture<ResourceBuilders.Resources> {
-        return Futures.immediateFuture(
+        return serviceScope.future {
             ResourceBuilders.Resources.Builder()
                 .setVersion(RESOURCES_VERSION)
-                .build(),
-        )
+                .build()
+        }
     }
 
     private fun buildTile(state: TripState): TileBuilders.Tile {

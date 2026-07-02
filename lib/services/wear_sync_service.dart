@@ -3,11 +3,14 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import '../models/monitoring_state.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../providers/settings_provider.dart';
 import '../providers/transit_mode_provider.dart';
 import '../services/alarm_service.dart';
+import '../utils/wear_trip_state_payload.dart';
 
 /// Syncs trip state to a paired Wear OS companion and receives watch commands.
 class WearSyncService {
@@ -16,15 +19,18 @@ class WearSyncService {
     required LocationProvider locationProvider,
     required TransitModeProvider transitModeProvider,
     required GtfsProvider gtfsProvider,
+    required SettingsProvider settingsProvider,
     required AlarmService alarmService,
   }) : _monitoringProvider = monitoringProvider,
        _locationProvider = locationProvider,
        _transitModeProvider = transitModeProvider,
        _gtfsProvider = gtfsProvider,
+       _settingsProvider = settingsProvider,
        _alarmService = alarmService {
     _monitoringProvider.addListener(_schedulePush);
     _locationProvider.addListener(_schedulePush);
     _transitModeProvider.addListener(_schedulePush);
+    _settingsProvider.addListener(_schedulePush);
   }
 
   static const _channel = MethodChannel('app.dozealert/wear');
@@ -33,16 +39,19 @@ class WearSyncService {
   static const cmdStartMonitoring = '/cmd/start_monitoring';
   static const cmdStopMonitoring = '/cmd/stop_monitoring';
   static const cmdDismissAlarm = '/cmd/dismiss_alarm';
+  static const cmdOpenPhone = '/cmd/open_phone';
 
   final MonitoringProvider _monitoringProvider;
   final LocationProvider _locationProvider;
   final TransitModeProvider _transitModeProvider;
   final GtfsProvider _gtfsProvider;
+  final SettingsProvider _settingsProvider;
   final AlarmService _alarmService;
 
   StreamSubscription<dynamic>? _commandSubscription;
   Timer? _pushTimer;
   bool _initialized = false;
+  MonitoringState? _lastMonitoringState;
 
   Future<void> Function()? onStartMonitoring;
   Future<void> Function()? onStopMonitoring;
@@ -70,6 +79,7 @@ class WearSyncService {
     }
 
     await pushTripState();
+    await _maybeLaunchWearApp(force: true);
   }
 
   Future<void> dispose() async {
@@ -78,7 +88,21 @@ class WearSyncService {
     _monitoringProvider.removeListener(_schedulePush);
     _locationProvider.removeListener(_schedulePush);
     _transitModeProvider.removeListener(_schedulePush);
+    _settingsProvider.removeListener(_schedulePush);
     _initialized = false;
+  }
+
+  Future<bool> refreshWatchConnection() async {
+    if (!Platform.isAndroid) {
+      return false;
+    }
+
+    try {
+      final connected = await _channel.invokeMethod<bool>('isWearConnected');
+      return connected ?? false;
+    } on PlatformException {
+      return false;
+    }
   }
 
   Future<void> pushTripState() async {
@@ -86,33 +110,57 @@ class WearSyncService {
       return;
     }
 
-    final monitoring = _monitoringProvider;
-    final destination = monitoring.selectedDestination;
-    final transit = _transitModeProvider.snapshot;
-    final alarmActive =
-        _alarmService.alarmActive || _locationProvider.arrivalDialogVisible;
+    await pushTripStateMap(
+      WearTripStatePayload.build(
+        monitoring: _monitoringProvider,
+        location: _locationProvider,
+        transitMode: _transitModeProvider,
+        gtfs: _gtfsProvider,
+        settings: _settingsProvider,
+        alarm: _alarmService,
+      ),
+    );
+  }
 
-    final payload = <String, dynamic>{
-      'state': monitoring.currentState.name,
-      'destinationName': destination?.name ?? '',
-      'distanceKm': _locationProvider.distanceRemainingKm,
-      'distanceReady': _locationProvider.distanceIsReady,
-      'stopsRemaining': transit.isActive ? transit.stopsRemaining : -1,
-      'transitActive': transit.isActive,
-      'lineLabel': _gtfsProvider.selectedLineLabel,
-      'alarmActive': alarmActive,
-      'hasDestination': destination != null,
-    };
+  Future<void> pushTripStateMap(Map<String, dynamic> payload) async {
+    if (!Platform.isAndroid) {
+      return;
+    }
 
     try {
       await _channel.invokeMethod<void>('pushTripState', payload);
     } on PlatformException {
       // Wear API unavailable on this device/build.
     }
+
+    await _maybeLaunchWearApp();
+  }
+
+  Future<void> _maybeLaunchWearApp({bool force = false}) async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
+    final monitoringState = _monitoringProvider.currentState;
+    final shouldLaunch = monitoringState == MonitoringState.monitoring &&
+        (force || _lastMonitoringState != MonitoringState.monitoring);
+    _lastMonitoringState = monitoringState;
+
+    if (!shouldLaunch) {
+      return;
+    }
+
+    try {
+      await _channel.invokeMethod<void>('launchWearApp');
+    } on PlatformException {
+      // No paired watch or Wear API unavailable.
+    }
   }
 
   Future<void> _handleWearCommand(String command) async {
     switch (command) {
+      case cmdOpenPhone:
+        break;
       case cmdStartMonitoring:
         await onStartMonitoring?.call();
       case cmdStopMonitoring:

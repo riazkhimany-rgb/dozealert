@@ -81,7 +81,7 @@ function Save-PlayScreenshot {
         [string]$Destination
     )
 
-    $cropped = New-Object System.Drawing.Bitmap $CropRect.Width, $CropRect.Height
+    $cropped = New-Object System.Drawing.Bitmap $CropRect.Width, $CropRect.Height, ([System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
     $cropGraphics = [System.Drawing.Graphics]::FromImage($cropped)
     $cropGraphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
     $cropGraphics.DrawImage(
@@ -94,9 +94,9 @@ function Save-PlayScreenshot {
 
     Remove-EmulatorBezel -Bitmap $cropped
 
-    $output = New-Object System.Drawing.Bitmap $TargetSize, $TargetSize
+    $output = New-Object System.Drawing.Bitmap $TargetSize, $TargetSize, ([System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
     $outputGraphics = [System.Drawing.Graphics]::FromImage($output)
-    $outputGraphics.Clear([System.Drawing.Color]::Black)
+    $outputGraphics.Clear([System.Drawing.Color]::FromArgb(255, 0, 0, 0))
     $outputGraphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
     $outputGraphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
     $outputGraphics.DrawImage($cropped, 0, 0, $TargetSize, $TargetSize)
@@ -127,7 +127,7 @@ try {
 
     Write-Host "Play-ready Wear screenshot:" -ForegroundColor Green
     Write-Host "  $resolvedOutput"
-    Write-Host "  ${Size}x${Size} PNG, 1:1, emulator bezel replaced with black"
+    Write-Host "  ${Size}x${Size} PNG, 1:1, opaque RGB (no transparency)"
 }
 finally {
     $bitmap.Dispose()

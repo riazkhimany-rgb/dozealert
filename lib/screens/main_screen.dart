@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/location_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../widgets/gtfs_feed_upgrade_listener.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
 import 'trips_screen.dart';
@@ -74,15 +75,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
 
     return WithForegroundTask(
-      child: Scaffold(
-        body: IndexedStack(
-          index: safeIndex,
-          children: _screens,
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: safeIndex,
-          onDestinationSelected: context.read<NavigationProvider>().setIndex,
-          destinations: _destinations,
+      child: GtfsFeedUpgradeListener(
+        child: Scaffold(
+          body: IndexedStack(
+            index: safeIndex,
+            children: _screens,
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: safeIndex,
+            onDestinationSelected: context.read<NavigationProvider>().setIndex,
+            destinations: _destinations,
+          ),
         ),
       ),
     );

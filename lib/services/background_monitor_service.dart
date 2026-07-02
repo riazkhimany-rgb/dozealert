@@ -25,6 +25,12 @@ class BackgroundMonitorDiagnostics {
   final bool foregroundServiceRunning;
 }
 
+class BackgroundArrivalEvent {
+  const BackgroundArrivalEvent({this.transitWake = false});
+
+  final bool transitWake;
+}
+
 class BackgroundMonitorService {
   BackgroundMonitorService(this._monitoringStorage);
 
@@ -34,8 +40,10 @@ class BackgroundMonitorService {
 
   final StreamController<CurrentLocation> _locationController =
       StreamController<CurrentLocation>.broadcast();
-  final StreamController<void> _arrivalController =
-      StreamController<void>.broadcast();
+  final StreamController<BackgroundArrivalEvent> _arrivalController =
+      StreamController<BackgroundArrivalEvent>.broadcast();
+  final StreamController<Map<String, Object>> _wearSyncController =
+      StreamController<Map<String, Object>>.broadcast();
 
   bool _initialized = false;
   bool _foregroundServiceRunning = false;
@@ -43,7 +51,10 @@ class BackgroundMonitorService {
 
   Stream<CurrentLocation> get locationStream => _locationController.stream;
 
-  Stream<void> get arrivalStream => _arrivalController.stream;
+  Stream<BackgroundArrivalEvent> get arrivalStream =>
+      _arrivalController.stream;
+
+  Stream<Map<String, Object>> get wearSyncStream => _wearSyncController.stream;
 
   bool get isForegroundServiceRunning => _foregroundServiceRunning;
 
@@ -99,6 +110,7 @@ class BackgroundMonitorService {
     FlutterForegroundTask.removeTaskDataCallback(_handleTaskData);
     await _locationController.close();
     await _arrivalController.close();
+    await _wearSyncController.close();
   }
 
   Future<void> syncServiceState() async {
@@ -265,7 +277,31 @@ class BackgroundMonitorService {
     }
 
     if (type == 'arrived') {
-      _arrivalController.add(null);
+      _arrivalController.add(const BackgroundArrivalEvent());
+      return;
+    }
+
+    if (type == 'transit_arrived') {
+      _arrivalController.add(
+        const BackgroundArrivalEvent(transitWake: true),
+      );
+      return;
+    }
+
+    if (type == 'wear_sync') {
+      final payload = <String, Object>{};
+      for (final entry in data.entries) {
+        if (entry.key == 'type') {
+          continue;
+        }
+        final value = entry.value;
+        if (value is String || value is num || value is bool) {
+          payload[entry.key] = value;
+        }
+      }
+      if (payload.isNotEmpty) {
+        _wearSyncController.add(payload);
+      }
     }
   }
 }

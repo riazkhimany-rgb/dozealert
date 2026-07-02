@@ -45,6 +45,7 @@ class GtfsImportService {
       agencies: parsed.agencies,
       routes: parsed.routes,
       stops: parsed.stops,
+      shapes: parsed.shapes,
     );
 
     return parsed;

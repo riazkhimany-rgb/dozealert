@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/transit_mode_service.dart';
-import 'package:dozealert/services/transit_data_service.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/cache/gtfs_cache_store.dart';
 import 'package:dozealert/models/transit_route.dart';
@@ -10,6 +9,7 @@ import 'package:dozealert/models/transit_stop.dart';
 import 'package:dozealert/models/transit_vehicle_type.dart';
 
 import 'support/go_transit_test_feed.dart';
+import 'support/lakeshore_west_bidirectional_feed.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +18,7 @@ void main() {
   late TransitModeService transitModeService;
 
   setUp(() async {
-    gtfsService = GtfsService(TransitDataService());
+    gtfsService = GtfsService();
     await gtfsService.initializeFromFallbackData();
     gtfsService.mergeCachedFeed(buildGoTransitTestFeed());
     transitModeService = TransitModeService(gtfsService);
@@ -290,5 +290,67 @@ void main() {
     );
 
     expect(snapshot.isActive, isFalse);
+  });
+
+  test('Clarkson to Bronte westbound selects correct direction pattern', () {
+    gtfsService.mergeCachedFeed(buildLakeshoreWestBidirectionalFeed());
+    final transitService = TransitModeService(gtfsService);
+
+    const destination = Destination(
+      name: 'Bronte GO',
+      latitude: 43.4039,
+      longitude: -79.7589,
+    );
+
+    final snapshot = transitService.evaluate(
+      destination: destination,
+      latitude: 43.5232,
+      longitude: -79.6338,
+      routeId: 'go_transit_11',
+      maxStopProximityMeters: 1000,
+    );
+
+    expect(snapshot.isActive, isTrue);
+    expect(snapshot.currentStop?.stopName, 'Clarkson GO');
+    expect(snapshot.nextStop?.stopName, 'Oakville GO');
+    expect(snapshot.stopsRemaining, 2);
+    expect(
+      snapshot.alongRouteRemainingMeters,
+      lessThan(25000),
+    );
+  });
+
+  test('Bronte to Union eastbound progress line uses correct direction pattern', () {
+    gtfsService.mergeCachedFeed(buildLakeshoreWestBidirectionalFeed());
+    final transitService = TransitModeService(gtfsService);
+
+    const destination = Destination(
+      name: 'Union GO',
+      latitude: 43.6453,
+      longitude: -79.3806,
+    );
+
+    final snapshot = transitService.evaluate(
+      destination: destination,
+      latitude: 43.4039,
+      longitude: -79.7589,
+      routeId: 'go_transit_11',
+      maxStopProximityMeters: 1000,
+    );
+
+    expect(snapshot.isActive, isTrue);
+    expect(snapshot.currentStop?.stopName, 'Bronte GO');
+    expect(snapshot.destinationStop?.stopName, 'Union GO');
+
+    final segment = transitService.getStopsFromCurrentToDestination(
+      currentStop: snapshot.currentStop!,
+      destinationStop: snapshot.destinationStop!,
+      routeId: snapshot.route!.routeId,
+    );
+
+    expect(segment.first.stopName, 'Bronte GO');
+    expect(segment.last.stopName, 'Union GO');
+    expect(segment.map((stop) => stop.stopName), contains('Oakville GO'));
+    expect(segment.map((stop) => stop.stopName), isNot(contains('Niagara Falls GO')));
   });
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import '../cache/gtfs_cache_store.dart';
 import '../models/gtfs_feed_info.dart';
+import '../models/route_shape_polyline.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_route.dart';
 import '../models/transit_stop.dart';
@@ -27,12 +28,14 @@ class GtfsCacheEncodeRequest {
     required this.agenciesJson,
     required this.routesJson,
     required this.stopsJson,
+    this.shapesJson = const [],
   });
 
   final Map<String, dynamic> feedInfoJson;
   final List<Map<String, dynamic>> agenciesJson;
   final List<Map<String, dynamic>> routesJson;
   final List<Map<String, dynamic>> stopsJson;
+  final List<Map<String, dynamic>> shapesJson;
 }
 
 GtfsParseResult parseGtfsZipInIsolate(GtfsParseRequest request) {
@@ -46,12 +49,16 @@ GtfsParseResult parseGtfsZipInIsolate(GtfsParseRequest request) {
 }
 
 Map<String, String> encodeGtfsCacheFilesInIsolate(GtfsCacheEncodeRequest request) {
-  return {
+  final files = {
     'feed_info.json': jsonEncode(request.feedInfoJson),
     'agencies.json': jsonEncode(request.agenciesJson),
     'routes.json': jsonEncode(request.routesJson),
     'stops.json': jsonEncode(request.stopsJson),
   };
+  if (request.shapesJson.isNotEmpty) {
+    files['shapes.json'] = jsonEncode(request.shapesJson);
+  }
+  return files;
 }
 
 GtfsCachedFeed loadGtfsCachedFeedInIsolate(String feedDirectoryPath) {
@@ -68,6 +75,7 @@ GtfsCachedFeed loadGtfsCachedFeedInIsolate(String feedDirectoryPath) {
     agencies: _readAgencies('$feedDirectoryPath/agencies.json'),
     routes: _readRoutes('$feedDirectoryPath/routes.json'),
     stops: _readStops('$feedDirectoryPath/stops.json'),
+    shapes: _readShapes('$feedDirectoryPath/shapes.json'),
   );
 }
 
@@ -197,5 +205,39 @@ Map<String, dynamic> stopToJson(TransitStop stop) {
     'longitude': stop.longitude,
     'routeId': stop.routeId,
     'stopSequence': stop.stopSequence,
+  };
+}
+
+List<RouteShapePolyline> _readShapes(String path) {
+  final file = File(path);
+  if (!file.existsSync()) {
+    return const [];
+  }
+  final decoded = jsonDecode(file.readAsStringSync()) as List<dynamic>;
+  return decoded
+      .map(
+        (entry) => RouteShapePolyline(
+          routeId: entry['routeId'] as String,
+          patternKey: entry['patternKey'] as String,
+          points: (entry['points'] as List<dynamic>)
+              .map(
+                (point) => RouteShapePoint(
+                  latitude: (point[0] as num).toDouble(),
+                  longitude: (point[1] as num).toDouble(),
+                ),
+              )
+              .toList(growable: false),
+        ),
+      )
+      .toList(growable: false);
+}
+
+Map<String, dynamic> shapeToJson(RouteShapePolyline shape) {
+  return {
+    'routeId': shape.routeId,
+    'patternKey': shape.patternKey,
+    'points': shape.points
+        .map((point) => [point.latitude, point.longitude])
+        .toList(growable: false),
   };
 }

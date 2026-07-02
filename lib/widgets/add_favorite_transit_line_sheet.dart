@@ -10,6 +10,7 @@ import '../models/transit_vehicle_type.dart';
 import '../providers/favorite_transit_line_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
+import '../utils/transit_line_picker_utils.dart';
 import '../utils/transit_user_copy.dart';
 import 'accessible_scroll_body.dart';
 import 'gtfs_vehicle_type_download_prompt.dart';
@@ -71,12 +72,13 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
       lineName: _lineName,
     );
 
+    final label = context.read<GtfsProvider>().favoriteLineLabel(favorite);
     await context.read<FavoriteTransitLineProvider>().add(favorite);
     if (mounted) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Added ${favorite.label}'),
+          content: Text('Added $label'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -103,9 +105,10 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
         }
       });
     }
-    final useSearch = _vehicleTypeFilter == TransitVehicleType.bus ||
-        _vehicleTypeFilter == TransitVehicleType.streetcar ||
-        lineOptions.length > 4;
+    final useSearch = TransitLinePickerUtils.shouldUseSearchableLinePicker(
+      lineOptions: lineOptions,
+      vehicleType: _vehicleTypeFilter,
+    );
     final showGtfsPrompt = _vehicleTypeFilter != null &&
         lineOptions.isEmpty &&
         vehicleTypes.contains(_vehicleTypeFilter);
@@ -145,8 +148,7 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
                 _region = TransitCatalog.defaultRegionForCountry(value);
                 _transitSystem =
                     TransitCatalog.defaultAgencyForRegion(_country, _region);
-                _lineName =
-                    TransitCatalog.defaultLineForSystem(_transitSystem);
+                _lineName = gtfsProvider.defaultLineForAgency(_transitSystem);
                 _vehicleTypeFilter = null;
               });
             },
@@ -160,8 +162,7 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
                 _region = value;
                 _transitSystem =
                     TransitCatalog.defaultAgencyForRegion(_country, _region);
-                _lineName =
-                    TransitCatalog.defaultLineForSystem(_transitSystem);
+                _lineName = gtfsProvider.defaultLineForAgency(_transitSystem);
                 _vehicleTypeFilter = null;
               });
             },
@@ -173,7 +174,7 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
             onChanged: (value) {
               setState(() {
                 _transitSystem = value;
-                _lineName = TransitCatalog.defaultLineForSystem(value);
+                _lineName = gtfsProvider.defaultLineForAgency(value);
                 _vehicleTypeFilter = null;
               });
             },

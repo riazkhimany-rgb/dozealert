@@ -3,7 +3,6 @@ import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/models/transit_stop.dart';
 import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/route_geometry_service.dart';
-import 'package:dozealert/services/transit_data_service.dart';
 import 'package:dozealert/services/transit_mode_service.dart';
 import 'package:dozealert/utils/gps_quality.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -175,7 +174,7 @@ void main() {
     late TransitModeService transitModeService;
 
     setUp(() async {
-      gtfsService = GtfsService(TransitDataService());
+      gtfsService = GtfsService();
       await gtfsService.initializeFromFallbackData();
       gtfsService.mergeCachedFeed(buildGoTransitTestFeed());
       transitModeService = TransitModeService(gtfsService);

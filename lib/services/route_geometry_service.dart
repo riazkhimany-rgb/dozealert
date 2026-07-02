@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:geolocator/geolocator.dart';
 
+import '../models/route_shape_polyline.dart';
 import '../models/transit_stop.dart';
 
 /// A polyline built from ordered route stops (GTFS shapes fallback).
@@ -65,6 +66,7 @@ class RouteGeometryService {
   RoutePolyline buildPolyline({
     required List<TransitStop> routeStops,
     required TransitStop destinationStop,
+    List<RouteShapePoint>? shapePoints,
   }) {
     final stops = List<TransitStop>.from(routeStops)
       ..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
@@ -72,36 +74,79 @@ class RouteGeometryService {
     final travelingForward =
         destinationStop.stopSequence >= stops.first.stopSequence;
 
+    final trimmedShape = _trimShapeToStops(
+      shapePoints: shapePoints,
+      stops: stops,
+    );
+
     final segments = <RouteSegment>[];
     var along = 0.0;
 
-    for (var index = 0; index < stops.length - 1; index++) {
-      final from = stops[index];
-      final to = stops[index + 1];
-      final length = Geolocator.distanceBetween(
-        from.latitude,
-        from.longitude,
-        to.latitude,
-        to.longitude,
-      );
+    if (trimmedShape != null && trimmedShape.length >= 2) {
+      for (var index = 0; index < trimmedShape.length - 1; index++) {
+        final from = trimmedShape[index];
+        final to = trimmedShape[index + 1];
+        final length = Geolocator.distanceBetween(
+          from.latitude,
+          from.longitude,
+          to.latitude,
+          to.longitude,
+        );
+        if (length <= 0) {
+          continue;
+        }
 
-      if (length <= 0) {
-        continue;
+        segments.add(
+          RouteSegment(
+            startLat: from.latitude,
+            startLon: from.longitude,
+            endLat: to.latitude,
+            endLon: to.longitude,
+            startAlongMeters: along,
+            lengthMeters: length,
+            fromStopSequence: _nearestStopSequence(
+              stops,
+              from.latitude,
+              from.longitude,
+            ),
+            toStopSequence: _nearestStopSequence(
+              stops,
+              to.latitude,
+              to.longitude,
+            ),
+          ),
+        );
+        along += length;
       }
+    } else {
+      for (var index = 0; index < stops.length - 1; index++) {
+        final from = stops[index];
+        final to = stops[index + 1];
+        final length = Geolocator.distanceBetween(
+          from.latitude,
+          from.longitude,
+          to.latitude,
+          to.longitude,
+        );
 
-      segments.add(
-        RouteSegment(
-          startLat: from.latitude,
-          startLon: from.longitude,
-          endLat: to.latitude,
-          endLon: to.longitude,
-          startAlongMeters: along,
-          lengthMeters: length,
-          fromStopSequence: from.stopSequence,
-          toStopSequence: to.stopSequence,
-        ),
-      );
-      along += length;
+        if (length <= 0) {
+          continue;
+        }
+
+        segments.add(
+          RouteSegment(
+            startLat: from.latitude,
+            startLon: from.longitude,
+            endLat: to.latitude,
+            endLon: to.longitude,
+            startAlongMeters: along,
+            lengthMeters: length,
+            fromStopSequence: from.stopSequence,
+            toStopSequence: to.stopSequence,
+          ),
+        );
+        along += length;
+      }
     }
 
     return RoutePolyline(
@@ -110,6 +155,90 @@ class RouteGeometryService {
       totalLengthMeters: along,
       travelingForward: travelingForward,
     );
+  }
+
+  List<RouteShapePoint>? _trimShapeToStops({
+    required List<RouteShapePoint>? shapePoints,
+    required List<TransitStop> stops,
+  }) {
+    if (shapePoints == null || shapePoints.length < 2 || stops.length < 2) {
+      return null;
+    }
+
+    final firstStop = stops.first;
+    final lastStop = stops.last;
+    var startIndex = _nearestShapeIndex(
+      shapePoints,
+      firstStop.latitude,
+      firstStop.longitude,
+    );
+    var endIndex = _nearestShapeIndex(
+      shapePoints,
+      lastStop.latitude,
+      lastStop.longitude,
+    );
+
+    if (startIndex < 0 || endIndex < 0) {
+      return null;
+    }
+
+    if (startIndex > endIndex) {
+      final temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    final trimmed = shapePoints.sublist(startIndex, endIndex + 1);
+    return trimmed.length >= 2 ? trimmed : null;
+  }
+
+  int _nearestShapeIndex(
+    List<RouteShapePoint> points,
+    double latitude,
+    double longitude,
+  ) {
+    var bestIndex = -1;
+    var bestDistance = double.infinity;
+
+    for (var index = 0; index < points.length; index++) {
+      final point = points[index];
+      final distance = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        point.latitude,
+        point.longitude,
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    }
+
+    return bestIndex;
+  }
+
+  int _nearestStopSequence(
+    List<TransitStop> stops,
+    double latitude,
+    double longitude,
+  ) {
+    var bestSequence = stops.first.stopSequence;
+    var bestDistance = double.infinity;
+
+    for (final stop in stops) {
+      final distance = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        stop.latitude,
+        stop.longitude,
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestSequence = stop.stopSequence;
+      }
+    }
+
+    return bestSequence;
   }
 
   RouteProjection? projectOnPolyline({

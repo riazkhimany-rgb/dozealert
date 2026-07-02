@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/gtfs_feed_info.dart';
+import '../models/route_shape_polyline.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_route.dart';
 import '../models/transit_stop.dart';
@@ -16,12 +17,14 @@ class GtfsCachedFeed {
     required this.agencies,
     required this.routes,
     required this.stops,
+    this.shapes = const [],
   });
 
   final GtfsFeedInfo info;
   final List<TransitAgency> agencies;
   final List<TransitRoute> routes;
   final List<TransitStop> stops;
+  final List<RouteShapePolyline> shapes;
 }
 
 class GtfsCacheStore {
@@ -55,6 +58,7 @@ class GtfsCacheStore {
     required List<TransitAgency> agencies,
     required List<TransitRoute> routes,
     required List<TransitStop> stops,
+    List<RouteShapePolyline> shapes = const [],
   }) async {
     final cacheDir = await _resolveCacheDirectory();
     final feedDir = Directory('${cacheDir.path}/${info.feedId}');
@@ -68,6 +72,7 @@ class GtfsCacheStore {
       agenciesJson: agencies.map(agencyToJson).toList(growable: false),
       routesJson: routes.map(routeToJson).toList(growable: false),
       stopsJson: stops.map(stopToJson).toList(growable: false),
+      shapesJson: shapes.map(shapeToJson).toList(growable: false),
     );
     final encodedFiles = _useBackgroundIsolate
         ? await compute(encodeGtfsCacheFilesInIsolate, encodeRequest)

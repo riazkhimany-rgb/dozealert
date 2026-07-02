@@ -71,7 +71,7 @@ abstract final class TransitCatalog {
         attributionText:
             'Contains data licensed under the City of Toronto Open Data License.',
       ),
-      lines: ['Line 1', 'Line 2', 'Line 4'],
+      lines: [allRoutesLine],
     ),
     TransitCatalogAgency(
       agencyId: 'yrt',

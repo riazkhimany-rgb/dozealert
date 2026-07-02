@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/favorite_transit_line.dart';
 import '../providers/favorite_transit_line_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../utils/transit_line_switch.dart';
 
@@ -43,6 +44,7 @@ class FavoriteLinesPickerSheet extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final favorites = context.watch<FavoriteTransitLineProvider>().favorites;
     final preferences = context.watch<TransitProvider>().preferences;
+    final gtfsProvider = context.watch<GtfsProvider>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -105,7 +107,7 @@ class FavoriteLinesPickerSheet extends StatelessWidget {
                               : colorScheme.onSecondaryContainer,
                         ),
                       ),
-                      title: Text(favorite.label),
+                      title: Text(gtfsProvider.favoriteLineLabel(favorite)),
                       trailing: isSelected
                           ? Icon(Icons.check, color: colorScheme.primary)
                           : null,

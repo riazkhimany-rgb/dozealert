@@ -67,8 +67,7 @@ class GtfsVehicleTypeDownloadPrompt extends StatelessWidget {
             feed.isDownloaded
                 ? '${vehicleType.label} routes were not found in the downloaded feed. '
                     'Try updating GTFS or choose All types.'
-                : 'Bundled data covers main train and subway lines only. '
-                    'Download the full ${feed.agencyName} GTFS feed to pick '
+                : 'Download the full ${feed.agencyName} GTFS feed to load '
                     '${vehicleType.label.toLowerCase()} route numbers.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,

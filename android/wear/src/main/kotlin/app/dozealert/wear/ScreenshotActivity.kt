@@ -3,18 +3,8 @@ package app.dozealert.wear
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material3.Button
-import androidx.wear.compose.material3.MaterialTheme
-import androidx.wear.compose.material3.Text
+import app.dozealert.wear.ui.AlarmScreen
+import app.dozealert.wear.ui.DozeAlertTheme
 import app.dozealert.wear.ui.TripScreen
 
 /**
@@ -29,14 +19,16 @@ class ScreenshotActivity : ComponentActivity() {
         val (state, phoneConnected) = scenarioState(scenario)
 
         setContent {
-            MaterialTheme {
+            DozeAlertTheme {
                 if (scenario == SCENARIO_ALARM) {
-                    AlarmScreenshot(state)
+                    AlarmScreen(state = state, busy = false, onDismiss = {})
                 } else {
                     TripScreen(
                         state = state,
                         phoneConnected = phoneConnected,
                         busy = false,
+                        statusMessage = null,
+                        isAmbient = false,
                         onStartMonitoring = {},
                         onStopMonitoring = {},
                         onDismissAlarm = {},
@@ -64,7 +56,7 @@ private fun scenarioState(scenario: String): Pair<TripState, Boolean> {
             state = "idle",
             hasDestination = true,
             destinationName = "Bronte GO",
-            lineLabel = "Lakeshore West",
+            lineLabel = "GO Transit - LW - Lakeshore West",
         ) to true
         ScreenshotActivity.SCENARIO_MONITORING -> TripState(
             state = "monitoring",
@@ -72,14 +64,15 @@ private fun scenarioState(scenario: String): Pair<TripState, Boolean> {
             destinationName = "Bronte GO",
             distanceKm = 2.3,
             distanceReady = true,
+            lineLabel = "GO Transit - LW - Lakeshore West",
         ) to true
         ScreenshotActivity.SCENARIO_TRANSIT -> TripState(
             state = "monitoring",
             hasDestination = true,
             destinationName = "Bronte GO",
             transitActive = true,
-            stopsRemaining = 3,
-            lineLabel = "Lakeshore West",
+            stopsRemaining = 1,
+            lineLabel = "GO Transit - LW - Lakeshore West",
         ) to true
         ScreenshotActivity.SCENARIO_ALARM -> TripState(
             state = "arrived",
@@ -94,38 +87,5 @@ private fun scenarioState(scenario: String): Pair<TripState, Boolean> {
             hasDestination = true,
             destinationName = "Bronte GO",
         ) to true
-    }
-}
-
-@androidx.compose.runtime.Composable
-private fun AlarmScreenshot(state: TripState) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = "Wake up",
-            style = MaterialTheme.typography.titleLarge,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = state.destinationName.ifBlank { "Your stop" },
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = state.detailLine,
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-        )
-        Button(
-            onClick = {},
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Dismiss alarm")
-        }
     }
 }

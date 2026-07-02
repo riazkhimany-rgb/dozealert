@@ -1,0 +1,9 @@
+Version 1.1.0 (build 19) — Phone
+
+• Background reliability — stop counting and wake alarms keep working when the app is backgrounded; monitoring notification uses your alarm copy
+• Route accuracy — GTFS shapes.txt geometry and faster direction lock from your line/destination pick
+• Wear sync — trip state (stops, next stop, GPS status, route concerns) stays in sync with your watch
+• GTFS hygiene — removed legacy bundled stop data; clearer warnings when route confidence is low; automatic transit data upgrades on Home
+• Watch companion — tile, complication, and alarm dismiss behavior aligned with the phone
+
+Sleep peacefully. Arrive confidently.

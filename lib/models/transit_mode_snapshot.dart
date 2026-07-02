@@ -19,6 +19,9 @@ class TransitModeSnapshot {
     this.usesDistanceFallback = false,
     this.gpsStale = false,
     this.status = 'Inactive',
+    this.tripConcern,
+    this.directionLabel,
+    this.directionLocked = false,
   });
 
   final bool isActive;
@@ -36,6 +39,17 @@ class TransitModeSnapshot {
   /// True when showing the last known route position after a brief GPS loss.
   final bool gpsStale;
   final String status;
+
+  /// Set when stop counts or direction look wrong on the locked pattern.
+  final String? tripConcern;
+
+  /// Human-readable direction/headsign for the locked pattern.
+  final String? directionLabel;
+
+  /// True after GPS has consistently locked trip direction.
+  final bool directionLocked;
+
+  bool get hasTripConcern => tripConcern != null;
 
   static const inactive = TransitModeSnapshot();
 
@@ -56,7 +70,10 @@ class TransitModeSnapshot {
             other.offRouteMeters == offRouteMeters &&
             other.usesDistanceFallback == usesDistanceFallback &&
             other.gpsStale == gpsStale &&
-            other.status == status;
+            other.status == status &&
+            other.tripConcern == tripConcern &&
+            other.directionLabel == directionLabel &&
+            other.directionLocked == directionLocked;
   }
 
   @override
@@ -75,5 +92,8 @@ class TransitModeSnapshot {
         usesDistanceFallback,
         gpsStale,
         status,
+        tripConcern,
+        directionLabel,
+        directionLocked,
       );
 }

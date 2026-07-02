@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../providers/location_provider.dart';
 import '../../providers/monitoring_provider.dart';
-import '../../providers/settings_provider.dart';
 import '../../services/background_monitor_service.dart';
 import '../../utils/monitoring_format.dart';
 import '../../widgets/settings_section_tile.dart';
@@ -29,9 +28,6 @@ class LocationSettingsScreen extends StatelessWidget {
     );
     final diagnostics = context.select<LocationProvider, BackgroundMonitorDiagnostics>(
       (provider) => provider.backgroundDiagnostics,
-    );
-    final testModeEnabled = context.select<SettingsProvider, bool>(
-      (provider) => provider.testModeEnabled,
     );
 
     return Scaffold(
@@ -111,16 +107,6 @@ class LocationSettingsScreen extends StatelessWidget {
             ),
             value: diagnostics.backgroundMonitoringEnabled,
             onChanged: null,
-          ),
-          SwitchListTile(
-            secondary: Icon(Icons.bug_report_outlined, color: colorScheme.primary),
-            title: const Text('Test Mode'),
-            subtitle: Text(
-              'Simulate arrival when distance is 5 km or less.',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
-            value: testModeEnabled,
-            onChanged: context.read<SettingsProvider>().setTestModeEnabled,
           ),
         ],
       ),

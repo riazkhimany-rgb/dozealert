@@ -11,6 +11,8 @@ import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../utils/external_link_launcher.dart';
+import '../utils/transit_line_picker_utils.dart';
+import '../utils/transit_line_picker_utils.dart';
 import '../utils/transit_user_copy.dart';
 import '../widgets/home_card.dart';
 import '../widgets/gtfs_vehicle_type_download_prompt.dart';
@@ -133,9 +135,9 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
     final showGtfsPrompt = _vehicleTypeFilter != null &&
         lineOptions.isEmpty &&
         vehicleTypes.contains(_vehicleTypeFilter);
-    final useSearch = _shouldUseSearchableLinePicker(
-      lineOptions,
-      _vehicleTypeFilter,
+    final useSearch = TransitLinePickerUtils.shouldUseSearchableLinePicker(
+      lineOptions: lineOptions,
+      vehicleType: _vehicleTypeFilter,
     );
 
     // Only repair the *saved* line when it genuinely no longer maps to any
@@ -287,17 +289,6 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
         ],
       ),
     );
-  }
-
-  bool _shouldUseSearchableLinePicker(
-    List<TransitLineOption> lineOptions,
-    TransitVehicleType? vehicleType,
-  ) {
-    if (vehicleType == TransitVehicleType.bus ||
-        vehicleType == TransitVehicleType.streetcar) {
-      return lineOptions.isNotEmpty;
-    }
-    return lineOptions.length > 4;
   }
 }
 
@@ -523,7 +514,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
           else if (feed == null) ...[
             Text(
               'No GTFS feed is configured for ${widget.transitSystem}. '
-              'Bundled line data may still be available.',
+              'Download stop data to enable transit mode.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),

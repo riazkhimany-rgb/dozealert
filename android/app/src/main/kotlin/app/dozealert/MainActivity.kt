@@ -7,6 +7,7 @@ import android.os.Bundle
 import app.dozealert.wear.WearBridge
 import app.dozealert.wear.WearPaths
 import app.dozealert.wear.WearSyncManager
+import com.google.android.gms.wearable.Wearable
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -81,6 +82,21 @@ class MainActivity : FlutterActivity() {
 
                 "consumePendingWearCommand" -> {
                     result.success(WearBridge.consumePendingCommand())
+                }
+
+                "launchWearApp" -> {
+                    WearSyncManager.getInstance(this).launchWearApp()
+                    result.success(null)
+                }
+
+                "isWearConnected" -> {
+                    Wearable.getNodeClient(this).connectedNodes
+                        .addOnSuccessListener { nodes ->
+                            result.success(nodes.isNotEmpty())
+                        }
+                        .addOnFailureListener {
+                            result.success(false)
+                        }
                 }
 
                 else -> result.notImplemented()

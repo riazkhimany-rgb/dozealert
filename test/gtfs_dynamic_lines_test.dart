@@ -8,8 +8,6 @@ import 'package:dozealert/models/transit_route.dart';
 import 'package:dozealert/models/transit_stop.dart';
 import 'package:dozealert/models/transit_vehicle_type.dart';
 import 'package:dozealert/services/gtfs_service.dart';
-import 'package:dozealert/services/transit_data_service.dart';
-
 import 'support/go_transit_test_feed.dart';
 
 void main() {
@@ -18,15 +16,15 @@ void main() {
   late GtfsService gtfsService;
 
   setUp(() async {
-    gtfsService = GtfsService(TransitDataService());
+    gtfsService = GtfsService();
     await gtfsService.initializeFromFallbackData();
   });
 
-  test('GO Transit falls back to curated catalog lines before GTFS download', () {
+  test('GO Transit shows All routes before GTFS download', () {
     expect(TransitCatalog.hasCatalogLines('GO Transit'), isTrue);
     expect(
       gtfsService.linesForTransitSystem('GO Transit'),
-      unorderedEquals(TransitCatalog.linesForSystem('GO Transit')),
+      [TransitCatalog.allRoutesLine],
     );
   });
 
@@ -35,6 +33,88 @@ void main() {
     expect(
       gtfsService.linesForTransitSystem('GO Transit'),
       ['Lakeshore West'],
+    );
+  });
+
+  test('TTC uses All routes before GTFS download', () {
+    expect(TransitCatalog.hasCatalogLines('TTC'), isFalse);
+    expect(
+      gtfsService.linesForTransitSystem('TTC'),
+      [TransitCatalog.allRoutesLine],
+    );
+  });
+
+  test('TTC subway filter returns GTFS routes after feed merge', () {
+    gtfsService.mergeCachedFeed(
+      GtfsCachedFeed(
+        info: const GtfsFeedInfo(
+          feedId: 'ttc',
+          agencyName: 'TTC',
+          province: 'Ontario',
+          vehicleTypes: [
+            TransitVehicleType.subway,
+            TransitVehicleType.streetcar,
+            TransitVehicleType.bus,
+          ],
+        ),
+        agencies: const [
+          TransitAgency(
+            agencyId: 'ttc',
+            agencyName: 'TTC',
+            country: 'Canada',
+            city: 'Toronto',
+          ),
+        ],
+        routes: const [
+          TransitRoute(
+            routeId: 'ttc_1',
+            routeName: 'Line 1 Yonge-University',
+            agencyId: 'ttc',
+            country: 'Canada',
+            lineName: '1',
+            routeShortName: '1',
+            transitSystem: 'TTC',
+            vehicleType: TransitVehicleType.subway,
+          ),
+          TransitRoute(
+            routeId: 'ttc_2',
+            routeName: 'Line 2 Bloor-Danforth',
+            agencyId: 'ttc',
+            country: 'Canada',
+            lineName: '2',
+            routeShortName: '2',
+            transitSystem: 'TTC',
+            vehicleType: TransitVehicleType.subway,
+          ),
+          TransitRoute(
+            routeId: 'ttc_29',
+            routeName: 'Dufferin',
+            agencyId: 'ttc',
+            country: 'Canada',
+            lineName: '29',
+            routeShortName: '29',
+            transitSystem: 'TTC',
+            vehicleType: TransitVehicleType.bus,
+          ),
+        ],
+        stops: const [],
+      ),
+    );
+
+    final subwayLines = gtfsService.lineOptionsForTransitSystem(
+      'TTC',
+      vehicleType: TransitVehicleType.subway,
+    );
+    expect(subwayLines.map((option) => option.lineName).toList(), ['1', '2']);
+    expect(subwayLines.first.displayLabel, '1');
+    expect(
+      gtfsService
+          .lineOptionsForTransitSystem(
+            'TTC',
+            vehicleType: TransitVehicleType.bus,
+          )
+          .map((option) => option.lineName),
+      ['29'],
     );
   });
 

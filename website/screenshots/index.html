@@ -6,11 +6,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="App tour — onboarding, Choose transit &amp; line, Favorites, Transit Mode, and wake alerts for GO Transit, TTC, and more.">
+  <meta name="description" content="App tour — phone and Wear OS: onboarding, transit mode, favorites, watch trip controls, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
   <link rel="icon" type="image/png" href="../assets/icon-512.png">
-  <link rel="stylesheet" href="../assets/brand.css?v=13">
+  <link rel="stylesheet" href="../assets/brand.css?v=20">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -155,6 +155,38 @@
 
     .shot.hero-shot {
       max-width: 320px;
+    }
+
+    .shot.watch-shot {
+      width: 220px;
+      height: 220px;
+      max-width: 220px;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid rgba(76, 201, 240, 0.2);
+      box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(76, 201, 240, 0.08);
+    }
+
+    .download-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .download-btn-secondary {
+      background: transparent;
+      color: var(--cyan) !important;
+      border: 2px solid rgba(76, 201, 240, 0.55);
+      box-shadow: none;
+    }
+
+    .download-btn-secondary:hover {
+      background: rgba(76, 201, 240, 0.1);
+      color: var(--white) !important;
     }
 
     .copy h3 {
@@ -516,6 +548,66 @@
       </div>
     </section>
 
+    <section class="card" id="wear">
+      <h2>Wear OS companion</h2>
+      <p class="section-lead">
+        A paired watch shows live trip status, lets you start or stop monitoring, and repeats
+        vibration until you dismiss a wake-up alert. GPS and permissions stay on your phone.
+      </p>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot watch-shot" src="../assets/screens/watch_shot4.png" width="512" height="512" alt="Wear app idle screen with Open on phone button.">
+        </div>
+        <div class="copy">
+          <h3>Set up on phone</h3>
+          <p>
+            When no destination is selected, the watch shows <strong>Phone connected</strong> and
+            an <strong>Open on phone</strong> shortcut. Pick a stop or place on the phone first
+            &mdash; the watch syncs over Bluetooth.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot watch-shot" src="../assets/screens/watch_shot2.png" width="512" height="512" alt="Wear app ready screen with destination and Start trip.">
+        </div>
+        <div class="copy">
+          <h3>Ready to rest</h3>
+          <p>
+            With a destination set, the watch shows <strong>Ready</strong> and your stop or line.
+            Tap <strong>Start trip</strong> on your wrist or phone &mdash; either starts monitoring
+            on the phone.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot watch-shot" src="../assets/screens/watch_shot1.png" width="512" height="512" alt="Wear app monitoring with distance remaining and Stop trip.">
+        </div>
+        <div class="copy">
+          <h3>Trip in progress</h3>
+          <p>
+            While monitoring, see distance remaining or a stop countdown (Transit Mode). Tap
+            <strong>Stop trip</strong> to end early. Add the DozeAlert tile or complication
+            for quicker access from your watch face.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot watch-shot" src="../assets/screens/watch_shot3.png" width="512" height="512" alt="Wear app wake-up alarm with Dismiss alarm button.">
+        </div>
+        <div class="copy">
+          <h3>Wake up on your wrist</h3>
+          <p>
+            When you approach your stop, the watch shows <strong>Wake up!</strong> with your
+            destination and vibrates continuously until you tap <strong>Dismiss alarm</strong>
+            on the watch or phone.
+          </p>
+        </div>
+      </div>
+    </section>
+
     <section class="card">
       <h2>Reliable wake alerts</h2>
       <p class="section-lead">
@@ -541,12 +633,19 @@
       <h2 style="margin-bottom: 0.75rem;">Ready to try it?</h2>
       <p style="color: #cbd5e1; margin-bottom: 1.25rem; font-size: 0.95rem;">
         Download DozeAlert for Android and set your first destination in under a minute.
+        Add the Wear companion if you use a paired watch.
       </p>
-      <a class="download-btn" href="../downloads/dozealert-latest.apk" download="dozealert.apk">
-        Download APK
-      </a>
+      <div class="download-grid">
+        <a class="download-btn" href="../downloads/dozealert-latest.apk" download="dozealert.apk">
+          Download phone APK
+        </a>
+        <a class="download-btn download-btn-secondary" href="../downloads/dozealert-wear-latest.apk" download="dozealert-wear.apk">
+          Download Wear OS APK
+        </a>
+      </div>
       <p style="margin-top: 1rem; font-size: 0.8125rem; color: var(--muted);">
         Also search <strong>DozeAlert</strong> on Google Play when available in your region.
+        Wear builds are on a separate Play closed-testing track.
       </p>
     </section>
 
@@ -561,6 +660,6 @@
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=13"></script>
+  <script src="../assets/brand.js?v=20"></script>
 </body>
 </html>

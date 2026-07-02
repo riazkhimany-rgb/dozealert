@@ -76,19 +76,19 @@ The phone app syncs trip state to a paired watch over the Wearable Data Layer. T
 Build the Wear bundle (same signing key and package name `app.dozealert`, separate version code):
 
 ```powershell
-cd android
-.\gradlew :wear:bundleRelease
+.\tools\build-wear.ps1
 ```
 
 Output: `build/wear/outputs/bundle/release/wear-release.aab`
 
-Upload that AAB to the **Wear OS** release track in Play Console (not the phone track). Enable the Wear form factor under **Advanced settings** first.
+Wear `versionCode` = `100000 + phone versionCode + wearVersionExtra` (see `android/wear/build.gradle.kts`). Phone at `1.1.0+19` → wear version code **100029**.
 
-Install on a dev watch:
+Upload that AAB to the **Wear OS** release track in Play Console — **not** the phone release. Enable the Wear form factor under **Advanced settings → Form factors → Wear OS** first.
+
+Install on a dev watch (see testing below):
 
 ```powershell
-cd android
-.\gradlew :wear:installDebug
+.\tools\build-wear.ps1 -InstallDebug
 ```
 
 Pair the watch with the phone, install both apps, set a destination on the phone, then open DozeAlert on the watch.

@@ -16,7 +16,6 @@ import 'package:dozealert/providers/gtfs_feed_provider.dart';
 import 'package:dozealert/providers/gtfs_provider.dart';
 import 'package:dozealert/providers/monitoring_provider.dart';
 import 'package:dozealert/providers/transit_mode_provider.dart';
-import 'package:dozealert/providers/transit_line_provider.dart';
 import 'package:dozealert/providers/transit_provider.dart';
 import 'package:dozealert/providers/trip_history_provider.dart';
 import 'package:dozealert/services/alarm_service.dart';
@@ -33,7 +32,6 @@ import 'package:dozealert/services/place_search_service.dart';
 import 'package:dozealert/services/preferences_service.dart';
 import 'package:dozealert/services/settings_service.dart';
 import 'package:dozealert/services/transit_mode_service.dart';
-import 'package:dozealert/services/transit_data_service.dart';
 import 'package:dozealert/services/trip_history_service.dart';
 import 'package:dozealert/utils/app_branding.dart';
 import 'package:dozealert/widgets/branded_app_name.dart';
@@ -124,12 +122,11 @@ Future<DozeAlertApp> _createTestApp() async {
 
   final placeSearchService = PlaceSearchService();
   final preferencesService = PreferencesService();
-  final transitDataService = TransitDataService();
   final gtfsCacheStore = GtfsCacheStore();
   final gtfsParserService = GtfsParserService();
   final gtfsDownloadService = GtfsDownloadService();
   final gtfsImportService = GtfsImportService(gtfsCacheStore, gtfsParserService);
-  final gtfsService = GtfsService(transitDataService);
+  final gtfsService = GtfsService();
   final transitProvider = TransitProvider(preferencesService);
   await transitProvider.loadPreferences();
 
@@ -158,13 +155,6 @@ Future<DozeAlertApp> _createTestApp() async {
   await monitoringProvider.loadSavedDestination();
   await monitoringProvider.loadMonitoringSession();
 
-  final transitLineProvider = TransitLineProvider(
-    transitDataService,
-    transitProvider,
-    monitoringProvider,
-  );
-  await transitLineProvider.loadCurrentLine();
-
   final transitModeService = TransitModeService(gtfsService);
   final transitModeProvider = TransitModeProvider(
     transitModeService,
@@ -186,6 +176,7 @@ Future<DozeAlertApp> _createTestApp() async {
     gtfsCacheStore,
     gtfsService,
   );
+  gtfsFeedProvider.onFeedsChanged = gtfsProvider.onFeedDataChanged;
   await gtfsProvider.initialize();
   await gtfsFeedProvider.initialize();
 
@@ -205,14 +196,12 @@ Future<DozeAlertApp> _createTestApp() async {
     monitoringStorageService: monitoringStorageService,
     placeSearchService: placeSearchService,
     preferencesService: preferencesService,
-    transitDataService: transitDataService,
     gtfsService: gtfsService,
     gtfsCacheStore: gtfsCacheStore,
     gtfsDownloadService: gtfsDownloadService,
     gtfsParserService: gtfsParserService,
     gtfsImportService: gtfsImportService,
     transitProvider: transitProvider,
-    transitLineProvider: transitLineProvider,
     transitModeProvider: transitModeProvider,
     gtfsProvider: gtfsProvider,
     gtfsFeedProvider: gtfsFeedProvider,

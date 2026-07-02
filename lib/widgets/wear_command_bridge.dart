@@ -7,10 +7,14 @@ import 'package:provider/provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../providers/settings_provider.dart';
 import '../providers/transit_mode_provider.dart';
+import '../providers/wear_status_provider.dart';
+import '../models/monitoring_state.dart';
 import '../services/alarm_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/wear_sync_service.dart';
+import '../utils/wear_trip_state_payload.dart';
 import '../utils/location_format.dart';
 
 /// Bridges Wear OS commands to phone-side monitoring actions.
@@ -26,12 +30,16 @@ class WearCommandBridge extends StatefulWidget {
   State<WearCommandBridge> createState() => _WearCommandBridgeState();
 }
 
-class _WearCommandBridgeState extends State<WearCommandBridge> {
+class _WearCommandBridgeState extends State<WearCommandBridge>
+    with WidgetsBindingObserver {
   WearSyncService? _wearSyncService;
+  Timer? _wearConnectionTimer;
+  StreamSubscription<Map<String, Object>>? _wearSyncSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (!Platform.isAndroid) {
       return;
     }
@@ -39,6 +47,13 @@ class _WearCommandBridgeState extends State<WearCommandBridge> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_initializeWearSync());
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshWearConnection());
+    }
   }
 
   Future<void> _initializeWearSync() async {
@@ -51,6 +66,7 @@ class _WearCommandBridgeState extends State<WearCommandBridge> {
       locationProvider: context.read<LocationProvider>(),
       transitModeProvider: context.read<TransitModeProvider>(),
       gtfsProvider: context.read<GtfsProvider>(),
+      settingsProvider: context.read<SettingsProvider>(),
       alarmService: context.read<AlarmService>(),
     );
 
@@ -60,12 +76,39 @@ class _WearCommandBridgeState extends State<WearCommandBridge> {
     wearSyncService.onDismissAlarm = () => _handleDismissAlarm();
 
     await wearSyncService.initialize();
+    await _refreshWearConnection(wearSyncService);
+    _wearConnectionTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => unawaited(_refreshWearConnection()),
+    );
+
     if (!mounted) {
       await wearSyncService.dispose();
       return;
     }
 
     setState(() => _wearSyncService = wearSyncService);
+
+    final backgroundMonitorService = context.read<BackgroundMonitorService>();
+    _wearSyncSubscription = backgroundMonitorService.wearSyncStream.listen(
+      (payload) => unawaited(
+        wearSyncService.pushTripStateMap(
+          WearTripStatePayload.fromBackgroundMap(payload),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _refreshWearConnection([WearSyncService? service]) async {
+    final wearSync = service ?? _wearSyncService;
+    if (wearSync == null || !mounted) {
+      return;
+    }
+
+    final connected = await wearSync.refreshWatchConnection();
+    if (mounted) {
+      context.read<WearStatusProvider>().setWatchConnected(connected);
+    }
   }
 
   Future<void> _handleStartMonitoring() async {
@@ -75,6 +118,7 @@ class _WearCommandBridgeState extends State<WearCommandBridge> {
 
     final locationProvider = context.read<LocationProvider>();
     final backgroundMonitorService = context.read<BackgroundMonitorService>();
+    final messenger = ScaffoldMessenger.maybeOf(context);
 
     Future<void> tryStart({bool resume = false}) async {
       final result = await locationProvider.startTracking(resume: resume);
@@ -91,6 +135,15 @@ class _WearCommandBridgeState extends State<WearCommandBridge> {
             ? () => tryStart(resume: true)
             : null,
       );
+
+      if (result == LocationStartResult.success) {
+        messenger?.showSnackBar(
+          const SnackBar(
+            content: Text('Monitoring started from your watch'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
 
     await tryStart();
@@ -103,10 +156,16 @@ class _WearCommandBridgeState extends State<WearCommandBridge> {
     }
 
     final locationProvider = context.read<LocationProvider>();
-    if (locationProvider.arrivalDialogVisible) {
+    final alarmService = context.read<AlarmService>();
+    final monitoringState = context.read<MonitoringProvider>().currentState;
+    final shouldDismissArrival = locationProvider.arrivalDialogVisible ||
+        alarmService.alarmActive ||
+        monitoringState == MonitoringState.arrived;
+
+    if (shouldDismissArrival) {
       await locationProvider.dismissArrival();
     } else {
-      await context.read<AlarmService>().stopAlarm();
+      await alarmService.stopAlarm();
       if (locationProvider.trackingEnabled) {
         await locationProvider.stopTracking();
       }
@@ -117,6 +176,9 @@ class _WearCommandBridgeState extends State<WearCommandBridge> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _wearConnectionTimer?.cancel();
+    unawaited(_wearSyncSubscription?.cancel());
     unawaited(_wearSyncService?.dispose());
     super.dispose();
   }

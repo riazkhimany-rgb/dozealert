@@ -12,16 +12,32 @@ object WearBridge {
     var pendingCommand: String? = null
 
     fun deliverCommand(context: Context, command: String) {
+        when (command) {
+            WearPaths.CMD_OPEN_PHONE -> {
+                openPhoneApp(context)
+                return
+            }
+        }
+
         val handler = commandHandler
         if (handler != null) {
+            openPhoneApp(context)
             handler(command)
             return
         }
 
         pendingCommand = command
+        openPhoneApp(context, command)
+    }
+
+    fun openPhoneApp(context: Context, wearCommand: String? = null) {
         val launchIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            putExtra(WearPaths.EXTRA_WEAR_COMMAND, command)
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT,
+            )
+            wearCommand?.let { putExtra(WearPaths.EXTRA_WEAR_COMMAND, it) }
         }
         context.startActivity(launchIntent)
     }

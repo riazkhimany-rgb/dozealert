@@ -1,20 +1,21 @@
 package app.dozealert.wear
 
+import android.content.ComponentName
 import android.content.Context
-import androidx.wear.tiles.TileService
-import app.dozealert.wear.tile.DozeAlertTileService
-import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
+import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
+import androidx.wear.tiles.TileService
+import app.dozealert.wear.complication.DozeAlertComplicationService
+import app.dozealert.wear.tile.DozeAlertTileService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
 
-class TripStateRepository private constructor(context: Context) :
-    DataClient.OnDataChangedListener {
+class TripStateRepository private constructor(context: Context) {
     private val appContext = context.applicationContext
     private val dataClient = Wearable.getDataClient(appContext)
     private val prefs =
@@ -23,40 +24,11 @@ class TripStateRepository private constructor(context: Context) :
     private val _state = MutableStateFlow(TripState.fromPreferences(prefs))
     val state: StateFlow<TripState> = _state.asStateFlow()
 
-    private var listening = false
-
-    suspend fun start() {
-        if (listening) {
-            return
-        }
-        listening = true
-        dataClient.addListener(this)
-        refreshFromPhone()
+    init {
+        TripOngoingActivityManager.sync(appContext, _state.value)
     }
 
-    fun stop() {
-        if (!listening) {
-            return
-        }
-        dataClient.removeListener(this)
-        listening = false
-    }
-
-    suspend fun refreshFromPhone() {
-        val items = dataClient.getDataItems(android.net.Uri.parse("wear://*/${WearPaths.TRIP_STATE}"))
-            .await()
-        try {
-            for (item in items) {
-                val map = DataMapItem.fromDataItem(item).dataMap
-                updateState(TripState.fromDataMap(map))
-                break
-            }
-        } finally {
-            items.release()
-        }
-    }
-
-    override fun onDataChanged(dataEvents: DataEventBuffer) {
+    fun onDataChanged(dataEvents: DataEventBuffer) {
         for (event in dataEvents) {
             if (event.type != DataEvent.TYPE_CHANGED) {
                 continue
@@ -66,14 +38,41 @@ class TripStateRepository private constructor(context: Context) :
                 continue
             }
             val map = DataMapItem.fromDataItem(event.dataItem).dataMap
-            updateState(TripState.fromDataMap(map))
+            applyState(TripState.fromDataMap(map))
         }
     }
 
-    private fun updateState(next: TripState) {
+    suspend fun refreshFromPhone() {
+        val items = dataClient.getDataItems(android.net.Uri.parse("wear://*/${WearPaths.TRIP_STATE}"))
+            .await()
+        try {
+            for (item in items) {
+                val map = DataMapItem.fromDataItem(item).dataMap
+                applyState(TripState.fromDataMap(map))
+                break
+            }
+        } finally {
+            items.release()
+        }
+    }
+
+    private fun applyState(next: TripState) {
+        val previous = _state.value
         next.persist(prefs)
         _state.value = next
         TileService.getUpdater(appContext).requestUpdate(DozeAlertTileService::class.java)
+        ComplicationDataSourceUpdateRequester.create(
+            appContext,
+            ComponentName(appContext, DozeAlertComplicationService::class.java),
+        ).requestUpdateAll()
+        handleSideEffects(previous, next)
+    }
+
+    private fun handleSideEffects(previous: TripState, next: TripState) {
+        if (!previous.alarmActive && next.alarmActive) {
+            AlarmLauncher.launchIfNeeded(appContext)
+        }
+        TripOngoingActivityManager.sync(appContext, next)
     }
 
     companion object {

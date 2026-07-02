@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/favorite_transit_line.dart';
 import '../providers/favorite_transit_line_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../utils/transit_line_switch.dart';
 
@@ -16,6 +17,7 @@ class FavoriteTransitLineChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final favorites = context.watch<FavoriteTransitLineProvider>().favorites;
     final preferences = context.watch<TransitProvider>().preferences;
+    final gtfsProvider = context.watch<GtfsProvider>();
 
     if (favorites.isEmpty) {
       return const SizedBox.shrink();
@@ -37,7 +39,7 @@ class FavoriteTransitLineChips extends StatelessWidget {
           children: [
             for (final favorite in favorites)
               FilterChip(
-                label: Text(favorite.label),
+                label: Text(gtfsProvider.favoriteLineLabel(favorite)),
                 selected: favorite.matches(preferences),
                 onSelected: (selected) {
                   if (selected) {

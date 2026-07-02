@@ -19,7 +19,9 @@ class ArrivalDialog extends StatelessWidget {
     final arrivalContext = context.select<LocationProvider, ArrivalContext?>(
       (provider) => provider.arrivalContext,
     );
-    final destinationName = arrivalContext?.destinationName ?? 'Destination';
+    final stopName = arrivalContext?.destinationName ?? 'Destination';
+    final headline = arrivalContext?.headline ?? 'Approaching destination';
+    final secondaryLine = arrivalContext?.secondaryLine;
     final detailMessage = arrivalContext?.detailMessage;
 
     return DecoratedBox(
@@ -56,7 +58,7 @@ class ArrivalDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  'Approaching destination',
+                  headline,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -65,13 +67,23 @@ class ArrivalDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  destinationName,
+                  stopName,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppBranding.cyanAccent,
                   ),
                 ),
+                if (secondaryLine != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    secondaryLine,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: AppBranding.white.withValues(alpha: 0.78),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   AppBranding.tagline,
@@ -83,7 +95,6 @@ class ArrivalDialog extends StatelessWidget {
                 const SizedBox(height: 24),
                 Text(
                   detailMessage ??
-                      'Heads up! You are approaching your destination. '
                       'Voice alert and vibration will continue until you dismiss.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(

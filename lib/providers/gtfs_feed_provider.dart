@@ -12,6 +12,7 @@ import '../services/gtfs_import_service.dart';
 import '../services/gtfs_parser_service.dart';
 import '../services/gtfs_service.dart';
 import '../utils/app_log.dart';
+import '../utils/gtfs_cache_migration.dart';
 import '../utils/gtfs_isolate_worker.dart';
 
 class GtfsFeedProgress {
@@ -39,12 +40,16 @@ class GtfsFeedProvider extends ChangeNotifier {
   final GtfsCacheStore _cacheStore;
   final GtfsService _gtfsService;
 
+  Future<void> Function()? onFeedsChanged;
+
   bool _initialized = false;
+  bool _isUpgradingStaleFeeds = false;
   List<GtfsFeedInfo> _feeds = const [];
   final Map<String, String?> _errors = {};
   final Map<String, GtfsFeedProgress> _progress = {};
 
   bool get isInitialized => _initialized;
+  bool get isUpgradingStaleFeeds => _isUpgradingStaleFeeds;
   List<GtfsFeedInfo> get feeds => List.unmodifiable(_feeds);
 
   List<GtfsFeedInfo> feedsForRegion(String country, String region) {
@@ -67,6 +72,120 @@ class GtfsFeedProvider extends ChangeNotifier {
         .toList(growable: false);
     _initialized = true;
     notifyListeners();
+  }
+
+  /// Feeds whose cached stop data predates the current parse schema.
+  Future<List<GtfsFeedInfo>> listStaleFeeds() async {
+    final cachedFeeds = await _cacheStore.loadAllFeeds();
+    final staleIds = cachedFeeds
+        .where(GtfsCacheMigration.isStale)
+        .map((feed) => feed.info.feedId)
+        .toSet();
+    if (staleIds.isEmpty) {
+      return const [];
+    }
+    return _feeds
+        .where((feed) => staleIds.contains(feed.feedId))
+        .toList(growable: false);
+  }
+
+  /// Re-parses or re-downloads cached feeds that predate direction-aware parsing.
+  ///
+  /// Returns feed ids queued for a background download (no saved zip available).
+  Future<Set<String>> upgradeStaleFeedsIfNeeded({
+    void Function({
+      required String feedId,
+      required String agencyName,
+      required String progressPhase,
+      required int completedFeeds,
+      required int totalFeeds,
+    })? onProgress,
+  }) async {
+    final cachedFeeds = await _cacheStore.loadAllFeeds();
+    final staleFeeds = cachedFeeds.where(GtfsCacheMigration.isStale).toList();
+    if (staleFeeds.isEmpty) {
+      return const {};
+    }
+
+    _isUpgradingStaleFeeds = true;
+    notifyListeners();
+
+    AppLog.d(
+      'GtfsFeedProvider: upgrading ${staleFeeds.length} stale GTFS feed(s)',
+    );
+
+    final queuedDownloads = <String>{};
+    var completed = 0;
+    final total = staleFeeds.length;
+
+    for (final feed in staleFeeds) {
+      final feedId = feed.info.feedId;
+      final agencyName = feed.info.agencyName;
+      onProgress?.call(
+        feedId: feedId,
+        agencyName: agencyName,
+        progressPhase: 'Reading saved data…',
+        completedFeeds: completed,
+        totalFeeds: total,
+      );
+
+      final reparsed = await _tryReparseSavedZip(feedId);
+      if (reparsed) {
+        AppLog.d('GtfsFeedProvider: reparsed stale feed $feedId from saved zip');
+        completed++;
+        onProgress?.call(
+          feedId: feedId,
+          agencyName: agencyName,
+          progressPhase: 'Done',
+          completedFeeds: completed,
+          totalFeeds: total,
+        );
+        continue;
+      }
+
+      await _cacheStore.deleteFeed(feedId);
+      await _downloadService.deleteSavedFeed(feedId);
+
+      final seed = DefaultGtfsFeeds.byId(feedId) ?? feed.info;
+      if (seed.hasDirectDownload) {
+        queuedDownloads.add(feedId);
+        AppLog.d('GtfsFeedProvider: queued re-download for stale feed $feedId');
+      } else {
+        AppLog.d(
+          'GtfsFeedProvider: removed stale manual-import feed $feedId '
+          '(re-import required)',
+        );
+      }
+      completed++;
+      onProgress?.call(
+        feedId: feedId,
+        agencyName: agencyName,
+        progressPhase: seed.hasDirectDownload
+            ? 'Queued for download'
+            : 'Needs re-import',
+        completedFeeds: completed,
+        totalFeeds: total,
+      );
+    }
+
+    await _refreshFeedList();
+    _isUpgradingStaleFeeds = false;
+    notifyListeners();
+    await _notifyFeedsChanged();
+    return queuedDownloads;
+  }
+
+  void queueBackgroundDownloads(
+    Iterable<String> feedIds, {
+    @Deprecated('Use GtfsFeedProvider.onFeedsChanged instead')
+    Future<void> Function()? onEachComplete,
+  }) {
+    for (final feedId in feedIds) {
+      if (isFeedBusy(feedId)) {
+        continue;
+      }
+      unawaited(_runPreload(feedId));
+    }
   }
 
   GtfsFeedInfo? feedById(String feedId) {
@@ -145,6 +264,7 @@ class GtfsFeedProvider extends ChangeNotifier {
     await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);
     await _refreshFeedList();
     notifyListeners();
+    await _notifyFeedsChanged();
   }
 
   /// Removes every cached GTFS feed from device storage.
@@ -155,6 +275,7 @@ class GtfsFeedProvider extends ChangeNotifier {
     await _gtfsService.reinitialize(cachedFeeds: const []);
     await _refreshFeedList();
     notifyListeners();
+    await _notifyFeedsChanged();
   }
 
   Future<void> importZipBytes({
@@ -172,10 +293,7 @@ class GtfsFeedProvider extends ChangeNotifier {
     await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);
     await _refreshFeedList();
     notifyListeners();
-  }
-
-  Future<void> syncAllFeeds() async {
-    AppLog.d('GtfsFeedProvider: syncAllFeeds() is not implemented yet.');
+    await _notifyFeedsChanged();
   }
 
   Future<void> _preloadAfterInitialize(
@@ -269,20 +387,16 @@ class GtfsFeedProvider extends ChangeNotifier {
         agencies: parsed.agencies,
         routes: parsed.routes,
         stops: parsed.stops,
+        shapes: parsed.shapes,
       );
 
       await _yieldToUi();
       _setProgress(feedId, phase: 'Loading into app…');
 
-      final cachedFeed = await _cacheStore.loadFeed(feedId);
-      if (_gtfsService.isInitialized) {
-        await _gtfsService.mergeCachedFeedAsync(cachedFeed);
-      } else {
-        final cachedFeeds = await _cacheStore.loadAllFeeds();
-        await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);
-      }
+      await _mergeCachedFeedFromDisk(feedId);
 
       await _refreshFeedList();
+      await _notifyFeedsChanged();
     } catch (error) {
       _errors[feedId] = error.toString();
       _updateFeedStatus(feedId, GtfsFeedStatus.error, errorMessage: '$error');
@@ -298,6 +412,25 @@ class GtfsFeedProvider extends ChangeNotifier {
     _feeds = DefaultGtfsFeeds.feeds
         .map((seed) => _mergeSeedWithCache(seed, cachedInfos))
         .toList(growable: false);
+  }
+
+  Future<void> _mergeCachedFeedFromDisk(String feedId) async {
+    final cachedFeed = await _cacheStore.loadFeed(feedId);
+    if (_gtfsService.isInitialized) {
+      await _gtfsService.mergeCachedFeedAsync(cachedFeed);
+      return;
+    }
+
+    final cachedFeeds = await _cacheStore.loadAllFeeds();
+    await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);
+  }
+
+  Future<void> _notifyFeedsChanged() async {
+    final callback = onFeedsChanged;
+    if (callback == null) {
+      return;
+    }
+    await callback();
   }
 
   GtfsFeedInfo _mergeSeedWithCache(
@@ -370,5 +503,38 @@ class GtfsFeedProvider extends ChangeNotifier {
     }
 
     return compute(parseGtfsZipInIsolate, request);
+  }
+
+  Future<bool> _tryReparseSavedZip(String feedId) async {
+    final seed = DefaultGtfsFeeds.byId(feedId);
+    if (seed == null) {
+      return false;
+    }
+
+    final bytes = await _downloadService.readSavedFeedZip(feedId);
+    if (bytes == null || bytes.isEmpty) {
+      return false;
+    }
+
+    try {
+      final parsed = await _parseFeedBytes(
+        bytes: bytes,
+        feedId: feedId,
+        seed: seed,
+      );
+      await _cacheStore.saveFeed(
+        info: parsed.feedInfo,
+        agencies: parsed.agencies,
+        routes: parsed.routes,
+        stops: parsed.stops,
+        shapes: parsed.shapes,
+      );
+
+      await _mergeCachedFeedFromDisk(feedId);
+      return true;
+    } catch (error) {
+      AppLog.d('GtfsFeedProvider: reparse failed for $feedId: $error');
+      return false;
+    }
   }
 }

@@ -25,4 +25,11 @@ plugins {
 }
 
 include(":app")
-include(":wear")
+
+// Wear is a separate APK — only configure that module when explicitly building it.
+val buildingWearModule = gradle.startParameter.taskNames.any { task ->
+    task.contains(":wear", ignoreCase = true)
+}
+if (buildingWearModule) {
+    include(":wear")
+}

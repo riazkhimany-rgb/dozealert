@@ -32,6 +32,7 @@ class AlarmService {
   bool _initialized = false;
   bool _alarmActive = false;
   bool _ttsConfigured = false;
+  String _activeTtsPhrase = _approachPhrase;
   Timer? _ttsRepeatTimer;
   DateTime? _lastAlarmTriggeredAt;
   DateTime? _lastAlarmDismissedAt;
@@ -102,6 +103,7 @@ class AlarmService {
   Future<void> playApproachAlarm({
     required String title,
     required String body,
+    String? ttsPhrase,
   }) async {
     if (_alarmActive) {
       return;
@@ -109,6 +111,7 @@ class AlarmService {
 
     _alarmActive = true;
     _lastAlarmTriggeredAt = DateTime.now();
+    _activeTtsPhrase = ttsPhrase ?? _approachPhrase;
 
     final forceSound = _settingsService.settings.alwaysPlayAlarmSound;
     final volume = _settingsService.settings.alarmVolume;
@@ -139,6 +142,7 @@ class AlarmService {
 
     _alarmActive = false;
     _lastAlarmDismissedAt = DateTime.now();
+    _activeTtsPhrase = _approachPhrase;
 
     _ttsRepeatTimer?.cancel();
     _ttsRepeatTimer = null;
@@ -296,7 +300,7 @@ class AlarmService {
           .clamp(0.0, 1.0);
       await _tts.setVolume(effectiveVolume);
       await _tts.stop();
-      await _tts.speak(_approachPhrase);
+      await _tts.speak(_activeTtsPhrase);
     } catch (error, stackTrace) {
       AppLog.d('AlarmService: TTS speak failed: $error');
       AppLog.d('$stackTrace');

@@ -6,11 +6,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="DozeAlert wakes you before you reach your destination. Sleep peacefully. Arrive confidently.">
+  <meta name="description" content="DozeAlert wakes you before you reach your destination. Android phone app plus Wear OS companion. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
   <link rel="icon" type="image/png" href="assets/icon-512.png">
-  <link rel="stylesheet" href="assets/brand.css?v=13">
+  <link rel="stylesheet" href="assets/brand.css?v=20">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -144,6 +144,69 @@
       width: 22px;
       height: 22px;
       flex-shrink: 0;
+    }
+
+    .download-btn-secondary {
+      background: transparent;
+      color: var(--cyan) !important;
+      border: 2px solid rgba(76, 201, 240, 0.55);
+      box-shadow: none;
+    }
+
+    .download-btn-secondary:hover {
+      background: rgba(76, 201, 240, 0.1);
+      color: var(--white) !important;
+    }
+
+    .download-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .watch-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 600px) {
+      .watch-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    .watch-card {
+      text-align: center;
+    }
+
+    .watch-shot {
+      width: 140px;
+      height: 140px;
+      max-width: 140px;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      margin: 0 auto 0.5rem;
+      border-radius: 50%;
+      border: 2px solid rgba(76, 201, 240, 0.2);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .watch-card figcaption {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .watch-card strong {
+      display: block;
+      color: var(--white);
+      font-size: 0.875rem;
+      margin-bottom: 0.15rem;
     }
 
     .meta {
@@ -280,17 +343,28 @@
 
     <section class="card download-block">
       <h2 style="margin-bottom: 1rem;">Get DozeAlert for Android</h2>
-      <a class="download-btn" href="downloads/dozealert-latest.apk" download="dozealert.apk">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        Download APK
-      </a>
+      <div class="download-grid">
+        <a class="download-btn" href="downloads/dozealert-latest.apk" download="dozealert.apk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download phone APK
+        </a>
+        <a class="download-btn download-btn-secondary" href="downloads/dozealert-wear-latest.apk" download="dozealert-wear.apk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="7"/>
+            <polyline points="12 9 12 12 13.5 13.5"/>
+            <path d="M16.5 7.5l2-2"/>
+          </svg>
+          Download Wear OS APK
+        </a>
+      </div>
       <p class="meta" style="margin-top: 1rem;">
         Also on <strong>Google Play</strong> &mdash; search for <strong>DozeAlert</strong>
-        (<code>app.dozealert</code>) when the listing is live in your region.
+        (<code>app.dozealert</code>) when the listing is live in your region. The Wear companion
+        is a separate closed-testing track on Play for paired watches.
       </p>
       <p class="meta" style="margin-top: 0.75rem;">
         Want early builds on Android? Join our <strong>Google Play closed testing</strong>
@@ -299,7 +373,8 @@
         from the Google account on your phone and we&rsquo;ll send an invite.
       </p>
       <p class="meta">
-        Version <span id="app-version">1.0.8+13</span> &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
+        Phone <span id="app-version">1.1.0+20</span> &middot; Wear <span id="wear-version">1.1.0+100029</span>
+        &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
 
@@ -324,8 +399,47 @@
         <li>Three-step onboarding: welcome, pick transit (multi-agency), guided permissions</li>
         <li>Four-step Home tour plus &ldquo;Ready to rest?&rdquo; before monitoring begins</li>
         <li>Download agency stop lists for offline search (Settings &rarr; Transit &rarr; Transit stops)</li>
+        <li><strong>Wear OS companion</strong> &mdash; watch face trip status, ambient always-on display, start/stop, and dismiss alarms from your wrist (phone runs GPS and monitoring)</li>
         <li>No account required &mdash; trip data stays on your device</li>
       </ul>
+    </section>
+
+    <section class="card">
+      <h2>Wear OS companion</h2>
+      <p>
+        Pair a Wear OS watch with DozeAlert on your phone for at-a-glance trip status
+        on your watch face, an always-on ambient view when your wrist is down, start and
+        stop controls, and wake-up alerts on your wrist. Your phone keeps location,
+        permissions, and background monitoring &mdash; the watch is a remote control and
+        display, not a standalone app.
+      </p>
+      <div class="watch-grid" aria-label="Wear OS app screenshots">
+        <figure class="watch-card">
+          <img class="watch-shot" src="assets/screens/watch_shot4.png" width="512" height="512" alt="Wear app idle screen prompting to set up on phone.">
+          <figcaption><strong>Set up on phone</strong>Open DozeAlert on your phone to pick a destination.</figcaption>
+        </figure>
+        <figure class="watch-card">
+          <img class="watch-shot" src="assets/screens/watch_shot2.png" width="512" height="512" alt="Wear app ready screen with Start trip button.">
+          <figcaption><strong>Ready to rest</strong>See destination and line, then start from watch or phone.</figcaption>
+        </figure>
+        <figure class="watch-card">
+          <img class="watch-shot" src="assets/screens/watch_shot1.png" width="512" height="512" alt="Wear app monitoring trip with distance remaining.">
+          <figcaption><strong>Monitoring</strong>Distance or stop countdown while you relax.</figcaption>
+        </figure>
+        <figure class="watch-card">
+          <img class="watch-shot" src="assets/screens/watch_shot3.png" width="512" height="512" alt="Wear app wake-up alarm screen.">
+          <figcaption><strong>Wake up!</strong>Vibration repeats until you dismiss on watch or phone.</figcaption>
+        </figure>
+      </div>
+      <p style="margin-top: 1rem;">
+        <a class="text-link" href="screenshots/index.html#wear">Wear app tour &rarr;</a>
+      </p>
+      <div class="note" style="margin-top: 1rem;">
+        <strong>Install order:</strong> Install the <strong>phone APK</strong> first, then the
+        <strong>Wear OS APK</strong> on your paired watch (same Google account, Bluetooth connected).
+        Sideload via ADB or a file manager on the watch. Google Play closed testing uses separate
+        phone and Wear tracks.
+      </div>
     </section>
 
     <section class="card">
@@ -360,12 +474,14 @@
 
       <ol class="steps">
         <li>
-          <strong>Download the APK</strong> using the button above.
-          Wait until the download finishes (check your notification shade or Downloads folder).
+          <strong>Download the APKs</strong> using the buttons above &mdash; phone first, then
+          Wear OS if you use a paired watch.
+          Wait until each download finishes (check your notification shade or Downloads folder).
         </li>
         <li>
           <strong>Open the downloaded file</strong> &mdash; tap the notification, or open
-          <em>Files</em> / <em>Downloads</em> and tap <code>dozealert-latest.apk</code>.
+          <em>Files</em> / <em>Downloads</em> and tap <code>dozealert-latest.apk</code>
+          (phone) or sideload <code>dozealert-wear-latest.apk</code> to your watch.
         </li>
         <li>
           <strong>Allow installation</strong> if Android blocks it. When prompted, tap
@@ -408,7 +524,8 @@
     <section class="card">
       <h2>Requirements</h2>
       <ul>
-        <li>Android 8.0 (Oreo) or later</li>
+        <li>Android 8.0 (Oreo) or later on phone</li>
+        <li>Wear OS 3+ on watch for the companion APK (paired with the phone app)</li>
         <li>GPS / location services enabled</li>
         <li>Internet for map search and optional transit stop list downloads</li>
         <li>Background location and notifications for trip monitoring (Android)</li>
@@ -444,7 +561,21 @@
         }
       })
       .catch(() => {});
+
+    fetch('wear-version.json', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!data) {
+          return;
+        }
+        const label = data.label || `${data.version} (${data.build})`;
+        const wearEl = document.getElementById('wear-version');
+        if (wearEl) {
+          wearEl.textContent = label;
+        }
+      })
+      .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=13"></script>
+  <script src="assets/brand.js?v=20"></script>
 </body>
 </html>

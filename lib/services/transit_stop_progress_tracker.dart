@@ -10,11 +10,26 @@ class TransitStopProgressTracker {
   int? _acceptedStopSequence;
   bool? _travelingForward;
 
+  bool get hasEstablishedProgress =>
+      _routeId != null && _acceptedStopSequence != null;
+
   void reset() {
     _routeId = null;
     _destinationStopSequence = null;
     _acceptedStopSequence = null;
     _travelingForward = null;
+  }
+
+  void seedAcceptedSequence({
+    required String routeId,
+    required int destinationStopSequence,
+    required int acceptedStopSequence,
+    required bool travelingForward,
+  }) {
+    _routeId = routeId;
+    _destinationStopSequence = destinationStopSequence;
+    _acceptedStopSequence = acceptedStopSequence;
+    _travelingForward = travelingForward;
   }
 
   /// Returns the stabilized stop to use instead of [rawStop].
@@ -24,7 +39,8 @@ class TransitStopProgressTracker {
     required TransitStop rawStop,
     required List<TransitStop> routeStops,
   }) {
-    final travelingForward = destinationStop.stopSequence >= rawStop.stopSequence;
+    final travelingForward =
+        destinationStop.stopSequence >= rawStop.stopSequence;
 
     if (_routeId != routeId ||
         _destinationStopSequence != destinationStop.stopSequence) {
@@ -69,9 +85,14 @@ class TransitStopProgressTracker {
       return accepted;
     }
 
-    if (rawSeq < acceptedSeq && acceptedSeq - rawSeq == 1) {
-      _acceptedStopSequence = rawSeq;
-      return rawStop;
+    if (rawSeq < acceptedSeq) {
+      if (acceptedSeq - rawSeq > 1) {
+        return accepted;
+      }
+      if (rawSeq == acceptedSeq - 1) {
+        _acceptedStopSequence = rawSeq;
+        return rawStop;
+      }
     }
 
     return accepted;
@@ -93,9 +114,14 @@ class TransitStopProgressTracker {
       return accepted;
     }
 
-    if (rawSeq > acceptedSeq && rawSeq - acceptedSeq == 1) {
-      _acceptedStopSequence = rawSeq;
-      return rawStop;
+    if (rawSeq > acceptedSeq) {
+      if (rawSeq - acceptedSeq > 1) {
+        return accepted;
+      }
+      if (rawSeq == acceptedSeq + 1) {
+        _acceptedStopSequence = rawSeq;
+        return rawStop;
+      }
     }
 
     return accepted;

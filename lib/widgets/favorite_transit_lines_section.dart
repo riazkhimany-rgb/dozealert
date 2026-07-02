@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/favorite_transit_line.dart';
 import '../providers/favorite_transit_line_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../utils/transit_line_switch.dart';
 import '../utils/transit_user_copy.dart';
 import 'add_favorite_transit_line_sheet.dart';
@@ -64,7 +65,7 @@ class FavoriteTransitLinesSection extends StatelessWidget {
               (item) => ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.directions_transit_outlined),
-                title: Text(item.label),
+                title: Text(context.watch<GtfsProvider>().favoriteLineLabel(item)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

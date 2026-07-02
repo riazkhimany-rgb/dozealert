@@ -1,0 +1,10 @@
+Version 1.1.0 — Phone
+
+• GTFS transit data — clearer Download vs Update on the Transit stops screen; route stop lists follow stop order along the line
+• TTC & multi-mode agencies — subway, streetcar, and bus routes come from the downloaded GTFS feed; consistent line pickers in Settings and Favorites
+• Smarter transit monitoring — missed-stop detection and background wake alarms; route-locked confidence and last GPS fix on Home
+• Faster startup — GTFS feed upgrades run in the background on Home instead of blocking the splash screen
+• Favorites & trip setup — unified line selection and vehicle-type filters across the app
+• Reliability — removed unused screens and legacy bundled stop JSON; transit detection uses live GTFS data
+
+Sleep peacefully. Arrive confidently.

@@ -3,19 +3,23 @@ import 'package:geolocator/geolocator.dart';
 import '../cache/gtfs_cache_store.dart';
 import '../data/transit_catalog.dart';
 import '../models/agency_detection_result.dart';
+import '../models/destination.dart';
+import '../models/route_shape_polyline.dart';
 import '../models/transit_agency.dart';
 import '../models/transit_line_option.dart';
 import '../models/transit_route.dart';
+import '../models/gtfs_station.dart';
+import '../models/gtfs_station_search_result.dart';
 import '../models/transit_stop.dart';
 import '../models/transit_stop_search_result.dart';
 import '../models/transit_vehicle_type.dart';
-import 'transit_data_service.dart';
+import '../utils/geo_heading_utils.dart';
+import '../utils/gtfs_station_utils.dart';
+import '../utils/gtfs_stop_name_utils.dart';
 import '../utils/app_log.dart';
 
 class GtfsService {
-  GtfsService(this._transitDataService);
-
-  final TransitDataService _transitDataService;
+  GtfsService();
 
   bool _initialized = false;
   final List<TransitAgency> _agencies = [];
@@ -24,6 +28,7 @@ class GtfsService {
   final Map<String, TransitAgency> _agenciesById = {};
   final Map<String, TransitRoute> _routesById = {};
   final Map<String, List<TransitStop>> _stopsByRouteId = {};
+  final Map<String, List<RouteShapePoint>> _shapePointsByKey = {};
 
   List<TransitAgency> get agencies => List.unmodifiable(_agencies);
   List<TransitRoute> get routes => List.unmodifiable(_routes);
@@ -48,6 +53,7 @@ class GtfsService {
     _agenciesById.clear();
     _routesById.clear();
     _stopsByRouteId.clear();
+    _shapePointsByKey.clear();
 
     for (final agency in _agencies) {
       _agenciesById[agency.agencyId] = agency;
@@ -89,6 +95,10 @@ class GtfsService {
       _mergeStop(stop);
     }
 
+    for (final shape in feed.shapes) {
+      _shapePointsByKey[shape.storageKey] = shape.points;
+    }
+
     AppLog.d(
       'GtfsService: merged cached feed ${feed.info.feedName} '
       '(${feed.stops.length} stops)',
@@ -124,6 +134,10 @@ class GtfsService {
       if (processed % 1000 == 0) {
         await Future<void>.delayed(Duration.zero);
       }
+    }
+
+    for (final shape in feed.shapes) {
+      _shapePointsByKey[shape.storageKey] = shape.points;
     }
 
     AppLog.d(
@@ -165,6 +179,7 @@ class GtfsService {
     _agenciesById.clear();
     _routesById.clear();
     _stopsByRouteId.clear();
+    _shapePointsByKey.clear();
     await initializeFromFallbackData(cachedFeeds: cachedFeeds);
   }
 
@@ -188,66 +203,20 @@ class GtfsService {
       final stopIds = routeStops.map((stop) => stop.stopId).toSet();
       _stops.removeWhere((stop) => stopIds.contains(stop.stopId));
     }
+
+    _shapePointsByKey.removeWhere(
+      (key, _) => routeIdsToRemove.any((routeId) => key.startsWith('$routeId|')),
+    );
   }
 
-  Future<void> _loadJsonFallbackForSystem({
-    required String country,
-    required String transitSystem,
-    required String agencyId,
-  }) async {
-    for (final lineName in TransitCatalog.linesForSystem(transitSystem)) {
-      final result = await _transitDataService.loadLine(
-        country: country,
-        transitSystem: transitSystem,
-        lineName: lineName,
-      );
-
-      if (result.line == null || result.line!.stations.isEmpty) {
-        AppLog.d(
-          'GtfsService: skipped empty JSON fallback for $lineName '
-          '(${result.error ?? 'no stations'})',
-        );
-        continue;
-      }
-
-      final routeId = _routeIdFor(agencyId, lineName);
-      final route = TransitRoute(
-        routeId: routeId,
-        routeName: lineName,
-        agencyId: agencyId,
-        country: country,
-        lineName: lineName,
-        transitSystem: transitSystem,
-        vehicleType: _defaultVehicleTypeForSystem(transitSystem),
-      );
-      _routes.add(route);
-      _routesById[routeId] = route;
-
-      final routeStops = result.line!.stations
-          .map(
-            (station) => TransitStop(
-              stopId: '$routeId:${station.stationOrder}',
-              stopName: station.name,
-              latitude: station.latitude,
-              longitude: station.longitude,
-              routeId: routeId,
-              stopSequence: station.stationOrder,
-            ),
-          )
-          .toList(growable: false);
-
-      _stops.addAll(routeStops);
-      _stopsByRouteId[routeId] = routeStops;
-
-      AppLog.d(
-        'GtfsService: loaded JSON fallback $routeId (${routeStops.length} stops)',
-      );
+  List<RouteShapePoint>? shapePointsForPattern({
+    required String routeId,
+    String? patternKey,
+  }) {
+    if (patternKey == null || patternKey.isEmpty) {
+      return null;
     }
-  }
-
-  String _routeIdFor(String agencyId, String lineName) {
-    final normalizedLine = lineName.replaceAll(' ', '_').toLowerCase();
-    return '${agencyId}_$normalizedLine';
+    return _shapePointsByKey['$routeId|$patternKey'];
   }
 
   List<TransitStop> searchStops(String query, {int limit = 20}) {
@@ -291,14 +260,6 @@ class GtfsService {
       'GtfsService: search "$query" returned ${matches.length} matches',
     );
     return matches;
-  }
-
-  TransitVehicleType _defaultVehicleTypeForSystem(String transitSystem) {
-    return switch (transitSystem) {
-      'GO Transit' || 'Exo' => TransitVehicleType.train,
-      'TTC' => TransitVehicleType.subway,
-      _ => TransitVehicleType.bus,
-    };
   }
 
   AgencyDetectionResult? detectAgencyFromDestination(String destinationName) {
@@ -468,27 +429,612 @@ class GtfsService {
 
   TransitRoute? routeForStop(TransitStop stop) => _routesById[stop.routeId];
 
-  TransitStop? findStopByName(String stopName, {String? routeId}) {
-    final normalizedName = stopName.trim().toLowerCase();
-    Iterable<TransitStop> candidates = _stops;
-    if (routeId != null) {
+  TransitStop? findStopByName(
+    String stopName, {
+    String? routeId,
+    List<TransitStop>? routeStops,
+  }) {
+    Iterable<TransitStop> candidates;
+    if (routeStops != null) {
+      candidates = routeStops;
+    } else if (routeId != null) {
       candidates = _stopsByRouteId[routeId] ?? const [];
+    } else {
+      candidates = _stops;
     }
 
     for (final stop in candidates) {
-      if (stop.stopName.toLowerCase() == normalizedName) {
+      if (GtfsStopNameUtils.namesMatch(stop.stopName, stopName)) {
         return stop;
       }
     }
     return null;
   }
 
+  String stationDisplayName(String rawName) =>
+      GtfsStopNameUtils.stationDisplayName(rawName);
+
+  String stationKeyForStop(TransitStop stop) =>
+      GtfsStationUtils.stationKeyForStop(stop);
+
+  GtfsStation stationFromStop(TransitStop stop) =>
+      GtfsStationUtils.stationFromStop(stop);
+
+  /// Resolves a saved destination to the stop on [stops] (locked pattern).
+  TransitStop? resolveStopAmongStops({
+    required Destination destination,
+    required List<TransitStop> stops,
+  }) {
+    final displayName = stationDisplayName(destination.name);
+
+    for (final stop in stops) {
+      if (GtfsStopNameUtils.namesMatch(stop.stopName, displayName)) {
+        return stop;
+      }
+    }
+
+    if (destination.stationKey != null) {
+      for (final stop in stops) {
+        if (stationKeyForStop(stop) == destination.stationKey) {
+          return stop;
+        }
+      }
+    }
+
+    return findStopByName(destination.name, routeStops: stops);
+  }
+
+  /// Nearest stop on [pattern] for GPS, preferring one platform per station.
+  TransitStop? resolveCurrentOnPattern({
+    required double latitude,
+    required double longitude,
+    required List<TransitStop> pattern,
+    required int maxProximityMeters,
+    TransitStop? destinationOnPattern,
+  }) {
+    if (pattern.isEmpty) {
+      return null;
+    }
+
+    final candidates = <TransitStop>[];
+    for (final stop in pattern) {
+      final distance = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        stop.latitude,
+        stop.longitude,
+      );
+      if (distance <= maxProximityMeters) {
+        candidates.add(stop);
+      }
+    }
+
+    if (candidates.isEmpty) {
+      return null;
+    }
+
+    TransitStop nearest = candidates.first;
+    var nearestDistance = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      nearest.latitude,
+      nearest.longitude,
+    );
+    for (final stop in candidates.skip(1)) {
+      final distance = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        stop.latitude,
+        stop.longitude,
+      );
+      if (distance < nearestDistance) {
+        nearest = stop;
+        nearestDistance = distance;
+      }
+    }
+
+    final stationKey = stationKeyForStop(nearest);
+    final atStation = pattern
+        .where((stop) => stationKeyForStop(stop) == stationKey)
+        .toList();
+    if (atStation.length <= 1) {
+      return nearest;
+    }
+
+    if (destinationOnPattern != null) {
+      final travelingForward =
+          destinationOnPattern.stopSequence >= nearest.stopSequence;
+      atStation.sort(
+        (a, b) => travelingForward
+            ? a.stopSequence.compareTo(b.stopSequence)
+            : b.stopSequence.compareTo(a.stopSequence),
+      );
+      return atStation.first;
+    }
+
+    return nearest;
+  }
+
+  /// Human-readable label for a locked direction/headsign pattern key.
+  static String? directionLabelForPatternKey(String? patternKey) {
+    if (patternKey == null || patternKey.isEmpty || patternKey == 'legacy') {
+      return null;
+    }
+    if (patternKey.startsWith('h:')) {
+      return patternKey
+          .substring(2)
+          .replaceAll('_', ' ')
+          .trim();
+    }
+    if (patternKey.startsWith('d:')) {
+      return 'Direction ${patternKey.substring(2)}';
+    }
+    return null;
+  }
+
+  List<GtfsStation> stationsOnRoute({
+    required String routeId,
+    String query = '',
+  }) {
+    return GtfsStationUtils.dedupeStopsToStations(
+      stopsForRoute(routeId),
+      query: query,
+    );
+  }
+
+  List<GtfsStationSearchResult> searchStationsForTransitSystem(
+    String transitSystem,
+    String query, {
+    int limit = 100,
+  }) {
+    final normalizedQuery = query.trim().toLowerCase();
+    final results = <GtfsStationSearchResult>[];
+    final seenKeys = <String>{};
+
+    for (final route in routesForTransitSystem(transitSystem)) {
+      final agency = _agenciesById[route.agencyId];
+      for (final station in stationsOnRoute(routeId: route.routeId)) {
+        if (normalizedQuery.isNotEmpty &&
+            !station.name.toLowerCase().contains(normalizedQuery)) {
+          continue;
+        }
+
+        final dedupeKey = '${station.stationKey}|${route.routeId}';
+        if (seenKeys.contains(dedupeKey)) {
+          continue;
+        }
+        seenKeys.add(dedupeKey);
+
+        results.add(
+          GtfsStationSearchResult(
+            station: station,
+            agencyName: agency?.agencyName ?? route.transitSystem,
+            routeName: route.routeName,
+            vehicleType: route.vehicleType,
+          ),
+        );
+
+        if (results.length >= limit) {
+          break;
+        }
+      }
+
+      if (results.length >= limit) {
+        break;
+      }
+    }
+
+    results.sort(
+      (a, b) => a.station.name.toLowerCase().compareTo(
+            b.station.name.toLowerCase(),
+          ),
+    );
+    return results;
+  }
+
+  List<GtfsStation> filterStationsOnRoute({
+    required String routeId,
+    required String query,
+  }) {
+    return stationsOnRoute(routeId: routeId, query: query);
+  }
+
   TransitRoute? routeById(String routeId) => _routesById[routeId];
 
   TransitAgency? agencyById(String agencyId) => _agenciesById[agencyId];
 
-  List<TransitStop> stopsForRoute(String routeId) {
-    return _dedupeStopsByLocation(_stopsByRouteId[routeId] ?? const []);
+  List<TransitStop> stopsForRoute(
+    String routeId, {
+    TransitStop? destinationStop,
+    TransitStop? anchorStop,
+    double? latitude,
+    double? longitude,
+    String? lockedPatternKey,
+    double? headingDegrees,
+    double? speedMps,
+  }) {
+    final raw = _stopsByRouteId[routeId] ?? const [];
+    if (raw.isEmpty) {
+      return const [];
+    }
+
+    final patterns = _directionPatternsFrom(raw);
+    if (lockedPatternKey != null) {
+      final locked = patterns[lockedPatternKey];
+      if (locked != null) {
+        return List<TransitStop>.from(locked);
+      }
+    }
+
+    if (patterns.length <= 1) {
+      final pattern = patterns.values.firstOrNull;
+      if (pattern == null) {
+        return _dedupeStopsByLocation(raw);
+      }
+      return List<TransitStop>.from(pattern);
+    }
+
+    if (destinationStop != null ||
+        anchorStop != null ||
+        (latitude != null && longitude != null)) {
+      return _selectDirectionPattern(
+        patterns: patterns.values.toList(growable: false),
+        destinationStop: destinationStop,
+        anchorStop: anchorStop,
+        latitude: latitude,
+        longitude: longitude,
+        headingDegrees: headingDegrees,
+        speedMps: speedMps,
+      );
+    }
+
+    return patterns.values.reduce(
+      (a, b) => a.length >= b.length ? a : b,
+    );
+  }
+
+  /// Infers the best-matching direction/headsign pattern key for GPS context.
+  String? inferPatternKeyForRoute(
+    String routeId, {
+    TransitStop? destinationStop,
+    TransitStop? anchorStop,
+    double? latitude,
+    double? longitude,
+    double? headingDegrees,
+    double? speedMps,
+  }) {
+    final raw = _stopsByRouteId[routeId] ?? const [];
+    if (raw.isEmpty) {
+      return null;
+    }
+
+    final patterns = _directionPatternsFrom(raw);
+    if (patterns.isEmpty) {
+      return null;
+    }
+    if (patterns.length == 1) {
+      return patterns.keys.first;
+    }
+
+    final selected = _selectDirectionPattern(
+      patterns: patterns.values.toList(growable: false),
+      destinationStop: destinationStop,
+      anchorStop: anchorStop,
+      latitude: latitude,
+      longitude: longitude,
+      headingDegrees: headingDegrees,
+      speedMps: speedMps,
+    );
+    if (selected.isEmpty) {
+      return null;
+    }
+    return patternKeyFromStopId(selected.first.stopId);
+  }
+
+  static final _patternStopIdPattern = RegExp(r':(d\d+|h[a-z0-9_]+):s\d+$');
+
+  static String? patternKeyFromStopId(String stopId) {
+    final token = _patternStopIdPattern.firstMatch(stopId)?.group(1);
+    if (token == null) {
+      return null;
+    }
+    if (token.startsWith('h')) {
+      return 'h:${token.substring(1)}';
+    }
+    return 'd:${token.substring(1)}';
+  }
+
+  @Deprecated('Use patternKeyFromStopId')
+  static String? directionIdFromStopId(String stopId) {
+    final key = patternKeyFromStopId(stopId);
+    if (key == null || !key.startsWith('d:')) {
+      return null;
+    }
+    return key.substring(2);
+  }
+
+  static Map<String, List<TransitStop>> _directionPatternsFrom(
+    List<TransitStop> stops,
+  ) {
+    final hasPatternKeys = stops.any(
+      (stop) => patternKeyFromStopId(stop.stopId) != null,
+    );
+    if (!hasPatternKeys) {
+      final legacy = List<TransitStop>.from(stops)
+        ..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
+      return {'legacy': legacy};
+    }
+
+    final patterns = <String, List<TransitStop>>{};
+    for (final stop in stops) {
+      final patternKey = patternKeyFromStopId(stop.stopId) ?? 'legacy';
+      patterns.putIfAbsent(patternKey, () => []).add(stop);
+    }
+
+    for (final pattern in patterns.values) {
+      pattern.sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
+    }
+    return patterns;
+  }
+
+  static List<TransitStop> _selectDirectionPattern({
+    required List<List<TransitStop>> patterns,
+    TransitStop? destinationStop,
+    TransitStop? anchorStop,
+    double? latitude,
+    double? longitude,
+    double? headingDegrees,
+    double? speedMps,
+  }) {
+    if (destinationStop != null && anchorStop != null) {
+      final bothMatching = patterns
+          .where(
+            (pattern) =>
+                _patternContainsStop(pattern, destinationStop) &&
+                _patternContainsStop(pattern, anchorStop),
+          )
+          .toList(growable: false);
+      if (bothMatching.length == 1) {
+        return bothMatching.first;
+      }
+      if (bothMatching.isNotEmpty) {
+        return _pickPatternForTrip(
+          bothMatching,
+          anchorStop: anchorStop,
+          destinationStop: destinationStop,
+          latitude: latitude,
+          longitude: longitude,
+          headingDegrees: headingDegrees,
+          speedMps: speedMps,
+        );
+      }
+    }
+
+    Iterable<List<TransitStop>> candidates = patterns;
+    if (destinationStop != null) {
+      final matching = patterns
+          .where(
+            (pattern) => _patternContainsStop(pattern, destinationStop),
+          )
+          .toList(growable: false);
+      if (matching.isNotEmpty) {
+        candidates = matching;
+      }
+    } else if (anchorStop != null) {
+      final matching = patterns
+          .where((pattern) => _patternContainsStop(pattern, anchorStop))
+          .toList(growable: false);
+      if (matching.isNotEmpty) {
+        candidates = matching;
+      }
+    }
+
+    final candidateList = candidates.toList(growable: false);
+    if (candidateList.length == 1) {
+      return candidateList.first;
+    }
+
+    if (latitude != null &&
+        longitude != null &&
+        destinationStop != null) {
+      List<TransitStop>? bestPattern;
+      var bestScore = double.negativeInfinity;
+
+      for (final pattern in candidateList) {
+        final destinationOnPattern = _findMatchingStop(pattern, destinationStop);
+        if (destinationOnPattern == null) {
+          continue;
+        }
+
+        final nearest = _nearestStopInPattern(pattern, latitude, longitude);
+        if (nearest == null) {
+          continue;
+        }
+
+        final travelingForward =
+            destinationOnPattern.stopSequence >= nearest.stopSequence;
+        final forwardBonus = travelingForward ? 100000.0 : -100000.0;
+        final distance = Geolocator.distanceBetween(
+          latitude,
+          longitude,
+          nearest.latitude,
+          nearest.longitude,
+        );
+        var score = forwardBonus - distance;
+        score += _headingAlignmentBonus(
+          pattern: pattern,
+          fromStop: nearest,
+          headingDegrees: headingDegrees,
+          speedMps: speedMps,
+        );
+        if (score > bestScore) {
+          bestScore = score;
+          bestPattern = pattern;
+        }
+      }
+
+      if (bestPattern != null) {
+        return bestPattern;
+      }
+    }
+
+    if (destinationStop != null && anchorStop != null) {
+      return _pickPatternForTrip(
+        candidateList,
+        anchorStop: anchorStop,
+        destinationStop: destinationStop,
+        latitude: latitude,
+        longitude: longitude,
+        headingDegrees: headingDegrees,
+        speedMps: speedMps,
+      );
+    }
+
+    return candidateList.reduce(
+      (a, b) => a.length >= b.length ? a : b,
+    );
+  }
+
+  static List<TransitStop> _pickPatternForTrip(
+    List<List<TransitStop>> patterns, {
+    required TransitStop anchorStop,
+    required TransitStop destinationStop,
+    double? latitude,
+    double? longitude,
+    double? headingDegrees,
+    double? speedMps,
+  }) {
+    List<TransitStop>? bestPattern;
+    var bestScore = double.negativeInfinity;
+
+    for (final pattern in patterns) {
+      final anchorOnPattern = _findMatchingStop(pattern, anchorStop);
+      final destinationOnPattern = _findMatchingStop(pattern, destinationStop);
+      if (anchorOnPattern == null || destinationOnPattern == null) {
+        continue;
+      }
+
+      final travelingForward =
+          destinationOnPattern.stopSequence >= anchorOnPattern.stopSequence;
+      final forwardBonus = travelingForward ? 100000.0 : -100000.0;
+      var score = forwardBonus;
+
+      if (latitude != null && longitude != null) {
+        final distance = Geolocator.distanceBetween(
+          latitude,
+          longitude,
+          anchorOnPattern.latitude,
+          anchorOnPattern.longitude,
+        );
+        score -= distance;
+      } else {
+        score -= (destinationOnPattern.stopSequence - anchorOnPattern.stopSequence)
+                .abs() *
+            1000.0;
+      }
+
+      score += _headingAlignmentBonus(
+        pattern: pattern,
+        fromStop: anchorOnPattern,
+        headingDegrees: headingDegrees,
+        speedMps: speedMps,
+      );
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestPattern = pattern;
+      }
+    }
+
+    return bestPattern ?? patterns.first;
+  }
+
+  static double _headingAlignmentBonus({
+    required List<TransitStop> pattern,
+    required TransitStop fromStop,
+    double? headingDegrees,
+    double? speedMps,
+  }) {
+    if (!GeoHeadingUtils.shouldUseHeading(headingDegrees, speedMps)) {
+      return 0;
+    }
+
+    final bearing = _bearingToNextStopOnPattern(pattern, fromStop);
+    if (bearing == null) {
+      return 0;
+    }
+
+    final delta = GeoHeadingUtils.headingDeltaDegrees(bearing, headingDegrees!);
+    return (90 - delta.clamp(0, 90)) * 200;
+  }
+
+  static double? _bearingToNextStopOnPattern(
+    List<TransitStop> pattern,
+    TransitStop fromStop,
+  ) {
+    TransitStop? next;
+    for (final stop in pattern) {
+      if (stop.stopSequence == fromStop.stopSequence + 1) {
+        next = stop;
+        break;
+      }
+    }
+    next ??= pattern
+        .where((stop) => stop.stopSequence == fromStop.stopSequence - 1)
+        .firstOrNull;
+    if (next == null) {
+      return null;
+    }
+
+    return Geolocator.bearingBetween(
+      fromStop.latitude,
+      fromStop.longitude,
+      next.latitude,
+      next.longitude,
+    );
+  }
+
+  static bool _patternContainsStop(
+    List<TransitStop> pattern,
+    TransitStop stop,
+  ) {
+    return _findMatchingStop(pattern, stop) != null;
+  }
+
+  static TransitStop? _findMatchingStop(
+    List<TransitStop> pattern,
+    TransitStop stop,
+  ) {
+    for (final candidate in pattern) {
+      if (GtfsStopNameUtils.namesMatch(candidate.stopName, stop.stopName)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  static TransitStop? _nearestStopInPattern(
+    List<TransitStop> pattern,
+    double latitude,
+    double longitude,
+  ) {
+    TransitStop? nearest;
+    var nearestDistance = double.infinity;
+
+    for (final stop in pattern) {
+      final distance = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        stop.latitude,
+        stop.longitude,
+      );
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = stop;
+      }
+    }
+
+    return nearest;
   }
 
   static List<TransitStop> _dedupeStopsByLocation(List<TransitStop> stops) {
@@ -555,35 +1101,16 @@ class GtfsService {
       }
     }
 
-    if (TransitCatalog.hasCatalogLines(transitSystem)) {
-      final catalogLines = TransitCatalog.linesForSystem(transitSystem);
-      if (vehicleType == null ||
-          vehicleType == _defaultVehicleTypeForSystem(transitSystem)) {
-        return catalogLines
-            .map(
-              (line) => TransitLineOption(
-                lineName: line,
-                displayLabel: line,
-              ),
-            )
-            .toList(growable: false);
-      }
+    if (vehicleType != null) {
       return const [];
     }
 
-    final options = _lineOptionsFromRoutes(routes);
-    if (options.isNotEmpty) {
-      return options;
-    }
-
-    return TransitCatalog.linesForSystem(transitSystem)
-        .map(
-          (line) => TransitLineOption(
-            lineName: line,
-            displayLabel: line,
-          ),
-        )
-        .toList(growable: false);
+    return const [
+      TransitLineOption(
+        lineName: TransitCatalog.allRoutesLine,
+        displayLabel: TransitCatalog.allRoutesLine,
+      ),
+    ];
   }
 
   String displayLabelForLine(String transitSystem, String lineName) {
@@ -595,6 +1122,23 @@ class GtfsService {
       }
     }
     return lineName;
+  }
+
+  /// Agency + full line name for favorites, e.g. `TTC · 1 · Line 1
+  /// (Yonge-University)`. Falls back to the raw stored line ref when the route
+  /// is not loaded from GTFS.
+  String favoriteLineLabel({
+    required String transitSystem,
+    required String lineName,
+  }) {
+    final route = routeForTransitLine(
+      transitSystem: transitSystem,
+      lineName: lineName,
+    );
+    if (route != null) {
+      return '$transitSystem · ${TransitLineOption.fromRoute(route).singleLineLabel}';
+    }
+    return '$transitSystem · $lineName';
   }
 
   /// Home-screen label: agency, route code, and long name when available.
@@ -775,19 +1319,9 @@ class GtfsService {
     required String routeId,
     required String query,
   }) {
-    final normalizedQuery = query.trim().toLowerCase();
-    final routeStops = stopsForRoute(routeId);
-    if (normalizedQuery.isEmpty) {
-      return List<TransitStop>.from(routeStops)
-        ..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
-    }
-
-    return routeStops
-        .where(
-          (stop) => stop.stopName.toLowerCase().contains(normalizedQuery),
-        )
-        .toList(growable: false)
-      ..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
+    return filterStationsOnRoute(routeId: routeId, query: query)
+        .map((station) => station.representativeStop)
+        .toList(growable: false);
   }
 
   bool hasStopsForTransitLine({
@@ -871,38 +1405,6 @@ class GtfsService {
       return null;
     }
     return _detectionForStop(stop);
-  }
-
-  Future<void> downloadGtfsFeeds() async {
-    AppLog.d('GtfsService: downloadGtfsFeeds() is not implemented yet.');
-  }
-
-  Future<void> refreshFeeds() async {
-    AppLog.d('GtfsService: refreshFeeds() is not implemented yet.');
-  }
-
-  Future<void> downloadRealtimeFeed(String agencyId) async {
-    AppLog.d(
-      'GtfsService: downloadRealtimeFeed($agencyId) is not implemented yet.',
-    );
-  }
-
-  Future<void> updateRealtimeVehicles(String agencyId) async {
-    AppLog.d(
-      'GtfsService: updateRealtimeVehicles($agencyId) is not implemented yet.',
-    );
-  }
-
-  Future<void> syncAllFeeds() async {
-    AppLog.d('GtfsService: syncAllFeeds() is not implemented yet.');
-  }
-
-  bool supportsRealtime(String agencyId) {
-    final agency = _agenciesById[agencyId];
-    if (agency == null) {
-      return false;
-    }
-    return agency.supportsRealtime;
   }
 
   int _compareLineNames(String a, String b) {

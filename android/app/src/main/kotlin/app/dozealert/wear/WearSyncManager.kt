@@ -5,7 +5,10 @@ import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 
 class WearSyncManager(context: Context) {
-    private val dataClient = Wearable.getDataClient(context.applicationContext)
+    private val appContext = context.applicationContext
+    private val dataClient = Wearable.getDataClient(appContext)
+    private val messageClient = Wearable.getMessageClient(appContext)
+    private val nodeClient = Wearable.getNodeClient(appContext)
 
     fun pushTripState(fields: Map<String, Any?>) {
         val request = PutDataMapRequest.create(WearPaths.TRIP_STATE).apply {
@@ -26,6 +29,18 @@ class WearSyncManager(context: Context) {
         }.asPutDataRequest().setUrgent()
 
         dataClient.putDataItem(request)
+    }
+
+    fun launchWearApp() {
+        nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+            for (node in nodes) {
+                messageClient.sendMessage(
+                    node.id,
+                    WearPaths.CMD_OPEN_WATCH,
+                    ByteArray(0),
+                )
+            }
+        }
     }
 
     companion object {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../models/background_transit_pattern.dart';
 import '../models/monitoring_state.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
@@ -10,6 +11,7 @@ import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
 import '../services/transit_mode_service.dart';
 import '../services/transit_stop_progress_tracker.dart';
+import '../utils/transit_wake_message.dart';
 import 'monitoring_provider.dart';
 
 class TransitModeProvider extends ChangeNotifier {
@@ -67,6 +69,7 @@ class TransitModeProvider extends ChangeNotifier {
       currentStop: current,
       destinationStop: destination,
       routeId: route.routeId,
+      lockedPatternKey: _transitModeService.tripSession.lockedPatternKey,
     );
   }
 
@@ -87,6 +90,43 @@ class TransitModeProvider extends ChangeNotifier {
     );
   }
 
+  /// True when the rider has passed their destination on the locked pattern.
+  bool get shouldFlagTransitMissedStop {
+    if (!_settingsService.settings.transitModeEnabled || !_snapshot.isActive) {
+      return false;
+    }
+    if (_approachAlarmTriggered) {
+      return false;
+    }
+    if (!_transitModeService.tripSession.isDirectionLocked) {
+      return false;
+    }
+    if (!_stopProgressTracker.hasEstablishedProgress) {
+      return false;
+    }
+    if (_snapshot.hasTripConcern) {
+      return false;
+    }
+
+    final current = _snapshot.currentStop;
+    final destination = _snapshot.destinationStop;
+    if (current == null || destination == null) {
+      return false;
+    }
+
+    final segment = routeSegmentStops;
+    if (segment.length < 2) {
+      return false;
+    }
+
+    final travelingForward =
+        destination.stopSequence >= segment.first.stopSequence;
+    if (travelingForward) {
+      return current.stopSequence > destination.stopSequence;
+    }
+    return current.stopSequence < destination.stopSequence;
+  }
+
   bool get shouldTriggerApproachAlarm {
     if (!_settingsService.settings.transitModeEnabled || !_snapshot.isActive) {
       return false;
@@ -96,15 +136,29 @@ class TransitModeProvider extends ChangeNotifier {
       return false;
     }
 
+    if (!_transitModeService.tripSession.isDirectionLocked ||
+        !_stopProgressTracker.hasEstablishedProgress) {
+      return false;
+    }
+
+    if (_snapshot.hasTripConcern) {
+      return false;
+    }
+
     final wakeCount =
         _settingsService.settings.transitModeWake.wakeStopCount;
     return _snapshot.stopsRemaining <= wakeCount;
   }
 
-  String get approachAlarmMessage {
-    final destinationName =
-        _snapshot.destinationStop?.stopName ?? 'your destination';
-    return 'Approaching $destinationName\nWake up.';
+  /// Copy for the current approach alarm, based on wake-by-stops setting.
+  WakeAlertCopy get approachAlarmCopy {
+    return TransitWakeMessage.forTransitAlarm(
+      snapshot: _snapshot,
+      wakeSetting: _settingsService.settings.transitModeWake,
+      segmentStops: routeSegmentStops,
+      fallbackDestinationName:
+          _monitoringProvider.selectedDestination?.name,
+    );
   }
 
   void updateFromLocation({
@@ -118,6 +172,7 @@ class TransitModeProvider extends ChangeNotifier {
         _snapshot = TransitModeSnapshot.inactive;
         _lastActiveSnapshot = null;
         _stopProgressTracker.reset();
+        _transitModeService.resetTripSession();
         notifyListeners();
       }
       return;
@@ -143,6 +198,7 @@ class TransitModeProvider extends ChangeNotifier {
       if (nextSnapshot != _snapshot) {
         _snapshot = nextSnapshot;
         unawaited(_monitoringStorage.setTransitOnRouteActive(true));
+        unawaited(_persistTransitBackgroundSnapshot(nextSnapshot));
         notifyListeners();
       }
       return;
@@ -162,7 +218,58 @@ class TransitModeProvider extends ChangeNotifier {
       _snapshot = nextSnapshot;
       _lastActiveSnapshot = null;
       unawaited(_monitoringStorage.setTransitOnRouteActive(false));
+      unawaited(_monitoringStorage.clearTransitBackgroundSnapshot());
       notifyListeners();
+    }
+  }
+
+  Future<void> _persistTransitBackgroundSnapshot(
+    TransitModeSnapshot snapshot,
+  ) async {
+    if (!_settingsService.settings.transitModeEnabled || !snapshot.isActive) {
+      await _monitoringStorage.clearTransitBackgroundSnapshot();
+      return;
+    }
+
+    final copy = TransitWakeMessage.forTransitAlarm(
+      snapshot: snapshot,
+      wakeSetting: _settingsService.settings.transitModeWake,
+      segmentStops: _routeSegmentStopsFor(snapshot),
+      fallbackDestinationName:
+          _monitoringProvider.selectedDestination?.name,
+    );
+
+    await _monitoringStorage.saveTransitBackgroundSnapshot(
+      transitActive: true,
+      stopsRemaining: snapshot.stopsRemaining,
+      wakeStopCount: _settingsService.settings.transitModeWake.wakeStopCount,
+      directionLocked: _transitModeService.tripSession.isDirectionLocked,
+      hasTripConcern: snapshot.hasTripConcern,
+      alarmHeadline: copy.headline,
+      alarmBody: copy.detailMessage,
+      alarmTts: copy.ttsPhrase,
+      alarmStopName: copy.primaryStopName,
+      alarmSubline: copy.wearSubline ?? copy.secondaryLine ?? '',
+    );
+
+    final segmentStops = _routeSegmentStopsFor(snapshot);
+    final destination = snapshot.destinationStop;
+    final route = snapshot.route;
+    final current = snapshot.currentStop;
+    if (segmentStops.length >= 2 && destination != null && route != null) {
+      final travelingForward =
+          destination.stopSequence >= segmentStops.first.stopSequence;
+      await _monitoringStorage.saveBackgroundTransitPattern(
+        BackgroundTransitPattern(
+          routeId: route.routeId,
+          directionLocked: _transitModeService.tripSession.isDirectionLocked,
+          travelingForward: travelingForward,
+          destinationStopSequence: destination.stopSequence,
+          stabilizedStopSequence: current?.stopSequence ?? -1,
+          segmentStops: segmentStops,
+          lineLabel: route.lineName,
+        ),
+      );
     }
   }
 
@@ -185,6 +292,7 @@ class TransitModeProvider extends ChangeNotifier {
         _lastActiveSnapshot = null;
         _approachAlarmTriggered = false;
         _stopProgressTracker.reset();
+        _transitModeService.resetTripSession();
         notifyListeners();
       }
       return;
@@ -224,12 +332,15 @@ class TransitModeProvider extends ChangeNotifier {
       _lastActiveSnapshot = null;
       _approachAlarmTriggered = false;
       _stopProgressTracker.reset();
+      _transitModeService.resetTripSession();
+      unawaited(_monitoringStorage.clearTransitBackgroundSnapshot());
       notifyListeners();
       return;
     }
 
     _approachAlarmTriggered = false;
     _stopProgressTracker.reset();
+    _transitModeService.resetTripSession();
     updateFromLocation(
       latitude: null,
       longitude: null,
@@ -249,7 +360,12 @@ class TransitModeProvider extends ChangeNotifier {
       routeId: routeId,
       destinationStop: rawSnapshot.destinationStop!,
       rawStop: rawSnapshot.currentStop!,
-      routeStops: _transitModeService.routeStopsFor(routeId),
+      routeStops: _transitModeService.routeStopsFor(
+        routeId,
+        destinationStop: rawSnapshot.destinationStop,
+        anchorStop: rawSnapshot.currentStop,
+        lockedPatternKey: _transitModeService.tripSession.lockedPatternKey,
+      ),
     );
 
     if (stabilizedStop == rawSnapshot.currentStop) {
@@ -291,6 +407,9 @@ extension on TransitModeSnapshot {
       usesDistanceFallback: usesDistanceFallback,
       gpsStale: gpsStale ?? this.gpsStale,
       status: gpsStale == true ? 'GPS signal weak' : status,
+      tripConcern: tripConcern,
+      directionLabel: directionLabel,
+      directionLocked: directionLocked,
     );
   }
 }

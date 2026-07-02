@@ -1,0 +1,9 @@
+Version 1.1.0 (build 100029) — Wear OS companion
+
+• Richer trip display — next stop, direction label, GPS weak warnings, and route concern hints match the phone
+• Tile & complication — refresh live data from the phone when you glance at your watch
+• Start/stop parity — Start only when the phone trip is idle (no restart after a missed trip)
+• Alarm dismiss — waits for the phone to confirm before closing, so alarms don’t re-fire
+• Background sync — receives trip updates even when the phone UI is in the background
+
+Requires DozeAlert 1.1.0 (build 19+) on your paired phone.

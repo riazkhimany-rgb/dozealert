@@ -6,6 +6,7 @@ import com.google.android.gms.wearable.WearableListenerService
 class WearListenerService : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         when (messageEvent.path) {
+            WearPaths.CMD_OPEN_PHONE,
             WearPaths.CMD_START_MONITORING,
             WearPaths.CMD_STOP_MONITORING,
             WearPaths.CMD_DISMISS_ALARM,

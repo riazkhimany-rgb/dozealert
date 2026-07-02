@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,11 +16,13 @@ import '../providers/monitoring_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/transit_mode_provider.dart';
 import '../providers/transit_provider.dart';
+import '../providers/wear_status_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../services/app_tour_service.dart';
 import '../utils/app_branding.dart';
 import '../utils/location_format.dart';
 import '../utils/monitoring_format.dart';
+import '../utils/gtfs_stop_name_utils.dart';
 import '../utils/gtfs_readiness.dart';
 import '../utils/transit_user_copy.dart';
 import '../utils/transit_wake_message.dart';
@@ -36,6 +39,8 @@ import '../widgets/metric_row.dart';
 import '../widgets/monitoring_distance_progress.dart';
 import '../widgets/transit_route_progress_line.dart';
 import '../widgets/trip_ready_sheet.dart';
+import '../widgets/gtfs_updating_banner.dart';
+import '../widgets/trip_concern_banner.dart';
 import '../widgets/trip_setup_checklist.dart';
 import '../screens/settings/location_settings_screen.dart';
 import '../widgets/transit_agency_line_picker_sheet.dart';
@@ -217,6 +222,20 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
+    if (!arrivalVisible && _showingArrivalDialog) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_showingArrivalDialog) {
+          return;
+        }
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        if (mounted) {
+          setState(() => _showingArrivalDialog = false);
+        }
+      });
+    }
+
     final destinationCard = _DestinationCard(
       compact: !monitoringFirst ? false : hasDestination,
       setDestinationKey: _setDestinationKey,
@@ -254,6 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
             if (!_homeTourVisible) ...[
               const TripSetupChecklist(),
+              const GtfsUpdatingBanner(),
               const GtfsReadinessBanner(),
             ],
           ],
@@ -432,10 +452,20 @@ class _DestinationCard extends StatelessWidget {
               Text(
                 wakeMessage,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  color: snapshot.hasTripConcern
+                      ? colorScheme.error
+                      : colorScheme.onSurfaceVariant,
                   height: 1.4,
                 ),
               ),
+            TripConcernBanner(
+              snapshot: snapshot,
+              selectedLine: selectedLine,
+              gpsSignalLost: gpsSignalLost,
+              transitModeEnabled: transitModeEnabled,
+              gtfsReady: gtfsReady,
+              isMonitoring: isMonitoring,
+            ),
           ],
           if (showTransitProgress) ...[
             const SizedBox(height: 16),
@@ -450,7 +480,40 @@ class _DestinationCard extends StatelessWidget {
               const SizedBox(height: 8),
               MetricRow(
                 label: 'Next stop',
-                value: snapshot.nextStop!.stopName,
+                value: GtfsStopNameUtils.stationDisplayName(
+                  snapshot.nextStop!.stopName,
+                ),
+              ),
+            ],
+            if (isMonitoring && transitModeEnabled && snapshot.isActive) ...[
+              const SizedBox(height: 8),
+              if (snapshot.directionLabel != null)
+                MetricRow(
+                  label: 'Route locked',
+                  value: snapshot.directionLabel!,
+                ),
+              Text(
+                snapshot.directionLocked
+                    ? 'Direction confirmed from your ride'
+                    : 'Confirming direction from GPS…',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: snapshot.directionLocked
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              ),
+            ],
+            if (isMonitoring) ...[
+              const SizedBox(height: 4),
+              Text(
+                _gpsFixLabel(context),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: gpsSignalLost
+                      ? colorScheme.error
+                      : colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
               ),
             ],
           ],
@@ -516,6 +579,21 @@ class _DestinationCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _gpsFixLabel(BuildContext context) {
+    final fixAt = context.read<LocationProvider>().lastLocationFixAt;
+    if (fixAt == null) {
+      return 'Last GPS fix: waiting…';
+    }
+    final age = DateTime.now().difference(fixAt);
+    if (age.inSeconds < 45) {
+      return 'Last GPS fix: just now';
+    }
+    if (age.inMinutes < 60) {
+      return 'Last GPS fix: ${age.inMinutes} min ago';
+    }
+    return 'Last GPS fix: ${age.inHours} hr ago';
   }
 }
 
@@ -588,6 +666,16 @@ class _MonitoringCard extends StatelessWidget {
     final canStop = state == MonitoringState.monitoring ||
         state == MonitoringState.arrived;
     final isMonitoring = state == MonitoringState.monitoring;
+    final watchConnected = Platform.isAndroid
+        ? context.select<WearStatusProvider, bool>(
+            (provider) => provider.watchConnected,
+          )
+        : false;
+    final watchChecked = Platform.isAndroid
+        ? context.select<WearStatusProvider, bool>(
+            (provider) => provider.hasChecked,
+          )
+        : false;
 
     return HomeCard(
       child: Column(
@@ -621,6 +709,38 @@ class _MonitoringCard extends StatelessWidget {
             color: statusColor,
             active: isMonitoring,
           ),
+          if (Platform.isAndroid && watchChecked) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  margin: const EdgeInsets.only(top: 4, right: 8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: watchConnected
+                        ? const Color(0xFF34C759)
+                        : const Color(0xFFFF3B30),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    watchConnected
+                        ? 'Watch connected'
+                        : 'Watch not connected — open DozeAlert on your watch',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: watchConnected
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 10),
           if (!hasDestination)
             const EmptyStateMessage(

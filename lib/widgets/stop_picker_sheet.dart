@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/gtfs_station.dart';
+import '../models/gtfs_station_search_result.dart';
 import '../models/transit_stop.dart';
-import '../models/transit_stop_search_result.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../screens/transit_data_screen.dart';
@@ -65,14 +66,14 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
     super.dispose();
   }
 
-  Future<void> _selectStop(TransitStop stop) async {
+  Future<void> _selectStation(GtfsStation station) async {
     final customHandler = widget.onStopSelected;
     if (customHandler != null) {
-      await customHandler(stop);
+      await customHandler(station.representativeStop);
       return;
     }
 
-    await context.read<GtfsProvider>().selectStop(stop);
+    await context.read<GtfsProvider>().selectStation(station);
     if (mounted) {
       Navigator.of(context).pop(true);
     }
@@ -90,15 +91,15 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
         : _StopSearchScope.allRoutes;
     final showScopeToggle = hasLineStops && hasAgencyStops;
 
-    final routeStops = effectiveScope == _StopSearchScope.thisRoute
-        ? gtfsProvider.filterStopsForSelectedLine(_query)
-        : const <TransitStop>[];
+    final routeStations = effectiveScope == _StopSearchScope.thisRoute
+        ? gtfsProvider.filterStationsForSelectedLine(_query)
+        : const <GtfsStation>[];
     final agencyResults = effectiveScope == _StopSearchScope.allRoutes
-        ? gtfsProvider.searchStopsForSelectedAgency(_query)
-        : const <TransitStopSearchResult>[];
+        ? gtfsProvider.searchStationsForSelectedAgency(_query)
+        : const <GtfsStationSearchResult>[];
 
     final resultCount = effectiveScope == _StopSearchScope.thisRoute
-        ? routeStops.length
+        ? routeStations.length
         : agencyResults.length;
 
     return Column(
@@ -107,7 +108,7 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
           child: Text(
-            'Pick Stop',
+            'Pick station',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -151,8 +152,8 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
           child: SearchBar(
             controller: _searchController,
             hintText: effectiveScope == _StopSearchScope.allRoutes
-                ? 'Search all stops…'
-                : 'Filter stops…',
+                ? 'Search all stations…'
+                : 'Filter stations…',
             leading: const Icon(Icons.search),
             trailing: _query.isEmpty
                 ? null
@@ -172,7 +173,7 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
-            '$resultCount stop${resultCount == 1 ? '' : 's'}',
+            '$resultCount station${resultCount == 1 ? '' : 's'}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -189,13 +190,13 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
                   transitSystem: transitSystem,
                 )
               : effectiveScope == _StopSearchScope.thisRoute
-                  ? _RouteStopList(
-                      stops: routeStops,
-                      onSelect: _selectStop,
+                  ? _RouteStationList(
+                      stations: routeStations,
+                      onSelect: _selectStation,
                     )
-                  : _AgencyStopList(
+                  : _AgencyStationList(
                       results: agencyResults,
-                      onSelect: _selectStop,
+                      onSelect: _selectStation,
                     ),
         ),
       ],
@@ -222,13 +223,13 @@ class _StopPickerEmptyState extends StatelessWidget {
 
   String get _message {
     if (query.isNotEmpty) {
-      return 'No stops match "$query".';
+      return 'No stations match "$query".';
     }
     if (!hasAgencyStops) {
       return TransitUserCopy.downloadStopListForTransit(transitSystem);
     }
     if (scope == _StopSearchScope.thisRoute && !hasLineStops) {
-      return 'No stops available for this line. Try All routes.';
+      return 'No stations available for this line. Try All routes.';
     }
     return TransitUserCopy.noStopsForTransit(transitSystem);
   }
@@ -272,53 +273,53 @@ class _StopPickerEmptyState extends StatelessWidget {
   }
 }
 
-class _RouteStopList extends StatelessWidget {
-  const _RouteStopList({
-    required this.stops,
+class _RouteStationList extends StatelessWidget {
+  const _RouteStationList({
+    required this.stations,
     required this.onSelect,
   });
 
-  final List<TransitStop> stops;
-  final ValueChanged<TransitStop> onSelect;
+  final List<GtfsStation> stations;
+  final ValueChanged<GtfsStation> onSelect;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      itemCount: stops.length,
+      itemCount: stations.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
-        final stop = stops[index];
+        final station = stations[index];
         return ListTile(
           contentPadding: EdgeInsets.zero,
           leading: CircleAvatar(
             radius: 16,
             backgroundColor: colorScheme.primaryContainer,
             child: Text(
-              '${stop.stopSequence}',
+              '${station.representativeStop.stopSequence}',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: colorScheme.onPrimaryContainer,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          title: Text(stop.stopName),
-          onTap: () => onSelect(stop),
+          title: Text(station.name),
+          onTap: () => onSelect(station),
         );
       },
     );
   }
 }
 
-class _AgencyStopList extends StatelessWidget {
-  const _AgencyStopList({
+class _AgencyStationList extends StatelessWidget {
+  const _AgencyStationList({
     required this.results,
     required this.onSelect,
   });
 
-  final List<TransitStopSearchResult> results;
-  final ValueChanged<TransitStop> onSelect;
+  final List<GtfsStationSearchResult> results;
+  final ValueChanged<GtfsStation> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -340,9 +341,9 @@ class _AgencyStopList extends StatelessWidget {
               color: colorScheme.onSecondaryContainer,
             ),
           ),
-          title: Text(result.stop.stopName),
+          title: Text(result.station.name),
           subtitle: Text(result.routeName),
-          onTap: () => onSelect(result.stop),
+          onTap: () => onSelect(result.station),
         );
       },
     );

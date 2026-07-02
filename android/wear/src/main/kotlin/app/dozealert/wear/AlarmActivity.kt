@@ -1,32 +1,27 @@
 package app.dozealert.wear
 
-import android.content.Intent
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.wear.compose.material3.Button
-import androidx.wear.compose.material3.MaterialTheme
-import androidx.wear.compose.material3.Text
+import app.dozealert.wear.ui.AlarmScreen
+import app.dozealert.wear.ui.DozeAlertTheme
 import kotlinx.coroutines.launch
 
 class AlarmActivity : ComponentActivity() {
     private val repository by lazy { TripStateRepository.getInstance(this) }
     private val commandSender by lazy { PhoneCommandSender.getInstance(this) }
+
+    private var busy by mutableStateOf(false)
+    private var vibrator: Vibrator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,45 +31,29 @@ class AlarmActivity : ComponentActivity() {
             return
         }
 
-        pulse()
+        startAlarmVibration()
 
         setContent {
-            MaterialTheme {
+            DozeAlertTheme {
                 val state by repository.state.collectAsStateWithLifecycle()
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = getString(R.string.alarm_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        text = state.destinationName.ifBlank { "Your stop" },
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        text = state.detailLine,
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                    )
-                    Button(
-                        onClick = {
-                            lifecycleScope.launch {
-                                commandSender.send(WearPaths.CMD_DISMISS_ALARM)
-                                finish()
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(getString(R.string.dismiss_alarm))
+                LaunchedEffect(state.alarmActive) {
+                    if (!state.alarmActive) {
+                        stopAlarmVibration()
+                        busy = false
+                        finish()
                     }
                 }
+                AlarmScreen(
+                    state = state,
+                    busy = busy,
+                    onDismiss = {
+                        lifecycleScope.launch {
+                            busy = true
+                            stopAlarmVibration()
+                            commandSender.send(WearPaths.CMD_DISMISS_ALARM)
+                        }
+                    },
+                )
             }
         }
     }
@@ -82,32 +61,43 @@ class AlarmActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         lifecycleScope.launch {
-            repository.start()
+            repository.refreshFromPhone()
         }
     }
 
     override fun onStop() {
-        repository.stop()
         super.onStop()
     }
 
-    private fun pulse() {
-        val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+    override fun onDestroy() {
+        stopAlarmVibration()
+        super.onDestroy()
+    }
+
+    private fun startAlarmVibration() {
+        val activeVibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
             manager.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
             getSystemService(VIBRATOR_SERVICE) as Vibrator
         }
+        vibrator = activeVibrator
 
+        val pattern = longArrayOf(0, 600, 200, 600, 200, 600)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            vibrator.vibrate(
-                VibrationEffect.createWaveform(
-                    longArrayOf(0, 500, 250, 500, 250, 500),
-                    -1,
-                ),
+            activeVibrator.vibrate(
+                VibrationEffect.createWaveform(pattern, 0),
             )
+        } else {
+            @Suppress("DEPRECATION")
+            activeVibrator.vibrate(pattern, 0)
         }
+    }
+
+    private fun stopAlarmVibration() {
+        vibrator?.cancel()
+        vibrator = null
     }
 
     companion object {

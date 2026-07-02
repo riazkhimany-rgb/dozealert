@@ -5,7 +5,6 @@ import 'package:dozealert/models/transit_route.dart';
 import 'package:dozealert/models/transit_stop.dart';
 import 'package:dozealert/models/transit_vehicle_type.dart';
 import 'package:dozealert/services/gtfs_service.dart';
-import 'package:dozealert/services/transit_data_service.dart';
 import 'package:dozealert/services/transit_mode_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -53,7 +52,7 @@ void main() {
     late TransitModeService transitModeService;
 
     setUp(() async {
-      final gtfsService = GtfsService(TransitDataService());
+      final gtfsService = GtfsService();
       await gtfsService.initializeFromFallbackData();
       gtfsService.mergeCachedFeed(
         GtfsCachedFeed(

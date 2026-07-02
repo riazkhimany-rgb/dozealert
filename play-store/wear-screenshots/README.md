@@ -6,23 +6,34 @@ Play Console requires:
 - **App UI only** — no emulator gray bezel / device frame
 - **Solid background** (black is fine), not transparent
 
-## Quick generate (no emulator needed)
+## From website captures (current listing assets)
 
-Renders Play-ready **512×512** PNGs matching the Wear app UI:
+Real Wear app UI captures live in `website/assets/screens/watch_shot*.png`.
+Convert them to Play-ready **512×512** opaque PNGs:
+
+```powershell
+cd D:\Dev\Projects\dozealert
+.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot4.png -OutputPath play-store\wear-screenshots\01-idle.png
+.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot2.png -OutputPath play-store\wear-screenshots\02-ready.png
+.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot1.png -OutputPath play-store\wear-screenshots\03-monitoring.png
+.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot3.png -OutputPath play-store\wear-screenshots\04-alarm.png
+```
+
+| Play file | Source | Screen |
+|-----------|--------|--------|
+| `01-idle.png` | `watch_shot4.png` | Set up on phone |
+| `02-ready.png` | `watch_shot2.png` | Ready to rest, **Start trip** |
+| `03-monitoring.png` | `watch_shot1.png` | **17.4 km left**, Clarkson GO |
+| `04-alarm.png` | `watch_shot3.png` | Wake-up alarm |
+
+## Quick generate (no emulator, synthetic UI)
+
+Renders Play-ready **512×512** PNGs from scripted mock UI:
 
 ```powershell
 cd D:\Dev\Projects\dozealert
 .\tools\generate-wear-screenshots.ps1
 ```
-
-Output:
-
-| File | Screen |
-|------|--------|
-| `01-idle.png` | No destination yet |
-| `02-ready.png` | Destination set (Bronte GO), **Start** |
-| `03-monitoring.png` | Active trip, **2.3 km remaining**, **Stop** |
-| `04-alarm.png` | Wake-up alarm at destination |
 
 ## Capture from Wear emulator (pixel-perfect)
 

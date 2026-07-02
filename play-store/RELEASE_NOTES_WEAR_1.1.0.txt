@@ -1,0 +1,9 @@
+Version 1.1.0 — Wear OS companion
+
+• Trip screen — clearer status, line label, and synced copy from your phone
+• Alarms — improved full-screen alarm UI and headlines when your stop is near
+• Watch face — complication and tile refresh when trip state changes on the phone
+• Connection — better visibility when the watch is linked to DozeAlert on your phone
+• Ongoing activity — trip status stays visible while monitoring is active
+
+Requires DozeAlert 1.1.0 on your paired phone.

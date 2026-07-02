@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/destination_history_provider.dart';
 import '../providers/gtfs_feed_provider.dart';
@@ -100,39 +99,47 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     final tripHistoryProvider = context.read<TripHistoryProvider>();
     final onboardingService = context.read<OnboardingService>();
 
+    await gtfsFeedProvider.initialize();
+
     await Future.wait([
       gtfsProvider.initialize(),
-      gtfsFeedProvider.initialize(),
       destinationHistoryProvider.load(),
       tripHistoryProvider.load(),
     ]);
 
-    await _purgeStaleGtfsCacheIfNeeded(gtfsFeedProvider, gtfsProvider);
-
     final transitSystem =
         context.read<TransitProvider>().preferences.transitSystem;
-    gtfsFeedProvider.preloadForTransitSystemIfNeeded(
+    final preloadFeed = feedForTransitSystemPreload(
+      gtfsFeedProvider,
       transitSystem,
-      onComplete: gtfsProvider.notifyDataUpdated,
+      const {},
     );
+    if (preloadFeed != null) {
+      gtfsFeedProvider.preloadFeedIfNeeded(
+        preloadFeed,
+        onComplete: () async {
+          await gtfsProvider.refreshFromCache();
+          await gtfsProvider.notifyDataUpdated();
+        },
+      );
+    }
 
     return onboardingService.isComplete();
   }
 
-  static const _gtfsStaleCachePurgedKey = 'gtfs_stale_cache_purged_v2';
-
-  Future<void> _purgeStaleGtfsCacheIfNeeded(
-    GtfsFeedProvider gtfsFeedProvider,
-    GtfsProvider gtfsProvider,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_gtfsStaleCachePurgedKey) ?? false) {
-      return;
+  String? feedForTransitSystemPreload(
+    GtfsFeedProvider feedProvider,
+    String transitSystem,
+    Set<String> alreadyQueued,
+  ) {
+    final feed = feedProvider.feedForTransitSystem(transitSystem);
+    if (feed == null ||
+        !feed.hasDirectDownload ||
+        feed.isDownloaded ||
+        alreadyQueued.contains(feed.feedId)) {
+      return null;
     }
-
-    await gtfsFeedProvider.clearAllCachedFeeds();
-    await gtfsProvider.refreshFromCache();
-    await prefs.setBool(_gtfsStaleCachePurgedKey, true);
+    return feed.feedId;
   }
 
   void _setPhaseAfterBootstrap(bool onboardingComplete) {

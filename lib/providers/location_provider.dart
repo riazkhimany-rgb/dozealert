@@ -19,6 +19,7 @@ import '../services/settings_service.dart';
 import '../services/trip_history_service.dart';
 import '../utils/app_log.dart';
 import '../utils/gps_quality.dart';
+import '../utils/transit_wake_message.dart';
 
 enum LocationStartResult {
   success,
@@ -49,8 +50,8 @@ class LocationProvider extends ChangeNotifier {
     _backgroundLocationSubscription =
         _backgroundMonitorService.locationStream.listen(_onLocationUpdate);
     _arrivalSubscription =
-        _backgroundMonitorService.arrivalStream.listen((_) {
-      unawaited(_handleBackgroundArrival());
+        _backgroundMonitorService.arrivalStream.listen((event) {
+      unawaited(_handleBackgroundArrival(transitWake: event.transitWake));
     });
     _monitoringProvider.addListener(_onMonitoringChanged);
   }
@@ -107,6 +108,8 @@ class LocationProvider extends ChangeNotifier {
   bool get arrivalDialogVisible => _arrivalDialogVisible;
   ArrivalContext? get arrivalContext => _arrivalContext;
   bool get usingBackgroundService => _usingBackgroundService;
+
+  DateTime? get lastLocationFixAt => _currentLocation?.timestamp;
 
   BackgroundMonitorDiagnostics get backgroundDiagnostics =>
       _backgroundMonitorService.diagnostics;
@@ -409,7 +412,7 @@ class LocationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _handleBackgroundArrival() async {
+  Future<void> _handleBackgroundArrival({bool transitWake = false}) async {
     if (!_trackingEnabled) {
       return;
     }
@@ -422,11 +425,45 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
-    await _alarmService.playAlarm();
+    if (_settingsService.settings.transitModeEnabled) {
+      if (!transitWake &&
+          (_transitModeProvider.isActive ||
+              _transitModeProvider.isTransitTrackableDestination)) {
+        return;
+      }
+    }
+
+    final destinationName =
+        _monitoringProvider.selectedDestination?.name ?? 'Destination';
+
+    if (transitWake) {
+      final copy = _transitModeProvider.approachAlarmCopy;
+      await _alarmService.playApproachAlarm(
+        title: copy.headline,
+        body: copy.detailMessage,
+        ttsPhrase: copy.ttsPhrase,
+      );
+      await _tripHistoryService.recordAlarmTriggered();
+      _transitModeProvider.markApproachAlarmTriggered();
+      _setArrivalContext(usedTransitMode: true, copy: copy);
+      _monitoringProvider.markArrived();
+      _arrivalDialogVisible = true;
+      notifyListeners();
+      return;
+    }
+
+    final copy = TransitWakeMessage.forDistanceAlarm(
+      destinationName: destinationName,
+    );
+    await _alarmService.playApproachAlarm(
+      title: copy.headline,
+      body: copy.detailMessage,
+      ttsPhrase: copy.ttsPhrase,
+    );
     await _tripHistoryService.recordAlarmTriggered();
     _setArrivalContext(
       usedTransitMode: false,
-      detailMessage: 'Distance wake — within wake radius',
+      copy: copy,
     );
     _monitoringProvider.markArrived();
     _arrivalDialogVisible = true;
@@ -457,16 +494,17 @@ class LocationProvider extends ChangeNotifier {
     if (_settingsService.settings.transitModeEnabled) {
       if (_transitModeProvider.shouldTriggerApproachAlarm) {
         await _monitoringStorage.setArrivalTriggered(true);
-        final message = _transitModeProvider.approachAlarmMessage;
+        final copy = _transitModeProvider.approachAlarmCopy;
         await _alarmService.playApproachAlarm(
-          title: 'Transit Mode Alert',
-          body: message,
+          title: copy.headline,
+          body: copy.detailMessage,
+          ttsPhrase: copy.ttsPhrase,
         );
         await _tripHistoryService.recordAlarmTriggered();
         _transitModeProvider.markApproachAlarmTriggered();
         _setArrivalContext(
           usedTransitMode: true,
-          detailMessage: message,
+          copy: copy,
         );
         _monitoringProvider.markArrived();
         _arrivalDialogVisible = true;
@@ -495,13 +533,21 @@ class LocationProvider extends ChangeNotifier {
     }
 
     await _monitoringStorage.setArrivalTriggered(true);
-    await _alarmService.playAlarm();
+    final destinationName =
+        _monitoringProvider.selectedDestination?.name ?? 'Destination';
+    final copy = TransitWakeMessage.forDistanceAlarm(
+      destinationName: destinationName,
+      transitFallback: _settingsService.settings.transitModeEnabled,
+    );
+    await _alarmService.playApproachAlarm(
+      title: copy.headline,
+      body: copy.detailMessage,
+      ttsPhrase: copy.ttsPhrase,
+    );
     await _tripHistoryService.recordAlarmTriggered();
     _setArrivalContext(
       usedTransitMode: false,
-      detailMessage: _settingsService.settings.transitModeEnabled
-          ? 'Distance wake — transit fallback'
-          : 'Distance wake — within wake radius',
+      copy: copy,
     );
     _monitoringProvider.markArrived();
     _arrivalDialogVisible = true;
@@ -510,13 +556,15 @@ class LocationProvider extends ChangeNotifier {
 
   void _setArrivalContext({
     required bool usedTransitMode,
-    required String detailMessage,
+    required WakeAlertCopy copy,
   }) {
-    final destination = _monitoringProvider.selectedDestination;
     _arrivalContext = ArrivalContext(
-      destinationName: destination?.name ?? 'Destination',
+      destinationName: copy.primaryStopName,
       usedTransitMode: usedTransitMode,
-      detailMessage: detailMessage,
+      headline: copy.headline,
+      detailMessage: copy.detailMessage,
+      secondaryLine: copy.secondaryLine,
+      wearSubline: copy.wearSubline,
       distanceKm: _distanceRemainingKm,
       stopsRemaining: usedTransitMode
           ? _transitModeProvider.snapshot.stopsRemaining
@@ -537,6 +585,14 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
+    if (_settingsService.settings.transitModeEnabled &&
+        _transitModeProvider.isActive) {
+      if (_transitModeProvider.shouldFlagTransitMissedStop) {
+        await _handleMissedStop(transitMissed: true);
+      }
+      return;
+    }
+
     final radiusMeters = _monitoringProvider.radiusMeters.toDouble();
     final approached = _closestApproachMeters <= radiusMeters * 3;
     final movingAway = _distanceRemainingMeters > radiusMeters &&
@@ -549,7 +605,7 @@ class LocationProvider extends ChangeNotifier {
     await _handleMissedStop();
   }
 
-  Future<void> _handleMissedStop() async {
+  Future<void> _handleMissedStop({bool transitMissed = false}) async {
     await _tripHistoryService.recordMissedTrip();
     await _tripHistoryProvider?.refresh();
     _monitoringProvider.markMissed();
@@ -561,7 +617,7 @@ class LocationProvider extends ChangeNotifier {
     _trackingEnabled = false;
     _usingBackgroundService = false;
     _resetLocationState();
-    await _monitoringStorage.clearSession();
+    await _monitoringStorage.clearTransitBackgroundSnapshot();
     notifyListeners();
   }
 

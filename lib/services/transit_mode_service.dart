@@ -3,17 +3,29 @@ import 'package:geolocator/geolocator.dart';
 import '../models/destination.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_stop.dart';
+import '../utils/gtfs_stop_name_utils.dart';
+import '../utils/trip_pattern_validation.dart';
 import 'gtfs_service.dart';
 import 'route_geometry_service.dart';
+import 'transit_trip_session.dart';
 
 class TransitModeService {
   TransitModeService(
     this._gtfsService, [
     RouteGeometryService? routeGeometryService,
-  ]) : _routeGeometry = routeGeometryService ?? RouteGeometryService();
+    TransitTripSession? tripSession,
+  ])  : _routeGeometry = routeGeometryService ?? RouteGeometryService(),
+        _tripSession = tripSession ?? TransitTripSession();
 
   final GtfsService _gtfsService;
   final RouteGeometryService _routeGeometry;
+  final TransitTripSession _tripSession;
+
+  TransitTripSession get tripSession => _tripSession;
+
+  void resetTripSession() {
+    _tripSession.reset();
+  }
 
   /// Max perpendicular distance from the route polyline before off-route.
   static const defaultMaxStopProximityMeters = 1000;
@@ -44,22 +56,80 @@ class TransitModeService {
     final agency = route == null
         ? null
         : _gtfsService.agencyById(route.agencyId);
-    final routeStops = _gtfsService.stopsForRoute(resolvedRouteId);
-    if (route == null || agency == null || routeStops.length < 2) {
+    if (route == null || agency == null) {
       return TransitModeSnapshot.inactive;
     }
 
-    final destinationStop = getDestinationStop(
+    final destinationStopCandidate = getDestinationStop(
       destination: destination,
       routeId: resolvedRouteId,
     );
-    if (destinationStop == null) {
+    if (destinationStopCandidate == null) {
       return TransitModeSnapshot.inactive;
     }
 
-    final polyline = _routeGeometry.buildPolyline(
+    final destinationKey =
+        destination.stationKey ??
+        GtfsStopNameUtils.stationDisplayName(destination.name);
+
+    if (!_tripSession.isDirectionLocked) {
+      final seedPattern = _gtfsService.inferPatternKeyForRoute(
+        resolvedRouteId,
+        destinationStop: destinationStopCandidate,
+      );
+      if (seedPattern != null) {
+        _tripSession.seedPatternKey(
+          routeId: resolvedRouteId,
+          destinationKey: destinationKey,
+          patternKey: seedPattern,
+        );
+      }
+    }
+
+    var inferredPattern = _gtfsService.inferPatternKeyForRoute(
+      resolvedRouteId,
+      destinationStop: destinationStopCandidate,
+      latitude: latitude,
+      longitude: longitude,
+      headingDegrees: headingDegrees,
+      speedMps: speedMps,
+    );
+    var patternKey = _tripSession.updateAndGetPatternKey(
+      routeId: resolvedRouteId,
+      destinationKey: destinationKey,
+      inferredPatternKey: inferredPattern,
+    );
+
+    var routeStops = _gtfsService.stopsForRoute(
+      resolvedRouteId,
+      destinationStop: destinationStopCandidate,
+      lockedPatternKey: patternKey,
+      latitude: latitude,
+      longitude: longitude,
+      headingDegrees: headingDegrees,
+      speedMps: speedMps,
+    );
+    if (routeStops.length < 2) {
+      return TransitModeSnapshot.inactive;
+    }
+
+    var destinationStop = _gtfsService.resolveStopAmongStops(
+          destination: destination,
+          stops: routeStops,
+        ) ??
+        destinationStopCandidate;
+
+    final polylineStops = _stopsUpToDestination(
       routeStops: routeStops,
       destinationStop: destinationStop,
+    );
+    final polyline = _routeGeometry.buildPolyline(
+      routeStops: polylineStops,
+      destinationStop: destinationStop,
+      shapePoints: _gtfsService.shapePointsForPattern(
+        routeId: resolvedRouteId,
+        patternKey: patternKey,
+      ),
     );
     final projection = _routeGeometry.projectOnPolyline(
       polyline: polyline,
@@ -67,7 +137,7 @@ class TransitModeService {
       longitude: longitude,
     );
 
-    final currentStop = _resolveCurrentStop(
+    var currentStop = _resolveCurrentStop(
       polyline: polyline,
       projection: projection,
       destinationStop: destinationStop,
@@ -77,25 +147,91 @@ class TransitModeService {
       maxStopProximityMeters: maxStopProximityMeters,
       headingDegrees: headingDegrees,
       speedMps: speedMps,
+      patternStops: routeStops,
     );
+
+    if (currentStop == null) {
+      currentStop = _gtfsService.resolveCurrentOnPattern(
+        latitude: latitude,
+        longitude: longitude,
+        pattern: routeStops,
+        maxProximityMeters: routeStopMatchMeters,
+        destinationOnPattern: destinationStop,
+      );
+    }
 
     if (currentStop == null) {
       return TransitModeSnapshot.inactive;
     }
 
+    inferredPattern = _gtfsService.inferPatternKeyForRoute(
+      resolvedRouteId,
+      destinationStop: destinationStop,
+      anchorStop: currentStop,
+      latitude: latitude,
+      longitude: longitude,
+      headingDegrees: headingDegrees,
+      speedMps: speedMps,
+    );
+    patternKey = _tripSession.updateAndGetPatternKey(
+      routeId: resolvedRouteId,
+      destinationKey: destinationKey,
+      inferredPatternKey: inferredPattern,
+    );
+    routeStops = _gtfsService.stopsForRoute(
+      resolvedRouteId,
+      destinationStop: destinationStop,
+      anchorStop: currentStop,
+      lockedPatternKey: patternKey,
+      latitude: latitude,
+      longitude: longitude,
+      headingDegrees: headingDegrees,
+      speedMps: speedMps,
+    );
+
+    destinationStop = _gtfsService.resolveStopAmongStops(
+          destination: destination,
+          stops: routeStops,
+        ) ??
+        destinationStop;
+    currentStop = _gtfsService.resolveStopAmongStops(
+          destination: Destination(
+            name: currentStop.stopName,
+            latitude: currentStop.latitude,
+            longitude: currentStop.longitude,
+            stationKey: _gtfsService.stationKeyForStop(currentStop),
+          ),
+          stops: routeStops,
+        ) ??
+        currentStop;
+
     final nextStop = getNextStop(
       currentStop: currentStop,
       destinationStop: destinationStop,
       routeId: resolvedRouteId,
+      latitude: latitude,
+      longitude: longitude,
+      lockedPatternKey: patternKey,
     );
     final previousStop = getPreviousStop(
       currentStop: currentStop,
       destinationStop: destinationStop,
       routeId: resolvedRouteId,
+      latitude: latitude,
+      longitude: longitude,
+      lockedPatternKey: patternKey,
     );
     final stopsRemaining = getStopsRemaining(
       currentStop: currentStop,
       destinationStop: destinationStop,
+    );
+
+    final validation = validateTripOnPattern(
+      pattern: routeStops,
+      current: currentStop,
+      destination: destinationStop,
+      patternKey: patternKey,
+      directionLocked: _tripSession.isDirectionLocked,
     );
 
     double? alongRouteRemainingMeters;
@@ -126,6 +262,9 @@ class TransitModeService {
       alongRouteRemainingMeters: alongRouteRemainingMeters,
       offRouteMeters: offRouteMeters,
       status: status,
+      tripConcern: validation.concern,
+      directionLabel: validation.directionLabel,
+      directionLocked: _tripSession.isDirectionLocked,
     );
   }
 
@@ -133,9 +272,9 @@ class TransitModeService {
     required Destination destination,
     required String routeId,
   }) {
-    return _gtfsService.findStopByName(
-      destination.name,
-      routeId: routeId,
+    return _gtfsService.resolveStopAmongStops(
+      destination: destination,
+      stops: _gtfsService.stopsForRoute(routeId),
     );
   }
 
@@ -169,7 +308,13 @@ class TransitModeService {
     required int maxProximityMeters,
     TransitStop? destinationStop,
   }) {
-    final routeStops = _gtfsService.stopsForRoute(routeId);
+    final routeStops = _gtfsService.stopsForRoute(
+      routeId,
+      destinationStop: destinationStop,
+      latitude: latitude,
+      longitude: longitude,
+      lockedPatternKey: _tripSession.lockedPatternKey,
+    );
     if (routeStops.isEmpty) {
       return null;
     }
@@ -264,10 +409,50 @@ class TransitModeService {
       alongRouteRemainingMeters: snapshot.alongRouteRemainingMeters,
       offRouteMeters: snapshot.offRouteMeters,
       status: status,
+      tripConcern: snapshot.tripConcern,
+      directionLabel: snapshot.directionLabel,
+      directionLocked: snapshot.directionLocked,
     );
   }
 
-  List<TransitStop> routeStopsFor(String routeId) => _sortedStops(routeId);
+  List<TransitStop> routeStopsFor(
+    String routeId, {
+    TransitStop? destinationStop,
+    TransitStop? anchorStop,
+    double? latitude,
+    double? longitude,
+    String? lockedPatternKey,
+  }) =>
+      _sortedStops(
+        routeId,
+        destinationStop: destinationStop,
+        anchorStop: anchorStop,
+        latitude: latitude,
+        longitude: longitude,
+        lockedPatternKey: lockedPatternKey ?? _tripSession.lockedPatternKey,
+      );
+
+  List<TransitStop> _stopsUpToDestination({
+    required List<TransitStop> routeStops,
+    required TransitStop destinationStop,
+  }) {
+    final sorted = List<TransitStop>.from(routeStops)
+      ..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
+    final travelingForward =
+        destinationStop.stopSequence >= sorted.first.stopSequence;
+    final segment = sorted.where((stop) {
+      if (travelingForward) {
+        return stop.stopSequence <= destinationStop.stopSequence;
+      }
+      return stop.stopSequence >= destinationStop.stopSequence;
+    }).toList()
+      ..sort(
+        (a, b) => travelingForward
+            ? a.stopSequence.compareTo(b.stopSequence)
+            : b.stopSequence.compareTo(a.stopSequence),
+      );
+    return segment.length >= 2 ? segment : routeStops;
+  }
 
   TransitStop? _resolveCurrentStop({
     required RoutePolyline polyline,
@@ -279,6 +464,7 @@ class TransitModeService {
     required int maxStopProximityMeters,
     double? headingDegrees,
     double? speedMps,
+    List<TransitStop>? patternStops,
   }) {
     if (projection != null &&
         projection.offRouteMeters <= maxStopProximityMeters) {
@@ -291,30 +477,78 @@ class TransitModeService {
         speedMps: speedMps,
       );
       if (matched != null) {
+        if (patternStops != null) {
+          return _gtfsService.resolveStopAmongStops(
+                destination: Destination(
+                  name: matched.stopName,
+                  latitude: matched.latitude,
+                  longitude: matched.longitude,
+                  stationKey: _gtfsService.stationKeyForStop(matched),
+                ),
+                stops: patternStops,
+              ) ??
+              matched;
+        }
         return matched;
       }
 
-      return _routeGeometry.bestStopAtOrBehindProjection(
+      final behind = _routeGeometry.bestStopAtOrBehindProjection(
         polyline: polyline,
         projection: projection,
       );
+      if (behind != null && patternStops != null) {
+        return _gtfsService.resolveStopAmongStops(
+              destination: Destination(
+                name: behind.stopName,
+                latitude: behind.latitude,
+                longitude: behind.longitude,
+                stationKey: _gtfsService.stationKeyForStop(behind),
+              ),
+              stops: patternStops,
+            ) ??
+            behind;
+      }
+      return behind;
     }
 
-    return getCurrentStop(
+    final snapped = getCurrentStop(
       latitude: latitude,
       longitude: longitude,
       routeId: routeId,
       maxProximityMeters: maxStopProximityMeters,
       destinationStop: destinationStop,
     );
+    if (snapped != null && patternStops != null) {
+      return _gtfsService.resolveStopAmongStops(
+            destination: Destination(
+              name: snapped.stopName,
+              latitude: snapped.latitude,
+              longitude: snapped.longitude,
+              stationKey: _gtfsService.stationKeyForStop(snapped),
+            ),
+            stops: patternStops,
+          ) ??
+          snapped;
+    }
+    return snapped;
   }
 
   TransitStop? getPreviousStop({
     required TransitStop currentStop,
     required TransitStop destinationStop,
     required String routeId,
+    double? latitude,
+    double? longitude,
+    String? lockedPatternKey,
   }) {
-    final routeStops = _sortedStops(routeId);
+    final routeStops = _sortedStops(
+      routeId,
+      destinationStop: destinationStop,
+      anchorStop: currentStop,
+      latitude: latitude,
+      longitude: longitude,
+      lockedPatternKey: lockedPatternKey,
+    );
     final travelingForward =
         destinationStop.stopSequence >= currentStop.stopSequence;
     final targetSequence = travelingForward
@@ -334,8 +568,18 @@ class TransitModeService {
     required TransitStop currentStop,
     required TransitStop destinationStop,
     required String routeId,
+    double? latitude,
+    double? longitude,
+    String? lockedPatternKey,
   }) {
-    final routeStops = _sortedStops(routeId);
+    final routeStops = _sortedStops(
+      routeId,
+      destinationStop: destinationStop,
+      anchorStop: currentStop,
+      latitude: latitude,
+      longitude: longitude,
+      lockedPatternKey: lockedPatternKey,
+    );
     final travelingForward =
         destinationStop.stopSequence >= currentStop.stopSequence;
     final targetSequence = travelingForward
@@ -363,8 +607,18 @@ class TransitModeService {
     required TransitStop currentStop,
     required TransitStop destinationStop,
     required String routeId,
+    double? latitude,
+    double? longitude,
+    String? lockedPatternKey,
   }) {
-    final routeStops = _sortedStops(routeId);
+    final routeStops = _sortedStops(
+      routeId,
+      destinationStop: destinationStop,
+      anchorStop: currentStop,
+      latitude: latitude,
+      longitude: longitude,
+      lockedPatternKey: lockedPatternKey ?? _tripSession.lockedPatternKey,
+    );
     final travelingForward =
         destinationStop.stopSequence >= currentStop.stopSequence;
 
@@ -385,10 +639,25 @@ class TransitModeService {
     return segment;
   }
 
-  List<TransitStop> _sortedStops(String routeId) {
+  List<TransitStop> _sortedStops(
+    String routeId, {
+    TransitStop? destinationStop,
+    TransitStop? anchorStop,
+    double? latitude,
+    double? longitude,
+    String? lockedPatternKey,
+  }) {
     final routeStops = List<TransitStop>.from(
-      _gtfsService.stopsForRoute(routeId),
+      _gtfsService.stopsForRoute(
+        routeId,
+        destinationStop: destinationStop,
+        anchorStop: anchorStop,
+        latitude: latitude,
+        longitude: longitude,
+        lockedPatternKey: lockedPatternKey ?? _tripSession.lockedPatternKey,
+      ),
     )..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
     return routeStops;
   }
 }
+

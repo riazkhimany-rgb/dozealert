@@ -10,6 +10,7 @@ import '../providers/transit_provider.dart';
 import '../utils/external_link_launcher.dart';
 import '../utils/transit_user_copy.dart';
 import '../utils/user_facing_errors.dart';
+import '../utils/app_features.dart';
 import '../widgets/home_card.dart';
 import 'transit_data_licenses_screen.dart';
 
@@ -230,7 +231,7 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
                   isBusy: isBusy,
                   progress: progress,
                   errorMessage: feedProvider.errorFor(feed.feedId),
-                onDownload: feed.hasDirectDownload
+                onDownload: feed.hasDirectDownload && !feed.isDownloaded
                     ? () => _runFeedAction(
                         feed.feedId,
                         () => feedProvider.downloadFeed(feed.feedId),
@@ -332,7 +333,7 @@ class _FeedCard extends StatelessWidget {
             _MetricRow(label: 'Stops', value: '${feed.stopCount}'),
             const SizedBox(height: 8),
             _MetricRow(label: 'Routes', value: '${feed.routeCount}'),
-            if (feed.supportsRealtime) ...[
+            if (AppFeatures.gtfsRealtimeEnabled && feed.supportsRealtime) ...[
               const SizedBox(height: 8),
               Text(
                 'Supports realtime',

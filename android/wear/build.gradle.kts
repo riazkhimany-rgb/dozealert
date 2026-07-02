@@ -22,6 +22,8 @@ val phoneVersionCode =
     localProperties.getProperty("flutter.versionCode")?.toIntOrNull() ?: 1
 val phoneVersionName =
     localProperties.getProperty("flutter.versionName") ?: "1.0.0"
+// Increment when shipping a wear-only update without bumping the phone versionCode.
+val wearVersionExtra = 10
 
 android {
     namespace = "app.dozealert.wear"
@@ -31,7 +33,7 @@ android {
         applicationId = "app.dozealert"
         minSdk = 30
         targetSdk = 35
-        versionCode = 100_000 + phoneVersionCode
+        versionCode = 100_000 + phoneVersionCode + wearVersionExtra
         versionName = phoneVersionName
     }
 
@@ -54,6 +56,13 @@ android {
                 signingConfigs.getByName("debug")
             }
             isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
         }
     }
 
@@ -81,6 +90,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.wear.compose:compose-material3:1.5.0")
     implementation("androidx.wear.compose:compose-foundation:1.6.2")
+    implementation(files("libs/wear-1.3.0.aar"))
+    implementation(files("libs/wear-ongoing-1.1.0.aar"))
     implementation("androidx.wear.protolayout:protolayout-material:1.2.0")
     implementation("androidx.wear.tiles:tiles:1.4.0")
     implementation("androidx.wear.tiles:tiles-material:1.4.0")

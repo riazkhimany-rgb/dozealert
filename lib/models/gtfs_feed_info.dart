@@ -1,4 +1,5 @@
 import 'transit_vehicle_type.dart';
+import 'gtfs_parse_schema.dart';
 
 enum GtfsFeedStatus {
   notDownloaded,
@@ -65,6 +66,7 @@ class GtfsFeedInfo {
     this.sourceFileName,
     this.status = GtfsFeedStatus.notDownloaded,
     this.errorMessage,
+    this.parseSchemaVersion = GtfsParseSchema.legacy,
   });
 
   final String feedId;
@@ -86,6 +88,7 @@ class GtfsFeedInfo {
   final String? sourceFileName;
   final GtfsFeedStatus status;
   final String? errorMessage;
+  final int parseSchemaVersion;
 
   /// Legacy alias used by older cache entries.
   String get feedName => agencyName;
@@ -151,6 +154,7 @@ class GtfsFeedInfo {
     String? sourceFileName,
     GtfsFeedStatus? status,
     String? errorMessage,
+    int? parseSchemaVersion,
   }) {
     return GtfsFeedInfo(
       feedId: feedId ?? this.feedId,
@@ -174,6 +178,7 @@ class GtfsFeedInfo {
       sourceFileName: sourceFileName ?? this.sourceFileName,
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
+      parseSchemaVersion: parseSchemaVersion ?? this.parseSchemaVersion,
     );
   }
 
@@ -210,6 +215,8 @@ class GtfsFeedInfo {
         orElse: () => GtfsFeedStatus.downloaded,
       ),
       errorMessage: json['errorMessage'] as String?,
+      parseSchemaVersion: json['parseSchemaVersion'] as int? ??
+          GtfsParseSchema.legacy,
     );
   }
 
@@ -235,6 +242,7 @@ class GtfsFeedInfo {
       'sourceFileName': sourceFileName,
       'status': status.name,
       'errorMessage': errorMessage,
+      'parseSchemaVersion': parseSchemaVersion,
     };
   }
 }
