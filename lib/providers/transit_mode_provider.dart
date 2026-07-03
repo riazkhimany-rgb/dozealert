@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../models/background_transit_pattern.dart';
 import '../models/monitoring_state.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
 import '../models/transit_stop.dart';
+import '../models/trip_pattern_concern.dart';
 import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
 import '../services/transit_mode_service.dart';
@@ -30,6 +32,7 @@ class TransitModeProvider extends ChangeNotifier {
   final MonitoringStorageService _monitoringStorage;
   final TransitStopProgressTracker _stopProgressTracker =
       TransitStopProgressTracker();
+  final _MovingAwayDetector _movingAwayDetector = _MovingAwayDetector();
 
   TransitModeSnapshot _snapshot = TransitModeSnapshot.inactive;
   TransitModeSnapshot? _lastActiveSnapshot;
@@ -189,6 +192,7 @@ class TransitModeProvider extends ChangeNotifier {
         _snapshot = TransitModeSnapshot.inactive;
         _lastActiveSnapshot = null;
         _stopProgressTracker.reset();
+        _movingAwayDetector.reset();
         _transitModeService.resetTripSession();
         notifyListeners();
       }
@@ -204,7 +208,11 @@ class TransitModeProvider extends ChangeNotifier {
       headingDegrees: headingDegrees,
       speedMps: speedMps,
     );
-    final nextSnapshot = _stabilizeSnapshot(rawSnapshot);
+    final nextSnapshot = _flagMovingAway(
+      _stabilizeSnapshot(rawSnapshot),
+      latitude: latitude,
+      longitude: longitude,
+    );
 
     if (nextSnapshot.route?.routeId != null) {
       _activeRouteId = nextSnapshot.route!.routeId;
@@ -310,6 +318,7 @@ class TransitModeProvider extends ChangeNotifier {
         _lastActiveSnapshot = null;
         _approachAlarmTriggered = false;
         _stopProgressTracker.reset();
+        _movingAwayDetector.reset();
         _transitModeService.resetTripSession();
         notifyListeners();
       }
@@ -350,6 +359,7 @@ class TransitModeProvider extends ChangeNotifier {
       _lastActiveSnapshot = null;
       _approachAlarmTriggered = false;
       _stopProgressTracker.reset();
+      _movingAwayDetector.reset();
       _transitModeService.resetTripSession();
       unawaited(_monitoringStorage.clearTransitBackgroundSnapshot());
       notifyListeners();
@@ -358,11 +368,49 @@ class TransitModeProvider extends ChangeNotifier {
 
     _approachAlarmTriggered = false;
     _stopProgressTracker.reset();
+    _movingAwayDetector.reset();
     _transitModeService.resetTripSession();
     updateFromLocation(
       latitude: null,
       longitude: null,
     );
+  }
+
+  /// Surfaces a wrong-direction concern when the rider is clearly moving away
+  /// from the destination stop, based on a sustained increase in straight-line
+  /// distance. This is independent of the pattern-lock heuristics, so it still
+  /// catches the case where someone starts monitoring after already passing
+  /// their stop (and the pattern inference orients the destination "ahead").
+  TransitModeSnapshot _flagMovingAway(
+    TransitModeSnapshot snapshot, {
+    required double? latitude,
+    required double? longitude,
+  }) {
+    final destination = snapshot.destinationStop;
+    if (!snapshot.isActive ||
+        destination == null ||
+        latitude == null ||
+        longitude == null) {
+      return snapshot;
+    }
+
+    final metersToDestination = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      destination.latitude,
+      destination.longitude,
+    );
+    final movingAway = _movingAwayDetector.update(metersToDestination);
+
+    // Only override when confident and not already flagged, and never after the
+    // wake has fired (the rider may legitimately walk away from the stop then).
+    if (movingAway &&
+        snapshot.tripConcern == null &&
+        snapshot.directionLocked &&
+        !_approachAlarmTriggered) {
+      return snapshot.copyWith(tripConcern: TripPatternConcern.wrongDirection);
+    }
+    return snapshot;
   }
 
   TransitModeSnapshot _stabilizeSnapshot(TransitModeSnapshot rawSnapshot) {
@@ -408,6 +456,7 @@ extension on TransitModeSnapshot {
   TransitModeSnapshot copyWith({
     bool? gpsStale,
     double? alongRouteRemainingMeters,
+    String? tripConcern,
   }) {
     return TransitModeSnapshot(
       isActive: isActive,
@@ -425,9 +474,52 @@ extension on TransitModeSnapshot {
       usesDistanceFallback: usesDistanceFallback,
       gpsStale: gpsStale ?? this.gpsStale,
       status: gpsStale == true ? 'GPS signal weak' : status,
-      tripConcern: tripConcern,
+      tripConcern: tripConcern ?? this.tripConcern,
       directionLabel: directionLabel,
       directionLocked: directionLocked,
     );
+  }
+}
+
+/// Detects a sustained increase in distance to the destination stop.
+///
+/// Requires several consecutive growing fixes and a meaningful cumulative
+/// increase while comfortably away from the stop, so ordinary GPS jitter or a
+/// route that briefly curves away from the destination does not trip a false
+/// "wrong direction" warning.
+class _MovingAwayDetector {
+  static const _minAwayMeters = 800.0;
+  static const _requiredIncreases = 4;
+  static const _minCumulativeGrowthMeters = 250.0;
+  static const _perFixNoiseMeters = 15.0;
+
+  double? _lastMeters;
+  int _increaseStreak = 0;
+  double _cumulativeGrowth = 0;
+
+  void reset() {
+    _lastMeters = null;
+    _increaseStreak = 0;
+    _cumulativeGrowth = 0;
+  }
+
+  bool update(double meters) {
+    final last = _lastMeters;
+    _lastMeters = meters;
+    if (last == null) {
+      return false;
+    }
+
+    if (meters > last + _perFixNoiseMeters) {
+      _increaseStreak++;
+      _cumulativeGrowth += meters - last;
+    } else if (meters < last - _perFixNoiseMeters) {
+      _increaseStreak = 0;
+      _cumulativeGrowth = 0;
+    }
+
+    return meters >= _minAwayMeters &&
+        _increaseStreak >= _requiredIncreases &&
+        _cumulativeGrowth >= _minCumulativeGrowthMeters;
   }
 }

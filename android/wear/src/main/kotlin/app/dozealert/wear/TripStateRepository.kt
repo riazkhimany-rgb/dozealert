@@ -72,6 +72,12 @@ class TripStateRepository private constructor(context: Context) {
         if (!previous.alarmActive && next.alarmActive) {
             AlarmLauncher.launchIfNeeded(appContext)
         }
+        if (previous.alarmActive && !next.alarmActive) {
+            // Dismissed on the phone (or watch): silence the buzz immediately,
+            // even if the alarm screen is stopped/ambient and not observing state.
+            WearAlarmController.stop()
+            AlarmLauncher.dismiss(appContext)
+        }
         TripOngoingActivityManager.sync(appContext, next)
     }
 

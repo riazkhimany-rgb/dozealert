@@ -1,9 +1,7 @@
 package app.dozealert.wear
 
+import android.content.Intent
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
@@ -21,24 +19,24 @@ class AlarmActivity : ComponentActivity() {
     private val commandSender by lazy { PhoneCommandSender.getInstance(this) }
 
     private var busy by mutableStateOf(false)
-    private var vibrator: Vibrator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (intent.getBooleanExtra(EXTRA_DISMISS_ONLY, false)) {
+            WearAlarmController.stop()
             finish()
             return
         }
 
-        startAlarmVibration()
+        WearAlarmController.start(this)
 
         setContent {
             DozeAlertTheme {
                 val state by repository.state.collectAsStateWithLifecycle()
                 LaunchedEffect(state.alarmActive) {
                     if (!state.alarmActive) {
-                        stopAlarmVibration()
+                        WearAlarmController.stop()
                         busy = false
                         finish()
                     }
@@ -49,12 +47,22 @@ class AlarmActivity : ComponentActivity() {
                     onDismiss = {
                         lifecycleScope.launch {
                             busy = true
-                            stopAlarmVibration()
+                            WearAlarmController.stop()
                             commandSender.send(WearPaths.CMD_DISMISS_ALARM)
                         }
                     },
                 )
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_DISMISS_ONLY, false)) {
+            WearAlarmController.stop()
+            busy = false
+            finish()
         }
     }
 
@@ -70,34 +78,13 @@ class AlarmActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        stopAlarmVibration()
+        // Only silence vibration if the alarm is no longer active. The Activity
+        // can be destroyed (screen off / ambient) while the alarm should still
+        // be buzzing; WearAlarmController keeps it running independently.
+        if (!repository.state.value.alarmActive) {
+            WearAlarmController.stop()
+        }
         super.onDestroy()
-    }
-
-    private fun startAlarmVibration() {
-        val activeVibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            manager.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(VIBRATOR_SERVICE) as Vibrator
-        }
-        vibrator = activeVibrator
-
-        val pattern = longArrayOf(0, 600, 200, 600, 200, 600)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            activeVibrator.vibrate(
-                VibrationEffect.createWaveform(pattern, 0),
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            activeVibrator.vibrate(pattern, 0)
-        }
-    }
-
-    private fun stopAlarmVibration() {
-        vibrator?.cancel()
-        vibrator = null
     }
 
     companion object {

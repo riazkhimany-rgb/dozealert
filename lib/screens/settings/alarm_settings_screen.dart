@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,6 +7,7 @@ import '../../models/alarm_sound_mode.dart';
 import '../../models/app_settings.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/alarm_service.dart';
+import '../../services/system_settings_service.dart';
 import '../../widgets/settings_section_tile.dart';
 
 class AlarmSettingsScreen extends StatelessWidget {
@@ -43,12 +46,52 @@ class AlarmSettingsScreen extends StatelessWidget {
                 color: colorScheme.primary),
             title: const Text('Voice alert'),
             subtitle: Text(
-              'Always speaks "Heads up! Approaching destination." with '
-              'vibration until you dismiss. Phone speaker volume is temporarily '
-              'adjusted during the alert, then restored.',
+              'Speaks a spoken heads-up with vibration until you dismiss. '
+              'Phone speaker volume is temporarily adjusted during the alert, '
+              'then restored.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            child: Text(
+              Platform.isIOS
+                  ? 'The voice uses your phone\u2019s built-in speech, so there '
+                      'is no extra cost. To change it (e.g. a different voice), '
+                      'open iOS Settings \u203a Accessibility \u203a Spoken '
+                      'Content \u203a Voices.'
+                  : 'The voice uses your phone\u2019s built-in speech, so there '
+                      'is no extra cost. Available voices depend on your device. '
+                      'Change or add voices in your system speech settings.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          if (Platform.isAndroid)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final launched =
+                      await SystemSettingsService().openTtsSettings();
+                  if (!context.mounted || launched) {
+                    return;
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Could not open speech settings. Look under your '
+                        'device\u2019s Text-to-speech / Accessibility settings.',
+                      ),
+                      duration: Duration(seconds: 4),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.settings_voice_outlined),
+                label: const Text('Change voice (system settings)'),
+              ),
+            ),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),

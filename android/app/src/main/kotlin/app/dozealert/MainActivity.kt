@@ -1,9 +1,11 @@
 package app.dozealert
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.os.Bundle
+import android.provider.Settings
 import app.dozealert.wear.WearBridge
 import app.dozealert.wear.WearPaths
 import app.dozealert.wear.WearSyncManager
@@ -58,6 +60,10 @@ class MainActivity : FlutterActivity() {
 
                     writeMusicVolume(audioManager, volume)
                     result.success(null)
+                }
+
+                "openTtsSettings" -> {
+                    result.success(openTextToSpeechSettings())
                 }
 
                 else -> result.notImplemented()
@@ -162,6 +168,30 @@ class MainActivity : FlutterActivity() {
         val command = intent?.getStringExtra(WearPaths.EXTRA_WEAR_COMMAND) ?: return
         intent.removeExtra(WearPaths.EXTRA_WEAR_COMMAND)
         WearBridge.deliverCommand(this, command)
+    }
+
+    /**
+     * Opens the system Text-to-speech settings so the user can pick a voice /
+     * engine. Falls back to Accessibility settings, then general Settings, since
+     * the dedicated TTS screen is not guaranteed on every OEM build. Returns
+     * true if any settings screen was launched.
+     */
+    private fun openTextToSpeechSettings(): Boolean {
+        val intents = listOf(
+            Intent("com.android.settings.TTS_SETTINGS"),
+            Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS),
+            Intent(Settings.ACTION_SETTINGS),
+        )
+        for (intent in intents) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try {
+                startActivity(intent)
+                return true
+            } catch (_: ActivityNotFoundException) {
+                // Try the next fallback.
+            }
+        }
+        return false
     }
 
     private fun readMusicVolume(audioManager: AudioManager): Double {

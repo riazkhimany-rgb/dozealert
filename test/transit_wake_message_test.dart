@@ -38,7 +38,7 @@ void main() {
       destination,
     ];
 
-    test('at destination uses destination stop name', () {
+    test('at destination points to the destination stop', () {
       final copy = TransitWakeMessage.forTransitAlarm(
         snapshot: _snapshot(destination: destination, stopsRemaining: 0),
         wakeSetting: TransitModeWakeSetting.atDestination,
@@ -48,12 +48,13 @@ void main() {
       expect(copy.headline, 'Arriving at Union Station');
       expect(copy.primaryStopName, 'Union Station');
       expect(copy.secondaryLine, isNull);
-      expect(copy.wearSubline, 'Arriving at Union Station');
+      expect(copy.wearSubline, 'Time to get off');
       expect(copy.detailMessage, contains('Wake by stops'));
       expect(copy.detailMessage, isNot(contains('Distance wake')));
     });
 
-    test('one stop before shows wake stop and final destination', () {
+    test('one stop before still points to the destination, not an earlier stop',
+        () {
       final copy = TransitWakeMessage.forTransitAlarm(
         snapshot: _snapshot(
           destination: destination,
@@ -64,14 +65,18 @@ void main() {
         segmentStops: segment,
       );
 
-      expect(copy.headline, '1 stop before Union Station');
-      expect(copy.primaryStopName, 'Queen');
-      expect(copy.secondaryLine, 'Final stop: Union Station');
-      expect(copy.wearSubline, '1 stop before Union Station');
-      expect(copy.ttsPhrase, contains('Queen'));
+      expect(copy.headline, 'Union Station — 1 stop to go');
+      expect(copy.primaryStopName, 'Union Station');
+      expect(copy.secondaryLine, 'Stay on until Union Station');
+      expect(copy.wearSubline, '1 stop to go');
+      // Must not instruct the rider to get off at the earlier wake stop.
+      expect(copy.detailMessage, contains('get ready to get off at Union Station'));
+      expect(copy.detailMessage, isNot(contains('Queen')));
+      expect(copy.ttsPhrase, contains('Union Station'));
+      expect(copy.ttsPhrase, isNot(contains('Queen')));
     });
 
-    test('two stops before uses segment stop two before destination', () {
+    test('two stops before still points to the destination', () {
       final copy = TransitWakeMessage.forTransitAlarm(
         snapshot: _snapshot(
           destination: destination,
@@ -82,10 +87,11 @@ void main() {
         segmentStops: segment,
       );
 
-      expect(copy.headline, '2 stops before Union Station');
-      expect(copy.primaryStopName, 'King');
-      expect(copy.secondaryLine, 'Final stop: Union Station');
-      expect(copy.wearSubline, '2 stops before Union Station');
+      expect(copy.headline, 'Union Station — 2 stops to go');
+      expect(copy.primaryStopName, 'Union Station');
+      expect(copy.secondaryLine, 'Stay on until Union Station');
+      expect(copy.wearSubline, '2 stops to go');
+      expect(copy.detailMessage, isNot(contains('King')));
     });
   });
 

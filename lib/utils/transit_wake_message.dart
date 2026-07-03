@@ -95,60 +95,56 @@ abstract final class TransitWakeMessage {
           fallbackDestinationName ??
           'your destination',
     );
-    final wakeStopName = wakeStopNameFor(
-          snapshot: snapshot,
-          wakeStopCount: wakeSetting.wakeStopCount,
-          segmentStops: segmentStops,
-        ) ??
-        destinationName;
-    final wakeEarly = wakeSetting != TransitModeWakeSetting.atDestination;
 
-    // Include the destination name so users woken from sleep immediately see
-    // where they need to get off, without having to read the body text.
+    // The rider ALWAYS gets off at their chosen destination. The wake setting
+    // only controls how much of a heads-up they get (at the stop, or 1/2 stops
+    // early to prepare) — so the copy must never tell them to get off earlier.
     final headline = switch (wakeSetting) {
       TransitModeWakeSetting.atDestination => 'Arriving at $destinationName',
-      TransitModeWakeSetting.oneStopBefore => '1 stop before $destinationName',
-      TransitModeWakeSetting.twoStopsBefore => '2 stops before $destinationName',
+      TransitModeWakeSetting.oneStopBefore =>
+        '$destinationName — 1 stop to go',
+      TransitModeWakeSetting.twoStopsBefore =>
+        '$destinationName — 2 stops to go',
     };
 
-    final secondaryLine = wakeEarly && wakeStopName != destinationName
-        ? 'Final stop: $destinationName'
-        : null;
+    // Reassure early-wake riders to stay on board until their actual stop.
+    final secondaryLine = switch (wakeSetting) {
+      TransitModeWakeSetting.atDestination => null,
+      TransitModeWakeSetting.oneStopBefore ||
+      TransitModeWakeSetting.twoStopsBefore =>
+        'Stay on until $destinationName',
+    };
 
     final detailMessage = switch (wakeSetting) {
       TransitModeWakeSetting.atDestination =>
-        'Wake by stops — arriving at $destinationName. '
+        'Wake by stops — your stop $destinationName is here. '
             'Voice alert and vibration continue until you dismiss.',
       TransitModeWakeSetting.oneStopBefore =>
-        'Wake by stops — get off at $wakeStopName, '
-            '1 stop before $destinationName. '
+        'Wake by stops — get ready to get off at $destinationName, 1 stop away. '
             'Voice alert and vibration continue until you dismiss.',
       TransitModeWakeSetting.twoStopsBefore =>
-        'Wake by stops — get off at $wakeStopName, '
-            '2 stops before $destinationName. '
+        'Wake by stops — get ready to get off at $destinationName, 2 stops away. '
             'Voice alert and vibration continue until you dismiss.',
     };
 
     final ttsPhrase = switch (wakeSetting) {
       TransitModeWakeSetting.atDestination =>
-        'Heads up! Your stop $destinationName is coming up.',
+        'Heads up! Your stop $destinationName is here.',
       TransitModeWakeSetting.oneStopBefore =>
-        'Heads up! Get off at $wakeStopName, one stop before $destinationName.',
+        'Heads up! Get ready to get off at $destinationName, one stop away.',
       TransitModeWakeSetting.twoStopsBefore =>
-        'Heads up! Get off at $wakeStopName, two stops before $destinationName.',
+        'Heads up! Get ready to get off at $destinationName, two stops away.',
     };
 
     final wearSubline = switch (wakeSetting) {
-      // For atDestination the headline already names the stop; subline adds
-      // directional confirmation.
-      TransitModeWakeSetting.atDestination => 'Arriving at $destinationName',
-      TransitModeWakeSetting.oneStopBefore => '1 stop before $destinationName',
-      TransitModeWakeSetting.twoStopsBefore => '2 stops before $destinationName',
+      TransitModeWakeSetting.atDestination => 'Time to get off',
+      TransitModeWakeSetting.oneStopBefore => '1 stop to go',
+      TransitModeWakeSetting.twoStopsBefore => '2 stops to go',
     };
 
     return WakeAlertCopy(
       headline: headline,
-      primaryStopName: wakeStopName,
+      primaryStopName: destinationName,
       detailMessage: detailMessage,
       ttsPhrase: ttsPhrase,
       secondaryLine: secondaryLine,
