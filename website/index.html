@@ -342,36 +342,63 @@
     </header>
 
     <section class="card download-block">
-      <h2 style="margin-bottom: 1rem;">Get DozeAlert for Android</h2>
+      <h2 style="margin-bottom: 0.75rem;">Get DozeAlert on Android</h2>
+      <p class="meta" style="margin-top: 0; margin-bottom: 1.25rem;">
+        The easiest way to try DozeAlert &mdash; join the <strong>Google Play
+        closed test</strong> and install straight from the Play Store, with
+        automatic updates on every new build.
+      </p>
       <div class="download-grid">
-        <a class="download-btn" href="downloads/dozealert-latest.apk" download="dozealert.apk">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
+        <a class="download-btn" href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M3.6 2.3a1 1 0 0 0-.6.9v17.6a1 1 0 0 0 .6.9l9.8-9.7-9.8-9.7z"/>
+            <path d="M14.7 10.3 5.4 1.1l11.9 6.8-2.6 2.4z" opacity="0.85"/>
+            <path d="M14.7 13.7 17.3 16 5.4 22.9l9.3-9.2z" opacity="0.85"/>
+            <path d="M18.4 8.6 21.6 10.4a1.3 1.3 0 0 1 0 3.2l-3.2 1.8-2.9-2.7 2.9-2.7z" opacity="0.7"/>
           </svg>
-          Download phone APK
+          Join on Android (Play Store)
         </a>
-        <a class="download-btn download-btn-secondary" href="downloads/dozealert-wear-latest.apk" download="dozealert-wear.apk">
+        <a class="download-btn download-btn-secondary" href="https://play.google.com/apps/testing/app.dozealert" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="7"/>
-            <polyline points="12 9 12 12 13.5 13.5"/>
-            <path d="M16.5 7.5l2-2"/>
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M3 12h18"/>
+            <path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/>
           </svg>
-          Download Wear OS APK
+          Join from the web
         </a>
       </div>
       <p class="meta" style="margin-top: 1rem;">
-        Also on <strong>Google Play</strong> &mdash; search for <strong>DozeAlert</strong>
-        (<code>app.dozealert</code>) when the listing is live in your region. The Wear companion
-        is a separate closed-testing track on Play for paired watches.
+        On your Android phone, tap <strong>Join on Android</strong> to open the
+        listing right in the Play Store &mdash; or use <strong>Join from the web</strong>
+        on any device. Accept the invite, then install DozeAlert like any other
+        app, signed in with the Google account you use on your phone. The Wear OS
+        companion installs automatically to a paired watch.
       </p>
-      <p class="meta" style="margin-top: 0.75rem;">
-        Want early builds on Android? Join our <strong>Google Play closed testing</strong>
-        group to get updates before public release. Email
-        <a href="mailto:support@dozealert.app" style="color: var(--cyan);">support@dozealert.app</a>
-        from the Google account on your phone and we&rsquo;ll send an invite.
-      </p>
+      <details style="margin-top: 1.25rem; text-align: left;">
+        <summary>Prefer a manual APK install instead?</summary>
+        <p>
+          Manual APKs don&rsquo;t receive Play&rsquo;s automatic updates, so we
+          recommend the closed test above. If you still want to sideload:
+        </p>
+        <div class="download-grid" style="margin-top: 0.75rem;">
+          <a class="download-btn download-btn-secondary" href="downloads/dozealert-latest.apk" download="dozealert.apk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download phone APK
+          </a>
+          <a class="download-btn download-btn-secondary" href="downloads/dozealert-wear-latest.apk" download="dozealert-wear.apk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="7"/>
+              <polyline points="12 9 12 12 13.5 13.5"/>
+              <path d="M16.5 7.5l2-2"/>
+            </svg>
+            Download Wear OS APK
+          </a>
+        </div>
+      </details>
       <p class="meta">
         Phone <span id="app-version">1.1.0+23</span> &middot; Wear <span id="wear-version">1.1.0+100035</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
@@ -468,14 +495,17 @@
     <section class="card">
       <h2>Install from APK (sideload)</h2>
       <p style="margin-bottom: 1rem;">
-        Prefer Google Play when available. Use a direct APK if you sideload or need a
-        build before the store listing appears in your region.
+        We recommend the Google Play closed test &mdash; it installs from the Play Store
+        and updates automatically. Join
+        <a href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">on Android (Play Store)</a>
+        or <a href="https://play.google.com/apps/testing/app.dozealert" target="_blank" rel="noopener">from the web</a>.
+        Use a direct APK only if you sideload or can&rsquo;t access the Play test in your region.
       </p>
 
       <ol class="steps">
         <li>
-          <strong>Download the APKs</strong> using the buttons above &mdash; phone first, then
-          Wear OS if you use a paired watch.
+          <strong>Download the APKs</strong> from the &ldquo;Prefer a manual APK install?&rdquo;
+          section above &mdash; phone first, then Wear OS if you use a paired watch.
           Wait until each download finishes (check your notification shade or Downloads folder).
         </li>
         <li>
