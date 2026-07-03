@@ -561,14 +561,14 @@ class GtfsService {
       return null;
     }
     if (patternKey.startsWith('h:')) {
-      return patternKey
+      final headsign = patternKey
           .substring(2)
           .replaceAll('_', ' ')
           .trim();
+      return headsign.isEmpty ? null : headsign;
     }
-    if (patternKey.startsWith('d:')) {
-      return 'Direction ${patternKey.substring(2)}';
-    }
+    // A raw GTFS direction_id ("d:0"/"d:1") is meaningless to riders, so we
+    // deliberately surface no label rather than "Direction 0/1".
     return null;
   }
 

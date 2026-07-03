@@ -52,6 +52,44 @@ void main() {
     expect(result.concern, TripPatternConcern.wrongDirection);
   });
 
+  test('never flags a concern once the rider is near the destination', () {
+    final result = validateTripOnPattern(
+      pattern: pattern,
+      current: pattern[3],
+      destination: pattern[0],
+      patternKey: 'd:0',
+      directionLocked: true,
+      alongRouteRemainingMeters: 120,
+    );
+
+    expect(result.concern, isNull);
+  });
+
+  test('ignores a single stop of overshoot as GPS noise', () {
+    final result = validateTripOnPattern(
+      pattern: pattern,
+      current: pattern[1],
+      destination: pattern[0],
+      patternKey: 'd:0',
+      directionLocked: true,
+      alongRouteRemainingMeters: 2000,
+    );
+
+    expect(result.concern, isNull);
+  });
+
+  test('does not emit a label for a raw direction_id pattern key', () {
+    final result = validateTripOnPattern(
+      pattern: pattern,
+      current: pattern[0],
+      destination: pattern[3],
+      patternKey: 'd:0',
+      directionLocked: true,
+    );
+
+    expect(result.directionLabel, isNull);
+  });
+
   test('flags unlikely route when too many stops remain', () {
     final longPattern = List<TransitStop>.generate(
       20,

@@ -54,6 +54,12 @@ class TransitTripSession {
 
   /// Records [inferredPatternKey] from the current GPS fix.
   /// Returns the pattern key to use for [GtfsService.stopsForRoute].
+  ///
+  /// The lock is *self-correcting*: even after a direction is locked, a
+  /// different direction inferred by GPS for [lockFixCount] consecutive fixes
+  /// re-locks onto the new direction. This recovers from an early wrong lock
+  /// (e.g. a destination-only seed that guessed the opposite direction on a
+  /// bidirectional route) instead of staying wrong for the whole trip.
   String? updateAndGetPatternKey({
     required String routeId,
     required String destinationKey,
@@ -63,14 +69,29 @@ class TransitTripSession {
       _beginSession(routeId, destinationKey);
     }
 
-    if (_lockedPatternKey != null) {
-      return _lockedPatternKey;
-    }
+    final current = _lockedPatternKey ?? _pendingPatternKey;
 
     if (inferredPatternKey == null || inferredPatternKey.isEmpty) {
-      return _pendingPatternKey;
+      return current;
     }
 
+    // GPS agrees with the direction we are already using.
+    if (inferredPatternKey == current) {
+      if (_lockedPatternKey != null) {
+        _pendingPatternKey = null;
+        _pendingCount = 0;
+        return _lockedPatternKey;
+      }
+      _pendingCount++;
+      if (_pendingCount >= lockFixCount) {
+        _lockedPatternKey = inferredPatternKey;
+        _pendingPatternKey = null;
+        _pendingCount = 0;
+      }
+      return _lockedPatternKey ?? _pendingPatternKey;
+    }
+
+    // GPS disagrees: build confidence in the alternative before switching.
     if (inferredPatternKey == _pendingPatternKey) {
       _pendingCount++;
     } else {
@@ -80,6 +101,8 @@ class TransitTripSession {
 
     if (_pendingCount >= lockFixCount) {
       _lockedPatternKey = inferredPatternKey;
+      _pendingPatternKey = null;
+      _pendingCount = 0;
     }
 
     return _lockedPatternKey ?? _pendingPatternKey;

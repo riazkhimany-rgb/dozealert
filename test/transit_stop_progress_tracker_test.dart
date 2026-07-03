@@ -67,7 +67,7 @@ void main() {
       expect(result.stopName, 'C');
     });
 
-    test('rejects skipping ahead more than one stop', () {
+    test('advances only one stop toward a multi-stop-ahead raw fix', () {
       tracker.reconcile(
         routeId: routeId,
         destinationStop: destination,
@@ -75,14 +75,40 @@ void main() {
         routeStops: routeStops,
       );
 
-      final skipped = tracker.reconcile(
+      // Raw jumps from B (seq 2) to D (seq 4): advance a single stop to C
+      // rather than the full jump, but never hold still (which used to freeze
+      // the stop count).
+      final stepped = tracker.reconcile(
         routeId: routeId,
         destinationStop: destination,
         rawStop: routeStops[3],
         routeStops: routeStops,
       );
 
-      expect(skipped.stopName, 'B');
+      expect(stepped.stopName, 'C');
+    });
+
+    test('never gets stuck when raw repeatedly jumps ahead', () {
+      tracker.reconcile(
+        routeId: routeId,
+        destinationStop: destination,
+        rawStop: routeStops[0],
+        routeStops: routeStops,
+      );
+
+      // The rider's true position stays at the destination while GPS fixes are
+      // sparse. Each fix must make forward progress until it reaches it.
+      var latest = routeStops[0];
+      for (var i = 0; i < 4; i++) {
+        latest = tracker.reconcile(
+          routeId: routeId,
+          destinationStop: destination,
+          rawStop: destination,
+          routeStops: routeStops,
+        );
+      }
+
+      expect(latest.stopName, 'Destination');
     });
 
     test('advances one stop at a time toward destination', () {
@@ -119,6 +145,30 @@ void main() {
       );
 
       expect(corrected.stopName, 'B');
+    });
+
+    test('converges back down when it has over-advanced by several stops', () {
+      // Accept the destination (seq 5) first.
+      tracker.reconcile(
+        routeId: routeId,
+        destinationStop: destination,
+        rawStop: destination,
+        routeStops: routeStops,
+      );
+
+      // GPS now consistently reports the rider is really back at A (seq 1).
+      // Each fix must step one stop closer rather than being stuck ahead.
+      var latest = destination;
+      for (var i = 0; i < 4; i++) {
+        latest = tracker.reconcile(
+          routeId: routeId,
+          destinationStop: destination,
+          rawStop: routeStops[0],
+          routeStops: routeStops,
+        );
+      }
+
+      expect(latest.stopName, 'A');
     });
 
     test('resets when route or destination changes', () {

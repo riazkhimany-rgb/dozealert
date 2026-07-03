@@ -230,14 +230,6 @@ class TransitModeService {
       destinationStop: destinationStop,
     );
 
-    final validation = validateTripOnPattern(
-      pattern: routeStops,
-      current: currentStop,
-      destination: destinationStop,
-      patternKey: patternKey,
-      directionLocked: _tripSession.isDirectionLocked,
-    );
-
     double? alongRouteRemainingMeters;
     double? offRouteMeters;
     if (projection != null) {
@@ -248,6 +240,15 @@ class TransitModeService {
         destinationStop: destinationStop,
       );
     }
+
+    final validation = validateTripOnPattern(
+      pattern: routeStops,
+      current: currentStop,
+      destination: destinationStop,
+      patternKey: patternKey,
+      directionLocked: _tripSession.isDirectionLocked,
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
+    );
 
     final status = stopsRemaining == 0
         ? 'At destination'

@@ -141,9 +141,10 @@ class TransitModeProvider extends ChangeNotifier {
       return false;
     }
 
-    if (_snapshot.hasTripConcern) {
-      return false;
-    }
+    // NOTE: a trip concern (e.g. a shaky "wrong direction" guess) must NOT
+    // suppress the wake. If the rider is genuinely reversed, stopsRemaining
+    // grows and never reaches the threshold anyway; but a false concern must
+    // never silently skip the alarm the way it did before.
 
     final wakeCount =
         _settingsService.settings.transitModeWake.wakeStopCount;

@@ -87,7 +87,8 @@ class TripConcernBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Stop-based wake is paused until route confidence improves.',
+                  'Your stop alarm is still armed — this is just a heads-up to '
+                  'double-check your line and direction.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onErrorContainer,
                     fontWeight: FontWeight.w600,

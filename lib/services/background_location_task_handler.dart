@@ -360,7 +360,10 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   }
 
   bool _shouldTriggerTransitWake() {
-    if (!_transitDirectionLocked || _transitHasTripConcern) {
+    // A trip concern (e.g. a shaky "wrong direction" guess) must not suppress
+    // the wake here either — mirror the foreground rule so the alarm always
+    // fires once the rider is within the wake threshold.
+    if (!_transitDirectionLocked) {
       return false;
     }
     if (_transitStopsRemaining < 0) {

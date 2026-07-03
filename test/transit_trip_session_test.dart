@@ -86,6 +86,34 @@ void main() {
     expect(session.lockedPatternKey, 'd:0');
   });
 
+  test('re-locks onto a new direction after GPS consistently disagrees', () {
+    final session = TransitTripSession();
+
+    // Lock onto d:0 first (the wrong direction, e.g. from an early guess).
+    for (var i = 0; i < TransitTripSession.lockFixCount; i++) {
+      session.updateAndGetPatternKey(
+        routeId: 'route_a',
+        destinationKey: 'dest_1',
+        inferredPatternKey: 'd:0',
+      );
+    }
+    expect(session.lockedPatternKey, 'd:0');
+
+    // GPS now consistently reports the opposite direction — the lock must
+    // self-correct rather than staying wrong for the whole trip.
+    String? key;
+    for (var i = 0; i < TransitTripSession.lockFixCount; i++) {
+      key = session.updateAndGetPatternKey(
+        routeId: 'route_a',
+        destinationKey: 'dest_1',
+        inferredPatternKey: 'd:1',
+      );
+    }
+
+    expect(key, 'd:1');
+    expect(session.lockedPatternKey, 'd:1');
+  });
+
   test('resets when route or destination changes', () {
     final session = TransitTripSession()
       ..updateAndGetPatternKey(

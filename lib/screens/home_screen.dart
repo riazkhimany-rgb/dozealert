@@ -485,23 +485,14 @@ class _DestinationCard extends StatelessWidget {
                 ),
               ),
             ],
-            if (isMonitoring && transitModeEnabled && snapshot.isActive) ...[
+            if (isMonitoring &&
+                transitModeEnabled &&
+                snapshot.isActive &&
+                snapshot.directionLabel != null) ...[
               const SizedBox(height: 8),
-              if (snapshot.directionLabel != null)
-                MetricRow(
-                  label: 'Route locked',
-                  value: snapshot.directionLabel!,
-                ),
-              Text(
-                snapshot.directionLocked
-                    ? 'Direction confirmed from your ride'
-                    : 'Confirming direction from GPS…',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: snapshot.directionLocked
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
+              MetricRow(
+                label: 'Direction',
+                value: snapshot.directionLabel!,
               ),
             ],
             if (isMonitoring) ...[
