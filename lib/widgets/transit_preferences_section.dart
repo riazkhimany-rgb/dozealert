@@ -5,13 +5,11 @@ import 'package:provider/provider.dart';
 
 import '../data/transit_catalog.dart';
 import '../models/gtfs_feed_info.dart';
-import '../models/transit_line_option.dart';
 import '../models/transit_vehicle_type.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../utils/external_link_launcher.dart';
-import '../utils/transit_line_picker_utils.dart';
 import '../utils/transit_line_picker_utils.dart';
 import '../utils/transit_user_copy.dart';
 import '../widgets/home_card.dart';

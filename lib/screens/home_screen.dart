@@ -852,6 +852,10 @@ class _MonitoringCard extends StatelessWidget {
         await TripReadySheet.markTripStarted(context);
       }
 
+      if (!context.mounted) {
+        return;
+      }
+
       await LocationFeedback.handleStartResult(
         context,
         result,

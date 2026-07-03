@@ -98,6 +98,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
         context.read<DestinationHistoryProvider>();
     final tripHistoryProvider = context.read<TripHistoryProvider>();
     final onboardingService = context.read<OnboardingService>();
+    final transitProvider = context.read<TransitProvider>();
 
     await gtfsFeedProvider.initialize();
 
@@ -107,8 +108,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       tripHistoryProvider.load(),
     ]);
 
-    final transitSystem =
-        context.read<TransitProvider>().preferences.transitSystem;
+    final transitSystem = transitProvider.preferences.transitSystem;
     final preloadFeed = feedForTransitSystemPreload(
       gtfsFeedProvider,
       transitSystem,

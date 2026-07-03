@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 
 import '../data/transit_catalog.dart';
 import '../models/favorite_transit_line.dart';
-import '../models/transit_line_option.dart';
 import '../models/transit_vehicle_type.dart';
 import '../providers/favorite_transit_line_provider.dart';
 import '../providers/gtfs_provider.dart';

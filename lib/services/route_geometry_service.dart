@@ -435,35 +435,6 @@ class RouteGeometryService {
     return best;
   }
 
-  TransitStop? _nearestStop({
-    required double latitude,
-    required double longitude,
-    required List<TransitStop> stops,
-    required double maxDistanceMeters,
-  }) {
-    TransitStop? nearest;
-    var nearestDistance = double.infinity;
-
-    for (final stop in stops) {
-      final distance = Geolocator.distanceBetween(
-        latitude,
-        longitude,
-        stop.latitude,
-        stop.longitude,
-      );
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearest = stop;
-      }
-    }
-
-    if (nearest == null || nearestDistance > maxDistanceMeters) {
-      return null;
-    }
-
-    return nearest;
-  }
-
   bool _shouldUseHeading(double? headingDegrees, double? speedMps) {
     if (headingDegrees == null || headingDegrees < 0) {
       return false;

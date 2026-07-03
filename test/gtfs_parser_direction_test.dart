@@ -135,7 +135,7 @@ List<int> _buildMiniGtfsZip() {
       ),
     );
 
-  return ZipEncoder().encode(archive)!;
+  return ZipEncoder().encode(archive);
 }
 
 ArchiveFile _archiveFile(String name, String content) {

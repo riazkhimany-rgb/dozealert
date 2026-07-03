@@ -107,7 +107,7 @@ List<int> _buildHeadsignOnlyZip() {
       ),
     );
 
-  return ZipEncoder().encode(archive)!;
+  return ZipEncoder().encode(archive);
 }
 
 List<int> _buildParentStationZip() {
@@ -146,7 +146,7 @@ List<int> _buildParentStationZip() {
       ),
     );
 
-  return ZipEncoder().encode(archive)!;
+  return ZipEncoder().encode(archive);
 }
 
 List<int> _buildMixedModeZip() {
@@ -184,7 +184,7 @@ List<int> _buildMixedModeZip() {
       ),
     );
 
-  return ZipEncoder().encode(archive)!;
+  return ZipEncoder().encode(archive);
 }
 
 ArchiveFile _file(String name, String content) {

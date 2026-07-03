@@ -69,6 +69,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _finish() async {
+    final appTourService = context.read<AppTourService>();
     if (_selectedAgencies.isNotEmpty && _primaryAgency != null) {
       await TransitAgencyChoicePage.applySelections(
         context,
@@ -77,7 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     }
     await _onboardingService.markComplete();
-    await context.read<AppTourService>().markHomeTourPending();
+    await appTourService.markHomeTourPending();
     if (!mounted) {
       return;
     }

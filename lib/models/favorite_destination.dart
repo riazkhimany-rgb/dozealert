@@ -70,9 +70,9 @@ class FavoriteDestination {
     final saved = item.savedTransitLine;
     if (saved != null &&
         (transitSystem == null ||
-            transitSystem!.isEmpty ||
+            transitSystem.isEmpty ||
             lineName == null ||
-            lineName!.isEmpty)) {
+            lineName.isEmpty)) {
       return item.copyWith(
         transitSystem: saved.transitSystem,
         lineName: saved.lineName,

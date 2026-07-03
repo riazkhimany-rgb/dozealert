@@ -630,16 +630,6 @@ class GtfsProvider extends ChangeNotifier {
     return true;
   }
 
-  (String, String)? _transitLineFromBadges(List<String> badges) {
-    for (final badge in badges) {
-      final parsed = _parseTransitBadge(badge);
-      if (parsed != null) {
-        return parsed;
-      }
-    }
-    return null;
-  }
-
   Future<bool> _applyTransitFromFavoriteBadges(
     FavoriteDestination item,
   ) async {

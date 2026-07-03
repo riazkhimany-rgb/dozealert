@@ -27,18 +27,13 @@ class WearAppStatus {
 /// Syncs trip state to a paired Wear OS companion and receives watch commands.
 class WearSyncService {
   WearSyncService({
-    required MonitoringProvider monitoringProvider,
-    required LocationProvider locationProvider,
-    required TransitModeProvider transitModeProvider,
-    required GtfsProvider gtfsProvider,
-    required SettingsProvider settingsProvider,
-    required AlarmService alarmService,
-  }) : _monitoringProvider = monitoringProvider,
-       _locationProvider = locationProvider,
-       _transitModeProvider = transitModeProvider,
-       _gtfsProvider = gtfsProvider,
-       _settingsProvider = settingsProvider,
-       _alarmService = alarmService {
+    required this._monitoringProvider,
+    required this._locationProvider,
+    required this._transitModeProvider,
+    required this._gtfsProvider,
+    required this._settingsProvider,
+    required this._alarmService,
+  }) {
     _monitoringProvider.addListener(_schedulePush);
     _locationProvider.addListener(_schedulePush);
     _transitModeProvider.addListener(_schedulePush);

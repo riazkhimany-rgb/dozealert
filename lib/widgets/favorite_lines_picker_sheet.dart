@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/favorite_transit_line.dart';
 import '../providers/favorite_transit_line_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';

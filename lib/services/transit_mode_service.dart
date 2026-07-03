@@ -158,15 +158,13 @@ class TransitModeService {
       patternStops: routeStops,
     );
 
-    if (currentStop == null) {
-      currentStop = _gtfsService.resolveCurrentOnPattern(
-        latitude: latitude,
-        longitude: longitude,
-        pattern: routeStops,
-        maxProximityMeters: routeStopMatchMeters,
-        destinationOnPattern: destinationStop,
-      );
-    }
+    currentStop ??= _gtfsService.resolveCurrentOnPattern(
+      latitude: latitude,
+      longitude: longitude,
+      pattern: routeStops,
+      maxProximityMeters: routeStopMatchMeters,
+      destinationOnPattern: destinationStop,
+    );
 
     if (currentStop == null) {
       return TransitModeSnapshot.inactive;
@@ -630,10 +628,14 @@ class TransitModeService {
       final seq = stop.stopSequence;
       if (forward) {
         if (seq >= currentStop.stopSequence &&
-            seq <= destinationStop.stopSequence) count++;
+            seq <= destinationStop.stopSequence) {
+          count++;
+        }
       } else {
         if (seq <= currentStop.stopSequence &&
-            seq >= destinationStop.stopSequence) count++;
+            seq >= destinationStop.stopSequence) {
+          count++;
+        }
       }
     }
     // count includes both endpoints; subtract 1 so at-destination == 0.
