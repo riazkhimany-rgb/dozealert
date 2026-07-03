@@ -7,6 +7,7 @@ import android.os.Bundle
 import app.dozealert.wear.WearBridge
 import app.dozealert.wear.WearPaths
 import app.dozealert.wear.WearSyncManager
+import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.Wearable
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -89,13 +90,41 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
 
-                "isWearConnected" -> {
-                    Wearable.getNodeClient(this).connectedNodes
-                        .addOnSuccessListener { nodes ->
-                            result.success(nodes.isNotEmpty())
+                "wearAppStatus" -> {
+                    val capabilityClient = Wearable.getCapabilityClient(this)
+                    capabilityClient
+                        .getCapability(WEAR_CAPABILITY, CapabilityClient.FILTER_ALL)
+                        .addOnSuccessListener { all ->
+                            // FILTER_ALL includes paired watches that have the
+                            // app but are currently offline, so this is true iff
+                            // the DozeAlert watch app is installed somewhere.
+                            val installed = all.nodes.isNotEmpty()
+                            capabilityClient
+                                .getCapability(
+                                    WEAR_CAPABILITY,
+                                    CapabilityClient.FILTER_REACHABLE,
+                                )
+                                .addOnSuccessListener { reachable ->
+                                    result.success(
+                                        mapOf(
+                                            "installed" to installed,
+                                            "connected" to reachable.nodes.isNotEmpty(),
+                                        ),
+                                    )
+                                }
+                                .addOnFailureListener {
+                                    result.success(
+                                        mapOf(
+                                            "installed" to installed,
+                                            "connected" to false,
+                                        ),
+                                    )
+                                }
                         }
                         .addOnFailureListener {
-                            result.success(false)
+                            result.success(
+                                mapOf("installed" to false, "connected" to false),
+                            )
                         }
                 }
 
@@ -164,5 +193,8 @@ class MainActivity : FlutterActivity() {
         private const val SYSTEM_VOLUME_CHANNEL = "app.dozealert/system_volume"
         private const val WEAR_CHANNEL = "app.dozealert/wear"
         private const val WEAR_EVENT_CHANNEL = "app.dozealert/wear_commands"
+
+        // Must match android_wear_capabilities in the wear module's wear.xml.
+        private const val WEAR_CAPABILITY = "dozealert_wear_app"
     }
 }

@@ -12,6 +12,18 @@ import '../providers/transit_mode_provider.dart';
 import '../services/alarm_service.dart';
 import '../utils/wear_trip_state_payload.dart';
 
+/// Whether the DozeAlert watch app is installed on a paired watch, and whether
+/// that watch is currently reachable.
+class WearAppStatus {
+  const WearAppStatus({
+    required this.appInstalled,
+    required this.connected,
+  });
+
+  final bool appInstalled;
+  final bool connected;
+}
+
 /// Syncs trip state to a paired Wear OS companion and receives watch commands.
 class WearSyncService {
   WearSyncService({
@@ -92,16 +104,24 @@ class WearSyncService {
     _initialized = false;
   }
 
-  Future<bool> refreshWatchConnection() async {
+  Future<WearAppStatus> refreshWatchConnection() async {
     if (!Platform.isAndroid) {
-      return false;
+      return const WearAppStatus(appInstalled: false, connected: false);
     }
 
     try {
-      final connected = await _channel.invokeMethod<bool>('isWearConnected');
-      return connected ?? false;
+      final status = await _channel.invokeMapMethod<String, dynamic>(
+        'wearAppStatus',
+      );
+      if (status == null) {
+        return const WearAppStatus(appInstalled: false, connected: false);
+      }
+      return WearAppStatus(
+        appInstalled: status['installed'] == true,
+        connected: status['connected'] == true,
+      );
     } on PlatformException {
-      return false;
+      return const WearAppStatus(appInstalled: false, connected: false);
     }
   }
 

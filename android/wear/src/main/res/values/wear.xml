@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Advertised to the paired phone via the Wear Data Layer whenever this
+      watch app is installed. The phone queries CapabilityClient for this name
+      to know that the DozeAlert watch app (not just any watch) is present.
+    -->
+    <string-array name="android_wear_capabilities" translatable="false">
+        <item>dozealert_wear_app</item>
+    </string-array>
+</resources>

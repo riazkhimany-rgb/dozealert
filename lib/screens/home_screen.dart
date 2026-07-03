@@ -662,9 +662,9 @@ class _MonitoringCard extends StatelessWidget {
             (provider) => provider.watchConnected,
           )
         : false;
-    final watchChecked = Platform.isAndroid
+    final watchAppInstalled = Platform.isAndroid
         ? context.select<WearStatusProvider, bool>(
-            (provider) => provider.hasChecked,
+            (provider) => provider.appInstalled,
           )
         : false;
 
@@ -700,15 +700,16 @@ class _MonitoringCard extends StatelessWidget {
             color: statusColor,
             active: isMonitoring,
           ),
-          if (Platform.isAndroid && watchChecked) ...[
+          if (Platform.isAndroid && watchAppInstalled) ...[
             const SizedBox(height: 8),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
                   width: 10,
                   height: 10,
-                  margin: const EdgeInsets.only(top: 4, right: 8),
+                  margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: watchConnected
@@ -716,17 +717,13 @@ class _MonitoringCard extends StatelessWidget {
                         : const Color(0xFFFF3B30),
                   ),
                 ),
-                Expanded(
-                  child: Text(
-                    watchConnected
-                        ? 'Watch connected'
-                        : 'Watch not connected — open DozeAlert on your watch',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: watchConnected
-                          ? colorScheme.primary
-                          : colorScheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
+                Text(
+                  watchConnected ? 'Watch Connected' : 'Watch Not Connected',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: watchConnected
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                    height: 1.4,
                   ),
                 ),
               ],

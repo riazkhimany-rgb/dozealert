@@ -1,19 +1,28 @@
 import 'package:flutter/foundation.dart';
 
-/// Phone-side Wear OS pairing / connection status.
+/// Phone-side Wear OS status for the DozeAlert watch app specifically.
+///
+/// [appInstalled] is true only when the DozeAlert watch app is present on a
+/// paired watch (even if that watch is momentarily offline). [watchConnected]
+/// is true when that watch is currently reachable.
 class WearStatusProvider extends ChangeNotifier {
+  bool _appInstalled = false;
   bool _watchConnected = false;
   bool _checked = false;
 
+  bool get appInstalled => _appInstalled;
   bool get watchConnected => _watchConnected;
   bool get hasChecked => _checked;
 
-  void setWatchConnected(bool connected) {
+  void setWearStatus({required bool appInstalled, required bool connected}) {
+    final changed = _appInstalled != appInstalled ||
+        _watchConnected != connected ||
+        !_checked;
     _checked = true;
-    if (_watchConnected == connected) {
-      return;
-    }
+    _appInstalled = appInstalled;
     _watchConnected = connected;
-    notifyListeners();
+    if (changed) {
+      notifyListeners();
+    }
   }
 }

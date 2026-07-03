@@ -105,9 +105,12 @@ class _WearCommandBridgeState extends State<WearCommandBridge>
       return;
     }
 
-    final connected = await wearSync.refreshWatchConnection();
+    final status = await wearSync.refreshWatchConnection();
     if (mounted) {
-      context.read<WearStatusProvider>().setWatchConnected(connected);
+      context.read<WearStatusProvider>().setWearStatus(
+            appInstalled: status.appInstalled,
+            connected: status.connected,
+          );
     }
   }
 
