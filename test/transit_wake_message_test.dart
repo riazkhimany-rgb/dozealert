@@ -49,7 +49,7 @@ void main() {
       expect(copy.primaryStopName, 'Union Station');
       expect(copy.secondaryLine, isNull);
       expect(copy.wearSubline, 'Time to get off');
-      expect(copy.detailMessage, contains('Wake by stops'));
+      expect(copy.detailMessage, contains('Your stop Union Station is here'));
       expect(copy.detailMessage, isNot(contains('Distance wake')));
     });
 
@@ -70,7 +70,7 @@ void main() {
       expect(copy.secondaryLine, 'Stay on until Union Station');
       expect(copy.wearSubline, '1 stop to go');
       // Must not instruct the rider to get off at the earlier wake stop.
-      expect(copy.detailMessage, contains('get ready to get off at Union Station'));
+      expect(copy.detailMessage, contains('Get ready to get off at Union Station'));
       expect(copy.detailMessage, isNot(contains('Queen')));
       expect(copy.ttsPhrase, contains('Union Station'));
       expect(copy.ttsPhrase, isNot(contains('Queen')));

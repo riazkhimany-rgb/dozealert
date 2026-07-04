@@ -117,13 +117,13 @@ abstract final class TransitWakeMessage {
 
     final detailMessage = switch (wakeSetting) {
       TransitModeWakeSetting.atDestination =>
-        'Wake by stops — your stop $destinationName is here. '
+        'Your stop $destinationName is here. '
             'Voice alert and vibration continue until you dismiss.',
       TransitModeWakeSetting.oneStopBefore =>
-        'Wake by stops — get ready to get off at $destinationName, 1 stop away. '
+        'Get ready to get off at $destinationName, 1 stop away. '
             'Voice alert and vibration continue until you dismiss.',
       TransitModeWakeSetting.twoStopsBefore =>
-        'Wake by stops — get ready to get off at $destinationName, 2 stops away. '
+        'Get ready to get off at $destinationName, 2 stops away. '
             'Voice alert and vibration continue until you dismiss.',
     };
 

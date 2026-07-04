@@ -648,11 +648,11 @@ class _MonitoringCard extends StatelessWidget {
     final settingsActionIcon = transitModeEnabled
         ? Icons.tune
         : Icons.radar_outlined;
-    final distanceSubtitle = distanceIsStale || gpsSignalLost
-        ? 'Last known distance — GPS signal weak'
-        : usingAlongRoute
-            ? 'Along route'
-            : null;
+    final distanceStale = distanceIsStale || gpsSignalLost;
+    final distanceSubtitle =
+        distanceStale ? 'Last known distance — GPS signal weak' : null;
+    final distanceInlineNote =
+        !distanceStale && usingAlongRoute ? 'along route' : null;
     final canStart = hasDestination && state == MonitoringState.idle;
     final canStop = state == MonitoringState.monitoring ||
         state == MonitoringState.arrived;
@@ -740,6 +740,7 @@ class _MonitoringCard extends StatelessWidget {
               progress: tripProgress,
               accentColor: statusColor,
               subtitle: distanceSubtitle,
+              inlineNote: distanceInlineNote,
             )
           else if (!hasDistance && isMonitoring && !transitModeEnabled)
             Text(

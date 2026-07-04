@@ -7,12 +7,17 @@ class MonitoringDistanceProgress extends StatelessWidget {
     required this.progress,
     required this.accentColor,
     this.subtitle,
+    this.inlineNote,
   });
 
   final double distanceKm;
   final double? progress;
   final Color accentColor;
   final String? subtitle;
+
+  /// Short qualifier shown in parentheses next to "km remaining"
+  /// (e.g. "along route").
+  final String? inlineNote;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +45,9 @@ class MonitoringDistanceProgress extends StatelessWidget {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                'km remaining',
+                inlineNote == null
+                    ? 'km remaining'
+                    : 'km remaining ($inlineNote)',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,

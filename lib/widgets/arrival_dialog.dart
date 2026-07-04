@@ -84,14 +84,6 @@ class ArrivalDialog extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 8),
-                Text(
-                  AppBranding.tagline,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppBranding.white.withValues(alpha: 0.78),
-                  ),
-                ),
                 const SizedBox(height: 24),
                 Text(
                   detailMessage ??
@@ -110,10 +102,22 @@ class ArrivalDialog extends StatelessWidget {
                     width: double.infinity,
                     child: FilledButton.icon(
                       onPressed: onDismiss,
-                      icon: const Icon(Icons.alarm_off_outlined),
+                      icon: const Icon(Icons.alarm_off_rounded, size: 24),
                       label: const Text('Dismiss'),
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 48),
+                        backgroundColor: AppBranding.cyanAccent,
+                        foregroundColor: AppBranding.midnightBlue,
+                        minimumSize: const Size(double.infinity, 56),
+                        elevation: 6,
+                        shadowColor: AppBranding.cyanAccent.withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                        ),
                       ),
                     ),
                   ),

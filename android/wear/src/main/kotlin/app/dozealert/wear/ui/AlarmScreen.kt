@@ -33,30 +33,24 @@ fun AlarmScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 20.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = state.alarmHeadline.ifBlank {
                 stringResource(R.string.alarm_title)
             },
-            style = MaterialTheme.typography.titleLarge.copy(
+            style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
+                fontSize = 17.sp,
+                lineHeight = 21.sp,
             ),
             color = StatusAlarmColor,
             textAlign = TextAlign.Center,
-        )
-
-        Text(
-            text = state.alarmPrimaryStopName.ifBlank {
-                stringResource(R.string.alarm_subtitle)
-            },
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
+            maxLines = 3,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth(),
         )
 
         Text(
@@ -66,6 +60,7 @@ fun AlarmScreen(
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth(),
         )
 
         Button(

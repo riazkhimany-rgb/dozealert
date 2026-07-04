@@ -163,7 +163,10 @@ private fun ActiveTripContent(
             item {
                 Text(
                     text = state.subline,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 12.sp,
+                        lineHeight = 15.sp,
+                    ),
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
                     textAlign = TextAlign.Center,
                     maxLines = 3,
