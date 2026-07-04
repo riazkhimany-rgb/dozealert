@@ -153,6 +153,7 @@ abstract final class LocationFeedback {
   }) async {
     switch (result) {
       case LocationStartResult.success:
+      case LocationStartResult.cancelled:
         return;
       case LocationStartResult.noDestination:
         showSnackBar(context, 'Select a destination before monitoring.');

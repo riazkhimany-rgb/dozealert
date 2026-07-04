@@ -12,6 +12,7 @@ enum PermissionSetupStep {
   locationWhenInUse,
   backgroundLocation,
   notifications,
+  activityRecognition,
   batteryOptimization,
 }
 
@@ -36,6 +37,9 @@ class AppPermissionsService {
         : await ph.Permission.notification.isGranted;
     final locationServicesEnabled =
         await _locationService.isLocationServiceEnabled();
+    final activityRecognitionGranted = Platform.isAndroid
+        ? await ph.Permission.activityRecognition.isGranted
+        : true;
     final batteryOptimizationEnabled = Platform.isAndroid
         ? await _backgroundMonitorService.isBatteryOptimizationEnabled()
         : false;
@@ -44,6 +48,7 @@ class AppPermissionsService {
       locationWhenInUseGranted: locationWhenInUseGranted,
       backgroundLocationGranted: backgroundLocationGranted,
       notificationsGranted: notificationsGranted,
+      activityRecognitionGranted: activityRecognitionGranted,
       locationServicesEnabled: locationServicesEnabled,
       batteryOptimizationEnabled: batteryOptimizationEnabled,
     );
@@ -59,6 +64,24 @@ class AppPermissionsService {
     }
 
     await _locationService.requestBackgroundPermission();
+  }
+
+  Future<bool> requestActivityRecognition() async {
+    if (!Platform.isAndroid) {
+      return true;
+    }
+
+    final status = await ph.Permission.activityRecognition.status;
+    if (status.isGranted) {
+      return true;
+    }
+    if (status.isPermanentlyDenied) {
+      await openAppSettingsPage();
+      return false;
+    }
+
+    final requested = await ph.Permission.activityRecognition.request();
+    return requested.isGranted;
   }
 
   Future<bool> requestNotifications() async {
@@ -167,6 +190,20 @@ class AppPermissionsService {
       }
 
       await requestNotifications();
+      snapshot = await this.snapshot();
+    }
+
+    if (Platform.isAndroid && !snapshot.activityRecognitionGranted) {
+      if (!await proceed(PermissionSetupStep.activityRecognition)) {
+        return snapshot;
+      }
+      final activity = await ph.Permission.activityRecognition.status;
+      if (activity.isPermanentlyDenied) {
+        await openAppSettingsPage();
+        return this.snapshot();
+      }
+
+      await requestActivityRecognition();
       snapshot = await this.snapshot();
     }
 

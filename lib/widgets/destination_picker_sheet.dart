@@ -56,7 +56,7 @@ class DestinationPickerSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            TripUxCopy.pickYourStop,
+            transitMode ? TripUxCopy.pickYourStop : TripUxCopy.pickDestination,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -65,7 +65,7 @@ class DestinationPickerSheet extends StatelessWidget {
           Text(
             transitMode
                 ? 'Search for the station where you want to get off.'
-                : 'Choose how you want to pick your stop or location.',
+                : 'Drop a pin or search with Google Places.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -75,7 +75,22 @@ class DestinationPickerSheet extends StatelessWidget {
             _StopDataPromptCard(agencyName: agency),
           ],
           const SizedBox(height: 16),
-          if (canPickStop)
+          if (!transitMode)
+            _PickerOption(
+              icon: Icons.map_outlined,
+              title: 'Search on map',
+              subtitle: 'Drop a pin or search with Google Places',
+              emphasized: true,
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const MapPickerScreen(),
+                  ),
+                );
+              },
+            ),
+          if (canPickStop && transitMode)
             _PickerOption(
               icon: Icons.route_outlined,
               title: TripUxCopy.pickYourStop,
@@ -112,46 +127,46 @@ class DestinationPickerSheet extends StatelessWidget {
                 ),
               ),
               children: [
-                _PickerOption(
-                  icon: Icons.star_outline,
-                  title: 'Saved stops',
-                  subtitle: favoriteStopCount == 0
-                      ? 'No saved stops yet'
-                      : '$favoriteStopCount saved stop${favoriteStopCount == 1 ? '' : 's'}',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    FavoriteStopsPickerSheet.show(context);
-                  },
-                ),
-                _PickerOption(
-                  icon: Icons.history,
-                  title: 'Recent stops',
-                  subtitle: recentCount == 0
-                      ? 'No recent stops yet'
-                      : '$recentCount recent stop${recentCount == 1 ? '' : 's'}',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    RecentDestinationsPickerSheet.show(context);
-                  },
-                ),
-                _PickerOption(
-                  icon: Icons.swap_horiz,
-                  title: 'Switch route',
-                  subtitle: favoriteLineCount == 0
-                      ? 'No saved routes yet'
-                      : '$favoriteLineCount saved route${favoriteLineCount == 1 ? '' : 's'}',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    FavoriteLinesPickerSheet.show(context);
-                  },
-                ),
-                if (!transitMode || !canPickStop)
+                if (transitMode) ...[
+                  _PickerOption(
+                    icon: Icons.star_outline,
+                    title: 'Saved stops',
+                    subtitle: favoriteStopCount == 0
+                        ? 'No saved stops yet'
+                        : '$favoriteStopCount saved stop${favoriteStopCount == 1 ? '' : 's'}',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      FavoriteStopsPickerSheet.show(context);
+                    },
+                  ),
+                  _PickerOption(
+                    icon: Icons.history,
+                    title: 'Recent stops',
+                    subtitle: recentCount == 0
+                        ? 'No recent stops yet'
+                        : '$recentCount recent stop${recentCount == 1 ? '' : 's'}',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      RecentDestinationsPickerSheet.show(context);
+                    },
+                  ),
+                  _PickerOption(
+                    icon: Icons.swap_horiz,
+                    title: 'Switch route',
+                    subtitle: favoriteLineCount == 0
+                        ? 'No saved routes yet'
+                        : '$favoriteLineCount saved route${favoriteLineCount == 1 ? '' : 's'}',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      FavoriteLinesPickerSheet.show(context);
+                    },
+                  ),
+                ],
+                if (transitMode && !canPickStop)
                   _PickerOption(
                     icon: Icons.map_outlined,
                     title: 'Search on map',
-                    subtitle: transitMode
-                        ? TransitUserCopy.mapPinSubtitle
-                        : 'Drop a pin or search with Google Places',
+                    subtitle: TransitUserCopy.mapPinSubtitle,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(

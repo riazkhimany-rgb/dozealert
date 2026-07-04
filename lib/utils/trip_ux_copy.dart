@@ -7,21 +7,44 @@ abstract final class TripUxCopy {
 
   static const pickYourStop = 'Pick your stop';
 
+  static const pickDestination = 'Pick destination';
+
+  static const setDestination = 'Set destination';
+
+  static const saveToMyTrips = 'Save to My Trips';
+
   static const changeStop = 'Change stop';
+
+  static const changeDestination = 'Change destination';
 
   static const changeLine = 'Change line';
 
+  static const selectFromMyTrips = 'Select from My Trips';
+
   static const clearStop = 'Clear stop';
+
+  static const clearDestination = 'Clear destination';
+
+  static const changeWakeStops = 'Change wake stops';
 
   static const startTrip = 'Start';
 
+  static const startingTrip = 'Starting…';
+
   static const stopTrip = 'Stop trip';
 
-  static const watchingTrip = 'Watching your trip';
+  static const stoppingTrip = 'Stopping…';
+
+  static const changeWakeDistance = 'Change wake distance';
+
+  static const watchingTripLine1 = 'Watching';
+  static const watchingTripLine2 = 'your trip';
 
   static const readyWhenYouAre = 'Ready when you are';
 
   static const yourStop = 'Your stop';
+
+  static const yourDestination = 'Your destination';
 
   static const lockPhoneHint = 'You can lock your phone now.';
 
@@ -29,6 +52,17 @@ abstract final class TripUxCopy {
 
   static const emptySubtitle =
       'Pick your stop on your route. We wake you one stop before by default.';
+
+  static const emptyHeadlineDistance = 'Where are you going?';
+
+  static const emptySubtitleDistance =
+      'Search on the map or drop a pin. We wake you within your alert distance.';
+
+  static const myTripsEmptyMessage =
+      'Save stops you use often and start a trip with one tap.';
+
+  static const myTripsEmptyMessageDistance =
+      'Save destinations you use often and start a trip with one tap.';
 
   static const moreOptions = 'More options';
 
@@ -79,4 +113,83 @@ abstract final class TripUxCopy {
     }
     return lockPhoneHint;
   }
+
+  static const onboardingIntroTitle = 'Wake up before your stop';
+
+  static const onboardingIntroBody =
+      'DozeAlert tracks your ride and sounds an alarm when you are '
+      'approaching your destination.\n\n'
+      'First, choose the transit you ride. Then we\'ll ask for a few '
+      'phone permissions so we can watch your trip while you sleep.\n\n'
+      'After that, pick your stop on Home and tap Start.';
+
+  static const permissionsHeadline = 'Allow what DozeAlert needs';
+
+  static const permissionsIntroAndroid =
+      'So we can track your ride and wake you before your stop. '
+      'Tap the button below — we\'ll walk you through each permission '
+      'one at a time.';
+
+  static const permissionsIntroIos =
+      'So we can track your ride and wake you before your stop. '
+      'Tap the button below to grant location access.';
+
+  static const enableAndContinue = 'Enable & continue';
+
+  static const resumePermissionSetup = 'Resume setup';
+
+  static const permissionsReadyHint =
+      'All set — tap Get started below.';
+
+  static const readyToSleepTitle = 'Ready to sleep?';
+
+  static const readyToSleepNotYet = 'Not yet';
+
+  static const startMyTrip = 'Start my trip';
+
+  static String readyToSleepBody({required String destinationName}) =>
+      'We\'ll wake you one stop before $destinationName.\n\n'
+      'Keep your phone charged and volume on, then relax.';
+
+  static const readyToSleepBodyDefault =
+      'We wake you one stop before your stop by default.\n\n'
+      'Keep your phone charged and volume on, then relax.';
+
+  static const almostReadyTitle = 'Almost ready';
+
+  static const almostReadySubtitle =
+      'Complete these steps before you fall asleep:';
+
+  static const getReadyHeadline = 'GET READY';
+
+  static const timeToGetOffHeadline = 'TIME TO GET OFF';
+
+  static String destinationIsYourStop(String destinationName) =>
+      '$destinationName is your stop';
+
+  static const stayOnBoardOneMoreStop = 'Stay on board — one more stop';
+
+  static const stayOnBoardTwoMoreStops = 'Stay on board — two more stops';
+
+  static const dismissAlarm = 'Dismiss';
+
+  static const alarmContinuesUntilDismiss =
+      'Alarm continues until you dismiss';
+
+  static const youAreAtPrefix = 'You are at ';
+
+  static const confirmingRoute = 'Confirming your route…';
+
+  static const permissionReasonLocation = 'Know which stop you\'re passing';
+
+  static const permissionReasonBackground =
+      'Keep watching while your screen is off';
+
+  static const permissionReasonNotifications =
+      'Wake you with sound and vibration';
+
+  static const permissionReasonActivity =
+      'Tell when you\'re on the train vs at the platform';
+
+  static const permissionReasonBattery = 'So Android doesn\'t stop the trip';
 }

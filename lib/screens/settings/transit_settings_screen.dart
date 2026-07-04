@@ -33,7 +33,7 @@ class TransitSettingsScreen extends StatelessWidget {
           SettingsNavTile(
             icon: Icons.directions_transit,
             title: 'Transit Mode',
-            subtitle: 'Wake timing and distance fallback (toggle on Home)',
+            subtitle: 'Transit Mode toggle, wake timing, and alert distance',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

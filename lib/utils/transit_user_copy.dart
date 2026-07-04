@@ -85,8 +85,8 @@ abstract final class TransitUserCopy {
   static const selectTransitAbove = 'Select at least one transit above.';
 
   static const permissionsContinueHint =
-      'Required permissions are set. Tap Continue to pick your transit, '
-      'then set your first destination on Home.';
+      'Required permissions are set. Tap Continue to finish setup, '
+      'then pick your stop on Home.';
 
   static String downloadStopListForTransit(String transitName) =>
       'Download stop lists for $transitName to browse and search stops.';

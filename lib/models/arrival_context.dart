@@ -2,6 +2,7 @@ class ArrivalContext {
   const ArrivalContext({
     required this.destinationName,
     required this.usedTransitMode,
+    this.uiHeadline,
     this.headline,
     this.currentStopName,
     this.detailMessage,
@@ -13,6 +14,7 @@ class ArrivalContext {
 
   final String destinationName;
   final bool usedTransitMode;
+  final String? uiHeadline;
   final String? headline;
   final String? currentStopName;
   final String? detailMessage;

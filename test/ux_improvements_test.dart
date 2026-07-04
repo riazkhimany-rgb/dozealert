@@ -81,6 +81,7 @@ void main() {
       locationWhenInUseGranted: false,
       backgroundLocationGranted: false,
       notificationsGranted: false,
+      activityRecognitionGranted: false,
       locationServicesEnabled: true,
       batteryOptimizationEnabled: true,
     );

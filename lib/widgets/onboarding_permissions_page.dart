@@ -7,23 +7,41 @@ import 'package:provider/provider.dart';
 import '../models/app_permission_snapshot.dart';
 import '../services/app_permissions_service.dart';
 import '../utils/permission_setup_steps.dart';
-import '../utils/transit_user_copy.dart';
+import '../utils/trip_ux_copy.dart';
 import 'permission_step_confirm_dialog.dart';
 
 class OnboardingPermissionsPage extends StatefulWidget {
   const OnboardingPermissionsPage({
     super.key,
     required this.onStatusChanged,
+    this.onUiStateChanged,
+    this.embedded = false,
   });
 
   final ValueChanged<AppPermissionSnapshot> onStatusChanged;
+  final ValueChanged<OnboardingPermissionsUiState>? onUiStateChanged;
+
+  /// When true, keeps inline action buttons (e.g. opened from Settings).
+  final bool embedded;
 
   @override
   State<OnboardingPermissionsPage> createState() =>
-      _OnboardingPermissionsPageState();
+      OnboardingPermissionsPageState();
 }
 
-class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
+class OnboardingPermissionsUiState {
+  const OnboardingPermissionsUiState({
+    required this.setupStarted,
+    required this.autoFlowRunning,
+    required this.permissionsReady,
+  });
+
+  final bool setupStarted;
+  final bool autoFlowRunning;
+  final bool permissionsReady;
+}
+
+class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     with WidgetsBindingObserver {
   AppPermissionSnapshot? _snapshot;
   bool _loading = true;
@@ -80,6 +98,7 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
 
   Future<void> _startSetup() async {
     setState(() => _setupStarted = true);
+    _notifyUiState();
     await _runAutomaticFlow();
   }
 
@@ -94,6 +113,7 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     }
 
     setState(() => _autoFlowRunning = true);
+    _notifyUiState();
 
     final permissions = context.read<AppPermissionsService>();
     await permissions.runAutomaticSetupFlow(
@@ -117,6 +137,7 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         _autoFlowRunning = false;
         _activeStep = null;
       });
+      _notifyUiState();
     }
   }
 
@@ -131,6 +152,34 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
       _loading = false;
     });
     widget.onStatusChanged(next);
+    _notifyUiState();
+  }
+
+  void _notifyUiState() {
+    widget.onUiStateChanged?.call(
+      OnboardingPermissionsUiState(
+        setupStarted: _setupStarted,
+        autoFlowRunning: _autoFlowRunning,
+        permissionsReady: _snapshot?.allRequiredForMonitoring ?? false,
+      ),
+    );
+  }
+
+  /// Called from [OnboardingScreen]'s fixed bottom bar.
+  Future<void> handleBottomPrimaryAction() async {
+    final snapshot = _snapshot;
+    if (snapshot == null || _autoFlowRunning) {
+      return;
+    }
+
+    if (!_setupStarted) {
+      await _startSetup();
+      return;
+    }
+
+    if (_needsAutomaticFlow(snapshot)) {
+      await _runAutomaticFlow();
+    }
   }
 
   Future<void> _runStepAction(String itemId) async {
@@ -154,6 +203,8 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         await permissions.requestBackgroundLocation();
       case 'notifications':
         await permissions.requestNotifications();
+      case 'activity_recognition':
+        await permissions.requestActivityRecognition();
       case 'battery':
         await permissions.requestBatteryOptimization();
     }
@@ -198,9 +249,16 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     final inStepMode = _setupStarted && !_showAllDetails;
     final showRecovery = needsBackgroundLocationRecovery(snapshot);
     final showDetailedTiles = _setupStarted && _showAllDetails;
+    final bottomInset =
+        widget.embedded ? MediaQuery.paddingOf(context).bottom : 0.0;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        16,
+        24,
+        24 + bottomInset,
+      ),
       children: [
         Icon(
           Icons.verified_user_outlined,
@@ -209,7 +267,7 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         ),
         const SizedBox(height: 20),
         Text(
-          'Permissions for trip monitoring',
+          TripUxCopy.permissionsHeadline,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
@@ -218,16 +276,18 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         const SizedBox(height: 12),
         Text(
           Platform.isAndroid
-              ? 'Tap Start below. We will walk you through each permission '
-                  'one at a time — read the short prompt before each Android '
-                  'screen and choose the option shown in bold.'
-              : 'Tap Start to grant location access before your first trip.',
+              ? TripUxCopy.permissionsIntroAndroid
+              : TripUxCopy.permissionsIntroIos,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurfaceVariant,
             height: 1.4,
           ),
         ),
+        if (!_setupStarted) ...[
+          const SizedBox(height: 20),
+          const PermissionReasonTable(),
+        ],
         if (_setupStarted) ...[
           const SizedBox(height: 16),
           Text(
@@ -257,9 +317,11 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
                 child: Text(
                   _activeStep == PermissionSetupStep.backgroundLocation
                       ? 'Choose Allow all the time on the next screen…'
-                      : _activeStep == PermissionSetupStep.batteryOptimization
-                          ? 'Allow battery exemption on the next screen…'
-                          : 'Follow the Android prompts…',
+                      : _activeStep == PermissionSetupStep.activityRecognition
+                          ? 'Allow physical activity on the next screen…'
+                          : _activeStep == PermissionSetupStep.batteryOptimization
+                              ? 'Allow battery exemption on the next screen…'
+                              : 'Follow the Android prompts…',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -294,25 +356,27 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           activeStep: _activeStep,
           dimIncomplete: !_setupStarted,
         ),
-        const SizedBox(height: 16),
-        if (!_setupStarted)
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => unawaited(_startSetup()),
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Start permission setup'),
+        if (widget.embedded) ...[
+          const SizedBox(height: 16),
+          if (!_setupStarted)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => unawaited(_startSetup()),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text(TripUxCopy.enableAndContinue),
+              ),
+            )
+          else if (_needsAutomaticFlow(snapshot) && !_autoFlowRunning)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => unawaited(_runAutomaticFlow()),
+                icon: const Icon(Icons.refresh),
+                label: const Text(TripUxCopy.resumePermissionSetup),
+              ),
             ),
-          )
-        else if (_needsAutomaticFlow(snapshot) && !_autoFlowRunning)
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => unawaited(_runAutomaticFlow()),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Resume permission setup'),
-            ),
-          ),
+        ],
         if (inStepMode && nextItem != null && !_autoFlowRunning) ...[
           const SizedBox(height: 16),
           _CurrentStepCard(
@@ -362,7 +426,8 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         complete: snapshot.locationServicesEnabled,
         title: 'Phone GPS',
         requiredSetting: 'Location services turned on',
-        detail: 'Your phone\'s main Location / GPS switch must be on.',
+        detail: 'Turn on your phone\'s Location / GPS switch so we know '
+            'which stop you\'re passing.',
         actionLabel: 'Open location settings',
         onAction: () async {
           await permissions.openLocationSettings();
@@ -376,9 +441,10 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
             ? 'Allow only while using the app'
             : 'Allow While Using the App',
         detail: Platform.isAndroid
-            ? 'Android will ask for this first. Choose '
-                '"While using the app" (not "Don\'t allow").'
-            : 'Choose While Using the App when iOS prompts you.',
+            ? 'Know which stop you\'re passing. Android asks for this first — '
+                'choose "While using the app".'
+            : 'Know which stop you\'re passing. Choose While Using the App '
+                'when iOS prompts you.',
         actionLabel: 'Request location access',
         onAction: () => unawaited(_runStepAction('location_when_in_use')),
       ),
@@ -387,9 +453,8 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           complete: snapshot.backgroundLocationGranted,
           title: 'Location (step 2)',
           requiredSetting: 'Allow all the time',
-          detail: 'On the Android permission screen, choose '
-              '"Allow all the time". If you only see app settings, open '
-              'Permissions → Location → Allow all the time.',
+          detail: 'Keep watching while your screen is off. Choose '
+              '"Allow all the time" — not "Only while using the app".',
           actionLabel: 'Request background location',
           onAction: () => unawaited(_runStepAction('background_location')),
           secondaryActionLabel: 'Open app settings',
@@ -400,18 +465,27 @@ class _OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           complete: snapshot.notificationsGranted,
           title: 'Notifications',
           requiredSetting: 'Allowed',
-          detail: 'Shows the ongoing trip monitoring notification while '
-              'DozeAlert tracks your progress in the background.',
+          detail: 'Wake you with sound and vibration. Shows a small ongoing '
+              'notification while DozeAlert watches your trip.',
           actionLabel: 'Allow notifications',
           onAction: () => unawaited(_runStepAction('notifications')),
+        ),
+      if (Platform.isAndroid)
+        _PermissionTile(
+          complete: snapshot.activityRecognitionGranted,
+          title: 'Physical activity',
+          requiredSetting: 'Allowed',
+          detail: 'Tell when you\'re on the train vs waiting at the platform '
+              'so wake timing stays accurate.',
+          actionLabel: 'Allow physical activity',
+          onAction: () => unawaited(_runStepAction('activity_recognition')),
         ),
       if (Platform.isAndroid)
         _PermissionTile(
           complete: snapshot.batteryUnrestricted,
           title: 'Battery',
           requiredSetting: 'Unrestricted / not optimized',
-          detail: 'Allow DozeAlert to ignore battery optimizations so '
-              'monitoring and alarms stay reliable in the background.',
+          detail: 'So Android doesn\'t stop the trip while you sleep.',
           actionLabel: 'Allow unrestricted battery',
           onAction: () => unawaited(_runStepAction('battery')),
         ),
@@ -451,7 +525,7 @@ class _SuccessCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              TransitUserCopy.permissionsContinueHint,
+              TripUxCopy.permissionsReadyHint,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onPrimaryContainer,

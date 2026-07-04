@@ -244,6 +244,55 @@ class GtfsProvider extends ChangeNotifier {
     );
   }
 
+  /// Returns the [TransitLineOption.lineName] from [options] that matches
+  /// [lineRef], including long names and route codes stored in preferences.
+  String? resolveLineNameInOptions(
+    String lineRef,
+    List<TransitLineOption> options,
+  ) {
+    if (lineRef.trim().isEmpty || options.isEmpty) {
+      return null;
+    }
+
+    for (final option in options) {
+      if (option.lineName == lineRef) {
+        return option.lineName;
+      }
+    }
+
+    if (!_initialized) {
+      return null;
+    }
+
+    final resolved = _gtfsService.resolvePreferenceLineName(
+      transitSystem: _transitProvider.preferences.transitSystem,
+      lineRef: lineRef,
+    );
+    if (resolved != null &&
+        options.any((option) => option.lineName == resolved)) {
+      return resolved;
+    }
+
+    return null;
+  }
+
+  TransitLineOption? lineOptionForPreference(
+    String lineRef,
+    List<TransitLineOption> options,
+  ) {
+    final resolved = resolveLineNameInOptions(lineRef, options);
+    if (resolved == null) {
+      return null;
+    }
+
+    for (final option in options) {
+      if (option.lineName == resolved) {
+        return option;
+      }
+    }
+    return null;
+  }
+
   List<TransitVehicleType> availableVehicleTypesForSelectedAgency() {
     if (!_initialized) {
       return const [];

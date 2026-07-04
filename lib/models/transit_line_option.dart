@@ -23,6 +23,16 @@ class TransitLineOption {
     return '$displayLabel · $subtitle';
   }
 
+  /// Route code plus long name, e.g. `LW - Lakeshore West`.
+  String get shortDashLongLabel {
+    if (subtitle != null &&
+        subtitle!.isNotEmpty &&
+        subtitle != displayLabel) {
+      return '$displayLabel - $subtitle';
+    }
+    return displayLabel;
+  }
+
   factory TransitLineOption.fromRoute(TransitRoute route) {
     final shortName = route.routeShortName?.trim();
     final lineName = route.lineName;

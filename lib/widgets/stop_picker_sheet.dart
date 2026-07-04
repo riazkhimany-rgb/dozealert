@@ -32,23 +32,14 @@ class StopPickerSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      useSafeArea: true,
       builder: (sheetContext) {
         final mediaQuery = MediaQuery.of(sheetContext);
-        final viewPadding = mediaQuery.viewPadding;
-        final sheetHeight = (mediaQuery.size.height -
-                viewPadding.top -
-                viewPadding.bottom) *
-            0.75;
+        final maxHeight = mediaQuery.size.height * 0.75;
 
-        return Padding(
-          padding: EdgeInsets.only(
-            top: viewPadding.top,
-            bottom: viewPadding.bottom + mediaQuery.viewInsets.bottom,
-          ),
-          child: SizedBox(
-            height: sheetHeight,
-            child: StopPickerSheet(onStopSelected: onStopSelected),
-          ),
+        return SizedBox(
+          height: maxHeight,
+          child: StopPickerSheet(onStopSelected: onStopSelected),
         );
       },
     );
@@ -129,15 +120,7 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
             ),
           ),
         ] else
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            child: Text(
-              gtfsProvider.selectedLineLabel,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
+          const SizedBox(height: 8),
         if (showScopeToggle) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -300,8 +283,9 @@ class _RouteStationList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 16 + bottomInset),
       itemCount: stations.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
@@ -339,8 +323,9 @@ class _AgencyStationList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 16 + bottomInset),
       itemCount: results.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {

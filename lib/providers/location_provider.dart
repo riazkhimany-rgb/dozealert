@@ -25,6 +25,7 @@ import '../utils/transit_wake_message.dart';
 
 enum LocationStartResult {
   success,
+  cancelled,
   noDestination,
   permissionDenied,
   permissionPermanentlyDenied,
@@ -114,6 +115,7 @@ class LocationProvider extends ChangeNotifier {
   DateTime? _monitoringStartedAt;
   double _closestApproachMeters = double.infinity;
   ArrivalContext? _arrivalContext;
+  int _startTrackingGeneration = 0;
 
   CurrentLocation? get currentLocation => _currentLocation;
   double get distanceRemainingMeters => _distanceRemainingMeters;
@@ -176,8 +178,18 @@ class LocationProvider extends ChangeNotifier {
       return LocationStartResult.noDestination;
     }
 
+    final startGeneration = _startTrackingGeneration;
+
     if (_trackingEnabled) {
-      return LocationStartResult.success;
+      if (_monitoringProvider.isMonitoring) {
+        return LocationStartResult.success;
+      }
+
+      // GPS was left running without an active monitoring session — restart cleanly.
+      await _locationService.stopTracking();
+      await _activityRecognitionService.stopListening();
+      _trackingEnabled = false;
+      _usingBackgroundService = false;
     }
 
     final permission = await _locationService.requestPermission();
@@ -228,6 +240,11 @@ class LocationProvider extends ChangeNotifier {
 
     _monitoringProvider.startMonitoring();
 
+    if (_startTrackingWasCancelled(startGeneration)) {
+      await _rollbackFailedStart();
+      return LocationStartResult.cancelled;
+    }
+
     if (Platform.isAndroid) {
       final backgroundResult = await _backgroundMonitorService.startMonitoring(
         destinationName: destination.name,
@@ -238,12 +255,19 @@ class LocationProvider extends ChangeNotifier {
         case BackgroundMonitorStartResult.unsupportedPlatform:
           _usingBackgroundService = false;
         case BackgroundMonitorStartResult.notificationPermissionDenied:
+          await _rollbackFailedStart();
           return LocationStartResult.foregroundServiceFailure;
         case BackgroundMonitorStartResult.foregroundServiceFailure:
+          await _rollbackFailedStart();
           return LocationStartResult.foregroundServiceFailure;
       }
     } else {
       _usingBackgroundService = false;
+    }
+
+    if (_startTrackingWasCancelled(startGeneration)) {
+      await _rollbackFailedStart();
+      return LocationStartResult.cancelled;
     }
 
     try {
@@ -256,11 +280,16 @@ class LocationProvider extends ChangeNotifier {
       await _activityRecognitionService.startListening();
       unawaited(_syncRiderMotionState());
     } on LocationServiceDisabledException {
-      await _backgroundMonitorService.stopMonitoring();
+      await _rollbackFailedStart();
       return LocationStartResult.locationServiceDisabled;
     } on PermissionDeniedException {
-      await _backgroundMonitorService.stopMonitoring();
+      await _rollbackFailedStart();
       return LocationStartResult.permissionDenied;
+    }
+
+    if (_startTrackingWasCancelled(startGeneration)) {
+      await _rollbackFailedStart();
+      return LocationStartResult.cancelled;
     }
 
     _transitModeProvider.resetApproachAlarm();
@@ -283,7 +312,9 @@ class LocationProvider extends ChangeNotifier {
   }
 
   Future<void> stopTracking() async {
-    if (!_trackingEnabled && !_alarmService.alarmActive) {
+    _startTrackingGeneration++;
+
+    if (!_shouldProcessStopTracking()) {
       return;
     }
 
@@ -291,7 +322,9 @@ class LocationProvider extends ChangeNotifier {
       await _alarmService.stopAlarm();
     }
 
-    if (_monitoringProvider.currentState == MonitoringState.monitoring) {
+    final monitoringState = _monitoringProvider.currentState;
+    if (monitoringState == MonitoringState.monitoring ||
+        monitoringState == MonitoringState.arrived) {
       await _tripHistoryService.endTrip();
       await _tripHistoryProvider?.refresh();
     }
@@ -308,6 +341,33 @@ class LocationProvider extends ChangeNotifier {
     _monitoringProvider.stopMonitoring();
     notifyListeners();
   }
+
+  bool _shouldProcessStopTracking() {
+    if (_trackingEnabled || _alarmService.alarmActive) {
+      return true;
+    }
+
+    final state = _monitoringProvider.currentState;
+    if (state == MonitoringState.monitoring ||
+        state == MonitoringState.arrived ||
+        state == MonitoringState.missed) {
+      return true;
+    }
+
+    return _backgroundMonitorService.isForegroundServiceRunning ||
+        _backgroundMonitorService.isBackgroundMonitoringEnabled;
+  }
+
+  Future<void> _rollbackFailedStart() async {
+    await _backgroundMonitorService.stopMonitoring();
+    _usingBackgroundService = false;
+    _monitoringProvider.stopMonitoring();
+    _trackingEnabled = false;
+    notifyListeners();
+  }
+
+  bool _startTrackingWasCancelled(int startGeneration) =>
+      startGeneration != _startTrackingGeneration;
 
   Future<void> dismissArrival() async {
     await _alarmService.stopAlarm();
@@ -739,6 +799,7 @@ class LocationProvider extends ChangeNotifier {
     _arrivalContext = ArrivalContext(
       destinationName: copy.primaryStopName,
       usedTransitMode: usedTransitMode,
+      uiHeadline: copy.uiHeadline,
       headline: copy.headline,
       currentStopName: copy.currentStopName,
       detailMessage: copy.detailMessage,

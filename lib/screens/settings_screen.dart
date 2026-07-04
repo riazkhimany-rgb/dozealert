@@ -10,6 +10,7 @@ import 'settings/activity_settings_screen.dart';
 import 'settings/alarm_settings_screen.dart';
 import 'settings/developer_tools_screen.dart';
 import 'settings/location_settings_screen.dart';
+import 'settings/permissions_settings_screen.dart';
 import 'settings/theme_settings_screen.dart';
 import 'settings/transit_settings_screen.dart';
 
@@ -23,8 +24,23 @@ class SettingsScreen extends StatelessWidget {
         title: const Text('Settings'),
       ),
       body: ListView(
+        padding: EdgeInsets.only(
+          bottom: 24 + MediaQuery.paddingOf(context).bottom + 72,
+        ),
         children: [
           const SettingsSectionHeader(title: 'General'),
+          SettingsNavTile(
+            icon: Icons.admin_panel_settings_outlined,
+            title: 'Permissions',
+            subtitle: 'GPS, notifications, battery, and background access',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PermissionsSettingsScreen(),
+                ),
+              );
+            },
+          ),
           SettingsNavTile(
             icon: Icons.palette_outlined,
             title: 'Theme',
@@ -67,6 +83,7 @@ class SettingsScreen extends StatelessWidget {
           const Divider(height: 32),
           const SettingsSectionHeader(title: 'Activity'),
           SettingsNavTile(
+            key: const Key('settings_activity'),
             icon: Icons.history,
             title: 'Activity',
             subtitle: 'Trip history and missed trips',

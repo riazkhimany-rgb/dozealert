@@ -18,11 +18,19 @@ import '../utils/gtfs_isolate_worker.dart';
 class GtfsFeedProgress {
   const GtfsFeedProgress({
     required this.phase,
+    required this.overallFraction,
     this.downloadFraction,
   });
 
   final String phase;
+
+  /// Overall completion for the full download + import pipeline, 0..1.
+  final double overallFraction;
+
+  /// Byte progress during the HTTP download phase only, when known.
   final double? downloadFraction;
+
+  int get percent => (overallFraction.clamp(0.0, 1.0) * 100).round();
 }
 
 class GtfsFeedProvider extends ChangeNotifier {
@@ -47,6 +55,13 @@ class GtfsFeedProvider extends ChangeNotifier {
   List<GtfsFeedInfo> _feeds = const [];
   final Map<String, String?> _errors = {};
   final Map<String, GtfsFeedProgress> _progress = {};
+  final Map<String, int> _lastReportedPercent = {};
+
+  static const _downloadShare = 0.65;
+  static const _processingShare = 0.80;
+  static const _savingShare = 0.90;
+  static const _loadingShare = 0.98;
+  static const _estimatedDownloadBytes = 15 * 1024 * 1024;
 
   bool get isInitialized => _initialized;
   bool get isUpgradingStaleFeeds => _isUpgradingStaleFeeds;
@@ -358,13 +373,14 @@ class GtfsFeedProvider extends ChangeNotifier {
       final bytes = await _downloadService.downloadFeed(
         seed.downloadUrl!,
         onProgress: (receivedBytes, totalBytes) {
-          final fraction = totalBytes == null || totalBytes <= 0
+          final downloadFraction = totalBytes == null || totalBytes <= 0
               ? null
               : receivedBytes / totalBytes;
           _setProgress(
             feedId,
             phase: 'Downloading…',
-            downloadFraction: fraction,
+            downloadFraction: downloadFraction,
+            receivedBytes: receivedBytes,
           );
         },
       );
@@ -471,16 +487,64 @@ class GtfsFeedProvider extends ChangeNotifier {
     String feedId, {
     required String phase,
     double? downloadFraction,
+    int? receivedBytes,
   }) {
+    final overallFraction = _overallFractionForPhase(
+      phase: phase,
+      downloadFraction: downloadFraction,
+      receivedBytes: receivedBytes,
+    );
+    final percent = (overallFraction * 100).round().clamp(0, 100);
+    final previous = _progress[feedId];
+    if (previous != null &&
+        previous.phase == phase &&
+        _lastReportedPercent[feedId] == percent) {
+      return;
+    }
+
+    _lastReportedPercent[feedId] = percent;
     _progress[feedId] = GtfsFeedProgress(
       phase: phase,
+      overallFraction: overallFraction,
       downloadFraction: downloadFraction,
     );
     notifyListeners();
   }
 
+  double _overallFractionForPhase({
+    required String phase,
+    double? downloadFraction,
+    int? receivedBytes,
+  }) {
+    switch (phase) {
+      case 'Preparing update…':
+        return 0.02;
+      case 'Starting download…':
+        return 0.05;
+      case 'Downloading…':
+        if (downloadFraction != null) {
+          return 0.05 + downloadFraction.clamp(0.0, 1.0) * (_downloadShare - 0.05);
+        }
+        if (receivedBytes != null && receivedBytes > 0) {
+          final estimated = (receivedBytes / _estimatedDownloadBytes)
+              .clamp(0.0, 0.95);
+          return 0.05 + estimated * (_downloadShare - 0.05);
+        }
+        return 0.08;
+      case 'Processing GTFS data…':
+        return _processingShare;
+      case 'Saving transit data…':
+        return _savingShare;
+      case 'Loading into app…':
+        return _loadingShare;
+      default:
+        return downloadFraction?.clamp(0.0, 1.0) ?? 0.05;
+    }
+  }
+
   void _clearProgress(String feedId) {
     _progress.remove(feedId);
+    _lastReportedPercent.remove(feedId);
   }
 
   Future<void> _yieldToUi() async {

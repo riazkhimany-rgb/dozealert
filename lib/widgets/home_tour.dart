@@ -7,7 +7,6 @@ import 'branding_logo.dart';
 
 /// Identifiers for each Home screen guided-tour step.
 enum HomeTourStepId {
-  chooseAgency,
   setDestination,
   wakeSettings,
   startMonitoring,

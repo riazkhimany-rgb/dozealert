@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/arrival_context.dart';
 import '../providers/location_provider.dart';
 import '../utils/app_branding.dart';
+import '../utils/trip_ux_copy.dart';
 import '../widgets/branding_logo.dart';
 
 class ArrivalDialog extends StatelessWidget {
@@ -19,6 +20,8 @@ class ArrivalDialog extends StatelessWidget {
     final arrivalContext = context.select<LocationProvider, ArrivalContext?>(
       (provider) => provider.arrivalContext,
     );
+    final uiHeadline =
+        arrivalContext?.uiHeadline ?? TripUxCopy.getReadyHeadline;
     final headline = arrivalContext?.headline ?? 'Destination';
     final statusLine = arrivalContext?.wearSubline;
     final currentStopName =
@@ -62,9 +65,19 @@ class ArrivalDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
                 Text(
+                  uiHeadline,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    color: AppBranding.cyanAccent,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
                   headline,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppBranding.white,
                   ),
@@ -89,9 +102,9 @@ class ArrivalDialog extends StatelessWidget {
                         height: 1.35,
                       ),
                       children: [
-                        const TextSpan(text: 'You are at '),
+                        TextSpan(text: TripUxCopy.youAreAtPrefix),
                         TextSpan(
-                          text: currentStopName!,
+                          text: currentStopName,
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppBranding.cyanAccent,
@@ -124,7 +137,7 @@ class ArrivalDialog extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: onDismiss,
                       icon: const Icon(Icons.alarm_off_rounded, size: 24),
-                      label: const Text('Dismiss'),
+                      label: const Text(TripUxCopy.dismissAlarm),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppBranding.cyanAccent,
                         foregroundColor: AppBranding.midnightBlue,

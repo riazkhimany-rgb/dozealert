@@ -228,6 +228,7 @@ class _PermissionsSetupScreen extends StatelessWidget {
         title: const Text('Permissions'),
       ),
       body: OnboardingPermissionsPage(
+        embedded: true,
         onStatusChanged: (_) {},
       ),
     );

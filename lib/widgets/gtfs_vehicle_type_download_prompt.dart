@@ -7,6 +7,7 @@ import '../models/gtfs_feed_info.dart';
 import '../models/transit_vehicle_type.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../utils/gtfs_feed_download_handler.dart';
+import 'gtfs_feed_progress_indicator.dart';
 
 class GtfsVehicleTypeDownloadPrompt extends StatelessWidget {
   const GtfsVehicleTypeDownloadPrompt({
@@ -76,21 +77,12 @@ class GtfsVehicleTypeDownloadPrompt extends StatelessWidget {
           ),
           if (isBusy) ...[
             const SizedBox(height: 12),
-            if (progress?.downloadFraction != null)
-              LinearProgressIndicator(
-                value: progress!.downloadFraction!.clamp(0, 1),
-                borderRadius: BorderRadius.circular(4),
-              )
-            else
-              LinearProgressIndicator(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            const SizedBox(height: 8),
-            Text(
-              progress?.phase ?? feed.status.label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.primary,
-              ),
+            GtfsFeedProgressIndicator(
+              progress: progress ??
+                  GtfsFeedProgress(
+                    phase: feed.status.label,
+                    overallFraction: 0.05,
+                  ),
             ),
           ] else ...[
             const SizedBox(height: 12),

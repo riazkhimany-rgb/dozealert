@@ -97,38 +97,47 @@ _StepDialogCopy? _copyForStep(PermissionSetupStep step) {
   return switch (step) {
     PermissionSetupStep.locationWhenInUse => const _StepDialogCopy(
         icon: Icons.location_on_outlined,
-        title: 'Location step 1',
+        title: 'Know which stop you\'re passing',
         body:
-            'Android will ask for location access next. This is the first of '
-            'two location steps.',
+            'Android asks for location in two steps. This is step 1 — '
+            'so DozeAlert can see your position while the app is open.',
         highlight: 'Tap "While using the app"',
-        actionLabel: 'Show permission',
+        actionLabel: 'Continue',
       ),
     PermissionSetupStep.backgroundLocation => const _StepDialogCopy(
         icon: Icons.my_location,
-        title: 'Location step 2 — important',
+        title: 'Keep watching while your screen is off',
         body:
-            'DozeAlert needs background location so monitoring continues when '
-            'your screen is off or you switch apps.\n\n'
+            'DozeAlert needs background location so monitoring continues '
+            'when you lock your phone or switch apps.\n\n'
             'The next screen may be an Android dialog or app settings.',
         highlight: 'Choose "Allow all the time"',
         actionLabel: 'Continue',
       ),
     PermissionSetupStep.notifications => const _StepDialogCopy(
         icon: Icons.notifications_outlined,
-        title: 'Notifications',
+        title: 'Wake you with sound and vibration',
         body:
-            'DozeAlert shows a small ongoing notification while monitoring '
-            'your trip in the background.',
+            'DozeAlert shows a small ongoing notification while watching '
+            'your trip, and uses alerts to wake you before your stop.',
         highlight: 'Tap "Allow"',
-        actionLabel: 'Show permission',
+        actionLabel: 'Continue',
+      ),
+    PermissionSetupStep.activityRecognition => const _StepDialogCopy(
+        icon: Icons.directions_transit_outlined,
+        title: 'On the train vs at the platform',
+        body:
+            'Physical activity helps DozeAlert tell when you are riding '
+            'versus waiting at a station — so wake timing stays accurate.',
+        highlight: 'Tap "Allow"',
+        actionLabel: 'Continue',
       ),
     PermissionSetupStep.batteryOptimization => const _StepDialogCopy(
         icon: Icons.battery_alert_outlined,
-        title: 'Battery optimization',
+        title: 'So Android doesn\'t stop the trip',
         body:
             'Some phones limit background apps. Allowing battery exemption '
-            'helps alarms stay reliable.',
+            'helps your alarm stay reliable while you sleep.',
         highlight: 'Tap "Allow" or "Unrestricted"',
         actionLabel: 'Continue',
       ),

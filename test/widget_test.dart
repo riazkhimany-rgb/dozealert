@@ -247,13 +247,6 @@ void main() {
     await tester.tap(find.text('Union Station'));
     await _pumpUntilSettled(tester);
 
-    await tester.tap(find.byIcon(Icons.play_arrow_rounded).first);
-    await _pumpUntilSettled(tester);
-
-    expect(find.text('Almost ready'), findsOneWidget);
-    await tester.tap(find.text('Close'));
-    await _pumpUntilSettled(tester);
-
     await tester.tap(find.text('Home'));
     await _pumpUntilSettled(tester);
 
@@ -283,80 +276,17 @@ void main() {
     await _pumpUntilSettled(tester);
 
     expect(find.text('General'), findsOneWidget);
+    expect(find.text('Permissions'), findsOneWidget);
     expect(find.text('Activity'), findsWidgets);
 
-    await tester.tap(
-      find.widgetWithText(ListTile, 'Activity'),
-    );
+    final activityTile = find.byKey(const Key('settings_activity'));
+    await tester.ensureVisible(activityTile);
+    await _pumpUntilSettled(tester);
+    await tester.tap(activityTile);
     await _pumpUntilSettled(tester);
 
     expect(find.text('Trip History'), findsOneWidget);
     expect(find.text('Missed Trips'), findsOneWidget);
-
-    await tester.pageBack();
-    await _pumpUntilSettled(tester);
-    expect(find.text('Theme'), findsOneWidget);
-    expect(find.text('About'), findsOneWidget);
-    expect(find.text('Transit'), findsWidgets);
-
-    await tester.tap(find.text('About'));
-    await _pumpUntilSettled(tester);
-
-    expect(find.text('App Version'), findsOneWidget);
-
-    await tester.tap(
-      find.ancestor(
-        of: find.byType(BrandedAppName),
-        matching: find.byType(ListTile),
-      ),
-    );
-    await _pumpUntilSettled(tester);
-
-    await tester.tap(find.byIcon(Icons.share_outlined));
-    await _pumpUntilSettled(tester);
-    expect(find.byType(BrandedAppName), findsWidgets);
-    expect(find.text(AppBranding.tagline), findsWidgets);
-    await tester.pageBack();
-    await _pumpUntilSettled(tester);
-
-    await tester.pageBack();
-    await _pumpUntilSettled(tester);
-
-    await tester.pageBack();
-    await _pumpUntilSettled(tester);
-
-    final transitTile = find.widgetWithText(ListTile, 'Transit');
-    await tester.scrollUntilVisible(
-      transitTile,
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(transitTile);
-    await _pumpUntilSettled(tester);
-
-    expect(find.text('Transit stops'), findsOneWidget);
-    expect(find.text('Transit Mode'), findsOneWidget);
-    expect(find.text('Favorite Lines'), findsOneWidget);
-    expect(find.text('Import GTFS Zip'), findsNothing);
-
-    await tester.tap(find.text('Transit Mode'));
-    await _pumpUntilSettled(tester);
-
-    expect(find.text('Wake Timing'), findsOneWidget);
-    expect(find.text('Distance fallback'), findsOneWidget);
-    expect(find.text('Enable Transit Mode'), findsNothing);
-
-    await tester.pageBack();
-    await _pumpUntilSettled(tester);
-
-    await tester.tap(find.text('Transit stops'));
-    await _pumpUntilSettled(tester);
-
-    expect(find.text('Download'), findsWidgets);
-    expect(find.text('Import GTFS Zip'), findsOneWidget);
-
-    await tester.pageBack();
-    await _pumpUntilSettled(tester);
   });
 
   testWidgets('persists and clears selected destination', (

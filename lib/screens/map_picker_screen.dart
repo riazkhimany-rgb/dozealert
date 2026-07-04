@@ -14,6 +14,7 @@ import '../providers/transit_provider.dart';
 import '../services/location_service.dart';
 import '../services/place_search_service.dart';
 import '../utils/map_defaults.dart';
+import '../utils/trip_ux_copy.dart';
 import '../widgets/home_card.dart';
 
 class MapPickerScreen extends StatefulWidget {
@@ -28,6 +29,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   final FocusNode _nameFocusNode = FocusNode();
 
   GoogleMapController? _mapController;
@@ -67,6 +69,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   void dispose() {
     _searchController.dispose();
     _nameController.dispose();
+    _searchFocusNode.dispose();
     _nameFocusNode.dispose();
     _mapController?.dispose();
     super.dispose();
@@ -123,14 +126,30 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       _nameController.text = result.name;
     });
 
+    _searchFocusNode.unfocus();
     _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(result.latLng, 15),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _nameFocusNode.requestFocus();
+      }
+    });
   }
 
-  Future<void> _saveDestination() async {
+  Future<void> _saveDestination({bool addToMyTrips = false}) async {
     final position = _selectedPosition;
     if (position == null) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Select a place from search results or tap the map to drop a pin.',
+          ),
+        ),
+      );
       return;
     }
 
@@ -145,35 +164,19 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     if (!mounted) {
       return;
     }
-    Navigator.of(context).pop();
-  }
 
-  Future<void> _saveAndFavorite() async {
-    final position = _selectedPosition;
-    if (position == null) {
-      return;
+    if (addToMyTrips) {
+      await context.read<DestinationHistoryProvider>().addFavoriteItem(
+        context.read<GtfsProvider>().buildFavoriteDestination(destination),
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved ${destination.name} to My Trips')),
+      );
     }
 
-    final name = _nameController.text.trim();
-    final destination = PlaceSearchResult(
-      name: name.isEmpty ? MapDefaults.customDestinationName : name,
-      latitude: position.latitude,
-      longitude: position.longitude,
-    ).toDestination();
-
-    await context.read<MonitoringProvider>().setDestination(destination);
-    if (!mounted) {
-      return;
-    }
-    await context.read<DestinationHistoryProvider>().addFavoriteItem(
-      context.read<GtfsProvider>().buildFavoriteDestination(destination),
-    );
-    if (!mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved ${destination.name} to favorites')),
-    );
     Navigator.of(context).pop();
   }
 
@@ -182,14 +185,13 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final placeSearchService = context.read<PlaceSearchService>();
     final selectedPosition = _selectedPosition;
-    final canSave = selectedPosition != null;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final keyboardOpen = keyboardInset > 0;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('Choose Destination'),
+        title: const Text(TripUxCopy.pickDestination),
       ),
       body: SafeArea(
         child: Column(
@@ -217,6 +219,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       else
                         GooglePlaceAutoCompleteTextField(
                           textEditingController: _searchController,
+                          focusNode: _searchFocusNode,
                           googleAPIKey: placeSearchService.apiKey,
                           debounceTime: 400,
                           countries: _placeCountries(),
@@ -311,10 +314,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     nameController: _nameController,
                     nameFocusNode: _nameFocusNode,
                     selectedPosition: selectedPosition,
-                    canSave: canSave,
                     keyboardOpen: keyboardOpen,
-                    onSave: _saveDestination,
-                    onSaveAndFavorite: _saveAndFavorite,
+                    onSave: () => unawaited(_saveDestination()),
+                    onSaveToMyTrips: () =>
+                        unawaited(_saveDestination(addToMyTrips: true)),
                     onCancel: () => Navigator.of(context).pop(),
                   ),
                 ),
@@ -332,20 +335,18 @@ class _DestinationPanel extends StatelessWidget {
     required this.nameController,
     required this.nameFocusNode,
     required this.selectedPosition,
-    required this.canSave,
     required this.keyboardOpen,
     required this.onSave,
-    required this.onSaveAndFavorite,
+    required this.onSaveToMyTrips,
     required this.onCancel,
   });
 
   final TextEditingController nameController;
   final FocusNode nameFocusNode;
   final LatLng? selectedPosition;
-  final bool canSave;
   final bool keyboardOpen;
   final VoidCallback onSave;
-  final VoidCallback onSaveAndFavorite;
+  final VoidCallback onSaveToMyTrips;
   final VoidCallback onCancel;
 
   @override
@@ -400,7 +401,7 @@ class _DestinationPanel extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             selectedPosition == null
-                ? 'Search above or tap the map to place a marker.'
+                ? 'Pick a search result or tap the map to place a pin first.'
                 : 'Tap the map to fine-tune the marker position.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
@@ -411,9 +412,9 @@ class _DestinationPanel extends StatelessWidget {
             width: double.infinity,
             height: 48,
             child: FilledButton.icon(
-              onPressed: canSave ? onSave : null,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Save Destination'),
+              onPressed: onSave,
+              icon: const Icon(Icons.check_rounded),
+              label: const Text(TripUxCopy.setDestination),
             ),
           ),
           const SizedBox(height: 12),
@@ -421,9 +422,9 @@ class _DestinationPanel extends StatelessWidget {
             width: double.infinity,
             height: 48,
             child: OutlinedButton.icon(
-              onPressed: canSave ? onSaveAndFavorite : null,
-              icon: const Icon(Icons.star_outline),
-              label: const Text('Save & Add to Favorites'),
+              onPressed: onSaveToMyTrips,
+              icon: const Icon(Icons.favorite_border_outlined),
+              label: const Text(TripUxCopy.saveToMyTrips),
             ),
           ),
           const SizedBox(height: 12),
@@ -441,23 +442,23 @@ class _DestinationPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: FilledButton(
-                  onPressed: canSave ? onSave : null,
+                  onPressed: onSave,
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(0, 40),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
-                  child: const Text('Save'),
+                  child: const Text(TripUxCopy.setDestination),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: canSave ? onSaveAndFavorite : null,
+                  onPressed: onSaveToMyTrips,
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 40),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
-                  child: const Text('Save & Favorite'),
+                  child: const Text(TripUxCopy.saveToMyTrips),
                 ),
               ),
             ],

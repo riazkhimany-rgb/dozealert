@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../services/app_tour_service.dart';
 import '../services/onboarding_service.dart';
 import '../utils/transit_user_copy.dart';
+import '../utils/trip_ux_copy.dart';
 import '../widgets/branded_app_name.dart';
 import '../widgets/branding_logo.dart';
 import '../widgets/onboarding_permissions_page.dart';
@@ -32,11 +35,15 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
+  final GlobalKey<OnboardingPermissionsPageState> _permissionsPageKey =
+      GlobalKey<OnboardingPermissionsPageState>();
   final OnboardingService _onboardingService = OnboardingService();
   int _pageIndex = 0;
   final Set<String> _selectedAgencies = {};
   String? _primaryAgency;
   bool _permissionsReady = false;
+  bool _permissionsSetupStarted = false;
+  bool _permissionsFlowRunning = false;
 
   @override
   void dispose() {
@@ -78,6 +85,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!mounted) {
       return;
     }
+    await context.read<AppTourService>().markHomeTourPending();
+    if (!mounted) {
+      return;
+    }
     if (widget.popOnComplete) {
       Navigator.of(context).pop();
       return;
@@ -89,7 +100,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _confirmSkipSetup() async {
     if (widget.popOnComplete) {
-      await _finish();
+      Navigator.of(context).pop();
       return;
     }
 
@@ -97,21 +108,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Skip setup?'),
+          title: const Text('Leave setup?'),
           content: const Text(
-            'You can use DozeAlert later, but trip monitoring needs location, '
-            'notification, and battery permissions first.\n\n'
-            'You can finish setup anytime from Home → First time setup or '
-            'Settings.',
+            'DozeAlert needs permissions before it can watch your trip '
+            'while you sleep.\n\n'
+            'You can finish setup from Settings → Permissions anytime.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Keep setup'),
+              child: const Text('Keep going'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Skip for now'),
+              child: const Text('Leave for now'),
             ),
           ],
         );
@@ -119,7 +129,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
 
     if (skip == true && mounted) {
-      await _finish();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const MainScreen()),
+      );
     }
   }
 
@@ -146,15 +158,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       }
     }
 
-    if (_pageIndex == OnboardingScreen.permissionsPageIndex &&
-        !_permissionsReady) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Complete permission setup on this screen before continuing.',
-          ),
-        ),
-      );
+    if (_pageIndex == OnboardingScreen.permissionsPageIndex) {
+      if (_permissionsReady) {
+        await _finish();
+        return;
+      }
+      await _permissionsPageKey.currentState?.handleBottomPrimaryAction();
       return;
     }
 
@@ -174,9 +183,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return _selectedAgencies.isNotEmpty && _primaryAgency != null;
     }
     if (_pageIndex == OnboardingScreen.permissionsPageIndex) {
-      return _permissionsReady;
+      return !_permissionsFlowRunning;
     }
     return true;
+  }
+
+  String get _primaryButtonLabel {
+    if (_pageIndex == OnboardingScreen.permissionsPageIndex) {
+      if (_permissionsReady) {
+        return 'Get started';
+      }
+      if (_permissionsSetupStarted) {
+        return TripUxCopy.resumePermissionSetup;
+      }
+      return TripUxCopy.enableAndContinue;
+    }
+    if (_pageIndex < OnboardingScreen.lastPageIndex) {
+      return 'Continue';
+    }
+    return 'Get started';
+  }
+
+  String? get _primaryButtonHint {
+    if (_pageIndex == OnboardingScreen.permissionsPageIndex &&
+        _permissionsFlowRunning) {
+      return 'Follow the Android prompts…';
+    }
+    if (_pageIndex == OnboardingScreen.permissionsPageIndex &&
+        _permissionsSetupStarted &&
+        !_permissionsReady &&
+        !_permissionsFlowRunning) {
+      return 'Finish the remaining steps above, or tap Resume setup.';
+    }
+    if (_pageIndex == OnboardingScreen.agencyPageIndex &&
+        _selectedAgencies.isEmpty) {
+      return TransitUserCopy.selectTransitAbove;
+    }
+    return null;
   }
 
   ScrollPhysics get _pagePhysics {
@@ -195,10 +238,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       appBar: AppBar(
         title: Text(widget.popOnComplete ? 'Setup guide' : 'Welcome'),
         actions: [
-          TextButton(
-            onPressed: _confirmSkipSetup,
-            child: Text(widget.popOnComplete ? 'Close' : 'Skip setup'),
-          ),
+          if (widget.popOnComplete)
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            )
+          else
+            TextButton(
+              onPressed: _confirmSkipSetup,
+              child: const Text('Leave for now'),
+            ),
         ],
       ),
       body: PageView(
@@ -207,14 +256,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         onPageChanged: (index) => setState(() => _pageIndex = index),
         children: [
           const _IntroPage(
-            title: 'Wake up before your stop',
-            body:
-                'DozeAlert monitors your trip and sounds an alarm when '
-                'you are approaching your destination.\n\n'
-                'Next, select the transit you ride — you can pick more '
-                'than one. Then allow location access so we can track '
-                'your ride.\n\n'
-                'On Home, a short guided tour shows you where to tap.',
+            title: TripUxCopy.onboardingIntroTitle,
+            body: TripUxCopy.onboardingIntroBody,
             useBrandMentions: true,
           ),
           TransitAgencyChoicePage(
@@ -224,12 +267,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             onPrimaryChanged: _setPrimaryAgency,
           ),
           OnboardingPermissionsPage(
+            key: _permissionsPageKey,
             onStatusChanged: (snapshot) {
               if (!mounted) {
                 return;
               }
               setState(() {
                 _permissionsReady = snapshot.allRequiredForMonitoring;
+              });
+            },
+            onUiStateChanged: (state) {
+              if (!mounted) {
+                return;
+              }
+              setState(() {
+                _permissionsSetupStarted = state.setupStarted;
+                _permissionsFlowRunning = state.autoFlowRunning;
+                _permissionsReady = state.permissionsReady;
               });
             },
           ),
@@ -267,31 +321,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: FilledButton(
                   onPressed:
                       _canPressPrimary ? () => unawaited(_onPrimaryAction()) : null,
-                  child: Text(
-                    _pageIndex < OnboardingScreen.lastPageIndex
-                        ? 'Continue'
-                        : 'Get started',
-                  ),
+                  child: _permissionsFlowRunning
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: colorScheme.onPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(_primaryButtonLabel),
+                          ],
+                        )
+                      : Text(_primaryButtonLabel),
                 ),
               ),
-              if (_pageIndex == OnboardingScreen.agencyPageIndex &&
-                  _selectedAgencies.isEmpty)
+              if (_primaryButtonHint != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    TransitUserCopy.selectTransitAbove,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              if (_pageIndex == OnboardingScreen.permissionsPageIndex &&
-                  !_permissionsReady)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Tap Start permission setup, then return here when done.',
+                    _primaryButtonHint!,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,

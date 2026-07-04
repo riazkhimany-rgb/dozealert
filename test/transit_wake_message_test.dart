@@ -2,6 +2,7 @@ import 'package:dozealert/models/transit_mode_snapshot.dart';
 import 'package:dozealert/models/transit_mode_wake_setting.dart';
 import 'package:dozealert/models/transit_stop.dart';
 import 'package:dozealert/utils/transit_wake_message.dart';
+import 'package:dozealert/utils/trip_ux_copy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 TransitStop _stop(String name, int sequence) {
@@ -41,7 +42,7 @@ void main() {
       destination,
     ];
 
-    test('at destination uses destination headline and status only', () {
+    test('at destination uses time-to-get-off headline and destination line', () {
       final copy = TransitWakeMessage.forTransitAlarm(
         snapshot: _snapshot(
           destination: destination,
@@ -52,16 +53,16 @@ void main() {
         segmentStops: segment,
       );
 
-      expect(copy.headline, 'Union Station');
+      expect(copy.uiHeadline, TripUxCopy.timeToGetOffHeadline);
+      expect(copy.headline, 'Union Station is your stop');
       expect(copy.primaryStopName, 'Union Station');
       expect(copy.currentStopName, 'Union Station');
       expect(copy.secondaryLine, isNull);
       expect(copy.wearSubline, 'Time to get off');
-      expect(copy.detailMessage, contains('Voice alert and vibration continue'));
-      expect(copy.detailMessage, isNot(contains('Union Station')));
+      expect(copy.detailMessage, TripUxCopy.alarmContinuesUntilDismiss);
     });
 
-    test('one stop before shows destination, status, and current stop', () {
+    test('one stop before shows get ready copy and current stop', () {
       final copy = TransitWakeMessage.forTransitAlarm(
         snapshot: _snapshot(
           destination: destination,
@@ -73,12 +74,12 @@ void main() {
         segmentStops: segment,
       );
 
-      expect(copy.headline, 'Union Station');
+      expect(copy.uiHeadline, TripUxCopy.getReadyHeadline);
+      expect(copy.headline, 'Union Station is your stop');
       expect(copy.primaryStopName, 'Union Station');
       expect(copy.currentStopName, 'Queen');
-      expect(copy.secondaryLine, 'Stay on board');
+      expect(copy.secondaryLine, TripUxCopy.stayOnBoardOneMoreStop);
       expect(copy.wearSubline, '1 stop to go');
-      expect(copy.detailMessage, isNot(contains('Union Station')));
       expect(copy.ttsPhrase, contains('Union Station'));
       expect(copy.ttsPhrase, isNot(contains('Queen')));
     });
@@ -96,22 +97,23 @@ void main() {
         segmentStops: segment,
       );
 
-      expect(copy.headline, 'Union Station');
+      expect(copy.uiHeadline, TripUxCopy.getReadyHeadline);
+      expect(copy.headline, 'Union Station is your stop');
       expect(copy.currentStopName, 'King');
-      expect(copy.secondaryLine, 'Stay on board');
+      expect(copy.secondaryLine, TripUxCopy.stayOnBoardTwoMoreStops);
       expect(copy.wearSubline, '2 stops to go');
     });
   });
 
   group('TransitWakeMessage.forDistanceAlarm', () {
-    test('distance wake uses destination headline and generic footer', () {
+    test('distance wake uses get ready copy and generic footer', () {
       final copy = TransitWakeMessage.forDistanceAlarm(
         destinationName: 'Union Station',
       );
 
-      expect(copy.headline, 'Union Station');
-      expect(copy.detailMessage, contains('Voice alert and vibration continue'));
-      expect(copy.detailMessage, isNot(contains('Distance wake')));
+      expect(copy.uiHeadline, TripUxCopy.getReadyHeadline);
+      expect(copy.headline, 'Union Station is your stop');
+      expect(copy.detailMessage, TripUxCopy.alarmContinuesUntilDismiss);
       expect(copy.wearSubline, 'Within wake radius');
     });
   });

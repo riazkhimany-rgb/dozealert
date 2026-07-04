@@ -5,6 +5,7 @@ class AppPermissionSnapshot {
     required this.locationWhenInUseGranted,
     required this.backgroundLocationGranted,
     required this.notificationsGranted,
+    required this.activityRecognitionGranted,
     required this.locationServicesEnabled,
     required this.batteryOptimizationEnabled,
   });
@@ -12,6 +13,7 @@ class AppPermissionSnapshot {
   final bool locationWhenInUseGranted;
   final bool backgroundLocationGranted;
   final bool notificationsGranted;
+  final bool activityRecognitionGranted;
   final bool locationServicesEnabled;
   /// `true` when Android battery optimization is still limiting the app.
   final bool batteryOptimizationEnabled;
@@ -24,6 +26,7 @@ class AppPermissionSnapshot {
     if (Platform.isAndroid) {
       return backgroundLocationGranted &&
           notificationsGranted &&
+          activityRecognitionGranted &&
           batteryUnrestricted;
     }
 
@@ -40,18 +43,21 @@ class AppPermissionSnapshot {
     if (!locationWhenInUseGranted) {
       missing.add(
         Platform.isAndroid
-            ? 'Location: Allow only while using the app (first step)'
-            : 'Location: Allow While Using the App',
+            ? 'Location — allow while using the app (first step)'
+            : 'Location — allow while using the app',
       );
     }
     if (Platform.isAndroid && !backgroundLocationGranted) {
-      missing.add('Location: Allow all the time');
+      missing.add('Background location — keep watching while screen is off');
     }
     if (Platform.isAndroid && !notificationsGranted) {
-      missing.add('Notifications: Allowed');
+      missing.add('Notifications — wake you with sound and vibration');
+    }
+    if (Platform.isAndroid && !activityRecognitionGranted) {
+      missing.add('Physical activity — tell when you\'re on the train');
     }
     if (Platform.isAndroid && !batteryUnrestricted) {
-      missing.add('Battery: Unrestricted / not optimized');
+      missing.add('Battery — so Android doesn\'t stop the trip');
     }
     return missing;
   }

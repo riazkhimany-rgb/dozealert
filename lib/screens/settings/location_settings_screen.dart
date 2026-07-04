@@ -2,22 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/location_provider.dart';
-import '../../providers/monitoring_provider.dart';
 import '../../services/background_monitor_service.dart';
-import '../../utils/monitoring_format.dart';
 import '../../widgets/settings_section_tile.dart';
+import '../../widgets/wake_radius_dropdown.dart';
 
 class LocationSettingsScreen extends StatelessWidget {
   const LocationSettingsScreen({super.key});
 
-  static const _radiusOptions = <int>[250, 500, 1000, 2000];
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final radiusMeters = context.select<MonitoringProvider, int>(
-      (provider) => provider.radiusMeters,
-    );
     final accuracy = context.select<LocationProvider, String>(
       (provider) {
         final location = provider.currentLocation;
@@ -37,40 +31,7 @@ class LocationSettingsScreen extends StatelessWidget {
       body: ListView(
         children: [
           const SettingsSectionHeader(title: 'Wake Radius'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: InputDecorator(
-              decoration: InputDecoration(
-                labelText: 'Alert distance',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<int>(
-                  isExpanded: true,
-                  value: radiusMeters,
-                  items: _radiusOptions
-                      .map(
-                        (meters) => DropdownMenuItem<int>(
-                          value: meters,
-                          child: Text(MonitoringFormat.radiusLabel(meters)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      context.read<MonitoringProvider>().setRadius(value);
-                    }
-                  },
-                ),
-              ),
-            ),
-          ),
+          const WakeRadiusDropdown(),
           const SizedBox(height: 24),
           const SettingsSectionHeader(title: 'Location Accuracy'),
           ListTile(

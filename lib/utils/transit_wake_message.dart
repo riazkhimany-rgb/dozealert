@@ -3,10 +3,12 @@ import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
 import '../models/transit_stop.dart';
 import '../utils/gtfs_stop_name_utils.dart';
+import 'trip_ux_copy.dart';
 
 /// User-facing copy for wake alerts on phone and Wear OS.
 class WakeAlertCopy {
   const WakeAlertCopy({
+    required this.uiHeadline,
     required this.headline,
     required this.primaryStopName,
     required this.currentStopName,
@@ -16,7 +18,10 @@ class WakeAlertCopy {
     this.wearSubline,
   });
 
-  /// Destination stop name — phone alarm headline and Wear alarm title.
+  /// Large alarm screen headline (e.g. GET READY).
+  final String uiHeadline;
+
+  /// Destination-focused line under the headline.
   final String headline;
 
   /// Selected destination (Wear sync / alarmStopName).
@@ -39,8 +44,7 @@ class WakeAlertCopy {
 }
 
 abstract final class TransitWakeMessage {
-  static const _alarmDismissFooter =
-      'Voice alert and vibration continue until you dismiss.';
+  static const _alarmDismissFooter = TripUxCopy.alarmContinuesUntilDismiss;
 
   static String forHome({
     required bool transitModeEnabled,
@@ -85,7 +89,7 @@ abstract final class TransitWakeMessage {
     }
 
     if (isMonitoring) {
-      return 'Confirming your route on $selectedLine…';
+      return TripUxCopy.confirmingRoute;
     }
 
     return 'Tap Start when you are on board.';
@@ -106,7 +110,10 @@ abstract final class TransitWakeMessage {
         ? GtfsStopNameUtils.stationDisplayName(snapshot.currentStop!.stopName)
         : destinationName;
 
-    final headline = destinationName;
+    final uiHeadline = wakeSetting == TransitModeWakeSetting.atDestination
+        ? TripUxCopy.timeToGetOffHeadline
+        : TripUxCopy.getReadyHeadline;
+    final headline = TripUxCopy.destinationIsYourStop(destinationName);
 
     final wearSubline = switch (wakeSetting) {
       TransitModeWakeSetting.atDestination => 'Time to get off',
@@ -116,9 +123,8 @@ abstract final class TransitWakeMessage {
 
     final secondaryLine = switch (wakeSetting) {
       TransitModeWakeSetting.atDestination => null,
-      TransitModeWakeSetting.oneStopBefore ||
-      TransitModeWakeSetting.twoStopsBefore =>
-        'Stay on board',
+      TransitModeWakeSetting.oneStopBefore => TripUxCopy.stayOnBoardOneMoreStop,
+      TransitModeWakeSetting.twoStopsBefore => TripUxCopy.stayOnBoardTwoMoreStops,
     };
 
     const detailMessage = _alarmDismissFooter;
@@ -133,6 +139,7 @@ abstract final class TransitWakeMessage {
     };
 
     return WakeAlertCopy(
+      uiHeadline: uiHeadline,
       headline: headline,
       primaryStopName: destinationName,
       currentStopName: currentStopName,
@@ -151,7 +158,8 @@ abstract final class TransitWakeMessage {
     final ttsPhrase = 'Heads up! Approaching $displayName.';
 
     return WakeAlertCopy(
-      headline: displayName,
+      uiHeadline: TripUxCopy.getReadyHeadline,
+      headline: TripUxCopy.destinationIsYourStop(displayName),
       primaryStopName: displayName,
       currentStopName: displayName,
       detailMessage: _alarmDismissFooter,

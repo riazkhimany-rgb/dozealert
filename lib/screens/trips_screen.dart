@@ -13,6 +13,7 @@ import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
 import '../utils/trip_ux_copy.dart';
@@ -43,6 +44,15 @@ class TripsScreen extends StatelessWidget {
     final hasAnyTrips = recentDestinations.isNotEmpty ||
         favorites.isNotEmpty ||
         lineFavorites.isNotEmpty;
+    final transitModeEnabled = context.select<SettingsProvider, bool>(
+      (provider) => provider.transitModeEnabled,
+    );
+    final emptyActionLabel = transitModeEnabled
+        ? TripUxCopy.pickYourStop
+        : TripUxCopy.pickDestination;
+    final emptyMessage = transitModeEnabled
+        ? TripUxCopy.myTripsEmptyMessage
+        : TripUxCopy.myTripsEmptyMessageDistance;
 
     return Scaffold(
       appBar: AppBar(
@@ -55,9 +65,8 @@ class TripsScreen extends StatelessWidget {
             HomeCard(
               child: EmptyStateMessage(
                 showLogo: true,
-                message:
-                    'Save stops you use often and start a trip with one tap.',
-                actionLabel: TripUxCopy.pickYourStop,
+                message: emptyMessage,
+                actionLabel: emptyActionLabel,
                 onAction: () => TripStopPickerSheet.show(context),
               ),
             )

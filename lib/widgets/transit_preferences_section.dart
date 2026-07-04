@@ -14,6 +14,7 @@ import '../utils/transit_line_picker_utils.dart';
 import '../utils/transit_user_copy.dart';
 import '../widgets/home_card.dart';
 import '../widgets/gtfs_vehicle_type_download_prompt.dart';
+import '../widgets/gtfs_feed_progress_indicator.dart';
 import '../widgets/searchable_line_picker.dart';
 import '../widgets/transit_attribution_notice.dart';
 import '../widgets/vehicle_type_filter_chips.dart';
@@ -229,13 +230,6 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
             ),
             const SizedBox(height: 12),
           ],
-          Text(
-            TransitUserCopy.lineLabel,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
           if (lineOptions.isEmpty)
             Text(
               _vehicleTypeFilter == null
@@ -247,7 +241,14 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
                 color: colorScheme.onSurfaceVariant,
               ),
             )
-          else if (useSearch)
+          else if (useSearch) ...[
+            Text(
+              TransitUserCopy.lineLabel,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
             SearchableLinePicker(
               value: resolvedLine,
               options: lineOptions,
@@ -255,8 +256,8 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
               onChanged: (value) {
                 unawaited(context.read<TransitProvider>().setDefaultLine(value));
               },
-            )
-          else
+            ),
+          ] else
             _InlineDropdown(
               label: TransitUserCopy.lineLabel,
               value: resolvedLine,
@@ -530,21 +531,12 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
             ],
             if (isBusy) ...[
               const SizedBox(height: 16),
-              if (progress?.downloadFraction != null)
-                LinearProgressIndicator(
-                  value: progress!.downloadFraction!.clamp(0, 1),
-                  borderRadius: BorderRadius.circular(4),
-                )
-              else
-                LinearProgressIndicator(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              const SizedBox(height: 8),
-              Text(
-                progress?.phase ?? feed.status.label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.primary,
-                ),
+              GtfsFeedProgressIndicator(
+                progress: progress ??
+                    GtfsFeedProgress(
+                      phase: feed.status.label,
+                      overallFraction: 0.05,
+                    ),
               ),
             ],
             if (errorMessage != null) ...[

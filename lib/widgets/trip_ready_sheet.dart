@@ -10,6 +10,7 @@ import '../screens/transit_data_screen.dart';
 import '../services/app_permissions_service.dart';
 import '../services/onboarding_service.dart';
 import '../utils/trip_readiness.dart';
+import '../utils/trip_ux_copy.dart';
 import '../widgets/branded_app_name.dart';
 import '../widgets/destination_picker_sheet.dart';
 import '../widgets/onboarding_permissions_page.dart';
@@ -81,24 +82,30 @@ abstract final class TripReadySheet {
       return true;
     }
 
+    final destination = monitoring.selectedDestination;
+    final destinationName = destination?.name;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           icon: const Icon(Icons.nightlight_round),
-          title: const Text('Ready to sleep?'),
+          title: const Text(TripUxCopy.readyToSleepTitle),
           content: BrandedMentionText(
-            'We wake you one stop before your stop by default.\n\n'
-            'Keep your phone charged and volume on, then relax.',
+            destinationName != null
+                ? TripUxCopy.readyToSleepBody(
+                    destinationName: destinationName,
+                  )
+                : TripUxCopy.readyToSleepBodyDefault,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Not yet'),
+              child: const Text(TripUxCopy.readyToSleepNotYet),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Start my trip'),
+              child: const Text(TripUxCopy.startMyTrip),
             ),
           ],
         );
@@ -133,7 +140,10 @@ class _TripReadyChecklist extends StatelessWidget {
           MaterialPageRoute<void>(
             builder: (_) => Scaffold(
               appBar: AppBar(title: const Text('Permissions')),
-              body: OnboardingPermissionsPage(onStatusChanged: (_) {}),
+              body: OnboardingPermissionsPage(
+                embedded: true,
+                onStatusChanged: (_) {},
+              ),
             ),
           ),
         );
@@ -158,14 +168,14 @@ class _TripReadyChecklist extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Almost ready',
+              TripUxCopy.almostReadyTitle,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Complete these steps before you fall asleep:',
+              TripUxCopy.almostReadySubtitle,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),

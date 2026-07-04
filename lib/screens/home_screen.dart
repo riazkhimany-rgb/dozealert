@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -13,18 +12,16 @@ import '../models/transit_stop.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/transit_mode_provider.dart';
 import '../providers/transit_provider.dart';
-import '../providers/wear_status_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../services/app_tour_service.dart';
 import '../utils/app_branding.dart';
 import '../utils/location_format.dart';
-import '../utils/monitoring_format.dart';
 import '../utils/gtfs_stop_name_utils.dart';
 import '../utils/gtfs_readiness.dart';
-import '../utils/transit_user_copy.dart';
 import '../utils/transit_wake_message.dart';
 import '../utils/trip_ux_copy.dart';
 import '../utils/wake_radius_format.dart';
@@ -41,8 +38,6 @@ import '../widgets/transit_route_progress_line.dart';
 import '../widgets/trip_ready_sheet.dart';
 import '../widgets/gtfs_updating_banner.dart';
 import '../widgets/trip_concern_banner.dart';
-import '../widgets/trip_setup_checklist.dart';
-import '../screens/settings/location_settings_screen.dart';
 import '../widgets/transit_agency_line_picker_sheet.dart';
 import '../screens/settings/transit_mode_settings_screen.dart';
 
@@ -56,10 +51,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _showingArrivalDialog = false;
   bool _homeTourVisible = false;
+  bool _startInProgress = false;
+  bool _stopInProgress = false;
   AppTourService? _appTourService;
   ShowcaseView? _showcaseView;
 
-  final _chooseAgencyKey = GlobalKey();
   final _setDestinationKey = GlobalKey();
   final _wakeSettingsKey = GlobalKey();
   final _startMonitoringKey = GlobalKey();
@@ -103,7 +99,9 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final shouldShow = context.read<AppTourService>().replayRequested;
+    final tourService = context.read<AppTourService>();
+    final shouldShow =
+        tourService.replayRequested || await tourService.shouldShowHomeTour();
     if (!mounted || !shouldShow) {
       return;
     }
@@ -117,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _showcaseView?.startShowCase(
         [
           _setDestinationKey,
+          _wakeSettingsKey,
           _startMonitoringKey,
         ],
         delay: const Duration(milliseconds: 300),
@@ -131,43 +130,66 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _openAgencyLinePicker() async {
-    await TransitAgencyLinePickerSheet.show(context);
-  }
-
   Future<void> _openWakeSettings() async {
-    final transitModeEnabled = context.read<SettingsProvider>().transitModeEnabled;
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => transitModeEnabled
-            ? const TransitModeSettingsScreen()
-            : const LocationSettingsScreen(),
+        builder: (_) => const TransitModeSettingsScreen(),
       ),
     );
   }
 
-  List<HomeTourStepContent> _tourStepContents(bool transitModeEnabled) => [
-        if (transitModeEnabled)
-          const HomeTourStepContent(
-            id: HomeTourStepId.chooseAgency,
-            title: TransitUserCopy.homeTourConfirmTransitTitle,
-            body: TransitUserCopy.homeTourConfirmTransitBody,
-          ),
+  List<HomeTourStepContent> _tourStepContents(BuildContext context) {
+    final transitModeEnabled = context.read<SettingsProvider>().transitModeEnabled;
+    if (transitModeEnabled) {
+      return [
         const HomeTourStepContent(
           id: HomeTourStepId.setDestination,
           title: TripUxCopy.pickYourStop,
           body:
-              'Tap Pick your stop, choose your route if needed, then search '
-              'for the station where you want to get off.',
+              'Tap Pick your stop, confirm your transit and line if needed, '
+              'then search for the station where you want to get off.',
+        ),
+        const HomeTourStepContent(
+          id: HomeTourStepId.wakeSettings,
+          title: TripUxCopy.changeWakeStops,
+          body:
+              'Choose when to wake up — one stop before your stop is the '
+              'default. You can change this anytime before or during a trip.',
         ),
         const HomeTourStepContent(
           id: HomeTourStepId.startMonitoring,
           title: 'Start before you sleep',
           body:
               'Tap Start when you sit down on the bus or train. DozeAlert '
-              'wakes you one stop before your stop by default.',
+              'tracks your ride and wakes you at the right time.',
         ),
       ];
+    }
+
+    return [
+      const HomeTourStepContent(
+        id: HomeTourStepId.setDestination,
+        title: TripUxCopy.pickDestination,
+        body:
+            'Tap Pick destination, search on the map or drop a pin, '
+            'then set it as your destination.',
+      ),
+      const HomeTourStepContent(
+        id: HomeTourStepId.wakeSettings,
+        title: TripUxCopy.changeWakeDistance,
+        body:
+            'Choose how close to your destination you want to wake up. '
+            'You can change your alert distance anytime before or during a trip.',
+      ),
+      const HomeTourStepContent(
+        id: HomeTourStepId.startMonitoring,
+        title: 'Start before you sleep',
+        body:
+            'Tap Start when you are on your way. DozeAlert tracks your '
+            'location and wakes you within your alert distance.',
+      ),
+    ];
+  }
 
   HomeTourCard _tourCard(
     HomeTourStepId id,
@@ -194,10 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final hasDestination = context.select<MonitoringProvider, bool>(
       (provider) => provider.selectedDestination != null,
     );
-    final transitModeEnabled = context.select<SettingsProvider, bool>(
-      (provider) => provider.transitModeEnabled,
-    );
-    final tourSteps = _tourStepContents(transitModeEnabled);
+    final tourSteps = _tourStepContents(context);
 
     if (arrivalVisible && !_showingArrivalDialog) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -221,16 +240,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final destinationCard = _DestinationCard(
       compact: hasDestination,
+      tourActive: _homeTourVisible,
       setDestinationKey: _setDestinationKey,
-      chooseAgencyKey: _chooseAgencyKey,
-      onChooseAgency: () => unawaited(_openAgencyLinePicker()),
       setDestinationTourCard: _tourCard(HomeTourStepId.setDestination, tourSteps),
-      chooseAgencyTourCard: _tourCard(HomeTourStepId.chooseAgency, tourSteps),
     );
     final monitoringCard = _MonitoringCard(
+      tourActive: _homeTourVisible,
+      startInProgress: _startInProgress,
+      stopInProgress: _stopInProgress,
       wakeSettingsKey: _wakeSettingsKey,
       onOpenWakeSettings: () => unawaited(_openWakeSettings()),
       startMonitoringKey: _startMonitoringKey,
+      onStartMonitoring: () => unawaited(_handleStartMonitoring()),
+      onStopMonitoring: () => unawaited(_handleStopMonitoring()),
       wakeSettingsTourCard: _tourCard(HomeTourStepId.wakeSettings, tourSteps),
       startMonitoringTourCard:
           _tourCard(HomeTourStepId.startMonitoring, tourSteps),
@@ -249,7 +271,6 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             monitoringCard,
             if (!_homeTourVisible) ...[
-              const TripSetupChecklist(),
               const GtfsUpdatingBanner(),
               const GtfsReadinessBanner(),
             ],
@@ -285,6 +306,104 @@ class _HomeScreenState extends State<HomeScreen> {
       _showingArrivalDialog = false;
     }
   }
+
+  Future<void> _handleStartMonitoring() async {
+    if (_startInProgress) {
+      return;
+    }
+
+    await _handleStartMonitoringForHome(
+      context,
+      setInProgress: () {
+        if (mounted) {
+          setState(() => _startInProgress = true);
+        }
+      },
+      clearInProgress: () {
+        if (mounted) {
+          setState(() => _startInProgress = false);
+        }
+      },
+    );
+  }
+
+  Future<void> _handleStopMonitoring() async {
+    if (_stopInProgress) {
+      return;
+    }
+
+    setState(() {
+      _startInProgress = false;
+      _stopInProgress = true;
+    });
+
+    try {
+      await context.read<LocationProvider>().stopTracking();
+    } finally {
+      if (mounted) {
+        setState(() => _stopInProgress = false);
+      }
+    }
+  }
+}
+
+Future<void> _handleStartMonitoringForHome(
+  BuildContext context, {
+  required VoidCallback setInProgress,
+  required VoidCallback clearInProgress,
+}) async {
+  if (context.read<MonitoringProvider>().currentState ==
+      MonitoringState.missed) {
+    context.read<MonitoringProvider>().resetToIdle();
+  }
+
+  try {
+    final proceed = await TripReadySheet.confirmStart(context);
+    if (!proceed || !context.mounted) {
+      if (context.mounted && !proceed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Complete the steps above before starting your trip.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    setInProgress();
+
+    final locationProvider = context.read<LocationProvider>();
+    final backgroundMonitorService = context.read<BackgroundMonitorService>();
+
+    Future<void> tryStart({bool resume = false}) async {
+      final result = await locationProvider.startTracking(resume: resume);
+      if (!context.mounted) {
+        return;
+      }
+
+      if (result == LocationStartResult.success && context.mounted) {
+        await TripReadySheet.markTripStarted(context);
+      }
+
+      if (!context.mounted) {
+        return;
+      }
+
+      await LocationFeedback.handleStartResult(
+        context,
+        result,
+        backgroundMonitorService: backgroundMonitorService,
+        onContinueAfterBatteryPrompt: result ==
+                LocationStartResult.batteryOptimizationRequired
+            ? () => tryStart(resume: true)
+            : null,
+      );
+    }
+
+    await tryStart();
+  } finally {
+    clearInProgress();
+  }
 }
 
 bool _isGtfsReadyForTransitMode(BuildContext context) {
@@ -317,19 +436,15 @@ Widget _tourTarget({
 class _DestinationCard extends StatelessWidget {
   const _DestinationCard({
     required this.compact,
+    required this.tourActive,
     required this.setDestinationKey,
-    required this.chooseAgencyKey,
-    required this.onChooseAgency,
     required this.setDestinationTourCard,
-    required this.chooseAgencyTourCard,
   });
 
   final bool compact;
+  final bool tourActive;
   final GlobalKey setDestinationKey;
-  final GlobalKey chooseAgencyKey;
-  final VoidCallback onChooseAgency;
   final Widget setDestinationTourCard;
-  final Widget chooseAgencyTourCard;
 
   @override
   Widget build(BuildContext context) {
@@ -354,79 +469,73 @@ class _DestinationCard extends StatelessWidget {
     );
     final isMonitoring = state == MonitoringState.monitoring;
     final gtfsReady = _isGtfsReadyForTransitMode(context);
+    final radiusMeters = context.select<MonitoringProvider, int>(
+      (provider) => provider.radiusMeters,
+    );
     final routeSegmentStops = context.select<TransitModeProvider, List<TransitStop>>(
       (provider) => provider.routeSegmentStops,
     );
-    final wakeMessage = TransitWakeMessage.forHome(
-      transitModeEnabled: transitModeEnabled,
-      gtfsReady: gtfsReady,
-      snapshot: snapshot,
-      isMonitoring: isMonitoring,
-      selectedLine: selectedLine,
-      gpsSignalLost: gpsSignalLost,
-    );
-    final showConcernBanner = isMonitoring &&
+    final showConcernBanner = !isMonitoring &&
         snapshot.isActive &&
         snapshot.hasTripConcern;
     final showTransitProgress = destination != null &&
         transitModeEnabled &&
         gtfsReady;
-    final idleTransitPrompt = showTransitProgress &&
-        !isMonitoring &&
-        !snapshot.isActive;
+    final pickDestinationLabel = transitModeEnabled
+        ? TripUxCopy.pickYourStop
+        : TripUxCopy.pickDestination;
+    final destinationCardTitle = destination == null
+        ? pickDestinationLabel
+        : transitModeEnabled
+            ? TripUxCopy.yourStop
+            : TripUxCopy.yourDestination;
+    final clearDestinationLabel = transitModeEnabled
+        ? TripUxCopy.clearStop
+        : TripUxCopy.clearDestination;
+    final changeDestinationLabel = transitModeEnabled
+        ? TripUxCopy.changeStop
+        : TripUxCopy.changeDestination;
 
     return HomeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HomeCardHeader(
-            icon: Icons.location_on_outlined,
-            title: compact
-                ? TripUxCopy.yourStop
-                : (destination == null
-                    ? TripUxCopy.pickYourStop
-                    : TripUxCopy.readyWhenYouAre),
+            icon: transitModeEnabled
+                ? Icons.location_on_outlined
+                : Icons.place_outlined,
+            title: destinationCardTitle,
             iconColor: colorScheme.secondary,
+            trailing: destination != null && !isMonitoring
+                ? _DestinationActionButton(
+                    label: clearDestinationLabel,
+                    icon: Icons.close_rounded,
+                    onPressed: () =>
+                        context.read<MonitoringProvider>().clearDestination(),
+                  )
+                : null,
           ),
           const SizedBox(height: 12),
           if (destination == null) ...[
             Text(
-              TripUxCopy.emptyHeadline,
+              transitModeEnabled
+                  ? TripUxCopy.emptyHeadline
+                  : TripUxCopy.emptyHeadlineDistance,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              TripUxCopy.emptySubtitle,
+              transitModeEnabled
+                  ? TripUxCopy.emptySubtitle
+                  : TripUxCopy.emptySubtitleDistance,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 height: 1.4,
               ),
             ),
-            if (transitModeEnabled) ...[
-              const SizedBox(height: 12),
-              Text(
-                selectedLine,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
-                ),
-              ),
-            ],
           ] else ...[
-            if (transitModeEnabled && selectedLine.isNotEmpty) ...[
-              Text(
-                selectedLine,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 6),
-            ],
             Text(
               destination.name,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -434,43 +543,86 @@ class _DestinationCard extends StatelessWidget {
                 letterSpacing: -0.2,
               ),
             ),
+            if (transitModeEnabled && selectedLine.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                selectedLine,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             if (!isMonitoring)
+              Text(
+                transitModeEnabled
+                    ? TripUxCopy.wakeTargetLabel(
+                        wakeSetting: context
+                            .read<SettingsProvider>()
+                            .transitModeWake,
+                        destinationName: destination.name,
+                        wakeAtStopName: TransitWakeMessage.wakeStopNameFor(
+                          snapshot: snapshot,
+                          wakeStopCount: context
+                              .read<SettingsProvider>()
+                              .transitModeWake
+                              .wakeStopCount,
+                          segmentStops: routeSegmentStops,
+                        ),
+                      )
+                    : WakeRadiusFormat.wakeByDescription(radiusMeters),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              )
+            else if (transitModeEnabled && snapshot.isActive)
               Text(
                 TripUxCopy.wakeTargetLabel(
                   wakeSetting:
                       context.read<SettingsProvider>().transitModeWake,
                   destinationName: destination.name,
+                  wakeAtStopName: TransitWakeMessage.wakeStopNameFor(
+                    snapshot: snapshot,
+                    wakeStopCount: context
+                        .read<SettingsProvider>()
+                        .transitModeWake
+                        .wakeStopCount,
+                    segmentStops: routeSegmentStops,
+                  ),
                 ),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   height: 1.4,
                 ),
               )
-            else if (idleTransitPrompt) ...[
+            else if (transitModeEnabled)
               Text(
-                'Start your trip to see stop-by-stop progress.',
+                TripUxCopy.confirmingRoute,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              )
+            else
+              Text(
+                WakeRadiusFormat.wakeByDescription(radiusMeters),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   height: 1.4,
                 ),
               ),
-            ] else if (!showConcernBanner)
-              Text(
-                wakeMessage,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
+            if (showConcernBanner)
+              TripConcernBanner(
+                snapshot: snapshot,
+                selectedLine: selectedLine,
+                gpsSignalLost: gpsSignalLost,
+                transitModeEnabled: transitModeEnabled,
+                gtfsReady: gtfsReady,
+                isMonitoring: isMonitoring,
               ),
-            TripConcernBanner(
-              snapshot: snapshot,
-              selectedLine: selectedLine,
-              gpsSignalLost: gpsSignalLost,
-              transitModeEnabled: transitModeEnabled,
-              gtfsReady: gtfsReady,
-              isMonitoring: isMonitoring,
-            ),
           ],
           if (showTransitProgress) ...[
             const SizedBox(height: 16),
@@ -487,67 +639,114 @@ class _DestinationCard extends StatelessWidget {
               inactiveMessage: '',
             ),
             if (transitModeEnabled &&
+                !isMonitoring &&
                 snapshot.directionLabel != null &&
-                (isMonitoring || snapshot.directionConfirming)) ...[
+                snapshot.directionConfirming) ...[
               const SizedBox(height: 8),
               MetricRow(
                 label: 'Direction',
-                value: snapshot.directionConfirming
-                    ? '${snapshot.directionLabel!} (confirming…)'
-                    : snapshot.directionLabel!,
-              ),
-            ],
-            if (isMonitoring) ...[
-              const SizedBox(height: 4),
-              Text(
-                _gpsFixLabel(context),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: gpsSignalLost
-                      ? colorScheme.error
-                      : colorScheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
+                value: '${snapshot.directionLabel!} (confirming…)',
               ),
             ],
           ],
           if (!isMonitoring) ...[
             if (destination == null) ...[
+              const SizedBox(height: 16),
               Semantics(
                 button: true,
-                label: TripUxCopy.pickYourStop,
+                label: pickDestinationLabel,
                 child: SizedBox(
                   width: double.infinity,
-                  child: _tourTarget(
-                    key: setDestinationKey,
-                    container: setDestinationTourCard,
-                    child: FilledButton.icon(
-                      onPressed: () => TripStopPickerSheet.show(context),
-                      icon: const Icon(Icons.add_location_alt_outlined),
-                      label: const Text(TripUxCopy.pickYourStop),
+                  child: tourActive
+                      ? _tourTarget(
+                          key: setDestinationKey,
+                          container: setDestinationTourCard,
+                          child: FilledButton.icon(
+                            onPressed: () => TripStopPickerSheet.show(context),
+                            icon: Icon(
+                              transitModeEnabled
+                                  ? Icons.add_location_alt_outlined
+                                  : Icons.map_outlined,
+                            ),
+                            label: Text(pickDestinationLabel),
+                          ),
+                        )
+                      : FilledButton.icon(
+                          onPressed: () => TripStopPickerSheet.show(context),
+                          icon: Icon(
+                            transitModeEnabled
+                                ? Icons.add_location_alt_outlined
+                                : Icons.map_outlined,
+                          ),
+                          label: Text(pickDestinationLabel),
+                        ),
+                ),
+              ),
+              if (transitModeEnabled) ...[
+                const SizedBox(height: 8),
+                Center(
+                  child: _DestinationActionButton(
+                    label: TripUxCopy.selectFromMyTrips,
+                    icon: Icons.favorite_border_outlined,
+                    onPressed: () =>
+                        context.read<NavigationProvider>().setIndex(1),
+                  ),
+                ),
+              ],
+              if (transitModeEnabled && selectedLine.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(
+                    selectedLine,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
                     ),
                   ),
                 ),
-              ),
+              ],
             ] else ...[
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  TextButton(
-                    onPressed: () => TripStopPickerSheet.show(context),
-                    child: const Text(TripUxCopy.changeStop),
-                  ),
-                  if (transitModeEnabled)
-                    TextButton(
-                      onPressed: onChooseAgency,
-                      child: const Text(TripUxCopy.changeLine),
+              const SizedBox(height: 12),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _DestinationActionButton(
+                          label: changeDestinationLabel,
+                          icon: transitModeEnabled
+                              ? Icons.edit_location_alt_outlined
+                              : Icons.map_outlined,
+                          onPressed: () => TripStopPickerSheet.show(context),
+                        ),
+                        if (transitModeEnabled)
+                          _DestinationActionButton(
+                            label: TripUxCopy.changeLine,
+                            icon: Icons.directions_transit_outlined,
+                            onPressed: () => unawaited(
+                              TransitAgencyLinePickerSheet.show(context),
+                            ),
+                          ),
+                      ],
                     ),
-                  TextButton(
-                    onPressed: () =>
-                        context.read<MonitoringProvider>().clearDestination(),
-                    child: const Text(TripUxCopy.clearStop),
-                  ),
-                ],
+                    if (transitModeEnabled) ...[
+                      const SizedBox(height: 8),
+                      _DestinationActionButton(
+                        label: TripUxCopy.selectFromMyTrips,
+                        icon: Icons.favorite_border_outlined,
+                        onPressed: () =>
+                            context.read<NavigationProvider>().setIndex(1),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
           ],
@@ -555,36 +754,159 @@ class _DestinationCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _gpsFixLabel(BuildContext context) {
-    final locationProvider = context.read<LocationProvider>();
-    if (locationProvider.establishingGps) {
-      return TripUxCopy.findingLocation;
-    }
-    if (locationProvider.gpsPrewarming) {
-      return TripUxCopy.findingLocation;
-    }
+String _compactWakeSettingLabel(TransitModeWakeSetting setting) {
+  return switch (setting) {
+    TransitModeWakeSetting.atDestination => 'At destination',
+    TransitModeWakeSetting.oneStopBefore => '1 stop before',
+    TransitModeWakeSetting.twoStopsBefore => '2 stops before',
+  };
+}
 
-    final fixAt = locationProvider.lastLocationFixAt;
-    if (fixAt == null) {
-      return TripUxCopy.findingLocation;
-    }
-    return TripUxCopy.lockPhoneHint;
+class _DestinationActionButton extends StatelessWidget {
+  const _DestinationActionButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        minimumSize: const Size(0, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: Theme.of(context).textTheme.labelMedium,
+      ),
+    );
+  }
+}
+
+class _WakeSettingControl extends StatelessWidget {
+  const _WakeSettingControl({
+    required this.transitModeEnabled,
+    required this.wakeSettingLabel,
+    required this.onOpenWakeSettings,
+  });
+
+  final bool transitModeEnabled;
+  final String wakeSettingLabel;
+  final VoidCallback onOpenWakeSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final buttonIcon = transitModeEnabled
+        ? Icons.notifications_active_outlined
+        : Icons.straighten_outlined;
+    final secondLine = transitModeEnabled ? 'wake stops' : 'wake distance';
+    final labelStyle = Theme.of(context).textTheme.labelMedium;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        OutlinedButton(
+          onPressed: onOpenWakeSettings,
+          style: OutlinedButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            minimumSize: const Size(0, 32),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(buttonIcon, size: 16),
+              const SizedBox(width: 6),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Change', style: labelStyle),
+                  Text(secondLine, style: labelStyle),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          wakeSettingLabel,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StartTripButton extends StatelessWidget {
+  const _StartTripButton({
+    required this.inProgress,
+    required this.onPressed,
+  });
+
+  final bool inProgress;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      onPressed: inProgress ? null : onPressed,
+      icon: inProgress
+          ? SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+            )
+          : const Icon(Icons.play_arrow_rounded, size: 22),
+      label: Text(inProgress ? TripUxCopy.startingTrip : TripUxCopy.startTrip),
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(double.infinity, 48),
+      ),
+    );
   }
 }
 
 class _MonitoringCard extends StatelessWidget {
   const _MonitoringCard({
+    required this.tourActive,
+    required this.startInProgress,
+    required this.stopInProgress,
     required this.wakeSettingsKey,
     required this.onOpenWakeSettings,
     required this.startMonitoringKey,
+    required this.onStartMonitoring,
+    required this.onStopMonitoring,
     required this.wakeSettingsTourCard,
     required this.startMonitoringTourCard,
   });
 
+  final bool tourActive;
+  final bool startInProgress;
+  final bool stopInProgress;
   final GlobalKey wakeSettingsKey;
   final VoidCallback onOpenWakeSettings;
   final GlobalKey startMonitoringKey;
+  final VoidCallback onStartMonitoring;
+  final VoidCallback onStopMonitoring;
   final Widget wakeSettingsTourCard;
   final Widget startMonitoringTourCard;
 
@@ -618,81 +940,130 @@ class _MonitoringCard extends StatelessWidget {
     final gpsSignalLost = context.select<TransitModeProvider, bool>(
       (provider) => provider.gpsSignalLost,
     );
+    final establishingGps = context.select<LocationProvider, bool>(
+      (provider) => provider.establishingGps,
+    );
+    final gpsPrewarming = context.select<LocationProvider, bool>(
+      (provider) => provider.gpsPrewarming,
+    );
     final statusColor = _statusColor(colorScheme, state);
     final transitModeEnabled = context.select<SettingsProvider, bool>(
       (provider) => provider.transitModeEnabled,
     );
-    final transitWakeLabel = context.select<SettingsProvider, String>(
-      (provider) => provider.transitModeWake.wakeByLabel,
+    final transitWakeSetting = context.select<SettingsProvider, TransitModeWakeSetting>(
+      (provider) => provider.transitModeWake,
     );
-    final wakeSettingLabel = transitModeEnabled
-        ? 'Wake by $transitWakeLabel'
+    final compactWakeLabel = transitModeEnabled
+        ? _compactWakeSettingLabel(transitWakeSetting)
         : WakeRadiusFormat.wakeByDescription(radiusMeters);
     final distanceStale = distanceIsStale || gpsSignalLost;
     final distanceSubtitle =
         distanceStale ? 'Last known distance — GPS signal weak' : null;
     final distanceInlineNote =
         !distanceStale && usingAlongRoute ? 'along route' : null;
-    final canStart = hasDestination && state == MonitoringState.idle;
+    final canStart = hasDestination &&
+        (state == MonitoringState.idle || state == MonitoringState.missed);
     final canStop = state == MonitoringState.monitoring ||
         state == MonitoringState.arrived;
     final isMonitoring = state == MonitoringState.monitoring;
-    final watchConnected = Platform.isAndroid
-        ? context.select<WearStatusProvider, bool>(
-            (provider) => provider.watchConnected,
-          )
-        : false;
-    final watchAppInstalled = Platform.isAndroid
-        ? context.select<WearStatusProvider, bool>(
-            (provider) => provider.appInstalled,
-          )
-        : false;
+    final showLockPhoneHint = isMonitoring &&
+        !establishingGps &&
+        !gpsPrewarming &&
+        !gpsSignalLost;
+    final monitoringGpsStatus = TripUxCopy.gpsStatusLabel(
+      establishingGps: establishingGps,
+      gpsPrewarming: gpsPrewarming,
+      gpsSignalLost: gpsSignalLost,
+    );
 
     return HomeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HomeCardHeader(
-            icon: Icons.sensors,
-            title: isMonitoring ? TripUxCopy.watchingTrip : 'Your trip',
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.sensors,
+                    color: colorScheme.primary,
+                    size: 22,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: isMonitoring
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  TripUxCopy.watchingTripLine1,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.25,
+                                  ),
+                                ),
+                                Text(
+                                  TripUxCopy.watchingTripLine2,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.25,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              'Your trip',
+                              maxLines: 2,
+                              softWrap: true,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                height: 1.25,
+                              ),
+                            ),
+                    ),
+                    const SizedBox(width: 8),
+                    tourActive
+                        ? _tourTarget(
+                            key: wakeSettingsKey,
+                            container: wakeSettingsTourCard,
+                            child: _WakeSettingControl(
+                              transitModeEnabled: transitModeEnabled,
+                              wakeSettingLabel: compactWakeLabel,
+                              onOpenWakeSettings: onOpenWakeSettings,
+                            ),
+                          )
+                        : _WakeSettingControl(
+                            transitModeEnabled: transitModeEnabled,
+                            wakeSettingLabel: compactWakeLabel,
+                            onOpenWakeSettings: onOpenWakeSettings,
+                          ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          if (isMonitoring)
-            MonitoringStatusChip(
-              label: MonitoringFormat.homeStatusLabel(state),
-              icon: _statusIcon(state),
-              color: statusColor,
-              active: true,
-            ),
-          if (Platform.isAndroid && watchAppInstalled && isMonitoring) ...[
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: watchConnected
-                        ? const Color(0xFF34C759)
-                        : const Color(0xFFFF3B30),
-                  ),
-                ),
-                Text(
-                  watchConnected ? 'Watch Connected' : 'Watch Not Connected',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: watchConnected
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ],
           const SizedBox(height: 10),
           if (!hasDestination)
             Text(
@@ -702,7 +1073,7 @@ class _MonitoringCard extends StatelessWidget {
                 height: 1.4,
               ),
             )
-          else if (hasDistance)
+          else if (hasDistance && !(isMonitoring && transitModeEnabled))
             MonitoringDistanceProgress(
               distanceKm: distanceKm,
               progress: tripProgress,
@@ -726,29 +1097,11 @@ class _MonitoringCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-          if (hasDestination && !isMonitoring) ...[
+          if (isMonitoring &&
+              monitoringGpsStatus != TripUxCopy.lockPhoneHint) ...[
             const SizedBox(height: 8),
             Text(
-              transitModeEnabled
-                  ? TripUxCopy.defaultWakeSummary(
-                      context.read<SettingsProvider>().transitModeWake,
-                    )
-                  : wakeSettingLabel,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: 1.4,
-              ),
-            ),
-          ],
-          if (isMonitoring) ...[
-            const SizedBox(height: 8),
-            Text(
-              TripUxCopy.gpsStatusLabel(
-                establishingGps:
-                    context.read<LocationProvider>().establishingGps,
-                gpsPrewarming: context.read<LocationProvider>().gpsPrewarming,
-                gpsSignalLost: gpsSignalLost,
-              ),
+              monitoringGpsStatus,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 height: 1.4,
@@ -756,80 +1109,66 @@ class _MonitoringCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          if (canStart)
+          if ((canStart || tourActive) && !stopInProgress)
             Semantics(
               button: true,
               label: 'Start trip',
-              child: _tourTarget(
-                key: startMonitoringKey,
-                container: startMonitoringTourCard,
-                child: FilledButton.icon(
-                  onPressed: () => _handleStartMonitoring(context),
-                  icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                  label: const Text(TripUxCopy.startTrip),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                ),
-              ),
+              enabled: canStart,
+              child: tourActive
+                  ? _tourTarget(
+                      key: startMonitoringKey,
+                      container: startMonitoringTourCard,
+                      child: _StartTripButton(
+                        inProgress: startInProgress && !isMonitoring,
+                        onPressed: canStart ? onStartMonitoring : null,
+                      ),
+                    )
+                  : _StartTripButton(
+                      inProgress: startInProgress && !isMonitoring,
+                      onPressed: onStartMonitoring,
+                    ),
             ),
-          if (canStop)
+          if (canStop || stopInProgress) ...[
             Semantics(
               button: true,
               label: 'Stop trip',
               child: OutlinedButton.icon(
-                onPressed: () => _handleStopMonitoring(context),
-                icon: const Icon(Icons.stop_rounded, size: 20),
-                label: const Text(TripUxCopy.stopTrip),
+                onPressed: stopInProgress ? null : onStopMonitoring,
+                icon: stopInProgress
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.primary,
+                        ),
+                      )
+                    : const Icon(Icons.stop_rounded, size: 20),
+                label: Text(
+                  stopInProgress ? TripUxCopy.stoppingTrip : TripUxCopy.stopTrip,
+                ),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
                 ),
               ),
             ),
+            if (showLockPhoneHint) ...[
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  TripUxCopy.lockPhoneHint,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ],
       ),
     );
-  }
-
-  Future<void> _handleStartMonitoring(BuildContext context) async {
-    final proceed = await TripReadySheet.confirmStart(context);
-    if (!proceed || !context.mounted) {
-      return;
-    }
-
-    final locationProvider = context.read<LocationProvider>();
-    final backgroundMonitorService = context.read<BackgroundMonitorService>();
-
-    Future<void> tryStart({bool resume = false}) async {
-      final result = await locationProvider.startTracking(resume: resume);
-      if (!context.mounted) {
-        return;
-      }
-
-      if (result == LocationStartResult.success && context.mounted) {
-        await TripReadySheet.markTripStarted(context);
-      }
-
-      if (!context.mounted) {
-        return;
-      }
-
-      await LocationFeedback.handleStartResult(
-        context,
-        result,
-        backgroundMonitorService: backgroundMonitorService,
-        onContinueAfterBatteryPrompt: result ==
-                LocationStartResult.batteryOptimizationRequired
-            ? () => tryStart(resume: true)
-            : null,
-      );
-    }
-
-    await tryStart();
-  }
-
-  Future<void> _handleStopMonitoring(BuildContext context) async {
-    await context.read<LocationProvider>().stopTracking();
   }
 
   Color _statusColor(ColorScheme colorScheme, MonitoringState state) {
@@ -838,15 +1177,6 @@ class _MonitoringCard extends StatelessWidget {
       MonitoringState.monitoring => colorScheme.primary,
       MonitoringState.arrived => colorScheme.tertiary,
       MonitoringState.missed => colorScheme.error,
-    };
-  }
-
-  IconData _statusIcon(MonitoringState state) {
-    return switch (state) {
-      MonitoringState.idle => Icons.hourglass_empty_outlined,
-      MonitoringState.monitoring => Icons.radar,
-      MonitoringState.arrived => Icons.directions_railway,
-      MonitoringState.missed => Icons.error_outline,
     };
   }
 }

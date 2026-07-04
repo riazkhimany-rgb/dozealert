@@ -76,26 +76,26 @@ class _TransitAgencyLinePickerSheetState
     final lineOptions = gtfsProvider.availableLineOptionsForSelectedAgency(
       vehicleType: _vehicleTypeFilter,
     );
+    final allLineOptions = gtfsProvider.availableLineOptionsForSelectedAgency();
+    final selectedOption = gtfsProvider.lineOptionForPreference(
+          preferences.defaultLine,
+          allLineOptions,
+        ) ??
+        TransitLineOption(
+          lineName: preferences.defaultLine,
+          displayLabel: gtfsProvider.displayLabelForSelectedLine(),
+        );
     final filteredLines = lineOptions
         .where((option) => option.matchesQuery(_query))
         .toList(growable: false);
-    final selectedLineName = lineOptions
-            .any((option) => option.lineName == preferences.defaultLine)
-        ? preferences.defaultLine
-        : (lineOptions.isNotEmpty
-            ? lineOptions.first.lineName
-            : preferences.defaultLine);
-    final selectedOption = lineOptions.firstWhere(
-      (option) => option.lineName == selectedLineName,
-      orElse: () => TransitLineOption(
-        lineName: selectedLineName,
-        displayLabel: gtfsProvider.displayLabelForSelectedLine(),
-      ),
+    final highlightedLineName = gtfsProvider.resolveLineNameInOptions(
+      preferences.defaultLine,
+      lineOptions,
     );
     final showGtfsPrompt = _vehicleTypeFilter != null &&
         lineOptions.isEmpty &&
         vehicleTypes.contains(_vehicleTypeFilter);
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     final sheetHeight = MediaQuery.sizeOf(context).height * 0.9;
 
     return Padding(
@@ -118,36 +118,51 @@ class _TransitAgencyLinePickerSheetState
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          preferences.transitSystem,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          selectedOption.singleLineLabel,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: colorScheme.primary.withValues(alpha: 0.28),
                   ),
-                  TextButton(
-                    onPressed: () => unawaited(_openFullSettings()),
-                    child: Text(TransitUserCopy.changeTransit),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        preferences.transitSystem,
+                        textAlign: TextAlign.center,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        selectedOption.shortDashLongLabel,
+                        textAlign: TextAlign.center,
+                        style:
+                            Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton.tonalIcon(
+                        onPressed: () => unawaited(_openFullSettings()),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: Text(TransitUserCopy.changeTransit),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 44),
+                          alignment: Alignment.center,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
             if (vehicleTypes.isNotEmpty)
@@ -223,7 +238,7 @@ class _TransitAgencyLinePickerSheetState
                           final option = filteredLines[index];
                           return TransitLineListTile(
                             option: option,
-                            selected: option.lineName == selectedLineName,
+                            selected: highlightedLineName == option.lineName,
                             onTap: () => unawaited(_selectLine(option.lineName)),
                           );
                         },
@@ -231,14 +246,6 @@ class _TransitAgencyLinePickerSheetState
               ),
             ] else
               const Spacer(),
-            Padding(
-              padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + bottomInset),
-              child: OutlinedButton.icon(
-                onPressed: () => unawaited(_openFullSettings()),
-                icon: const Icon(Icons.settings_outlined, size: 18),
-                label: Text(TransitUserCopy.transitAndLineSettings),
-              ),
-            ),
           ],
         ),
       ),

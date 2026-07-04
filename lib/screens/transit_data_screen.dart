@@ -11,6 +11,7 @@ import '../utils/transit_user_copy.dart';
 import '../utils/user_facing_errors.dart';
 import '../utils/app_features.dart';
 import '../widgets/home_card.dart';
+import '../widgets/gtfs_feed_progress_indicator.dart';
 import 'transit_data_licenses_screen.dart';
 
 class TransitDataScreen extends StatefulWidget {
@@ -350,22 +351,13 @@ class _FeedCard extends StatelessWidget {
             ],
             if (isBusy) ...[
               const SizedBox(height: 12),
-              Text(
-                progress?.phase ?? feed.status.label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+              GtfsFeedProgressIndicator(
+                progress: progress ??
+                    GtfsFeedProgress(
+                      phase: feed.status.label,
+                      overallFraction: 0.05,
+                    ),
               ),
-              const SizedBox(height: 8),
-              if (progress?.downloadFraction != null)
-                LinearProgressIndicator(
-                  value: progress!.downloadFraction!.clamp(0, 1),
-                  minHeight: 6,
-                  borderRadius: BorderRadius.circular(999),
-                )
-              else
-                const LinearProgressIndicator(minHeight: 6),
             ],
             const SizedBox(height: 16),
             Wrap(
