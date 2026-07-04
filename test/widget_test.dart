@@ -19,6 +19,7 @@ import 'package:dozealert/providers/transit_mode_provider.dart';
 import 'package:dozealert/providers/transit_provider.dart';
 import 'package:dozealert/providers/trip_history_provider.dart';
 import 'package:dozealert/services/activity_recognition_service.dart';
+import 'package:dozealert/utils/trip_ux_copy.dart';
 import 'package:dozealert/services/alarm_service.dart';
 import 'package:dozealert/services/background_monitor_service.dart';
 import 'package:dozealert/services/destination_storage_service.dart';
@@ -235,50 +236,35 @@ void main() {
     await _pumpUntilSettled(tester);
 
     expect(find.byType(BrandedAppBarTitle), findsOneWidget);
-    expect(find.text('Monitoring'), findsOneWidget);
-    expect(find.text('Start'), findsOneWidget);
-    expect(find.text('Stop'), findsOneWidget);
-    expect(find.textContaining('Idle'), findsOneWidget);
+    expect(find.text('Your trip'), findsOneWidget);
+    expect(find.text('Pick your stop'), findsWidgets);
 
-    await tester.scrollUntilVisible(
-      find.text('Destination'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
+    expect(find.text(TripUxCopy.emptyHeadline), findsOneWidget);
+
+    await tester.tap(find.text(TripUxCopy.myTripsTab));
     await _pumpUntilSettled(tester);
 
-    expect(find.text('Destination'), findsOneWidget);
+    await tester.tap(find.text('Union Station'));
+    await _pumpUntilSettled(tester);
+
+    await tester.tap(find.byIcon(Icons.play_arrow_rounded).first);
+    await _pumpUntilSettled(tester);
+
+    expect(find.text('Almost ready'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await _pumpUntilSettled(tester);
+
+    await tester.tap(find.text('Home'));
+    await _pumpUntilSettled(tester);
+
+    expect(find.text('Union Station'), findsWidgets);
     expect(
       find.descendant(
         of: find.byType(HomeScreen),
-        matching: find.text('Set destination'),
+        matching: find.text('Start'),
       ),
       findsOneWidget,
     );
-    expect(
-      find.textContaining('Pick the stop where you want to wake up'),
-      findsOneWidget,
-    );
-
-    await tester.tap(
-      find.descendant(
-        of: find.byType(HomeScreen),
-        matching: find.text('Set destination'),
-      ).first,
-    );
-    await _pumpUntilSettled(tester);
-
-    expect(find.text('Favorite destinations'), findsOneWidget);
-
-    await tester.tap(find.text('Favorite destinations'));
-    await _pumpUntilSettled(tester);
-
-    expect(find.text('Union Station'), findsWidgets);
-
-    await tester.tap(find.text('Union Station').last);
-    await _pumpUntilSettled(tester);
-
-    expect(find.text('Union Station'), findsWidgets);
     expect(find.text('No destination selected'), findsNothing);
     expect(find.text('Transit Settings'), findsNothing);
     expect(find.text('Train Mode'), findsNothing);
@@ -286,10 +272,10 @@ void main() {
     expect(find.text('Distance'), findsNothing);
     expect(find.text('Recent Destinations'), findsNothing);
 
-    await tester.tap(find.text('Favorites'));
+    await tester.tap(find.text('My Trips'));
     await _pumpUntilSettled(tester);
 
-    expect(find.text('Favorite Destinations'), findsOneWidget);
+    expect(find.text('Saved stops'), findsOneWidget);
     expect(find.text('Trip History'), findsNothing);
     expect(find.text('Missed Trips'), findsNothing);
 

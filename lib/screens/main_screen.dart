@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/location_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../utils/trip_ux_copy.dart';
 import '../widgets/gtfs_feed_upgrade_listener.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
@@ -26,7 +27,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     NavigationDestination(
       icon: Icon(Icons.favorite_border),
       selectedIcon: Icon(Icons.favorite),
-      label: 'Favorites',
+      label: TripUxCopy.myTripsTab,
     ),
     NavigationDestination(
       icon: Icon(Icons.settings_outlined),

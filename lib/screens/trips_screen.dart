@@ -15,9 +15,11 @@ import '../providers/monitoring_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
+import '../utils/trip_ux_copy.dart';
 import '../widgets/add_favorite_destination_sheet.dart';
 import '../widgets/favorite_transit_lines_section.dart';
-import '../widgets/destination_picker_sheet.dart';
+import '../widgets/trip_ready_sheet.dart';
+import '../widgets/trip_stop_picker_sheet.dart';
 import '../widgets/empty_state_message.dart';
 import '../widgets/home_card.dart';
 
@@ -44,7 +46,7 @@ class TripsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorites'),
+        title: const Text(TripUxCopy.myTripsTab),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -54,10 +56,9 @@ class TripsScreen extends StatelessWidget {
               child: EmptyStateMessage(
                 showLogo: true,
                 message:
-                    'Save favorite stops and lines for quick access when '
-                    'setting your destination.',
-                actionLabel: 'Set destination',
-                onAction: () => DestinationPickerSheet.show(context),
+                    'Save stops you use often and start a trip with one tap.',
+                actionLabel: TripUxCopy.pickYourStop,
+                onAction: () => TripStopPickerSheet.show(context),
               ),
             )
           else ...[
@@ -66,7 +67,7 @@ class TripsScreen extends StatelessWidget {
             FavoriteTransitLinesSection(favorites: lineFavorites),
             const SizedBox(height: 16),
             _TripSection(
-              title: 'Recent Destinations',
+              title: 'Recent stops',
               icon: Icons.history,
               emptyMessage: 'No recent destinations yet.',
               destinations: recentDestinations,
@@ -173,7 +174,7 @@ class _FavoriteSection extends StatelessWidget {
               const Expanded(
                 child: HomeCardHeader(
                   icon: Icons.star_outline,
-                  title: 'Favorite Destinations',
+                  title: 'Saved stops',
                   iconColor: Color(0xFF4CC9F0),
                 ),
               ),
@@ -187,7 +188,7 @@ class _FavoriteSection extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Saved stops for quick access when setting your destination.',
+            'Tap ▶ to start a trip to a saved stop.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -339,11 +340,24 @@ Future<void> _selectAndStartMonitoring(
 }
 
 Future<void> _startMonitoringFromTrips(BuildContext context) async {
+  final proceed = await TripReadySheet.confirmStart(context);
+  if (!proceed || !context.mounted) {
+    return;
+  }
+
   final locationProvider = context.read<LocationProvider>();
   final backgroundMonitorService = context.read<BackgroundMonitorService>();
 
   Future<void> tryStart({bool resume = false}) async {
     final result = await locationProvider.startTracking(resume: resume);
+    if (!context.mounted) {
+      return;
+    }
+
+    if (result == LocationStartResult.success && context.mounted) {
+      await TripReadySheet.markTripStarted(context);
+    }
+
     if (!context.mounted) {
       return;
     }

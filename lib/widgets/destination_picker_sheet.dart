@@ -10,11 +10,12 @@ import '../providers/transit_provider.dart';
 import '../screens/map_picker_screen.dart';
 import '../screens/transit_data_screen.dart';
 import '../utils/transit_user_copy.dart';
+import '../utils/trip_ux_copy.dart';
+import 'accessible_scroll_body.dart';
 import 'favorite_lines_picker_sheet.dart';
 import 'favorite_stops_picker_sheet.dart';
 import 'recent_destinations_picker_sheet.dart';
-import 'accessible_scroll_body.dart';
-import 'stop_picker_sheet.dart';
+import 'trip_stop_picker_sheet.dart';
 
 class DestinationPickerSheet extends StatelessWidget {
   const DestinationPickerSheet({super.key});
@@ -55,7 +56,7 @@ class DestinationPickerSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Set destination',
+            TripUxCopy.pickYourStop,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -63,7 +64,7 @@ class DestinationPickerSheet extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             transitMode
-                ? 'Pick the stop where you want to wake up.'
+                ? 'Search for the station where you want to get off.'
                 : 'Choose how you want to pick your stop or location.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
@@ -77,63 +78,92 @@ class DestinationPickerSheet extends StatelessWidget {
           if (canPickStop)
             _PickerOption(
               icon: Icons.route_outlined,
-              title: 'Pick stop',
+              title: TripUxCopy.pickYourStop,
               subtitle: TransitUserCopy.pickStopSubtitle,
-              emphasized: transitMode,
+              emphasized: true,
               onTap: () {
                 Navigator.of(context).pop();
-                StopPickerSheet.show(context);
+                TripStopPickerSheet.show(context);
               },
             ),
-          _PickerOption(
-            icon: Icons.star_outline,
-            title: 'Favorite destinations',
-            subtitle: favoriteStopCount == 0
-                ? 'No saved destinations yet'
-                : '$favoriteStopCount saved destination${favoriteStopCount == 1 ? '' : 's'}',
-            onTap: () {
-              Navigator.of(context).pop();
-              FavoriteStopsPickerSheet.show(context);
-            },
-          ),
-          _PickerOption(
-            icon: Icons.history,
-            title: 'Recent destinations',
-            subtitle: recentCount == 0
-                ? 'No recent destinations yet'
-                : '$recentCount recent destination${recentCount == 1 ? '' : 's'}',
-            onTap: () {
-              Navigator.of(context).pop();
-              RecentDestinationsPickerSheet.show(context);
-            },
-          ),
-          _PickerOption(
-            icon: Icons.swap_horiz,
-            title: 'Switch transit line',
-            subtitle: favoriteLineCount == 0
-                ? 'No saved lines yet'
-                : '$favoriteLineCount saved line${favoriteLineCount == 1 ? '' : 's'}',
-            onTap: () {
-              Navigator.of(context).pop();
-              FavoriteLinesPickerSheet.show(context);
-            },
-          ),
-          if (!transitMode || !canPickStop)
+          if (!canPickStop && transitMode)
             _PickerOption(
-              icon: Icons.map_outlined,
-              title: 'Search on map',
-              subtitle: transitMode
-                  ? TransitUserCopy.mapPinSubtitle
-                  : 'Drop a pin or search with Google Places',
+              icon: Icons.route_outlined,
+              title: TripUxCopy.pickYourStop,
+              subtitle: TransitUserCopy.stopListNeededFor(agency),
+              emphasized: true,
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const MapPickerScreen(),
+                    builder: (_) => const TransitDataScreen(),
                   ),
                 );
               },
             ),
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                TripUxCopy.moreOptions,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              children: [
+                _PickerOption(
+                  icon: Icons.star_outline,
+                  title: 'Saved stops',
+                  subtitle: favoriteStopCount == 0
+                      ? 'No saved stops yet'
+                      : '$favoriteStopCount saved stop${favoriteStopCount == 1 ? '' : 's'}',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    FavoriteStopsPickerSheet.show(context);
+                  },
+                ),
+                _PickerOption(
+                  icon: Icons.history,
+                  title: 'Recent stops',
+                  subtitle: recentCount == 0
+                      ? 'No recent stops yet'
+                      : '$recentCount recent stop${recentCount == 1 ? '' : 's'}',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    RecentDestinationsPickerSheet.show(context);
+                  },
+                ),
+                _PickerOption(
+                  icon: Icons.swap_horiz,
+                  title: 'Switch route',
+                  subtitle: favoriteLineCount == 0
+                      ? 'No saved routes yet'
+                      : '$favoriteLineCount saved route${favoriteLineCount == 1 ? '' : 's'}',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    FavoriteLinesPickerSheet.show(context);
+                  },
+                ),
+                if (!transitMode || !canPickStop)
+                  _PickerOption(
+                    icon: Icons.map_outlined,
+                    title: 'Search on map',
+                    subtitle: transitMode
+                        ? TransitUserCopy.mapPinSubtitle
+                        : 'Drop a pin or search with Google Places',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const MapPickerScreen(),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );

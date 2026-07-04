@@ -15,10 +15,14 @@ class StopPickerSheet extends StatefulWidget {
   const StopPickerSheet({
     super.key,
     this.onStopSelected,
+    this.compactHeader = false,
   });
 
   /// When set, called instead of applying the stop as the active destination.
   final Future<void> Function(TransitStop stop)? onStopSelected;
+
+  /// Hides the sheet title when embedded in [TripStopPickerSheet].
+  final bool compactHeader;
 
   static Future<bool> show(
     BuildContext context, {
@@ -105,24 +109,35 @@ class _StopPickerSheetState extends State<StopPickerSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-          child: Text(
-            'Pick station',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
+        if (!widget.compactHeader) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Text(
+              'Pick station',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-          child: Text(
-            gtfsProvider.selectedLineLabel,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+            child: Text(
+              gtfsProvider.selectedLineLabel,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
-        ),
+        ] else
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Text(
+              gtfsProvider.selectedLineLabel,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         if (showScopeToggle) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),

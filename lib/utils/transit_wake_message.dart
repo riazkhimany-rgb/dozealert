@@ -85,10 +85,10 @@ abstract final class TransitWakeMessage {
     }
 
     if (isMonitoring) {
-      return 'Waiting to lock onto your route — $selectedLine';
+      return 'Confirming your route on $selectedLine…';
     }
 
-    return 'Tap Start to begin tracking your ride.';
+    return 'Tap Start when you are on board.';
   }
 
   static WakeAlertCopy forTransitAlarm({

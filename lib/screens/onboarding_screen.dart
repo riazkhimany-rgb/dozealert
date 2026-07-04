@@ -1,9 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../services/app_tour_service.dart';
 import '../services/onboarding_service.dart';
 import '../utils/transit_user_copy.dart';
 import '../widgets/branded_app_name.dart';
@@ -69,7 +67,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _finish() async {
-    final appTourService = context.read<AppTourService>();
     if (_selectedAgencies.isNotEmpty && _primaryAgency != null) {
       await TransitAgencyChoicePage.applySelections(
         context,
@@ -78,7 +75,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     }
     await _onboardingService.markComplete();
-    await appTourService.markHomeTourPending();
     if (!mounted) {
       return;
     }

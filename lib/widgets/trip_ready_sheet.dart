@@ -86,11 +86,10 @@ abstract final class TripReadySheet {
       builder: (dialogContext) {
         return AlertDialog(
           icon: const Icon(Icons.nightlight_round),
-          title: const Text('Ready to rest?'),
+          title: const Text('Ready to sleep?'),
           content: BrandedMentionText(
-            'Tap Start, then relax. DozeAlert watches your trip in the '
-            'background and wakes you before your stop.\n\n'
-            'Keep your phone charged and volume on.',
+            'We wake you one stop before your stop by default.\n\n'
+            'Keep your phone charged and volume on, then relax.',
           ),
           actions: [
             TextButton(
