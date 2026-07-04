@@ -28,6 +28,8 @@ class MonitoringStorageService {
   static const transitStopsRemainingKey = 'transit_stops_remaining';
   static const transitWakeStopCountKey = 'transit_wake_stop_count';
   static const transitDirectionLockedKey = 'transit_direction_locked';
+  static const transitRiderInVehicleKey = 'transit_rider_in_vehicle';
+  static const transitRiderOnFootKey = 'transit_rider_on_foot';
   static const transitHasTripConcernKey = 'transit_has_trip_concern';
   static const transitTripConcernTypeKey = 'transit_trip_concern_type';
   static const transitActiveKey = 'transit_active_snapshot';
@@ -166,6 +168,8 @@ class MonitoringStorageService {
     await prefs.remove(transitStopsRemainingKey);
     await prefs.remove(transitWakeStopCountKey);
     await prefs.remove(transitDirectionLockedKey);
+    await prefs.remove(transitRiderInVehicleKey);
+    await prefs.remove(transitRiderOnFootKey);
     await prefs.remove(transitHasTripConcernKey);
     await prefs.remove(transitTripConcernTypeKey);
     await prefs.remove(transitAlarmHeadlineKey);
@@ -213,5 +217,34 @@ class MonitoringStorageService {
   Future<void> saveStabilizedStopSequence(int sequence) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(transitStabilizedStopSequenceKey, sequence);
+  }
+
+  Future<void> saveRiderMotionState({
+    bool? inVehicle,
+    bool? onFoot,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (inVehicle == null) {
+      await prefs.remove(transitRiderInVehicleKey);
+    } else {
+      await prefs.setBool(transitRiderInVehicleKey, inVehicle);
+    }
+    if (onFoot == null) {
+      await prefs.remove(transitRiderOnFootKey);
+    } else {
+      await prefs.setBool(transitRiderOnFootKey, onFoot);
+    }
+  }
+
+  Future<({bool? inVehicle, bool? onFoot})> loadRiderMotionState() async {
+    final prefs = await SharedPreferences.getInstance();
+    return (
+      inVehicle: prefs.containsKey(transitRiderInVehicleKey)
+          ? prefs.getBool(transitRiderInVehicleKey)
+          : null,
+      onFoot: prefs.containsKey(transitRiderOnFootKey)
+          ? prefs.getBool(transitRiderOnFootKey)
+          : null,
+    );
   }
 }

@@ -9,11 +9,14 @@ import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
 import '../models/transit_stop.dart';
 import '../models/trip_pattern_concern.dart';
+import '../services/activity_recognition_service.dart';
 import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
 import '../services/transit_mode_service.dart';
 import '../services/transit_stop_progress_tracker.dart';
+import '../utils/rider_motion_rules.dart';
 import '../utils/transit_wake_message.dart';
+import '../utils/transit_wake_trigger.dart';
 import 'monitoring_provider.dart';
 
 class TransitModeProvider extends ChangeNotifier {
@@ -22,6 +25,7 @@ class TransitModeProvider extends ChangeNotifier {
     this._settingsService,
     this._monitoringProvider,
     this._monitoringStorage,
+    this._activityRecognitionService,
   ) {
     _monitoringProvider.addListener(_handleMonitoringChanged);
   }
@@ -30,9 +34,13 @@ class TransitModeProvider extends ChangeNotifier {
   final SettingsService _settingsService;
   final MonitoringProvider _monitoringProvider;
   final MonitoringStorageService _monitoringStorage;
+  final ActivityRecognitionService _activityRecognitionService;
   final TransitStopProgressTracker _stopProgressTracker =
       TransitStopProgressTracker();
   final _MovingAwayDetector _movingAwayDetector = _MovingAwayDetector();
+
+  double _lastAccuracyMeters = 0;
+  double? _lastSpeedMps;
 
   TransitModeSnapshot _snapshot = TransitModeSnapshot.inactive;
   TransitModeSnapshot? _lastActiveSnapshot;
@@ -144,30 +152,24 @@ class TransitModeProvider extends ChangeNotifier {
       return false;
     }
 
-    // NOTE: a trip concern (e.g. a shaky "wrong direction" guess) must NOT
-    // suppress the wake. If the rider is genuinely reversed, stopsRemaining
-    // grows and never reaches the threshold anyway; but a false concern must
-    // never silently skip the alarm the way it did before.
-
     final wakeCount =
         _settingsService.settings.transitModeWake.wakeStopCount;
 
-    if (_snapshot.stopsRemaining <= wakeCount) return true;
-
-    // Safety net for atDestination: the progress tracker advances at most
-    // +1 stop per GPS fix. If GPS becomes noisy or sparse exactly at the
-    // destination, stopsRemaining may stick at 1 while the user is physically
-    // at (or has just passed) their stop. Fire the alarm so they are not
-    // silently missed.
-    if (wakeCount == 0 && _snapshot.stopsRemaining == 1) {
-      final offRoute = _snapshot.offRouteMeters;
-      // Only apply the fallback when the user is close enough to be plausibly
-      // on the platform (within 400 m of the route — same threshold used for
-      // on-route snapping elsewhere in the app).
-      if (offRoute != null && offRoute <= 400) return true;
-    }
-
-    return false;
+    return TransitWakeTrigger.shouldTrigger(
+      stopsRemaining: _snapshot.stopsRemaining,
+      wakeStopCount: wakeCount,
+      directionLocked: _snapshot.directionLocked,
+      hasEstablishedProgress: _stopProgressTracker.hasEstablishedProgress,
+      alongRouteRemainingMeters: _snapshot.alongRouteRemainingMeters,
+      offRouteMeters: _snapshot.offRouteMeters,
+      accuracyMeters: _lastAccuracyMeters,
+      speedMps: _lastSpeedMps,
+      segmentStops: routeSegmentStops,
+      currentStop: _snapshot.currentStop,
+      destinationStop: _snapshot.destinationStop,
+      activityInVehicle: _activityRecognitionService.activityInVehicleHint,
+      activityOnFoot: _activityRecognitionService.activityOnFootHint,
+    );
   }
 
   /// Copy for the current approach alarm, based on wake-by-stops setting.
@@ -186,6 +188,9 @@ class TransitModeProvider extends ChangeNotifier {
     required double? longitude,
     double? headingDegrees,
     double? speedMps,
+    double? accuracyMeters,
+    bool directionInferenceOnly = false,
+    DateTime? fixTimestamp,
   }) {
     if (!_settingsService.settings.transitModeEnabled) {
       if (_snapshot.isActive || _lastActiveSnapshot != null) {
@@ -199,6 +204,13 @@ class TransitModeProvider extends ChangeNotifier {
       return;
     }
 
+    if (accuracyMeters != null && accuracyMeters > 0) {
+      _lastAccuracyMeters = accuracyMeters;
+    }
+    if (speedMps != null && speedMps >= 0) {
+      _lastSpeedMps = speedMps;
+    }
+
     final rawSnapshot = _transitModeService.evaluate(
       destination: _monitoringProvider.selectedDestination,
       latitude: latitude,
@@ -207,7 +219,23 @@ class TransitModeProvider extends ChangeNotifier {
       maxStopProximityMeters: TransitModeService.routeStopMatchMeters,
       headingDegrees: headingDegrees,
       speedMps: speedMps,
+      accuracyMeters: accuracyMeters,
+      fixTimestamp: fixTimestamp,
     );
+    if (directionInferenceOnly) {
+      if (rawSnapshot.route?.routeId != null) {
+        _activeRouteId = rawSnapshot.route!.routeId;
+      }
+      if (rawSnapshot.isActive || rawSnapshot.directionConfirming) {
+        if (rawSnapshot.isActive) {
+          _lastActiveSnapshot = rawSnapshot;
+        }
+        _snapshot = rawSnapshot;
+        notifyListeners();
+      }
+      return;
+    }
+
     final nextSnapshot = _flagMovingAway(
       _stabilizeSnapshot(rawSnapshot),
       latitude: latitude,
@@ -422,6 +450,14 @@ class TransitModeProvider extends ChangeNotifier {
     }
 
     final routeId = rawSnapshot.route!.routeId;
+    final relaxedProgress = RiderMotionRules.allowsRelaxedStopProgress(
+      activityInVehicle: _activityRecognitionService.activityInVehicleHint,
+      activityOnFoot: _activityRecognitionService.activityOnFootHint,
+      directionLocked: rawSnapshot.directionLocked,
+      offRouteMeters: rawSnapshot.offRouteMeters,
+      accuracyMeters: _lastAccuracyMeters,
+      speedMps: _lastSpeedMps,
+    );
     final stabilizedStop = _stopProgressTracker.reconcile(
       routeId: routeId,
       destinationStop: rawSnapshot.destinationStop!,
@@ -432,6 +468,7 @@ class TransitModeProvider extends ChangeNotifier {
         anchorStop: rawSnapshot.currentStop,
         lockedPatternKey: _transitModeService.tripSession.lockedPatternKey,
       ),
+      maxStepsPerFix: relaxedProgress ? 2 : 1,
     );
 
     if (stabilizedStop == rawSnapshot.currentStop) {
@@ -457,6 +494,7 @@ extension on TransitModeSnapshot {
     bool? gpsStale,
     double? alongRouteRemainingMeters,
     String? tripConcern,
+    bool? directionConfirming,
   }) {
     return TransitModeSnapshot(
       isActive: isActive,
@@ -477,6 +515,7 @@ extension on TransitModeSnapshot {
       tripConcern: tripConcern ?? this.tripConcern,
       directionLabel: directionLabel,
       directionLocked: directionLocked,
+      directionConfirming: directionConfirming ?? this.directionConfirming,
     );
   }
 }

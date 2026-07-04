@@ -18,6 +18,7 @@ import 'package:dozealert/providers/monitoring_provider.dart';
 import 'package:dozealert/providers/transit_mode_provider.dart';
 import 'package:dozealert/providers/transit_provider.dart';
 import 'package:dozealert/providers/trip_history_provider.dart';
+import 'package:dozealert/services/activity_recognition_service.dart';
 import 'package:dozealert/services/alarm_service.dart';
 import 'package:dozealert/services/background_monitor_service.dart';
 import 'package:dozealert/services/destination_storage_service.dart';
@@ -156,11 +157,13 @@ Future<DozeAlertApp> _createTestApp() async {
   await monitoringProvider.loadMonitoringSession();
 
   final transitModeService = TransitModeService(gtfsService);
+  final activityRecognitionService = ActivityRecognitionService();
   final transitModeProvider = TransitModeProvider(
     transitModeService,
     settingsService,
     monitoringProvider,
     monitoringStorageService,
+    activityRecognitionService,
   );
   final gtfsProvider = GtfsProvider(
     gtfsService,
@@ -213,6 +216,7 @@ Future<DozeAlertApp> _createTestApp() async {
     tripHistoryProvider: tripHistoryProvider,
       onboardingService: onboardingService,
       appTourService: appTourService,
+      activityRecognitionService: activityRecognitionService,
     skipSplash: true,
     skipBootstrap: true,
   );

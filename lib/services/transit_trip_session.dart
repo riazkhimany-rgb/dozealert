@@ -17,6 +17,9 @@ class TransitTripSession {
 
   bool get isSeeded => _seeded;
 
+  /// Pattern key awaiting GPS confirmation before [isDirectionLocked] is true.
+  String? get pendingPatternKey => _pendingPatternKey;
+
   void reset() {
     _routeId = null;
     _destinationKey = null;

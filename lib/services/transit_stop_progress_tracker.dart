@@ -39,6 +39,7 @@ class TransitStopProgressTracker {
     required TransitStop destinationStop,
     required TransitStop rawStop,
     required List<TransitStop> routeStops,
+    int maxStepsPerFix = 1,
   }) {
     if (_routeId != routeId ||
         _destinationStopSequence != destinationStop.stopSequence) {
@@ -58,13 +59,15 @@ class TransitStopProgressTracker {
       return accepted;
     }
 
-    // Move at most one stop per fix toward the raw match, in whichever
-    // direction (higher or lower sequence) it lies. Capping to a single step
-    // keeps one noisy fix from over-/under-counting, while stepping *both* ways
-    // guarantees the tracker always converges on the rider and can never get
-    // permanently stuck — neither behind (which froze the count and suppressed
-    // the wake) nor ahead (which would fire the alarm too early).
-    return _stepTowardRaw(rawStop, routeStops);
+    final steps = maxStepsPerFix.clamp(1, 2);
+    var latest = accepted;
+    for (var step = 0; step < steps; step++) {
+      if (latest.stopSequence == rawStop.stopSequence) {
+        break;
+      }
+      latest = _stepTowardRaw(rawStop, routeStops);
+    }
+    return latest;
   }
 
   /// Advances/retreats [_acceptedStopSequence] by a single stop toward

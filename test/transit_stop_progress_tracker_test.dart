@@ -67,6 +67,25 @@ void main() {
       expect(result.stopName, 'C');
     });
 
+    test('advances two stops when maxStepsPerFix is 2', () {
+      tracker.reconcile(
+        routeId: routeId,
+        destinationStop: destination,
+        rawStop: routeStops[1],
+        routeStops: routeStops,
+      );
+
+      final stepped = tracker.reconcile(
+        routeId: routeId,
+        destinationStop: destination,
+        rawStop: routeStops[3],
+        routeStops: routeStops,
+        maxStepsPerFix: 2,
+      );
+
+      expect(stepped.stopName, 'D');
+    });
+
     test('advances only one stop toward a multi-stop-ahead raw fix', () {
       tracker.reconcile(
         routeId: routeId,

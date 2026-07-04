@@ -29,9 +29,13 @@ TripPatternValidation validateTripOnPattern({
   required TransitStop destination,
   required String? patternKey,
   required bool directionLocked,
+  String? pendingPatternKey,
   double? alongRouteRemainingMeters,
 }) {
-  final directionLabel = GtfsService.directionLabelForPatternKey(patternKey);
+  final labelKey = directionLocked
+      ? patternKey
+      : (pendingPatternKey ?? patternKey);
+  final directionLabel = GtfsService.directionLabelForPatternKey(labelKey);
 
   if (pattern.isEmpty) {
     return TripPatternValidation(directionLabel: directionLabel);

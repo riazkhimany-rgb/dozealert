@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/current_location.dart';
+import '../models/location_tracking_mode.dart';
 import '../utils/app_log.dart';
 
 enum LocationPermissionStatus {
@@ -15,16 +16,28 @@ enum LocationPermissionStatus {
 
 class LocationService {
   static const _lastKnownMaxAge = Duration(minutes: 5);
+  static const _prewarmInterval = Duration(seconds: 5);
+  static const _prewarmDistanceFilter = 5;
+  static const _monitoringInterval = Duration(seconds: 2);
+  static const _monitoringDistanceFilter = 2;
 
   final StreamController<CurrentLocation> _controller =
       StreamController<CurrentLocation>.broadcast();
 
   StreamSubscription<Position>? _positionSubscription;
+  LocationTrackingMode _mode = LocationTrackingMode.prewarm;
   bool _tracking = false;
+  bool _navigationPriority = false;
 
   Stream<CurrentLocation> get locationStream => _controller.stream;
 
   bool get isTracking => _tracking;
+
+  bool get isPrewarming =>
+      _tracking && _mode == LocationTrackingMode.prewarm;
+
+  bool get isMonitoring =>
+      _tracking && _mode == LocationTrackingMode.monitoring;
 
   Future<LocationPermissionStatus> requestPermission() async {
     final currentStatus = await Permission.locationWhenInUse.status;
@@ -78,46 +91,42 @@ class LocationService {
     return Geolocator.isLocationServiceEnabled();
   }
 
-  Future<void> startTracking({bool highAccuracy = false}) async {
-    if (_tracking) {
+  /// Low-rate GPS warm-up while a destination is selected.
+  Future<void> startPrewarm({bool navigationPriority = false}) async {
+    await _startStream(
+      mode: LocationTrackingMode.prewarm,
+      navigationPriority: navigationPriority,
+    );
+  }
+
+  Future<void> startTracking({
+    bool highAccuracy = false,
+    LocationTrackingMode mode = LocationTrackingMode.monitoring,
+    bool navigationPriority = true,
+  }) async {
+    await _startStream(
+      mode: mode,
+      navigationPriority: navigationPriority || mode == LocationTrackingMode.monitoring,
+    );
+  }
+
+  Future<void> setNavigationPriority(bool enabled) async {
+    if (!_tracking || _navigationPriority == enabled) {
+      return;
+    }
+
+    await _startStream(mode: _mode, navigationPriority: enabled);
+  }
+
+  Future<void> stopPrewarm() async {
+    if (_tracking && _mode == LocationTrackingMode.prewarm) {
       await stopTracking();
     }
-
-    _tracking = true;
-
-    final lastKnown = await fetchLastKnownLocation();
-    if (lastKnown != null) {
-      _emitLocation(lastKnown);
-    }
-
-    await _emitCurrentLocation(highAccuracy: highAccuracy);
-
-    await _positionSubscription?.cancel();
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: Platform.isAndroid
-          ? AndroidSettings(
-              accuracy: highAccuracy
-                  ? LocationAccuracy.high
-                  : LocationAccuracy.medium,
-              distanceFilter: highAccuracy ? 3 : 5,
-              intervalDuration: Duration(seconds: highAccuracy ? 3 : 5),
-            )
-          : AppleSettings(
-              accuracy: highAccuracy
-                  ? LocationAccuracy.high
-                  : LocationAccuracy.medium,
-              distanceFilter: highAccuracy ? 3 : 5,
-            ),
-    ).listen(
-      (position) => _emitLocation(_locationFromPosition(position)),
-      onError: (Object error) {
-        AppLog.d('LocationService: position stream error: $error');
-      },
-    );
   }
 
   Future<void> stopTracking() async {
     _tracking = false;
+    _navigationPriority = false;
     await _positionSubscription?.cancel();
     _positionSubscription = null;
   }
@@ -142,13 +151,14 @@ class LocationService {
     }
   }
 
-  Future<CurrentLocation?> fetchCurrentLocation({bool highAccuracy = true}) async {
+  Future<CurrentLocation?> fetchCurrentLocation({
+    bool highAccuracy = true,
+    bool navigationPriority = false,
+  }) async {
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: LocationSettings(
-          accuracy:
-              highAccuracy ? LocationAccuracy.high : LocationAccuracy.medium,
-          timeLimit: const Duration(seconds: 12),
+        locationSettings: _oneShotSettings(
+          navigationPriority: navigationPriority || highAccuracy,
         ),
       );
 
@@ -163,13 +173,54 @@ class LocationService {
     }
   }
 
-  Future<void> _emitCurrentLocation({bool highAccuracy = false}) async {
+  Future<void> _startStream({
+    required LocationTrackingMode mode,
+    required bool navigationPriority,
+  }) async {
+    if (_tracking &&
+        _mode == LocationTrackingMode.monitoring &&
+        mode == LocationTrackingMode.prewarm) {
+      return;
+    }
+
+    if (_tracking) {
+      await stopTracking();
+    }
+
+    _tracking = true;
+    _mode = mode;
+    _navigationPriority = navigationPriority;
+
+    final lastKnown = await fetchLastKnownLocation();
+    if (lastKnown != null) {
+      _emitLocation(lastKnown);
+    }
+
+    await _emitCurrentLocation(navigationPriority: navigationPriority);
+
+    await _positionSubscription?.cancel();
+    _positionSubscription = Geolocator.getPositionStream(
+      locationSettings: _streamSettings(
+        mode: mode,
+        navigationPriority: navigationPriority,
+      ),
+    ).listen(
+      (position) => _emitLocation(_locationFromPosition(position)),
+      onError: (Object error) {
+        AppLog.d('LocationService: position stream error: $error');
+      },
+    );
+  }
+
+  Future<void> _emitCurrentLocation({required bool navigationPriority}) async {
     if (!_tracking) {
       return;
     }
 
     try {
-      final location = await fetchCurrentLocation(highAccuracy: highAccuracy);
+      final location = await fetchCurrentLocation(
+        navigationPriority: navigationPriority,
+      );
       if (location != null) {
         _emitLocation(location);
       }
@@ -178,6 +229,50 @@ class LocationService {
     } on PermissionDeniedException {
       rethrow;
     }
+  }
+
+  LocationSettings _oneShotSettings({required bool navigationPriority}) {
+    final accuracy = navigationPriority
+        ? LocationAccuracy.bestForNavigation
+        : LocationAccuracy.high;
+
+    return LocationSettings(
+      accuracy: accuracy,
+      timeLimit: const Duration(seconds: 12),
+    );
+  }
+
+  LocationSettings _streamSettings({
+    required LocationTrackingMode mode,
+    required bool navigationPriority,
+  }) {
+    final useNavigation = navigationPriority ||
+        mode == LocationTrackingMode.monitoring;
+    final accuracy = useNavigation
+        ? LocationAccuracy.bestForNavigation
+        : LocationAccuracy.high;
+    final interval = mode == LocationTrackingMode.monitoring
+        ? _monitoringInterval
+        : _prewarmInterval;
+    final distanceFilter = mode == LocationTrackingMode.monitoring
+        ? _monitoringDistanceFilter
+        : _prewarmDistanceFilter;
+
+    if (Platform.isAndroid) {
+      return AndroidSettings(
+        accuracy: accuracy,
+        distanceFilter: distanceFilter,
+        intervalDuration: interval,
+      );
+    }
+
+    return AppleSettings(
+      accuracy: accuracy,
+      distanceFilter: distanceFilter,
+      activityType: useNavigation
+          ? ActivityType.automotiveNavigation
+          : ActivityType.other,
+    );
   }
 
   CurrentLocation _locationFromPosition(Position position) {

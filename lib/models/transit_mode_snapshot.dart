@@ -22,6 +22,7 @@ class TransitModeSnapshot {
     this.tripConcern,
     this.directionLabel,
     this.directionLocked = false,
+    this.directionConfirming = false,
   });
 
   final bool isActive;
@@ -49,6 +50,9 @@ class TransitModeSnapshot {
   /// True after GPS has consistently locked trip direction.
   final bool directionLocked;
 
+  /// True when a direction is seeded/inferred but not yet GPS-locked.
+  final bool directionConfirming;
+
   bool get hasTripConcern => tripConcern != null;
 
   static const inactive = TransitModeSnapshot();
@@ -73,7 +77,8 @@ class TransitModeSnapshot {
             other.status == status &&
             other.tripConcern == tripConcern &&
             other.directionLabel == directionLabel &&
-            other.directionLocked == directionLocked;
+            other.directionLocked == directionLocked &&
+            other.directionConfirming == directionConfirming;
   }
 
   @override
@@ -95,5 +100,6 @@ class TransitModeSnapshot {
         tripConcern,
         directionLabel,
         directionLocked,
+        directionConfirming,
       );
 }

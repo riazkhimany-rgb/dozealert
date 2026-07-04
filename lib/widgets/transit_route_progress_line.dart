@@ -22,6 +22,7 @@ class TransitRouteProgressLine extends StatelessWidget {
     required this.stops,
     required this.stopsRemaining,
     this.lineLabel,
+    this.nextStopName,
     this.inactiveMessage =
         'Start monitoring on your line to see stop-by-stop progress.',
   });
@@ -30,6 +31,7 @@ class TransitRouteProgressLine extends StatelessWidget {
   final List<TransitStop> stops;
   final int stopsRemaining;
   final String? lineLabel;
+  final String? nextStopName;
   final String inactiveMessage;
 
   static const _maxDots = 13;
@@ -85,9 +87,10 @@ class TransitRouteProgressLine extends StatelessWidget {
     return Semantics(
       label:
           'Transit progress on $lineLabel. Currently at $currentName. '
+          '${nextStopName != null ? 'Next $nextStopName. ' : ''}'
           '$stopsLabel before $destinationName.',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (lineLabel != null) ...[
             Text(
@@ -99,46 +102,38 @@ class TransitRouteProgressLine extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
-          SizedBox(
-            width: double.infinity,
-            child: Text(
-              stopsLabel,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w700,
+          if (nextStopName != null) ...[
+            Text.rich(
+              TextSpan(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.35,
+                ),
+                children: [
+                  const TextSpan(text: 'Next: '),
+                  TextSpan(
+                    text: _shortStopName(nextStopName!),
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+          ],
+          Text(
+            stopsLabel,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  _shortStopName(currentName),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _shortStopName(destinationName),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2),
           SizedBox(
             height: 28,
             child: CustomPaint(
@@ -162,6 +157,33 @@ class TransitRouteProgressLine extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  _shortStopName(currentName),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  _shortStopName(destinationName),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -295,29 +317,36 @@ class _TransitRouteProgressPainter extends CustomPainter {
     final y = size.height / 2;
     final segmentWidth = size.width / dotCount;
     final startX = segmentWidth / 2;
-    final endX = size.width - segmentWidth / 2;
 
-    final basePaint = Paint()
+    final upcomingPaint = Paint()
       ..color = colorScheme.outlineVariant
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
-
-    canvas.drawLine(Offset(startX, y), Offset(endX, y), basePaint);
 
     final progressPaint = Paint()
       ..color = colorScheme.primary.withValues(alpha: 0.85)
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
 
-    var progressEnd = startX;
+    var progressEndIndex = 0;
     for (var i = 1; i < dotCount; i++) {
       if (kinds[i] == _RouteDotKind.ellipsis) {
         break;
       }
-      progressEnd = startX + segmentWidth * i;
+      progressEndIndex = i;
     }
-    if (progressEnd > startX) {
-      canvas.drawLine(Offset(startX, y), Offset(progressEnd, y), progressPaint);
+
+    // Connect dots segment-by-segment only — no full-width rail spanning the
+    // row, which read like extra divider lines above/below the labels.
+    for (var i = 0; i < dotCount - 1; i++) {
+      if (kinds[i] == _RouteDotKind.ellipsis ||
+          kinds[i + 1] == _RouteDotKind.ellipsis) {
+        continue;
+      }
+      final x1 = startX + segmentWidth * i;
+      final x2 = startX + segmentWidth * (i + 1);
+      final paint = i < progressEndIndex ? progressPaint : upcomingPaint;
+      canvas.drawLine(Offset(x1, y), Offset(x2, y), paint);
     }
   }
 

@@ -19,8 +19,12 @@ class ArrivalDialog extends StatelessWidget {
     final arrivalContext = context.select<LocationProvider, ArrivalContext?>(
       (provider) => provider.arrivalContext,
     );
-    final stopName = arrivalContext?.destinationName ?? 'Destination';
-    final headline = arrivalContext?.headline ?? 'Approaching destination';
+    final headline = arrivalContext?.headline ?? 'Destination';
+    final statusLine = arrivalContext?.wearSubline;
+    final currentStopName =
+        arrivalContext?.currentStopName ?? arrivalContext?.destinationName;
+    final showCurrentStop = currentStopName != null &&
+        currentStopName.toLowerCase() != headline.toLowerCase();
     final secondaryLine = arrivalContext?.secondaryLine;
     final detailMessage = arrivalContext?.detailMessage;
 
@@ -65,15 +69,42 @@ class ArrivalDialog extends StatelessWidget {
                     color: AppBranding.white,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  stopName,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppBranding.cyanAccent,
+                if (statusLine != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    statusLine,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppBranding.white.withValues(alpha: 0.9),
+                    ),
                   ),
-                ),
+                ],
+                if (showCurrentStop) ...[
+                  const SizedBox(height: 16),
+                  Text.rich(
+                    TextSpan(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppBranding.white.withValues(alpha: 0.82),
+                        height: 1.35,
+                      ),
+                      children: [
+                        const TextSpan(text: 'You are at '),
+                        TextSpan(
+                          text: currentStopName!,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppBranding.cyanAccent,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
                 if (secondaryLine != null) ...[
                   const SizedBox(height: 8),
                   Text(
@@ -84,16 +115,6 @@ class ArrivalDialog extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 24),
-                Text(
-                  detailMessage ??
-                      'Voice alert and vibration will continue until you dismiss.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppBranding.white.withValues(alpha: 0.82),
-                    height: 1.45,
-                  ),
-                ),
                 const SizedBox(height: 36),
                 Semantics(
                   button: true,
@@ -109,7 +130,8 @@ class ArrivalDialog extends StatelessWidget {
                         foregroundColor: AppBranding.midnightBlue,
                         minimumSize: const Size(double.infinity, 56),
                         elevation: 6,
-                        shadowColor: AppBranding.cyanAccent.withValues(alpha: 0.5),
+                        shadowColor:
+                            AppBranding.cyanAccent.withValues(alpha: 0.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -122,6 +144,17 @@ class ArrivalDialog extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (detailMessage != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    detailMessage,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppBranding.white.withValues(alpha: 0.72),
+                      height: 1.45,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

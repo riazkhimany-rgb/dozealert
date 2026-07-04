@@ -9,32 +9,39 @@ class WakeAlertCopy {
   const WakeAlertCopy({
     required this.headline,
     required this.primaryStopName,
+    required this.currentStopName,
     required this.detailMessage,
     required this.ttsPhrase,
     this.secondaryLine,
     this.wearSubline,
   });
 
-  /// Dialog / notification title line.
+  /// Destination stop name — phone alarm headline and Wear alarm title.
   final String headline;
 
-  /// Prominent stop name (wake stop, not always the final destination).
+  /// Selected destination (Wear sync / alarmStopName).
   final String primaryStopName;
 
-  /// Body text under the stop name.
+  /// Stop the rider is at now — phone alarm cyan accent line.
+  final String currentStopName;
+
+  /// Footer under the Dismiss button on the phone alarm screen.
   final String detailMessage;
 
   /// Spoken by TTS during the alarm loop.
   final String ttsPhrase;
 
-  /// Optional subtitle, e.g. final destination when waking early.
+  /// Optional reassurance between accent stop and Dismiss (e.g. "Stay on board").
   final String? secondaryLine;
 
-  /// Second line on Wear alarm screen (avoids duplicating the stop name).
+  /// Status under the destination on phone; gray line on Wear ("1 stop to go").
   final String? wearSubline;
 }
 
 abstract final class TransitWakeMessage {
+  static const _alarmDismissFooter =
+      'Voice alert and vibration continue until you dismiss.';
+
   static String forHome({
     required bool transitModeEnabled,
     required bool gtfsReady,
@@ -95,37 +102,26 @@ abstract final class TransitWakeMessage {
           fallbackDestinationName ??
           'your destination',
     );
+    final currentStopName = snapshot.currentStop != null
+        ? GtfsStopNameUtils.stationDisplayName(snapshot.currentStop!.stopName)
+        : destinationName;
 
-    // The rider ALWAYS gets off at their chosen destination. The wake setting
-    // only controls how much of a heads-up they get (at the stop, or 1/2 stops
-    // early to prepare) — so the copy must never tell them to get off earlier.
-    final headline = switch (wakeSetting) {
-      TransitModeWakeSetting.atDestination => 'Arriving at $destinationName',
-      TransitModeWakeSetting.oneStopBefore =>
-        '$destinationName — 1 stop to go',
-      TransitModeWakeSetting.twoStopsBefore =>
-        '$destinationName — 2 stops to go',
+    final headline = destinationName;
+
+    final wearSubline = switch (wakeSetting) {
+      TransitModeWakeSetting.atDestination => 'Time to get off',
+      TransitModeWakeSetting.oneStopBefore => '1 stop to go',
+      TransitModeWakeSetting.twoStopsBefore => '2 stops to go',
     };
 
-    // Reassure early-wake riders to stay on board until their actual stop.
     final secondaryLine = switch (wakeSetting) {
       TransitModeWakeSetting.atDestination => null,
       TransitModeWakeSetting.oneStopBefore ||
       TransitModeWakeSetting.twoStopsBefore =>
-        'Stay on until $destinationName',
+        'Stay on board',
     };
 
-    final detailMessage = switch (wakeSetting) {
-      TransitModeWakeSetting.atDestination =>
-        'Your stop $destinationName is here. '
-            'Voice alert and vibration continue until you dismiss.',
-      TransitModeWakeSetting.oneStopBefore =>
-        'Get ready to get off at $destinationName, 1 stop away. '
-            'Voice alert and vibration continue until you dismiss.',
-      TransitModeWakeSetting.twoStopsBefore =>
-        'Get ready to get off at $destinationName, 2 stops away. '
-            'Voice alert and vibration continue until you dismiss.',
-    };
+    const detailMessage = _alarmDismissFooter;
 
     final ttsPhrase = switch (wakeSetting) {
       TransitModeWakeSetting.atDestination =>
@@ -136,15 +132,10 @@ abstract final class TransitWakeMessage {
         'Heads up! Get ready to get off at $destinationName, two stops away.',
     };
 
-    final wearSubline = switch (wakeSetting) {
-      TransitModeWakeSetting.atDestination => 'Time to get off',
-      TransitModeWakeSetting.oneStopBefore => '1 stop to go',
-      TransitModeWakeSetting.twoStopsBefore => '2 stops to go',
-    };
-
     return WakeAlertCopy(
       headline: headline,
       primaryStopName: destinationName,
+      currentStopName: currentStopName,
       detailMessage: detailMessage,
       ttsPhrase: ttsPhrase,
       secondaryLine: secondaryLine,
@@ -156,18 +147,14 @@ abstract final class TransitWakeMessage {
     required String destinationName,
     bool transitFallback = false,
   }) {
-    final headline = 'Approaching $destinationName';
-    final detailMessage = transitFallback
-        ? 'Distance wake — could not track your route, so waking by distance '
-            'to $destinationName. Voice alert and vibration continue until you dismiss.'
-        : 'Distance wake — within your wake radius of $destinationName. '
-            'Voice alert and vibration continue until you dismiss.';
-    final ttsPhrase = 'Heads up! Approaching $destinationName.';
+    final displayName = GtfsStopNameUtils.stationDisplayName(destinationName);
+    final ttsPhrase = 'Heads up! Approaching $displayName.';
 
     return WakeAlertCopy(
-      headline: headline,
-      primaryStopName: destinationName,
-      detailMessage: detailMessage,
+      headline: displayName,
+      primaryStopName: displayName,
+      currentStopName: displayName,
+      detailMessage: _alarmDismissFooter,
       ttsPhrase: ttsPhrase,
       wearSubline: 'Within wake radius',
     );

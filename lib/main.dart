@@ -27,6 +27,7 @@ import 'services/gtfs_download_service.dart';
 import 'services/gtfs_import_service.dart';
 import 'services/gtfs_parser_service.dart';
 import 'services/gtfs_service.dart';
+import 'services/activity_recognition_service.dart';
 import 'services/location_service.dart';
 import 'services/monitoring_storage_service.dart';
 import 'services/app_tour_service.dart';
@@ -86,11 +87,13 @@ Future<void> main() async {
   await monitoringProvider.loadMonitoringSession();
 
   final transitModeService = TransitModeService(gtfsService);
+  final activityRecognitionService = ActivityRecognitionService();
   final transitModeProvider = TransitModeProvider(
     transitModeService,
     settingsService,
     monitoringProvider,
     monitoringStorageService,
+    activityRecognitionService,
   );
   final gtfsProvider = GtfsProvider(
     gtfsService,
@@ -142,6 +145,7 @@ Future<void> main() async {
       tripHistoryProvider: tripHistoryProvider,
       onboardingService: onboardingService,
       appTourService: appTourService,
+      activityRecognitionService: activityRecognitionService,
     ),
   );
 }
@@ -185,6 +189,7 @@ class DozeAlertApp extends StatelessWidget {
     required this.tripHistoryProvider,
     required this.onboardingService,
     required this.appTourService,
+    required this.activityRecognitionService,
     this.skipSplash = false,
     this.skipBootstrap = false,
   });
@@ -212,6 +217,7 @@ class DozeAlertApp extends StatelessWidget {
   final TripHistoryProvider tripHistoryProvider;
   final OnboardingService onboardingService;
   final AppTourService appTourService;
+  final ActivityRecognitionService activityRecognitionService;
   final bool skipSplash;
   final bool skipBootstrap;
 
@@ -242,6 +248,10 @@ class DozeAlertApp extends StatelessWidget {
         ),
         Provider<LocationService>(
           create: (_) => LocationService(),
+          dispose: (_, service) => service.dispose(),
+        ),
+        Provider<ActivityRecognitionService>(
+          create: (_) => activityRecognitionService,
           dispose: (_, service) => service.dispose(),
         ),
         Provider<AppPermissionsService>(
@@ -297,6 +307,7 @@ class DozeAlertApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => LocationProvider(
             context.read<LocationService>(),
+            context.read<ActivityRecognitionService>(),
             monitoringProvider,
             alarmService,
             settingsService,

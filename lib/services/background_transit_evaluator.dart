@@ -1,5 +1,7 @@
 import '../models/background_transit_pattern.dart';
 import '../models/transit_stop.dart';
+import '../utils/gps_tracking_confidence.dart';
+import '../utils/rider_motion_rules.dart';
 import 'route_geometry_service.dart';
 import 'transit_mode_service.dart';
 import 'transit_stop_progress_tracker.dart';
@@ -10,12 +12,22 @@ class BackgroundTransitEvaluation {
     required this.stabilizedStopSequence,
     required this.onRoute,
     required this.directionLocked,
+    required this.hasEstablishedProgress,
+    this.alongRouteRemainingMeters,
+    this.offRouteMeters,
+    this.currentStop,
+    this.destinationStop,
   });
 
   final int stopsRemaining;
   final int stabilizedStopSequence;
   final bool onRoute;
   final bool directionLocked;
+  final bool hasEstablishedProgress;
+  final double? alongRouteRemainingMeters;
+  final double? offRouteMeters;
+  final TransitStop? currentStop;
+  final TransitStop? destinationStop;
 }
 
 /// Lightweight stop-based evaluation for the background location isolate.
@@ -38,6 +50,9 @@ class BackgroundTransitEvaluator {
     required double longitude,
     double? headingDegrees,
     double? speedMps,
+    double accuracyMeters = 0,
+    bool? activityInVehicle,
+    bool? activityOnFoot,
   }) {
     if (!pattern.isValid) {
       return null;
@@ -86,14 +101,24 @@ class BackgroundTransitEvaluator {
         stabilizedStopSequence: -1,
         onRoute: false,
         directionLocked: false,
+        hasEstablishedProgress: false,
       );
     }
 
+    final highConfidence = RiderMotionRules.allowsRelaxedStopProgress(
+      activityInVehicle: activityInVehicle,
+      activityOnFoot: activityOnFoot,
+      directionLocked: pattern.directionLocked,
+      offRouteMeters: projection.offRouteMeters,
+      accuracyMeters: accuracyMeters,
+      speedMps: speedMps,
+    );
     final stabilizedStop = _progressTracker.reconcile(
       routeId: pattern.routeId,
       destinationStop: destinationStop,
       rawStop: currentStop,
       routeStops: pattern.segmentStops,
+      maxStepsPerFix: highConfidence ? 2 : 1,
     );
 
     final stopsRemaining = _stopsBetween(
@@ -102,11 +127,22 @@ class BackgroundTransitEvaluator {
       routeStops: pattern.segmentStops,
     );
 
+    final alongRouteRemainingMeters = _routeGeometry.alongRouteRemainingMeters(
+      polyline: polyline,
+      projection: projection,
+      destinationStop: destinationStop,
+    );
+
     return BackgroundTransitEvaluation(
       stopsRemaining: stopsRemaining,
       stabilizedStopSequence: stabilizedStop.stopSequence,
       onRoute: true,
       directionLocked: pattern.directionLocked,
+      hasEstablishedProgress: _progressTracker.hasEstablishedProgress,
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
+      offRouteMeters: projection.offRouteMeters,
+      currentStop: stabilizedStop,
+      destinationStop: destinationStop,
     );
   }
 

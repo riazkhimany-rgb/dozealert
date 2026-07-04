@@ -7,8 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/background_transit_pattern.dart';
 import '../models/monitoring_state.dart';
+import '../models/transit_stop.dart';
 import '../services/background_transit_evaluator.dart';
 import '../services/monitoring_storage_service.dart';
+import '../utils/transit_wake_trigger.dart';
 
 const _testModeArrivalThresholdMeters = 5000.0;
 const _testModeKey = 'test_mode_enabled';
@@ -38,6 +40,15 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   int _transitStopsRemaining = -1;
   int _transitWakeStopCount = 0;
   bool _transitDirectionLocked = false;
+  bool _transitHasEstablishedProgress = false;
+  double? _transitAlongRouteRemainingMeters;
+  double? _transitOffRouteMeters;
+  int _transitCurrentStopSequence = -1;
+  int _transitDestinationStopSequence = -1;
+  double _lastPositionAccuracy = 0;
+  double? _lastPositionSpeedMps;
+  bool? _riderInVehicle;
+  bool? _riderOnFoot;
   bool _transitHasTripConcern = false;
   String _transitTripConcernType = '';
   bool _arrivalTriggered = false;
@@ -118,6 +129,14 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
         prefs.getString(MonitoringStorageService.transitAlarmSublineKey) ?? '';
     _lineLabel =
         prefs.getString(MonitoringStorageService.transitLineLabelKey) ?? '';
+    _riderInVehicle = prefs.containsKey(
+            MonitoringStorageService.transitRiderInVehicleKey)
+        ? prefs.getBool(MonitoringStorageService.transitRiderInVehicleKey)
+        : null;
+    _riderOnFoot = prefs.containsKey(
+            MonitoringStorageService.transitRiderOnFootKey)
+        ? prefs.getBool(MonitoringStorageService.transitRiderOnFootKey)
+        : null;
 
     final patternRaw =
         prefs.getString(MonitoringStorageService.transitPatternSnapshotKey);
@@ -147,9 +166,9 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
 
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: AndroidSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
-        intervalDuration: const Duration(seconds: 5),
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 2,
+        intervalDuration: const Duration(seconds: 2),
         foregroundNotificationConfig: null,
       ),
     ).listen(
@@ -171,6 +190,10 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     if (position.accuracy > 150) {
       return;
     }
+
+    _lastPositionAccuracy = position.accuracy;
+    _lastPositionSpeedMps =
+        position.speed >= 0 ? position.speed : _lastPositionSpeedMps;
 
     FlutterForegroundTask.sendDataToMain(<String, Object>{
       'type': 'location',
@@ -248,6 +271,9 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       longitude: position.longitude,
       headingDegrees: position.heading,
       speedMps: position.speed,
+      accuracyMeters: position.accuracy,
+      activityInVehicle: _riderInVehicle,
+      activityOnFoot: _riderOnFoot,
     );
     if (evaluation == null) {
       return;
@@ -261,6 +287,13 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _transitOnRoute = true;
     _transitStopsRemaining = evaluation.stopsRemaining;
     _transitDirectionLocked = evaluation.directionLocked;
+    _transitHasEstablishedProgress = evaluation.hasEstablishedProgress;
+    _transitAlongRouteRemainingMeters = evaluation.alongRouteRemainingMeters;
+    _transitOffRouteMeters = evaluation.offRouteMeters;
+    _transitCurrentStopSequence =
+        evaluation.currentStop?.stopSequence ?? -1;
+    _transitDestinationStopSequence =
+        evaluation.destinationStop?.stopSequence ?? -1;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(MonitoringStorageService.transitOnRouteKey, true);
@@ -311,6 +344,14 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
         prefs.getString(MonitoringStorageService.transitAlarmSublineKey) ?? '';
     _lineLabel =
         prefs.getString(MonitoringStorageService.transitLineLabelKey) ?? '';
+    _riderInVehicle = prefs.containsKey(
+            MonitoringStorageService.transitRiderInVehicleKey)
+        ? prefs.getBool(MonitoringStorageService.transitRiderInVehicleKey)
+        : null;
+    _riderOnFoot = prefs.containsKey(
+            MonitoringStorageService.transitRiderOnFootKey)
+        ? prefs.getBool(MonitoringStorageService.transitRiderOnFootKey)
+        : null;
 
     final patternRaw =
         prefs.getString(MonitoringStorageService.transitPatternSnapshotKey);
@@ -360,16 +401,54 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   }
 
   bool _shouldTriggerTransitWake() {
-    // A trip concern (e.g. a shaky "wrong direction" guess) must not suppress
-    // the wake here either — mirror the foreground rule so the alarm always
-    // fires once the rider is within the wake threshold.
-    if (!_transitDirectionLocked) {
+    if (!_transitDirectionLocked || !_transitHasEstablishedProgress) {
       return false;
     }
     if (_transitStopsRemaining < 0) {
       return false;
     }
-    return _transitStopsRemaining <= _transitWakeStopCount;
+
+    final pattern = _transitPattern;
+    if (pattern == null || !pattern.isValid) {
+      return _transitStopsRemaining <= _transitWakeStopCount;
+    }
+
+    final currentStop = _stopForSequence(
+      pattern.segmentStops,
+      _transitCurrentStopSequence,
+    );
+    final destinationStop = _stopForSequence(
+      pattern.segmentStops,
+      _transitDestinationStopSequence,
+    );
+
+    return TransitWakeTrigger.shouldTrigger(
+      stopsRemaining: _transitStopsRemaining,
+      wakeStopCount: _transitWakeStopCount,
+      directionLocked: _transitDirectionLocked,
+      hasEstablishedProgress: _transitHasEstablishedProgress,
+      alongRouteRemainingMeters: _transitAlongRouteRemainingMeters,
+      offRouteMeters: _transitOffRouteMeters,
+      accuracyMeters: _lastPositionAccuracy,
+      speedMps: _lastPositionSpeedMps,
+      segmentStops: pattern.segmentStops,
+      currentStop: currentStop,
+      destinationStop: destinationStop,
+      activityInVehicle: _riderInVehicle,
+      activityOnFoot: _riderOnFoot,
+    );
+  }
+
+  TransitStop? _stopForSequence(List<TransitStop> stops, int sequence) {
+    if (sequence < 0) {
+      return null;
+    }
+    for (final stop in stops) {
+      if (stop.stopSequence == sequence) {
+        return stop;
+      }
+    }
+    return null;
   }
 
   Future<void> _triggerArrival({bool transitWake = false}) async {

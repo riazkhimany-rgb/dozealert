@@ -383,7 +383,16 @@ class RouteGeometryService {
         stop.latitude,
         stop.longitude,
       );
-      final score = alongDelta + directDistance * 0.35;
+      var score = alongDelta + directDistance * 0.35;
+      if (_shouldUseHeading(headingDegrees, speedMps)) {
+        final bearing = Geolocator.bearingBetween(
+          projection.latitude,
+          projection.longitude,
+          stop.latitude,
+          stop.longitude,
+        );
+        score += _headingDelta(bearing, headingDegrees!) * 0.5;
+      }
 
       if (score < bestScore) {
         bestScore = score;

@@ -388,6 +388,9 @@ class _DestinationCard extends StatelessWidget {
       selectedLine: selectedLine,
       gpsSignalLost: gpsSignalLost,
     );
+    final showConcernBanner = isMonitoring &&
+        snapshot.isActive &&
+        snapshot.hasTripConcern;
     final showTransitProgress = destination != null &&
         transitModeEnabled &&
         gtfsReady;
@@ -448,13 +451,11 @@ class _DestinationCard extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-            ] else
+            ] else if (!showConcernBanner)
               Text(
                 wakeMessage,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: snapshot.hasTripConcern
-                      ? colorScheme.error
-                      : colorScheme.onSurfaceVariant,
+                  color: colorScheme.onSurfaceVariant,
                   height: 1.4,
                 ),
               ),
@@ -474,25 +475,22 @@ class _DestinationCard extends StatelessWidget {
               stops: routeSegmentStops,
               stopsRemaining: snapshot.stopsRemaining,
               lineLabel: compact ? null : selectedLine,
+              nextStopName: snapshot.isActive && snapshot.nextStop != null
+                  ? GtfsStopNameUtils.stationDisplayName(
+                      snapshot.nextStop!.stopName,
+                    )
+                  : null,
               inactiveMessage: '',
             ),
-            if (snapshot.isActive && snapshot.nextStop != null) ...[
-              const SizedBox(height: 8),
-              MetricRow(
-                label: 'Next stop',
-                value: GtfsStopNameUtils.stationDisplayName(
-                  snapshot.nextStop!.stopName,
-                ),
-              ),
-            ],
-            if (isMonitoring &&
-                transitModeEnabled &&
-                snapshot.isActive &&
-                snapshot.directionLabel != null) ...[
+            if (transitModeEnabled &&
+                snapshot.directionLabel != null &&
+                (isMonitoring || snapshot.directionConfirming)) ...[
               const SizedBox(height: 8),
               MetricRow(
                 label: 'Direction',
-                value: snapshot.directionLabel!,
+                value: snapshot.directionConfirming
+                    ? '${snapshot.directionLabel!} (confirming…)'
+                    : snapshot.directionLabel!,
               ),
             ],
             if (isMonitoring) ...[
@@ -573,7 +571,15 @@ class _DestinationCard extends StatelessWidget {
   }
 
   String _gpsFixLabel(BuildContext context) {
-    final fixAt = context.read<LocationProvider>().lastLocationFixAt;
+    final locationProvider = context.read<LocationProvider>();
+    if (locationProvider.establishingGps) {
+      return 'Establishing GPS…';
+    }
+    if (locationProvider.gpsPrewarming) {
+      return 'Warming GPS for your trip…';
+    }
+
+    final fixAt = locationProvider.lastLocationFixAt;
     if (fixAt == null) {
       return 'Last GPS fix: waiting…';
     }

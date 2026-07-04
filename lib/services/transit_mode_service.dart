@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/destination.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_stop.dart';
+import '../utils/along_route_smoother.dart';
 import '../utils/gtfs_stop_name_utils.dart';
 import '../utils/trip_pattern_validation.dart';
 import 'gtfs_service.dart';
@@ -20,11 +21,13 @@ class TransitModeService {
   final GtfsService _gtfsService;
   final RouteGeometryService _routeGeometry;
   final TransitTripSession _tripSession;
+  final AlongRouteSmoother _alongRouteSmoother = AlongRouteSmoother();
 
   TransitTripSession get tripSession => _tripSession;
 
   void resetTripSession() {
     _tripSession.reset();
+    _alongRouteSmoother.reset();
   }
 
   /// Max perpendicular distance from the route polyline before off-route.
@@ -41,6 +44,8 @@ class TransitModeService {
     int maxStopProximityMeters = defaultMaxStopProximityMeters,
     double? headingDegrees,
     double? speedMps,
+    double? accuracyMeters,
+    DateTime? fixTimestamp,
   }) {
     if (destination == null || latitude == null || longitude == null) {
       return TransitModeSnapshot.inactive;
@@ -158,12 +163,10 @@ class TransitModeService {
       patternStops: routeStops,
     );
 
-    currentStop ??= _gtfsService.resolveCurrentOnPattern(
-      latitude: latitude,
-      longitude: longitude,
-      pattern: routeStops,
-      maxProximityMeters: routeStopMatchMeters,
-      destinationOnPattern: destinationStop,
+    currentStop ??= _corridorFallbackStop(
+      projection: projection,
+      routeStops: routeStops,
+      destinationStop: destinationStop,
     );
 
     if (currentStop == null) {
@@ -232,11 +235,22 @@ class TransitModeService {
     double? offRouteMeters;
     if (projection != null) {
       offRouteMeters = projection.offRouteMeters;
-      alongRouteRemainingMeters = _routeGeometry.alongRouteRemainingMeters(
+      final rawAlong = _routeGeometry.alongRouteRemainingMeters(
         polyline: polyline,
         projection: projection,
         destinationStop: destinationStop,
       );
+      if (rawAlong != null) {
+        final timestamp = fixTimestamp ?? DateTime.now();
+        alongRouteRemainingMeters = accuracyMeters != null && accuracyMeters > 0
+            ? _alongRouteSmoother.smooth(
+                alongRouteMeters: rawAlong,
+                accuracyMeters: accuracyMeters,
+                timestamp: timestamp,
+                speedMps: speedMps,
+              )
+            : rawAlong;
+      }
     }
 
     final validation = validateTripOnPattern(
@@ -245,6 +259,7 @@ class TransitModeService {
       destination: destinationStop,
       patternKey: patternKey,
       directionLocked: _tripSession.isDirectionLocked,
+      pendingPatternKey: _tripSession.pendingPatternKey,
       alongRouteRemainingMeters: alongRouteRemainingMeters,
     );
 
@@ -268,6 +283,8 @@ class TransitModeService {
       tripConcern: validation.concern,
       directionLabel: validation.directionLabel,
       directionLocked: _tripSession.isDirectionLocked,
+      directionConfirming:
+          _tripSession.hasPendingDirection && !_tripSession.isDirectionLocked,
     );
   }
 
@@ -422,6 +439,7 @@ class TransitModeService {
       tripConcern: snapshot.tripConcern,
       directionLabel: snapshot.directionLabel,
       directionLocked: snapshot.directionLocked,
+      directionConfirming: snapshot.directionConfirming,
     );
   }
 
@@ -476,71 +494,117 @@ class TransitModeService {
     double? speedMps,
     List<TransitStop>? patternStops,
   }) {
-    if (projection != null &&
-        projection.offRouteMeters <= maxStopProximityMeters) {
-      final matched = _routeGeometry.matchCurrentStop(
-        polyline: polyline,
-        projection: projection,
-        destinationStop: destinationStop,
-        maxOffRouteMeters: maxStopProximityMeters,
-        headingDegrees: headingDegrees,
-        speedMps: speedMps,
-      );
-      if (matched != null) {
-        if (patternStops != null) {
+    if (projection != null) {
+      if (projection.offRouteMeters <= maxStopProximityMeters) {
+        final matched = _routeGeometry.matchCurrentStop(
+          polyline: polyline,
+          projection: projection,
+          destinationStop: destinationStop,
+          maxOffRouteMeters: maxStopProximityMeters,
+          headingDegrees: headingDegrees,
+          speedMps: speedMps,
+        );
+        if (matched != null) {
+          if (patternStops != null) {
+            return _gtfsService.resolveStopAmongStops(
+                  destination: Destination(
+                    name: matched.stopName,
+                    latitude: matched.latitude,
+                    longitude: matched.longitude,
+                    stationKey: _gtfsService.stationKeyForStop(matched),
+                  ),
+                  stops: patternStops,
+                ) ??
+                matched;
+          }
+          return matched;
+        }
+
+        final behind = _routeGeometry.bestStopAtOrBehindProjection(
+          polyline: polyline,
+          projection: projection,
+        );
+        if (behind != null && patternStops != null) {
           return _gtfsService.resolveStopAmongStops(
                 destination: Destination(
-                  name: matched.stopName,
-                  latitude: matched.latitude,
-                  longitude: matched.longitude,
-                  stationKey: _gtfsService.stationKeyForStop(matched),
+                  name: behind.stopName,
+                  latitude: behind.latitude,
+                  longitude: behind.longitude,
+                  stationKey: _gtfsService.stationKeyForStop(behind),
                 ),
                 stops: patternStops,
               ) ??
-              matched;
+              behind;
         }
-        return matched;
+        return behind;
       }
 
-      final behind = _routeGeometry.bestStopAtOrBehindProjection(
-        polyline: polyline,
-        projection: projection,
+      if (projection.offRouteMeters <= defaultMaxStopProximityMeters) {
+        final behind = _routeGeometry.bestStopAtOrBehindProjection(
+          polyline: polyline,
+          projection: projection,
+        );
+        if (behind != null) {
+          if (patternStops != null) {
+            return _gtfsService.resolveStopAmongStops(
+                  destination: Destination(
+                    name: behind.stopName,
+                    latitude: behind.latitude,
+                    longitude: behind.longitude,
+                    stationKey: _gtfsService.stationKeyForStop(behind),
+                  ),
+                  stops: patternStops,
+                ) ??
+                behind;
+          }
+          return behind;
+        }
+      }
+    }
+
+    if (projection == null) {
+      final snapped = getCurrentStop(
+        latitude: latitude,
+        longitude: longitude,
+        routeId: routeId,
+        maxProximityMeters: maxStopProximityMeters,
+        destinationStop: destinationStop,
       );
-      if (behind != null && patternStops != null) {
+      if (snapped != null && patternStops != null) {
         return _gtfsService.resolveStopAmongStops(
               destination: Destination(
-                name: behind.stopName,
-                latitude: behind.latitude,
-                longitude: behind.longitude,
-                stationKey: _gtfsService.stationKeyForStop(behind),
+                name: snapped.stopName,
+                latitude: snapped.latitude,
+                longitude: snapped.longitude,
+                stationKey: _gtfsService.stationKeyForStop(snapped),
               ),
               stops: patternStops,
             ) ??
-            behind;
+            snapped;
       }
-      return behind;
+      return snapped;
     }
 
-    final snapped = getCurrentStop(
-      latitude: latitude,
-      longitude: longitude,
-      routeId: routeId,
-      maxProximityMeters: maxStopProximityMeters,
-      destinationStop: destinationStop,
-    );
-    if (snapped != null && patternStops != null) {
-      return _gtfsService.resolveStopAmongStops(
-            destination: Destination(
-              name: snapped.stopName,
-              latitude: snapped.latitude,
-              longitude: snapped.longitude,
-              stationKey: _gtfsService.stationKeyForStop(snapped),
-            ),
-            stops: patternStops,
-          ) ??
-          snapped;
+    return null;
+  }
+
+  TransitStop? _corridorFallbackStop({
+    required RouteProjection? projection,
+    required List<TransitStop> routeStops,
+    required TransitStop destinationStop,
+  }) {
+    if (projection == null ||
+        projection.offRouteMeters > defaultMaxStopProximityMeters) {
+      return null;
     }
-    return snapped;
+
+    return _gtfsService.resolveCurrentOnPattern(
+      latitude: projection.latitude,
+      longitude: projection.longitude,
+      pattern: routeStops,
+      maxProximityMeters: routeStopMatchMeters,
+      destinationOnPattern: destinationStop,
+    );
   }
 
   TransitStop? getPreviousStop({

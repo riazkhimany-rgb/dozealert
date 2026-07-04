@@ -90,6 +90,19 @@ void main() {
     expect(result.directionLabel, isNull);
   });
 
+  test('uses pending pattern key for direction label before lock', () {
+    final result = validateTripOnPattern(
+      pattern: pattern,
+      current: pattern[0],
+      destination: pattern[3],
+      patternKey: 'd:0',
+      directionLocked: false,
+      pendingPatternKey: 'h:finch',
+    );
+
+    expect(result.directionLabel, 'finch');
+  });
+
   test('flags unlikely route when too many stops remain', () {
     final longPattern = List<TransitStop>.generate(
       20,

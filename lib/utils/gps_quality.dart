@@ -11,15 +11,26 @@ class GpsQualityGate {
   final double degradedAccuracyMeters;
 
   bool accept(CurrentLocation location, {bool allowDegraded = false}) {
+    return _acceptWithLimit(
+      location,
+      limitMeters: allowDegraded ? degradedAccuracyMeters : maxAccuracyMeters,
+    );
+  }
+
+  /// Looser gate for direction seeding / inference while position is still warming.
+  bool acceptForDirectionInference(CurrentLocation location) {
+    return _acceptWithLimit(location, limitMeters: degradedAccuracyMeters);
+  }
+
+  bool _acceptWithLimit(
+    CurrentLocation location, {
+    required double limitMeters,
+  }) {
     if (location.accuracy <= 0) {
       return true;
     }
 
-    if (location.accuracy <= maxAccuracyMeters) {
-      return true;
-    }
-
-    return allowDegraded && location.accuracy <= degradedAccuracyMeters;
+    return location.accuracy <= limitMeters;
   }
 }
 

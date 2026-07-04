@@ -11,6 +11,8 @@ import '../models/monitoring_state.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/transit_mode_provider.dart';
 import '../providers/trip_history_provider.dart';
+import '../models/location_tracking_mode.dart';
+import '../services/activity_recognition_service.dart';
 import '../services/alarm_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/location_service.dart';
@@ -35,6 +37,7 @@ enum LocationStartResult {
 class LocationProvider extends ChangeNotifier {
   LocationProvider(
     this._locationService,
+    this._activityRecognitionService,
     this._monitoringProvider,
     this._alarmService,
     this._settingsService,
@@ -45,7 +48,15 @@ class LocationProvider extends ChangeNotifier {
     this._tripHistoryProvider,
   }) {
     _locationSubscription = _locationService.locationStream.listen(
-      _onLocationUpdate,
+      (location) {
+        if (_trackingEnabled) {
+          unawaited(_onLocationUpdate(location));
+          return;
+        }
+        if (_gpsPrewarming) {
+          unawaited(_onPrewarmLocation(location));
+        }
+      },
     );
     _backgroundLocationSubscription =
         _backgroundMonitorService.locationStream.listen(_onLocationUpdate);
@@ -54,11 +65,22 @@ class LocationProvider extends ChangeNotifier {
       unawaited(_handleBackgroundArrival(transitWake: event.transitWake));
     });
     _monitoringProvider.addListener(_onMonitoringChanged);
+    _activitySubscription =
+        _activityRecognitionService.vehicleActivityStream.listen(
+      (_) => unawaited(_syncRiderMotionState()),
+    );
+    _onFootActivitySubscription =
+        _activityRecognitionService.onFootActivityStream.listen(
+      (_) => unawaited(_syncRiderMotionState()),
+    );
   }
+
+  static const _prewarmIdleTimeout = Duration(minutes: 8);
 
   static const _testModeArrivalThresholdMeters = 5000.0;
 
   final LocationService _locationService;
+  final ActivityRecognitionService _activityRecognitionService;
   final MonitoringProvider _monitoringProvider;
   final AlarmService _alarmService;
   final SettingsService _settingsService;
@@ -74,6 +96,9 @@ class LocationProvider extends ChangeNotifier {
   StreamSubscription<CurrentLocation>? _locationSubscription;
   StreamSubscription<CurrentLocation>? _backgroundLocationSubscription;
   StreamSubscription<void>? _arrivalSubscription;
+  StreamSubscription<bool>? _activitySubscription;
+  StreamSubscription<bool>? _onFootActivitySubscription;
+  Timer? _prewarmIdleTimer;
 
   CurrentLocation? _currentLocation;
   double _distanceRemainingMeters = 0;
@@ -85,6 +110,7 @@ class LocationProvider extends ChangeNotifier {
   bool _arrivalDialogVisible = false;
   bool _usingBackgroundService = false;
   bool _awaitingFreshLocation = false;
+  bool _gpsPrewarming = false;
   DateTime? _monitoringStartedAt;
   double _closestApproachMeters = double.infinity;
   ArrivalContext? _arrivalContext;
@@ -104,6 +130,8 @@ class LocationProvider extends ChangeNotifier {
   }
   bool get distanceIsReady =>
       _trackingEnabled && !_awaitingFreshLocation && _currentLocation != null;
+  bool get establishingGps => _awaitingFreshLocation && _trackingEnabled;
+  bool get gpsPrewarming => _gpsPrewarming && !_trackingEnabled;
   bool get trackingEnabled => _trackingEnabled;
   bool get arrivalDialogVisible => _arrivalDialogVisible;
   ArrivalContext? get arrivalContext => _arrivalContext;
@@ -130,6 +158,11 @@ class LocationProvider extends ChangeNotifier {
     if (session.state == MonitoringState.monitoring &&
         !_trackingEnabled) {
       await startTracking(resume: true);
+      return;
+    }
+
+    if (_monitoringProvider.selectedDestination != null && !_trackingEnabled) {
+      await _beginGpsPrewarm();
     }
   }
 
@@ -214,7 +247,14 @@ class LocationProvider extends ChangeNotifier {
     }
 
     try {
-      await _locationService.startTracking(highAccuracy: true);
+      await _stopGpsPrewarm();
+      await _locationService.startTracking(
+        highAccuracy: true,
+        mode: LocationTrackingMode.monitoring,
+        navigationPriority: _activityRecognitionService.inVehicle,
+      );
+      await _activityRecognitionService.startListening();
+      unawaited(_syncRiderMotionState());
     } on LocationServiceDisabledException {
       await _backgroundMonitorService.stopMonitoring();
       return LocationStartResult.locationServiceDisabled;
@@ -258,6 +298,7 @@ class LocationProvider extends ChangeNotifier {
 
     _arrivalDialogVisible = false;
     _transitModeProvider.resetApproachAlarm();
+    await _activityRecognitionService.stopListening();
     await _locationService.stopTracking();
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
@@ -277,6 +318,7 @@ class LocationProvider extends ChangeNotifier {
     _transitModeProvider.resetApproachAlarm();
     await _monitoringStorage.setArrivalTriggered(false);
     _monitoringProvider.resetToIdle();
+    await _activityRecognitionService.stopListening();
     await _locationService.stopTracking();
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
@@ -284,6 +326,10 @@ class LocationProvider extends ChangeNotifier {
     _resetLocationState();
     await _monitoringStorage.clearSession();
     notifyListeners();
+
+    if (_monitoringProvider.selectedDestination != null) {
+      unawaited(_beginGpsPrewarm());
+    }
   }
 
   void _resetLocationState({bool awaitingFresh = false}) {
@@ -296,6 +342,7 @@ class LocationProvider extends ChangeNotifier {
     _usingAlongRouteDistance = false;
     _gpsSmoother.reset();
     _awaitingFreshLocation = awaitingFresh;
+    _gpsPrewarming = false;
     if (!awaitingFresh) {
       _monitoringStartedAt = null;
     }
@@ -366,11 +413,31 @@ class LocationProvider extends ChangeNotifier {
 
     final allowDegraded = _settingsService.settings.transitModeEnabled &&
         _transitModeProvider.isActive;
-    if (!_gpsQualityGate.accept(location, allowDegraded: allowDegraded)) {
+    final positionOk = _gpsQualityGate.accept(
+      location,
+      allowDegraded: allowDegraded,
+    );
+    final inferenceOk = _gpsQualityGate.acceptForDirectionInference(location);
+
+    if (!positionOk && !inferenceOk) {
       if (_trackingEnabled && _distanceRemainingMeters > 0) {
         _distanceIsStale = true;
         notifyListeners();
       }
+      return;
+    }
+
+    if (!positionOk && inferenceOk) {
+      _transitModeProvider.updateFromLocation(
+        latitude: location.latitude,
+        longitude: location.longitude,
+        headingDegrees: location.hasHeading ? location.heading : null,
+        speedMps: location.speed >= 0 ? location.speed : null,
+        accuracyMeters: location.accuracy,
+        directionInferenceOnly: true,
+        fixTimestamp: location.timestamp,
+      );
+      notifyListeners();
       return;
     }
 
@@ -386,6 +453,8 @@ class LocationProvider extends ChangeNotifier {
       longitude: smoothed.longitude,
       headingDegrees: smoothed.hasHeading ? smoothed.heading : null,
       speedMps: smoothed.speed >= 0 ? smoothed.speed : null,
+      accuracyMeters: smoothed.accuracy,
+      fixTimestamp: smoothed.timestamp,
     );
     updateDistance();
 
@@ -406,10 +475,119 @@ class LocationProvider extends ChangeNotifier {
     updateDistance();
 
     if (_monitoringProvider.selectedDestination == null) {
+      unawaited(_stopGpsPrewarm());
       unawaited(stopTracking());
+      return;
+    }
+
+    if (!_trackingEnabled) {
+      unawaited(_beginGpsPrewarm());
     }
 
     notifyListeners();
+  }
+
+  Future<void> _beginGpsPrewarm() async {
+    if (_trackingEnabled || _monitoringProvider.selectedDestination == null) {
+      return;
+    }
+
+    try {
+      final permission = await _locationService.requestPermission();
+      if (permission != LocationPermissionStatus.granted) {
+        return;
+      }
+
+      if (!await _locationService.isLocationServiceEnabled()) {
+        return;
+      }
+
+      _prewarmIdleTimer?.cancel();
+      _prewarmIdleTimer = Timer(_prewarmIdleTimeout, () {
+        unawaited(_stopGpsPrewarm());
+      });
+
+      if (_gpsPrewarming && _locationService.isPrewarming) {
+        await _syncLocationPriority();
+        return;
+      }
+
+      await _activityRecognitionService.startListening();
+      await _locationService.startPrewarm(
+        navigationPriority: _activityRecognitionService.inVehicle,
+      );
+      _gpsPrewarming = true;
+      notifyListeners();
+    } catch (error) {
+      AppLog.d('LocationProvider: prewarm failed: $error');
+    }
+  }
+
+  Future<void> _stopGpsPrewarm() async {
+    _prewarmIdleTimer?.cancel();
+    _prewarmIdleTimer = null;
+    if (!_gpsPrewarming && !_locationService.isPrewarming) {
+      return;
+    }
+
+    _gpsPrewarming = false;
+    await _locationService.stopPrewarm();
+    if (!_trackingEnabled) {
+      await _activityRecognitionService.stopListening();
+      await _monitoringStorage.saveRiderMotionState(
+        inVehicle: null,
+        onFoot: null,
+      );
+    }
+    notifyListeners();
+  }
+
+  Future<void> _syncRiderMotionState() async {
+    await _monitoringStorage.saveRiderMotionState(
+      inVehicle: _activityRecognitionService.activityInVehicleHint,
+      onFoot: _activityRecognitionService.activityOnFootHint,
+    );
+    await _syncLocationPriority();
+  }
+
+  Future<void> _syncLocationPriority() async {
+    if (!_locationService.isTracking) {
+      return;
+    }
+
+    final navigationPriority = _activityRecognitionService.inVehicle;
+    if (_trackingEnabled) {
+      await _locationService.setNavigationPriority(navigationPriority);
+      return;
+    }
+
+    if (_gpsPrewarming) {
+      await _locationService.startPrewarm(
+        navigationPriority: navigationPriority,
+      );
+    }
+  }
+
+  Future<void> _onPrewarmLocation(CurrentLocation location) async {
+    if (_trackingEnabled ||
+        _monitoringProvider.selectedDestination == null ||
+        !_gpsPrewarming) {
+      return;
+    }
+
+    if (!_gpsQualityGate.acceptForDirectionInference(location)) {
+      return;
+    }
+
+    _transitModeProvider.updateFromLocation(
+      latitude: location.latitude,
+      longitude: location.longitude,
+      headingDegrees: location.hasHeading ? location.heading : null,
+      speedMps: location.speed >= 0 ? location.speed : null,
+      accuracyMeters: location.accuracy,
+      directionInferenceOnly: true,
+      fixTimestamp: location.timestamp,
+    );
   }
 
   Future<void> _handleBackgroundArrival({bool transitWake = false}) async {
@@ -562,6 +740,7 @@ class LocationProvider extends ChangeNotifier {
       destinationName: copy.primaryStopName,
       usedTransitMode: usedTransitMode,
       headline: copy.headline,
+      currentStopName: copy.currentStopName,
       detailMessage: copy.detailMessage,
       secondaryLine: copy.secondaryLine,
       wearSubline: copy.wearSubline,
@@ -612,6 +791,7 @@ class LocationProvider extends ChangeNotifier {
     _arrivalDialogVisible = false;
     _arrivalContext = null;
     await _alarmService.stopAlarm();
+    await _activityRecognitionService.stopListening();
     await _locationService.stopTracking();
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
@@ -669,9 +849,12 @@ class LocationProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _prewarmIdleTimer?.cancel();
     _locationSubscription?.cancel();
     _backgroundLocationSubscription?.cancel();
     _arrivalSubscription?.cancel();
+    _activitySubscription?.cancel();
+    _onFootActivitySubscription?.cancel();
     _monitoringProvider.removeListener(_onMonitoringChanged);
     super.dispose();
   }

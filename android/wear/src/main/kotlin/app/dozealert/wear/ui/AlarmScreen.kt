@@ -38,8 +38,10 @@ fun AlarmScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = state.alarmHeadline.ifBlank {
-                stringResource(R.string.alarm_title)
+            text = state.alarmPrimaryStopName.ifBlank {
+                state.alarmHeadline.ifBlank {
+                    stringResource(R.string.alarm_title)
+                }
             },
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.Bold,
