@@ -18,7 +18,7 @@ class AppPermissionSnapshot {
   /// `true` when Android battery optimization is still limiting the app.
   final bool batteryOptimizationEnabled;
 
-  bool get allRequiredForMonitoring {
+  bool allRequiredForMonitoring({bool requireActivityRecognition = false}) {
     if (!locationServicesEnabled || !locationWhenInUseGranted) {
       return false;
     }
@@ -26,7 +26,7 @@ class AppPermissionSnapshot {
     if (Platform.isAndroid) {
       return backgroundLocationGranted &&
           notificationsGranted &&
-          activityRecognitionGranted &&
+          (!requireActivityRecognition || activityRecognitionGranted) &&
           batteryUnrestricted;
     }
 
@@ -35,7 +35,9 @@ class AppPermissionSnapshot {
 
   bool get batteryUnrestricted => !batteryOptimizationEnabled;
 
-  List<String> get missingRequiredLabels {
+  List<String> missingRequiredLabels({
+    bool requireActivityRecognition = false,
+  }) {
     final missing = <String>[];
     if (!locationServicesEnabled) {
       missing.add('Phone GPS / location services turned on');
@@ -53,7 +55,9 @@ class AppPermissionSnapshot {
     if (Platform.isAndroid && !notificationsGranted) {
       missing.add('Notifications — wake you with sound and vibration');
     }
-    if (Platform.isAndroid && !activityRecognitionGranted) {
+    if (Platform.isAndroid &&
+        requireActivityRecognition &&
+        !activityRecognitionGranted) {
       missing.add('Physical activity — tell when you\'re on the train');
     }
     if (Platform.isAndroid && !batteryUnrestricted) {

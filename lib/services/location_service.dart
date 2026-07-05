@@ -16,10 +16,10 @@ enum LocationPermissionStatus {
 
 class LocationService {
   static const _lastKnownMaxAge = Duration(minutes: 5);
-  static const _prewarmInterval = Duration(seconds: 5);
-  static const _prewarmDistanceFilter = 5;
-  static const _monitoringInterval = Duration(seconds: 2);
-  static const _monitoringDistanceFilter = 2;
+  static const _prewarmInterval = Duration(seconds: 2);
+  static const _prewarmDistanceFilter = 0;
+  static const _monitoringInterval = Duration(seconds: 1);
+  static const _monitoringDistanceFilter = 0;
 
   final StreamController<CurrentLocation> _controller =
       StreamController<CurrentLocation>.broadcast();

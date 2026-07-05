@@ -12,10 +12,12 @@ data class TripState(
     val gpsStale: Boolean = false,
     val directionLabel: String = "",
     val nextStopName: String = "",
+    val wakeStopCount: Int = -1,
     val alarmActive: Boolean = false,
     val hasDestination: Boolean = false,
     val alarmStopName: String = "",
     val alarmHeadline: String = "",
+    val alarmUiHeadline: String = "",
     val alarmSubline: String = "",
     val updatedAt: Long = 0L,
 ) {
@@ -24,6 +26,9 @@ data class TripState(
 
     val hasTripConcern: Boolean
         get() = tripConcern.isNotBlank()
+
+    val showTripConcernBanner: Boolean
+        get() = isMonitoring && hasTripConcern && !alarmActive
 
     val canStart: Boolean
         get() = hasDestination && state == "idle"
@@ -52,7 +57,7 @@ data class TripState(
 
     val headline: String
         get() = when {
-            alarmActive -> alarmHeadline.ifBlank { "Wake up!" }
+            alarmActive -> alarmUiHeadline.ifBlank { "GET READY" }
             !hasDestination -> "Set up on phone"
             isMonitoring && hasTripConcern && tripConcern == "wrong_direction" ->
                 "Wrong direction?"
@@ -60,27 +65,48 @@ data class TripState(
                 "Route uncertain"
             isMonitoring && gpsStale -> "GPS signal weak"
             isMonitoring && transitActive && stopsRemaining >= 0 -> when (stopsRemaining) {
-                0 -> "At your stop"
+                0 -> "At destination stop"
                 1 -> "1 stop to go"
                 else -> "$stopsRemaining stops to go"
             }
             isMonitoring && distanceReady -> String.format("%.1f km left", distanceKm)
-            isMonitoring -> "Monitoring"
+            isMonitoring -> "Watching your trip"
             state == "arrived" -> "You've arrived"
             state == "missed" -> "Trip missed"
-            else -> "Ready to rest"
+            else -> "Ready when you are"
         }
 
     val alarmPrimaryStopName: String
         get() = alarmStopName.ifBlank { destinationName }
 
     val alarmContextLine: String
-        get() = alarmSubline.ifBlank {
-            if (destinationName.isNotBlank()) {
+        get() {
+            val synced = alarmSubline.trim()
+            if (synced.isNotEmpty()) {
+                return synced
+            }
+
+            if (wakeStopCount > 0 && stopsRemaining >= 0) {
+                val capped = minOf(stopsRemaining, wakeStopCount)
+                return when (capped) {
+                    0 -> "Time to get off"
+                    1 -> "1 more stop to go"
+                    else -> "$capped more stops to go"
+                }
+            }
+
+            return if (destinationName.isNotBlank()) {
                 "Within wake radius"
             } else {
-                "Approaching your stop"
+                "Within wake radius"
             }
+        }
+
+    val tripConcernDetail: String
+        get() = when (tripConcern) {
+            "wrong_direction" -> "Check line & direction on phone."
+            "unlikely_route" -> "Confirm your trip on phone."
+            else -> "Check your line and direction on phone."
         }
 
     val subline: String
@@ -97,7 +123,7 @@ data class TripState(
                     dest != null && line != null -> "$dest · $line"
                     dest != null -> dest
                     line != null -> line
-                    else -> "Tap Start when you're ready"
+                    else -> "Tap Start when you are on board"
                 }
             }
             else -> "Open phone to set destination"
@@ -132,16 +158,15 @@ data class TripState(
             StatusKind.Alarm -> "Alarm"
             StatusKind.Arrived -> "Arrived"
             StatusKind.Missed -> "Missed"
-            StatusKind.Monitoring -> "Monitoring"
+            StatusKind.Monitoring -> "Watching"
             StatusKind.Ready -> "Ready"
             StatusKind.Idle -> "Idle"
         }
 
     val tileLine: String
         get() = when {
-            // During alarm: show stop name first (most actionable); headline as fallback.
-            alarmActive -> alarmPrimaryStopName.ifBlank { alarmHeadline }.ifBlank { "Wake up!" }
-            isMonitoring && hasTripConcern -> "Check route on phone"
+            alarmActive -> alarmPrimaryStopName.ifBlank { alarmUiHeadline }.ifBlank { "GET READY" }
+            isMonitoring && hasTripConcern -> "Check line on phone"
             isMonitoring && gpsStale -> "GPS weak"
             isMonitoring && transitActive && stopsRemaining >= 0 -> when (stopsRemaining) {
                 0 -> "At stop"
@@ -150,7 +175,7 @@ data class TripState(
             }
             isMonitoring && nextStopName.isNotBlank() -> "Next: $nextStopName"
             isMonitoring && distanceReady -> String.format("%.1f km", distanceKm)
-            isMonitoring -> "Monitoring"
+            isMonitoring -> "Watching"
             hasDestination -> destinationName
                 .ifBlank { if (transitActive) lineLabel else "" }
                 .ifBlank { "DozeAlert" }
@@ -171,10 +196,12 @@ data class TripState(
                 gpsStale = map.getBoolean("gpsStale", false),
                 directionLabel = map.getString("directionLabel", ""),
                 nextStopName = map.getString("nextStopName", ""),
+                wakeStopCount = map.getInt("wakeStopCount", -1),
                 alarmActive = map.getBoolean("alarmActive", false),
                 hasDestination = map.getBoolean("hasDestination", false),
                 alarmStopName = map.getString("alarmStopName", ""),
                 alarmHeadline = map.getString("alarmHeadline", ""),
+                alarmUiHeadline = map.getString("alarmUiHeadline", ""),
                 alarmSubline = map.getString("alarmSubline", ""),
                 updatedAt = map.getLong("updatedAt", 0L),
             )
@@ -193,10 +220,12 @@ data class TripState(
                 gpsStale = prefs.getBoolean("gpsStale", false),
                 directionLabel = prefs.getString("directionLabel", "") ?: "",
                 nextStopName = prefs.getString("nextStopName", "") ?: "",
+                wakeStopCount = prefs.getInt("wakeStopCount", -1),
                 alarmActive = prefs.getBoolean("alarmActive", false),
                 hasDestination = prefs.getBoolean("hasDestination", false),
                 alarmStopName = prefs.getString("alarmStopName", "") ?: "",
                 alarmHeadline = prefs.getString("alarmHeadline", "") ?: "",
+                alarmUiHeadline = prefs.getString("alarmUiHeadline", "") ?: "",
                 alarmSubline = prefs.getString("alarmSubline", "") ?: "",
                 updatedAt = prefs.getLong("updatedAt", 0L),
             )
@@ -217,10 +246,12 @@ fun TripState.persist(prefs: android.content.SharedPreferences) {
         .putBoolean("gpsStale", gpsStale)
         .putString("directionLabel", directionLabel)
         .putString("nextStopName", nextStopName)
+        .putInt("wakeStopCount", wakeStopCount)
         .putBoolean("alarmActive", alarmActive)
         .putBoolean("hasDestination", hasDestination)
         .putString("alarmStopName", alarmStopName)
         .putString("alarmHeadline", alarmHeadline)
+        .putString("alarmUiHeadline", alarmUiHeadline)
         .putString("alarmSubline", alarmSubline)
         .putLong("updatedAt", updatedAt)
         .apply()

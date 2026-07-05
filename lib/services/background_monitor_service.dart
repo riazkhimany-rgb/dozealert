@@ -7,6 +7,7 @@ import '../models/current_location.dart';
 import 'background_location_task_handler.dart';
 import 'monitoring_storage_service.dart';
 import '../utils/app_log.dart';
+import '../utils/trip_ux_copy.dart';
 
 enum BackgroundMonitorStartResult {
   success,
@@ -78,9 +79,8 @@ class BackgroundMonitorService {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'dozealert_monitoring',
-        channelName: 'Trip Monitoring',
-        channelDescription:
-            'Shown while DozeAlert monitors your trip in the background.',
+        channelName: TripUxCopy.notificationChannelName,
+        channelDescription: TripUxCopy.notificationChannelDescription,
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
         onlyAlertOnce: true,
@@ -189,8 +189,10 @@ class BackgroundMonitorService {
       serviceId: _serviceId,
       serviceTypes: const [ForegroundServiceTypes.location],
       notificationTitle: 'DozeAlert',
-      notificationText:
-          'Monitoring your trip...\n$destinationName · Waiting for location...',
+      notificationText: TripUxCopy.notificationTripStatus(
+        destinationName: destinationName,
+        statusDetail: TripUxCopy.findingLocation,
+      ),
       callback: startBackgroundMonitoringCallback,
     );
 
@@ -235,9 +237,10 @@ class BackgroundMonitorService {
 
     await FlutterForegroundTask.updateService(
       notificationTitle: 'DozeAlert',
-      notificationText:
-          'Monitoring your trip...\n$destinationName · '
-          '${distanceKm.toStringAsFixed(1)} km remaining',
+      notificationText: TripUxCopy.notificationTripStatus(
+        destinationName: destinationName,
+        statusDetail: TripUxCopy.notificationKmRemaining(distanceKm),
+      ),
     );
   }
 

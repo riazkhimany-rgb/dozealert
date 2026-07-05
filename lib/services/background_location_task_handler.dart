@@ -5,12 +5,16 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/transit_mode_wake_setting.dart';
 import '../models/background_transit_pattern.dart';
 import '../models/monitoring_state.dart';
 import '../models/transit_stop.dart';
 import '../services/background_transit_evaluator.dart';
 import '../services/monitoring_storage_service.dart';
+import '../services/settings_service.dart';
 import '../utils/transit_wake_trigger.dart';
+import '../utils/transit_wake_message.dart';
+import '../utils/trip_ux_copy.dart';
 
 const _testModeArrivalThresholdMeters = 5000.0;
 const _testModeKey = 'test_mode_enabled';
@@ -36,6 +40,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   int _radiusMeters = 1000;
   bool _testModeEnabled = false;
   bool _transitModeEnabled = false;
+  bool _activityRecognitionEnabled = false;
   bool _transitOnRoute = false;
   int _transitStopsRemaining = -1;
   int _transitWakeStopCount = 0;
@@ -54,7 +59,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   bool _arrivalTriggered = false;
   int? _monitoringStartedAtMs;
   BackgroundTransitPattern? _transitPattern;
-  String _alarmHeadline = 'Wake up!';
+  String _alarmHeadline = TripUxCopy.getReadyHeadline;
   String _alarmBody = '';
   String _alarmStopName = '';
   String _alarmSubline = '';
@@ -90,8 +95,13 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   @override
   void onReceiveData(Object data) {
     if (data == 'refresh_session') {
-      unawaited(_loadSession());
+      unawaited(_reloadSessionAndGps());
     }
+  }
+
+  Future<void> _reloadSessionAndGps() async {
+    await _loadSession();
+    await _startLocationStream();
   }
 
   Future<void> _loadSession() async {
@@ -102,12 +112,13 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _radiusMeters = prefs.getInt(MonitoringStorageService.radiusKey) ?? 1000;
     _testModeEnabled = prefs.getBool(_testModeKey) ?? false;
     _transitModeEnabled = prefs.getBool(_transitModeEnabledKey) ?? true;
+    _activityRecognitionEnabled =
+        prefs.getBool(SettingsService.activityRecognitionEnabledKey) ?? false;
     _transitOnRoute =
         prefs.getBool(MonitoringStorageService.transitOnRouteKey) ?? false;
     _transitStopsRemaining =
         prefs.getInt(MonitoringStorageService.transitStopsRemainingKey) ?? -1;
-    _transitWakeStopCount =
-        prefs.getInt(MonitoringStorageService.transitWakeStopCountKey) ?? 0;
+    _transitWakeStopCount = _loadWakeStopCount(prefs);
     _transitDirectionLocked =
         prefs.getBool(MonitoringStorageService.transitDirectionLockedKey) ??
             false;
@@ -120,7 +131,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
         prefs.getInt(MonitoringStorageService.monitoringStartedAtKey);
     _alarmHeadline =
         prefs.getString(MonitoringStorageService.transitAlarmHeadlineKey) ??
-            'Wake up!';
+            TripUxCopy.getReadyHeadline;
     _alarmBody =
         prefs.getString(MonitoringStorageService.transitAlarmBodyKey) ?? '';
     _alarmStopName =
@@ -159,7 +170,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     if (!serviceEnabled) {
       await FlutterForegroundTask.updateService(
         notificationTitle: 'DozeAlert',
-        notificationText: 'Monitoring paused — GPS is disabled.',
+        notificationText: TripUxCopy.notificationTripPausedGpsOff,
       );
       return;
     }
@@ -167,8 +178,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: AndroidSettings(
         accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 2,
-        intervalDuration: const Duration(seconds: 2),
+        distanceFilter: 0,
+        intervalDuration: const Duration(seconds: 1),
         foregroundNotificationConfig: null,
       ),
     ).listen(
@@ -176,7 +187,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       onError: (_) async {
         await FlutterForegroundTask.updateService(
           notificationTitle: 'DozeAlert',
-          notificationText: 'Monitoring paused — location unavailable.',
+          notificationText: TripUxCopy.notificationTripPausedNoLocation,
         );
       },
     );
@@ -187,7 +198,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       return;
     }
 
-    if (position.accuracy > 150) {
+    if (position.accuracy > (_transitOnRoute ? 150 : 200)) {
       return;
     }
 
@@ -272,8 +283,9 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       headingDegrees: position.heading,
       speedMps: position.speed,
       accuracyMeters: position.accuracy,
-      activityInVehicle: _riderInVehicle,
-      activityOnFoot: _riderOnFoot,
+      useActivityRecognition: _activityRecognitionEnabled,
+      activityInVehicle: !_activityRecognitionEnabled ? null : _riderInVehicle,
+      activityOnFoot: !_activityRecognitionEnabled ? null : _riderOnFoot,
     );
     if (evaluation == null) {
       return;
@@ -322,8 +334,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
 
   Future<void> _reloadTransitPatternFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    _transitWakeStopCount =
-        prefs.getInt(MonitoringStorageService.transitWakeStopCountKey) ?? 0;
+    _transitWakeStopCount = _loadWakeStopCount(prefs);
     _transitHasTripConcern =
         prefs.getBool(MonitoringStorageService.transitHasTripConcernKey) ??
             false;
@@ -335,7 +346,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
             false;
     _alarmHeadline =
         prefs.getString(MonitoringStorageService.transitAlarmHeadlineKey) ??
-            'Wake up!';
+            TripUxCopy.getReadyHeadline;
     _alarmBody =
         prefs.getString(MonitoringStorageService.transitAlarmBodyKey) ?? '';
     _alarmStopName =
@@ -392,6 +403,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       // Propagate concern type so the watch shows the correct message
       // ("Wrong direction?" / "Route uncertain") while the phone is backgrounded.
       'tripConcern': _transitHasTripConcern ? _transitTripConcernType : '',
+      'wakeStopCount': _transitWakeStopCount,
       'alarmActive': false,
       'hasDestination': true,
       'alarmStopName': _alarmStopName,
@@ -434,8 +446,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       segmentStops: pattern.segmentStops,
       currentStop: currentStop,
       destinationStop: destinationStop,
-      activityInVehicle: _riderInVehicle,
-      activityOnFoot: _riderOnFoot,
+      activityInVehicle: !_activityRecognitionEnabled ? null : _riderInVehicle,
+      activityOnFoot: !_activityRecognitionEnabled ? null : _riderOnFoot,
     );
   }
 
@@ -449,6 +461,16 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       }
     }
     return null;
+  }
+
+  int _loadWakeStopCount(SharedPreferences prefs) {
+    const settingsWakeKey = 'transit_mode_wake';
+    final settingsWakeIndex = prefs.getInt(settingsWakeKey);
+    if (settingsWakeIndex != null) {
+      return TransitModeWakeSettingX.fromIndex(settingsWakeIndex).wakeStopCount;
+    }
+
+    return prefs.getInt(MonitoringStorageService.transitWakeStopCountKey) ?? 0;
   }
 
   Future<void> _triggerArrival({bool transitWake = false}) async {
@@ -465,6 +487,39 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     });
 
     if (transitWake) {
+      final wakeSetting = TransitModeWakeSettingX.fromIndex(
+        prefs.getInt('transit_mode_wake') ??
+            TransitModeWakeSetting.oneStopBefore.index,
+      );
+      final stopName =
+          _alarmStopName.isNotEmpty ? _alarmStopName : _destinationName;
+      final alarmFields = TransitWakeMessage.wearAlarmFieldsForWake(
+        stopsRemaining: _transitStopsRemaining,
+        wakeSetting: wakeSetting,
+        destinationName: stopName,
+      );
+      _alarmHeadline = alarmFields.headline;
+      _alarmSubline = alarmFields.subline;
+      _alarmStopName = alarmFields.stopName;
+      _alarmBody = TripUxCopy.alarmContinuesUntilDismiss;
+
+      await prefs.setString(
+        MonitoringStorageService.transitAlarmHeadlineKey,
+        alarmFields.headline,
+      );
+      await prefs.setString(
+        MonitoringStorageService.transitAlarmSublineKey,
+        alarmFields.subline,
+      );
+      await prefs.setString(
+        MonitoringStorageService.transitAlarmStopNameKey,
+        alarmFields.stopName,
+      );
+      await prefs.setString(
+        MonitoringStorageService.transitAlarmBodyKey,
+        _alarmBody,
+      );
+
       FlutterForegroundTask.sendDataToMain(<String, Object>{
         'type': 'wear_sync',
         'state': MonitoringState.arrived.name,
@@ -474,11 +529,13 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
         'stopsRemaining': _transitStopsRemaining,
         'transitActive': true,
         'lineLabel': _lineLabel,
+        'wakeStopCount': _transitWakeStopCount,
         'alarmActive': true,
         'hasDestination': true,
-        'alarmStopName': _alarmStopName,
-        'alarmHeadline': _alarmHeadline,
-        'alarmSubline': _alarmSubline,
+        'alarmStopName': alarmFields.stopName,
+        'alarmHeadline': alarmFields.headline,
+        'alarmUiHeadline': alarmFields.uiHeadline,
+        'alarmSubline': alarmFields.subline,
       });
     }
 
@@ -502,21 +559,19 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   }) async {
     String distanceLabel;
     if (stopsRemaining != null && stopsRemaining >= 0) {
-      distanceLabel = stopsRemaining == 0
-          ? 'At your stop'
-          : stopsRemaining == 1
-              ? '1 stop remaining'
-              : '$stopsRemaining stops remaining';
+      distanceLabel = TripUxCopy.notificationStopsRemaining(stopsRemaining);
     } else {
       distanceLabel = distanceKm != null
-          ? '${distanceKm.toStringAsFixed(1)} km remaining'
-          : 'Waiting for location...';
+          ? TripUxCopy.notificationKmRemaining(distanceKm)
+          : TripUxCopy.findingLocation;
     }
 
     await FlutterForegroundTask.updateService(
       notificationTitle: 'DozeAlert',
-      notificationText:
-          'Monitoring your trip...\n$_destinationName · $distanceLabel',
+      notificationText: TripUxCopy.notificationTripStatus(
+        destinationName: _destinationName,
+        statusDetail: distanceLabel,
+      ),
     );
   }
 
@@ -526,6 +581,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       return false;
     }
 
-    return position.timestamp.millisecondsSinceEpoch < startedAtMs;
+    return position.timestamp.millisecondsSinceEpoch <
+        startedAtMs - const Duration(seconds: 60).inMilliseconds;
   }
 }

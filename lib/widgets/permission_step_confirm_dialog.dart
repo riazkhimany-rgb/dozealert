@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/app_permissions_service.dart';
+import '../utils/trip_ux_copy.dart';
 
 /// Blocks the auto permission flow until the user acknowledges what to tap
 /// on the next system screen.
@@ -97,48 +98,37 @@ _StepDialogCopy? _copyForStep(PermissionSetupStep step) {
   return switch (step) {
     PermissionSetupStep.locationWhenInUse => const _StepDialogCopy(
         icon: Icons.location_on_outlined,
-        title: 'Know which stop you\'re passing',
-        body:
-            'Android asks for location in two steps. This is step 1 — '
-            'so DozeAlert can see your position while the app is open.',
-        highlight: 'Tap "While using the app"',
+        title: TripUxCopy.permissionReasonLocation,
+        body: TripUxCopy.permissionDialogLocationBody,
+        highlight: TripUxCopy.permissionDialogLocationHighlight,
         actionLabel: 'Continue',
       ),
     PermissionSetupStep.backgroundLocation => const _StepDialogCopy(
         icon: Icons.my_location,
-        title: 'Keep watching while your screen is off',
-        body:
-            'DozeAlert needs background location so monitoring continues '
-            'when you lock your phone or switch apps.\n\n'
-            'The next screen may be an Android dialog or app settings.',
-        highlight: 'Choose "Allow all the time"',
+        title: TripUxCopy.permissionReasonBackground,
+        body: TripUxCopy.permissionDialogBackgroundBody,
+        highlight: TripUxCopy.permissionDialogBackgroundHighlight,
         actionLabel: 'Continue',
       ),
     PermissionSetupStep.notifications => const _StepDialogCopy(
         icon: Icons.notifications_outlined,
-        title: 'Wake you with sound and vibration',
-        body:
-            'DozeAlert shows a small ongoing notification while watching '
-            'your trip, and uses alerts to wake you before your stop.',
-        highlight: 'Tap "Allow"',
+        title: TripUxCopy.permissionReasonNotifications,
+        body: TripUxCopy.permissionDialogNotificationsBody,
+        highlight: TripUxCopy.permissionDialogNotificationsHighlight,
         actionLabel: 'Continue',
       ),
     PermissionSetupStep.activityRecognition => const _StepDialogCopy(
         icon: Icons.directions_transit_outlined,
-        title: 'On the train vs at the platform',
-        body:
-            'Physical activity helps DozeAlert tell when you are riding '
-            'versus waiting at a station — so wake timing stays accurate.',
-        highlight: 'Tap "Allow"',
+        title: TripUxCopy.permissionReasonActivity,
+        body: TripUxCopy.permissionDialogActivityBody,
+        highlight: TripUxCopy.permissionDialogActivityHighlight,
         actionLabel: 'Continue',
       ),
     PermissionSetupStep.batteryOptimization => const _StepDialogCopy(
         icon: Icons.battery_alert_outlined,
-        title: 'So Android doesn\'t stop the trip',
-        body:
-            'Some phones limit background apps. Allowing battery exemption '
-            'helps your alarm stay reliable while you sleep.',
-        highlight: 'Tap "Allow" or "Unrestricted"',
+        title: TripUxCopy.permissionReasonBattery,
+        body: TripUxCopy.permissionDialogBatteryBody,
+        highlight: TripUxCopy.permissionDialogBatteryHighlight,
         actionLabel: 'Continue',
       ),
     PermissionSetupStep.locationServices => null,

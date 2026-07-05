@@ -6,10 +6,11 @@ import 'package:dozealert/models/transit_stop.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('RiderMotionRules', () {
+  group('RiderMotionRules with activity recognition', () {
     test('blocks relaxed progress when on foot', () {
       expect(
         RiderMotionRules.allowsRelaxedStopProgress(
+          useActivityRecognition: true,
           activityInVehicle: false,
           activityOnFoot: true,
           directionLocked: true,
@@ -24,6 +25,7 @@ void main() {
     test('allows relaxed progress in vehicle with high confidence', () {
       expect(
         RiderMotionRules.allowsRelaxedStopProgress(
+          useActivityRecognition: true,
           activityInVehicle: true,
           activityOnFoot: false,
           directionLocked: true,
@@ -38,6 +40,7 @@ void main() {
     test('blocks approach wake on foot even with good GPS', () {
       expect(
         RiderMotionRules.allowsApproachWake(
+          useActivityRecognition: true,
           activityInVehicle: false,
           activityOnFoot: true,
           speedMps: 0.5,
@@ -49,6 +52,7 @@ void main() {
     test('speed overrides still activity for in-vehicle detection', () {
       expect(
         RiderMotionRules.resolvesInVehicle(
+          useActivityRecognition: true,
           activityInVehicle: false,
           speedMps: 6,
         ),
@@ -56,6 +60,7 @@ void main() {
       );
       expect(
         RiderMotionRules.allowsApproachWake(
+          useActivityRecognition: true,
           activityInVehicle: false,
           activityOnFoot: true,
           speedMps: 6,
@@ -67,8 +72,35 @@ void main() {
     test('unknown activity falls back to speed for on-foot', () {
       expect(
         RiderMotionRules.resolvesOnFoot(
+          useActivityRecognition: true,
           activityInVehicle: null,
           activityOnFoot: null,
+          speedMps: 0.5,
+        ),
+        isTrue,
+      );
+    });
+  });
+
+  group('RiderMotionRules without activity recognition', () {
+    test('does not treat rider as on foot from activity alone', () {
+      expect(
+        RiderMotionRules.resolvesOnFoot(
+          useActivityRecognition: false,
+          activityInVehicle: false,
+          activityOnFoot: true,
+          speedMps: 0.5,
+        ),
+        isFalse,
+      );
+    });
+
+    test('allows approach wake when activity recognition is off', () {
+      expect(
+        RiderMotionRules.allowsApproachWake(
+          useActivityRecognition: false,
+          activityInVehicle: false,
+          activityOnFoot: true,
           speedMps: 0.5,
         ),
         isTrue,

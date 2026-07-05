@@ -1,8 +1,15 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/location_provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../services/activity_recognition_service.dart';
+import '../../services/app_permissions_service.dart';
 import '../../services/background_monitor_service.dart';
+import '../../utils/trip_ux_copy.dart';
 import '../../widgets/settings_section_tile.dart';
 import '../../widgets/wake_radius_dropdown.dart';
 
@@ -32,6 +39,11 @@ class LocationSettingsScreen extends StatelessWidget {
         children: [
           const SettingsSectionHeader(title: 'Wake Radius'),
           const WakeRadiusDropdown(),
+          if (Platform.isAndroid) ...[
+            const SizedBox(height: 24),
+            const SettingsSectionHeader(title: 'Transit detection'),
+            const _ActivityRecognitionToggle(),
+          ],
           const SizedBox(height: 24),
           const SettingsSectionHeader(title: 'Location Accuracy'),
           ListTile(
@@ -51,19 +63,19 @@ class LocationSettingsScreen extends StatelessWidget {
             title: const Text('Battery optimization'),
             subtitle: Text(
               'You may be prompted to disable battery restrictions when '
-              'starting monitoring.',
+              'starting a trip.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
           ),
           const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Background Monitoring'),
+          const SettingsSectionHeader(title: 'Background trip'),
           SwitchListTile(
             secondary: Icon(Icons.sensors, color: colorScheme.primary),
-            title: const Text('Background monitoring active'),
+            title: const Text(TripUxCopy.backgroundTripActive),
             subtitle: Text(
               diagnostics.backgroundMonitoringEnabled
-                  ? 'Foreground service is running.'
-                  : 'Start monitoring from Home to enable.',
+                  ? TripUxCopy.foregroundServiceRunning
+                  : TripUxCopy.startTripFromHomeHint,
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             value: diagnostics.backgroundMonitoringEnabled,
@@ -71,6 +83,61 @@ class LocationSettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ActivityRecognitionToggle extends StatelessWidget {
+  const _ActivityRecognitionToggle();
+
+  Future<void> _handleChanged(BuildContext context, bool enabled) async {
+    final settings = context.read<SettingsProvider>();
+    final permissions = context.read<AppPermissionsService>();
+    final location = context.read<LocationProvider>();
+    final activity = context.read<ActivityRecognitionService>();
+
+    if (enabled) {
+      await settings.setActivityRecognitionEnabled(true);
+      final granted = await permissions.requestActivityRecognition();
+      if (!context.mounted) {
+        return;
+      }
+      if (!granted) {
+        await settings.setActivityRecognitionEnabled(false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(TripUxCopy.activityRecognitionPermissionDenied),
+          ),
+        );
+        return;
+      }
+      await location.syncActivityRecognitionFromSettings();
+      return;
+    }
+
+    await settings.setActivityRecognitionEnabled(false);
+    await activity.stopListening();
+    await location.syncActivityRecognitionFromSettings();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final enabled = context.select<SettingsProvider, bool>(
+      (provider) => provider.activityRecognitionEnabled,
+    );
+
+    return SwitchListTile(
+      secondary: Icon(Icons.directions_transit_outlined, color: colorScheme.primary),
+      title: const Text(TripUxCopy.activityRecognitionSettingTitle),
+      subtitle: Text(
+        enabled
+            ? TripUxCopy.activityRecognitionEnabledSubtitle
+            : TripUxCopy.activityRecognitionDisabledSubtitle,
+        style: TextStyle(color: colorScheme.onSurfaceVariant),
+      ),
+      value: enabled,
+      onChanged: (value) => unawaited(_handleChanged(context, value)),
     );
   }
 }

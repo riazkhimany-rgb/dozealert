@@ -298,6 +298,41 @@ class TransitModeService {
     );
   }
 
+  /// Seeds route direction from the picked stop before the first GPS fix arrives.
+  void seedDirectionFromDestination({
+    required Destination destination,
+    required String routeId,
+  }) {
+    if (_tripSession.isDirectionLocked || _tripSession.isSeeded) {
+      return;
+    }
+
+    final destinationStop = getDestinationStop(
+      destination: destination,
+      routeId: routeId,
+    );
+    if (destinationStop == null) {
+      return;
+    }
+
+    final destinationKey =
+        destination.stationKey ??
+        GtfsStopNameUtils.stationDisplayName(destination.name);
+    final seedPattern = _gtfsService.inferPatternKeyForRoute(
+      routeId,
+      destinationStop: destinationStop,
+    );
+    if (seedPattern == null) {
+      return;
+    }
+
+    _tripSession.seedPatternKey(
+      routeId: routeId,
+      destinationKey: destinationKey,
+      patternKey: seedPattern,
+    );
+  }
+
   /// True when [destination] resolves to a stop on a known GTFS route.
   bool isTransitTrackableDestination(
     Destination destination, {

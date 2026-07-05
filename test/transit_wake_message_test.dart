@@ -78,30 +78,50 @@ void main() {
       expect(copy.headline, 'Union Station is your stop');
       expect(copy.primaryStopName, 'Union Station');
       expect(copy.currentStopName, 'Queen');
-      expect(copy.secondaryLine, TripUxCopy.stayOnBoardOneMoreStop);
-      expect(copy.wearSubline, '1 stop to go');
+      expect(copy.secondaryLine, TripUxCopy.stayOnBoard);
+      expect(copy.wearSubline, '1 more stop to go');
       expect(copy.ttsPhrase, contains('Union Station'));
       expect(copy.ttsPhrase, isNot(contains('Queen')));
     });
 
-    test('two stops before shows current stop from snapshot', () {
-      final king = _stop('King', 8);
+    test('caps inflated stop count for one-stop-before wake', () {
       final copy = TransitWakeMessage.forTransitAlarm(
         snapshot: _snapshot(
           destination: destination,
           stopsRemaining: 2,
-          currentStop: king,
-          nextStop: queen,
+          currentStop: segment[0],
+          nextStop: segment[1],
         ),
-        wakeSetting: TransitModeWakeSetting.twoStopsBefore,
+        wakeSetting: TransitModeWakeSetting.oneStopBefore,
         segmentStops: segment,
       );
 
-      expect(copy.uiHeadline, TripUxCopy.getReadyHeadline);
-      expect(copy.headline, 'Union Station is your stop');
-      expect(copy.currentStopName, 'King');
-      expect(copy.secondaryLine, TripUxCopy.stayOnBoardTwoMoreStops);
-      expect(copy.wearSubline, '2 stops to go');
+      expect(copy.wearSubline, '1 more stop to go');
+      expect(copy.secondaryLine, TripUxCopy.stayOnBoard);
+      expect(copy.ttsPhrase, contains('one stop away'));
+    });
+
+    test('stopsLeftForAlarmDisplay leaves at-destination counts unchanged', () {
+      expect(
+        TransitWakeMessage.stopsLeftForAlarmDisplay(
+          stopsRemaining: 2,
+          wakeSetting: TransitModeWakeSetting.atDestination,
+        ),
+        2,
+      );
+    });
+
+    test('wearAlarmFieldsForWake caps inflated stop count for watch sync', () {
+      final fields = TransitWakeMessage.wearAlarmFieldsForWake(
+        stopsRemaining: 2,
+        wakeSetting: TransitModeWakeSetting.oneStopBefore,
+        destinationName: 'Union Station',
+      );
+
+      expect(fields.uiHeadline, TripUxCopy.getReadyHeadline);
+      expect(fields.headline, 'Union Station is your stop');
+      expect(fields.subline, '1 more stop to go');
+      expect(fields.stopName, 'Union Station');
     });
   });
 

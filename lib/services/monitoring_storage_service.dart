@@ -43,6 +43,11 @@ class MonitoringStorageService {
       'transit_stabilized_stop_sequence';
   static const transitLineLabelKey = 'transit_line_label';
 
+  Future<int> readTransitStopsRemaining() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(transitStopsRemainingKey) ?? -1;
+  }
+
   Future<void> saveSession({
     required bool isActive,
     required MonitoringState state,

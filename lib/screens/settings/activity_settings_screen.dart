@@ -20,7 +20,7 @@ class ActivitySettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Activity'),
+        title: const Text('Trip history'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),

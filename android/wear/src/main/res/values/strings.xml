@@ -5,7 +5,7 @@
     <string name="complication_label">DozeAlert</string>
     <string name="status_idle">Idle</string>
     <string name="status_ready">Ready</string>
-    <string name="status_monitoring">Monitoring</string>
+    <string name="status_monitoring">Watching</string>
     <string name="status_alarm">Alarm</string>
     <string name="status_arrived">Arrived</string>
     <string name="status_missed">Missed</string>
@@ -19,9 +19,9 @@
     <string name="dismiss_alarm">Dismiss alarm</string>
     <string name="waiting_for_phone">Phone not connected</string>
     <string name="phone_connected">Phone connected</string>
-    <string name="alarm_title">Wake up!</string>
-    <string name="alarm_subtitle">Approaching your stop</string>
+    <string name="alarm_title">GET READY</string>
+    <string name="is_your_stop">is your stop</string>
     <string name="hint_setup">Set destination on phone first</string>
     <string name="ongoing_trip_channel_name">Trip in progress</string>
-    <string name="ongoing_trip_channel_description">Watch face status while DozeAlert is monitoring your trip</string>
+    <string name="ongoing_trip_channel_description">Watch face status while DozeAlert is watching your trip</string>
 </resources>

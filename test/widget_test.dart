@@ -158,7 +158,7 @@ Future<DozeAlertApp> _createTestApp() async {
   await monitoringProvider.loadMonitoringSession();
 
   final transitModeService = TransitModeService(gtfsService);
-  final activityRecognitionService = ActivityRecognitionService();
+  final activityRecognitionService = ActivityRecognitionService(settingsService);
   final transitModeProvider = TransitModeProvider(
     transitModeService,
     settingsService,
@@ -277,15 +277,15 @@ void main() {
 
     expect(find.text('General'), findsOneWidget);
     expect(find.text('Permissions'), findsOneWidget);
-    expect(find.text('Activity'), findsWidgets);
+    expect(find.text('Trip history'), findsWidgets);
 
-    final activityTile = find.byKey(const Key('settings_activity'));
-    await tester.ensureVisible(activityTile);
+    final tripHistoryTile = find.byKey(const Key('settings_trip_history'));
+    await tester.ensureVisible(tripHistoryTile);
     await _pumpUntilSettled(tester);
-    await tester.tap(activityTile);
+    await tester.tap(tripHistoryTile);
     await _pumpUntilSettled(tester);
 
-    expect(find.text('Trip History'), findsOneWidget);
+    expect(find.text('Trip history'), findsOneWidget);
     expect(find.text('Missed Trips'), findsOneWidget);
   });
 

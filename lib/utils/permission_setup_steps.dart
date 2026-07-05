@@ -16,7 +16,9 @@ class PermissionReasonSummary {
   final String reason;
 }
 
-List<PermissionReasonSummary> permissionReasonSummaries() {
+List<PermissionReasonSummary> permissionReasonSummaries({
+  bool includeActivityRecognition = true,
+}) {
   if (!Platform.isAndroid) {
     return const [
       PermissionReasonSummary(
@@ -26,24 +28,25 @@ List<PermissionReasonSummary> permissionReasonSummaries() {
     ];
   }
 
-  return const [
-    PermissionReasonSummary(
+  return [
+    const PermissionReasonSummary(
       label: 'Location',
       reason: TripUxCopy.permissionReasonLocation,
     ),
-    PermissionReasonSummary(
+    const PermissionReasonSummary(
       label: 'Background',
       reason: TripUxCopy.permissionReasonBackground,
     ),
-    PermissionReasonSummary(
+    const PermissionReasonSummary(
       label: 'Notifications',
       reason: TripUxCopy.permissionReasonNotifications,
     ),
-    PermissionReasonSummary(
-      label: 'Physical activity',
-      reason: TripUxCopy.permissionReasonActivity,
-    ),
-    PermissionReasonSummary(
+    if (includeActivityRecognition)
+      const PermissionReasonSummary(
+        label: 'Physical activity',
+        reason: TripUxCopy.permissionReasonActivity,
+      ),
+    const PermissionReasonSummary(
       label: 'Battery',
       reason: TripUxCopy.permissionReasonBattery,
     ),
@@ -51,12 +54,19 @@ List<PermissionReasonSummary> permissionReasonSummaries() {
 }
 
 class PermissionReasonTable extends StatelessWidget {
-  const PermissionReasonTable({super.key});
+  const PermissionReasonTable({
+    super.key,
+    this.includeActivityRecognition = true,
+  });
+
+  final bool includeActivityRecognition;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final rows = permissionReasonSummaries();
+    final rows = permissionReasonSummaries(
+      includeActivityRecognition: includeActivityRecognition,
+    );
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -123,7 +133,9 @@ class PermissionSetupItem {
   final PermissionSetupStep? setupStep;
 }
 
-List<PermissionSetupItem> permissionSetupItems() {
+List<PermissionSetupItem> permissionSetupItems({
+  bool requireActivityRecognition = false,
+}) {
   return [
     PermissionSetupItem(
       id: 'gps',
@@ -166,8 +178,9 @@ List<PermissionSetupItem> permissionSetupItems() {
         id: 'activity_recognition',
         title: 'Physical activity',
         reason: 'Tell when you\'re on the train vs waiting at the platform',
-        subtitle: 'Allowed',
+        subtitle: requireActivityRecognition ? 'Allowed' : 'Optional — enable in Location settings',
         isComplete: (snapshot) => snapshot.activityRecognitionGranted,
+        required: requireActivityRecognition,
         setupStep: PermissionSetupStep.activityRecognition,
       ),
     if (Platform.isAndroid)
@@ -182,8 +195,13 @@ List<PermissionSetupItem> permissionSetupItems() {
   ];
 }
 
-PermissionSetupItem? nextIncompleteSetupItem(AppPermissionSnapshot snapshot) {
-  for (final item in permissionSetupItems()) {
+PermissionSetupItem? nextIncompleteSetupItem(
+  AppPermissionSnapshot snapshot, {
+  bool requireActivityRecognition = false,
+}) {
+  for (final item in permissionSetupItems(
+    requireActivityRecognition: requireActivityRecognition,
+  )) {
     if (item.required && !item.isComplete(snapshot)) {
       return item;
     }
@@ -191,8 +209,13 @@ PermissionSetupItem? nextIncompleteSetupItem(AppPermissionSnapshot snapshot) {
   return null;
 }
 
-PermissionSetupItem? nextRecommendedSetupItem(AppPermissionSnapshot snapshot) {
-  for (final item in permissionSetupItems()) {
+PermissionSetupItem? nextRecommendedSetupItem(
+  AppPermissionSnapshot snapshot, {
+  bool requireActivityRecognition = false,
+}) {
+  for (final item in permissionSetupItems(
+    requireActivityRecognition: requireActivityRecognition,
+  )) {
     if (!item.isComplete(snapshot)) {
       return item;
     }
@@ -200,12 +223,19 @@ PermissionSetupItem? nextRecommendedSetupItem(AppPermissionSnapshot snapshot) {
   return null;
 }
 
-int requiredSetupStepCount() {
-  return permissionSetupItems().where((item) => item.required).length;
+int requiredSetupStepCount({bool requireActivityRecognition = false}) {
+  return permissionSetupItems(
+    requireActivityRecognition: requireActivityRecognition,
+  ).where((item) => item.required).length;
 }
 
-int completedRequiredSetupStepCount(AppPermissionSnapshot snapshot) {
-  return permissionSetupItems()
+int completedRequiredSetupStepCount(
+  AppPermissionSnapshot snapshot, {
+  bool requireActivityRecognition = false,
+}) {
+  return permissionSetupItems(
+    requireActivityRecognition: requireActivityRecognition,
+  )
       .where((item) => item.required && item.isComplete(snapshot))
       .length;
 }
@@ -216,8 +246,13 @@ bool needsBackgroundLocationRecovery(AppPermissionSnapshot snapshot) {
       !snapshot.backgroundLocationGranted;
 }
 
-PermissionSetupStep? setupStepForItemId(String id) {
-  for (final item in permissionSetupItems()) {
+PermissionSetupStep? setupStepForItemId(
+  String id, {
+  bool requireActivityRecognition = false,
+}) {
+  for (final item in permissionSetupItems(
+    requireActivityRecognition: requireActivityRecognition,
+  )) {
     if (item.id == id) {
       return item.setupStep;
     }
@@ -231,17 +266,24 @@ class PermissionStepProgressList extends StatelessWidget {
     required this.snapshot,
     this.activeStep,
     this.dimIncomplete = false,
+    this.requireActivityRecognition = false,
   });
 
   final AppPermissionSnapshot snapshot;
   final PermissionSetupStep? activeStep;
   final bool dimIncomplete;
+  final bool requireActivityRecognition;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final items = permissionSetupItems();
-    final nextRequired = nextIncompleteSetupItem(snapshot);
+    final items = permissionSetupItems(
+      requireActivityRecognition: requireActivityRecognition,
+    );
+    final nextRequired = nextIncompleteSetupItem(
+      snapshot,
+      requireActivityRecognition: requireActivityRecognition,
+    );
 
     return Column(
       children: [

@@ -86,9 +86,9 @@ void main() {
       batteryOptimizationEnabled: true,
     );
 
-    expect(snapshot.allRequiredForMonitoring, isFalse);
+    expect(snapshot.allRequiredForMonitoring(), isFalse);
     expect(snapshot.batteryUnrestricted, isFalse);
-    expect(snapshot.missingRequiredLabels, isNotEmpty);
+    expect(snapshot.missingRequiredLabels(), isNotEmpty);
   });
 
   test('OnboardingService tracks completion and alarm test', () async {

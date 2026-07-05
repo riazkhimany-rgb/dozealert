@@ -87,7 +87,7 @@ Future<void> main() async {
   await monitoringProvider.loadMonitoringSession();
 
   final transitModeService = TransitModeService(gtfsService);
-  final activityRecognitionService = ActivityRecognitionService();
+  final activityRecognitionService = ActivityRecognitionService(settingsService);
   final transitModeProvider = TransitModeProvider(
     transitModeService,
     settingsService,

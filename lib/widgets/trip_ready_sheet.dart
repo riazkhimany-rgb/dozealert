@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/transit_mode_wake_setting.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/transit_mode_provider.dart';
 import '../providers/transit_provider.dart';
 import '../screens/transit_data_screen.dart';
 import '../services/app_permissions_service.dart';
 import '../services/onboarding_service.dart';
+import '../utils/transit_wake_message.dart';
 import '../utils/trip_readiness.dart';
 import '../utils/trip_ux_copy.dart';
 import '../widgets/branded_app_name.dart';
@@ -37,6 +40,7 @@ abstract final class TripReadySheet {
       preferences: transit.preferences,
       gtfsProvider: gtfsProvider,
       feedProvider: feedProvider,
+      requireActivityRecognition: settings.activityRecognitionEnabled,
     );
 
     if (!snapshot.isReady) {
@@ -66,6 +70,8 @@ abstract final class TripReadySheet {
         preferences: context.read<TransitProvider>().preferences,
         gtfsProvider: context.read<GtfsProvider>(),
         feedProvider: context.read<GtfsFeedProvider>(),
+        requireActivityRecognition:
+            context.read<SettingsProvider>().activityRecognitionEnabled,
       );
       if (!refreshed.isReady) {
         return false;
@@ -84,6 +90,11 @@ abstract final class TripReadySheet {
 
     final destination = monitoring.selectedDestination;
     final destinationName = destination?.name;
+    final wakeSetting = settings.transitModeWake;
+    final transitModeEnabled = settings.transitModeEnabled;
+    final transitSnapshot = context.read<TransitModeProvider>().displaySnapshot;
+    final routeSegmentStops =
+        context.read<TransitModeProvider>().routeSegmentStops;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -92,11 +103,17 @@ abstract final class TripReadySheet {
           icon: const Icon(Icons.nightlight_round),
           title: const Text(TripUxCopy.readyToSleepTitle),
           content: BrandedMentionText(
-            destinationName != null
-                ? TripUxCopy.readyToSleepBody(
-                    destinationName: destinationName,
-                  )
-                : TripUxCopy.readyToSleepBodyDefault,
+            TripUxCopy.readyToSleepBody(
+              wakeSetting: wakeSetting,
+              destinationName: destinationName,
+              wakeAtStopName: destinationName != null && transitModeEnabled
+                  ? TransitWakeMessage.wakeStopNameFor(
+                      snapshot: transitSnapshot,
+                      wakeStopCount: wakeSetting.wakeStopCount,
+                      segmentStops: routeSegmentStops,
+                    )
+                  : null,
+            ),
           ),
           actions: [
             TextButton(

@@ -14,7 +14,6 @@ import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
 import '../services/transit_mode_service.dart';
 import '../services/transit_stop_progress_tracker.dart';
-import '../utils/rider_motion_rules.dart';
 import '../utils/transit_wake_message.dart';
 import '../utils/transit_wake_trigger.dart';
 import 'monitoring_provider.dart';
@@ -173,13 +172,16 @@ class TransitModeProvider extends ChangeNotifier {
   }
 
   /// Copy for the current approach alarm, based on wake-by-stops setting.
-  WakeAlertCopy get approachAlarmCopy {
+  WakeAlertCopy get approachAlarmCopy => approachAlarmCopyWith();
+
+  WakeAlertCopy approachAlarmCopyWith({int? stopsRemainingOverride}) {
     return TransitWakeMessage.forTransitAlarm(
       snapshot: _snapshot,
       wakeSetting: _settingsService.settings.transitModeWake,
       segmentStops: routeSegmentStops,
       fallbackDestinationName:
           _monitoringProvider.selectedDestination?.name,
+      stopsRemainingOverride: stopsRemainingOverride,
     );
   }
 
@@ -227,10 +229,15 @@ class TransitModeProvider extends ChangeNotifier {
         _activeRouteId = rawSnapshot.route!.routeId;
       }
       if (rawSnapshot.isActive || rawSnapshot.directionConfirming) {
-        if (rawSnapshot.isActive) {
-          _lastActiveSnapshot = rawSnapshot;
+        final nextSnapshot = rawSnapshot.isActive
+            ? _stabilizeSnapshot(rawSnapshot)
+            : rawSnapshot;
+        if (nextSnapshot.isActive) {
+          _lastActiveSnapshot = nextSnapshot;
+          unawaited(_monitoringStorage.setTransitOnRouteActive(true));
+          unawaited(_persistTransitBackgroundSnapshot(nextSnapshot));
         }
-        _snapshot = rawSnapshot;
+        _snapshot = nextSnapshot;
         notifyListeners();
       }
       return;
@@ -398,6 +405,15 @@ class TransitModeProvider extends ChangeNotifier {
     _stopProgressTracker.reset();
     _movingAwayDetector.reset();
     _transitModeService.resetTripSession();
+
+    final destination = _monitoringProvider.selectedDestination;
+    if (_activeRouteId != null && destination != null) {
+      _transitModeService.seedDirectionFromDestination(
+        destination: destination,
+        routeId: _activeRouteId!,
+      );
+    }
+
     updateFromLocation(
       latitude: null,
       longitude: null,
@@ -450,14 +466,7 @@ class TransitModeProvider extends ChangeNotifier {
     }
 
     final routeId = rawSnapshot.route!.routeId;
-    final relaxedProgress = RiderMotionRules.allowsRelaxedStopProgress(
-      activityInVehicle: _activityRecognitionService.activityInVehicleHint,
-      activityOnFoot: _activityRecognitionService.activityOnFootHint,
-      directionLocked: rawSnapshot.directionLocked,
-      offRouteMeters: rawSnapshot.offRouteMeters,
-      accuracyMeters: _lastAccuracyMeters,
-      speedMps: _lastSpeedMps,
-    );
+    final maxStepsPerFix = rawSnapshot.directionLocked ? 2 : 1;
     final stabilizedStop = _stopProgressTracker.reconcile(
       routeId: routeId,
       destinationStop: rawSnapshot.destinationStop!,
@@ -468,7 +477,7 @@ class TransitModeProvider extends ChangeNotifier {
         anchorStop: rawSnapshot.currentStop,
         lockedPatternKey: _transitModeService.tripSession.lockedPatternKey,
       ),
-      maxStepsPerFix: relaxedProgress ? 2 : 1,
+      maxStepsPerFix: maxStepsPerFix,
     );
 
     if (stabilizedStop == rawSnapshot.currentStop) {

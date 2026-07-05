@@ -40,6 +40,9 @@ abstract final class TripUxCopy {
   static const watchingTripLine1 = 'Watching';
   static const watchingTripLine2 = 'your trip';
 
+  static const watchConnected = 'Watch connected';
+  static const watchNotConnected = 'Watch not connected';
+
   static const readyWhenYouAre = 'Ready when you are';
 
   static const yourStop = 'Your stop';
@@ -51,7 +54,11 @@ abstract final class TripUxCopy {
   static const emptyHeadline = 'Where are you getting off?';
 
   static const emptySubtitle =
-      'Pick your stop on your route. We wake you one stop before by default.';
+      'Pick your stop on your route.';
+
+  static String emptySubtitleForWake(TransitModeWakeSetting wakeSetting) {
+    return '$emptySubtitle ${defaultWakeSummary(wakeSetting)}.';
+  }
 
   static const emptyHeadlineDistance = 'Where are you going?';
 
@@ -69,6 +76,48 @@ abstract final class TripUxCopy {
   static const pickRoute = 'Pick your route';
 
   static const findingLocation = 'Finding your location…';
+
+  /// Shared phrasing for stop counts across Home, notifications, and alarms.
+  static String stopsRemainingLabel(
+    int stopsRemaining, {
+    StopsRemainingStyle style = StopsRemainingStyle.progress,
+  }) {
+    if (stopsRemaining <= 0) {
+      return switch (style) {
+        StopsRemainingStyle.progress => 'At destination stop',
+        StopsRemainingStyle.notification => 'At your stop',
+        StopsRemainingStyle.alarm => 'Time to get off',
+      };
+    }
+    if (stopsRemaining == 1) {
+      return switch (style) {
+        StopsRemainingStyle.progress => '1 stop to go',
+        StopsRemainingStyle.notification => '1 stop remaining',
+        StopsRemainingStyle.alarm => '1 more stop to go',
+      };
+    }
+    return switch (style) {
+      StopsRemainingStyle.progress => '$stopsRemaining stops to go',
+      StopsRemainingStyle.notification => '$stopsRemaining stops remaining',
+      StopsRemainingStyle.alarm => '$stopsRemaining more stops to go',
+    };
+  }
+
+  static String stayOnBoardForStopsRemaining(int stopsRemaining) {
+    return stayOnBoard;
+  }
+
+  static const gpsSignalWeakBase =
+      'GPS signal weak — using last known position';
+
+  static String gpsSignalWeakMessage({String? lineName}) {
+    if (lineName != null && lineName.isNotEmpty) {
+      return '$gpsSignalWeakBase on $lineName';
+    }
+    return gpsSignalWeakBase;
+  }
+
+  static const staleDistanceSubtitle = 'Last known distance';
 
   static String defaultWakeSummary(TransitModeWakeSetting wakeSetting) {
     return switch (wakeSetting) {
@@ -109,7 +158,7 @@ abstract final class TripUxCopy {
       return findingLocation;
     }
     if (gpsSignalLost) {
-      return 'GPS signal weak — using last known position';
+      return gpsSignalWeakMessage();
     }
     return lockPhoneHint;
   }
@@ -147,13 +196,26 @@ abstract final class TripUxCopy {
 
   static const startMyTrip = 'Start my trip';
 
-  static String readyToSleepBody({required String destinationName}) =>
-      'We\'ll wake you one stop before $destinationName.\n\n'
-      'Keep your phone charged and volume on, then relax.';
+  static String wakeSettingsTourBody(TransitModeWakeSetting wakeSetting) {
+    return 'Choose when to wake up — ${defaultWakeSummary(wakeSetting).toLowerCase()} '
+        'is the default. You can change this anytime before or during a trip.';
+  }
 
-  static const readyToSleepBodyDefault =
-      'We wake you one stop before your stop by default.\n\n'
-      'Keep your phone charged and volume on, then relax.';
+  static String readyToSleepBody({
+    required TransitModeWakeSetting wakeSetting,
+    String? destinationName,
+    String? wakeAtStopName,
+  }) {
+    final wakeLine = destinationName != null
+        ? wakeTargetLabel(
+            wakeSetting: wakeSetting,
+            destinationName: destinationName,
+            wakeAtStopName: wakeAtStopName,
+          )
+        : defaultWakeSummary(wakeSetting);
+    return '$wakeLine.\n\n'
+        'Keep your phone charged and volume on, then relax.';
+  }
 
   static const almostReadyTitle = 'Almost ready';
 
@@ -167,9 +229,9 @@ abstract final class TripUxCopy {
   static String destinationIsYourStop(String destinationName) =>
       '$destinationName is your stop';
 
-  static const stayOnBoardOneMoreStop = 'Stay on board — one more stop';
+  static const isYourStopLine = 'is your stop';
 
-  static const stayOnBoardTwoMoreStops = 'Stay on board — two more stops';
+  static const stayOnBoard = 'Stay on board';
 
   static const dismissAlarm = 'Dismiss';
 
@@ -179,6 +241,9 @@ abstract final class TripUxCopy {
   static const youAreAtPrefix = 'You are at ';
 
   static const confirmingRoute = 'Confirming your route…';
+
+  static const routeProgressBeforeStart =
+      'Start your trip to see stop-by-stop progress.';
 
   static const permissionReasonLocation = 'Know which stop you\'re passing';
 
@@ -192,4 +257,107 @@ abstract final class TripUxCopy {
       'Tell when you\'re on the train vs at the platform';
 
   static const permissionReasonBattery = 'So Android doesn\'t stop the trip';
+
+  static const permissionDialogLocationBody =
+      'Android asks for location in two steps. This is step 1 — '
+      'so DozeAlert can see your position while the app is open.';
+
+  static const permissionDialogLocationHighlight = 'Tap "While using the app"';
+
+  static const permissionDialogBackgroundBody =
+      'DozeAlert needs background location so your trip keeps running '
+      'when you lock your phone or switch apps.\n\n'
+      'The next screen may be an Android dialog or app settings.';
+
+  static const permissionDialogBackgroundHighlight =
+      'Choose "Allow all the time"';
+
+  static const permissionDialogNotificationsBody =
+      'DozeAlert shows a small ongoing notification while watching '
+      'your trip, and uses alerts to wake you before your stop.';
+
+  static const permissionDialogNotificationsHighlight = 'Tap "Allow"';
+
+  static const permissionDialogActivityBody =
+      'Physical activity helps DozeAlert tell when you are riding '
+      'versus waiting at a station — so wake timing stays accurate.';
+
+  static const permissionDialogActivityHighlight = 'Tap "Allow"';
+
+  static const permissionDialogBatteryBody =
+      'Some phones limit background apps. Allowing battery exemption '
+      'helps your alarm stay reliable while you sleep.';
+
+  static const permissionDialogBatteryHighlight =
+      'Tap "Allow" or "Unrestricted"';
+
+  static const activityRecognitionSettingTitle = 'Physical activity detection';
+
+  static const activityRecognitionEnabledSubtitle =
+      'Helps tell riding from waiting at a platform — can improve wake timing '
+      'on transit. Uses Android physical activity permission.';
+
+  static const activityRecognitionDisabledSubtitle =
+      'Off — wake uses GPS only. Route lock may take longer; less accurate '
+      'if you are still at the station.';
+
+  static const activityRecognitionPermissionDenied =
+      'Physical activity permission is required when this is turned on.';
+
+  static const tripCouldNotStartTitle = 'Trip could not start';
+
+  static const tripCouldNotStartBody =
+      'DozeAlert could not start watching your trip. Check location, '
+      'notification, and battery settings, then try again.';
+
+  static const selectDestinationBeforeTrip =
+      'Pick your stop before starting a trip.';
+
+  static const turnOnGpsToStartTrip = 'Turn on GPS to start your trip.';
+
+  static const tripMayStopWhenScreenOff =
+      'Your trip may stop when the screen is off.';
+
+  static const backgroundTripActive = 'Background trip active';
+
+  static const foregroundServiceRunning = 'Trip service is running.';
+
+  static const startTripFromHomeHint =
+      'Start your trip from Home to enable.';
+
+  static const notificationChannelName = 'Active trips';
+
+  static const notificationChannelDescription =
+      'Shown while DozeAlert watches your trip in the background.';
+
+  static const notificationWatchingTrip = 'Watching your trip…';
+
+  static const notificationTripPausedGpsOff = 'Trip paused — GPS is off.';
+
+  static const notificationTripPausedNoLocation =
+      'Trip paused — location unavailable.';
+
+  static String notificationTripStatus({
+    required String destinationName,
+    required String statusDetail,
+  }) {
+    return '$notificationWatchingTrip\n$destinationName · $statusDetail';
+  }
+
+  static String notificationKmRemaining(double distanceKm) {
+    return '${distanceKm.toStringAsFixed(1)} km remaining';
+  }
+
+  static String notificationStopsRemaining(int stopsRemaining) {
+    return stopsRemainingLabel(
+      stopsRemaining,
+      style: StopsRemainingStyle.notification,
+    );
+  }
+}
+
+enum StopsRemainingStyle {
+  progress,
+  notification,
+  alarm,
 }

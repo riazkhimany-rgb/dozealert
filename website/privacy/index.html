@@ -145,7 +145,7 @@
 
     <h1>Privacy Policy</h1>
     <p class="meta">
-      Effective date: June 18, 2026 &middot; App: DozeAlert (<code>app.dozealert</code>) &middot;
+      Effective date: June 18, 2026 &middot; Last updated: July 5, 2026 &middot; App: DozeAlert (<code>app.dozealert</code>) &middot;
       Developer: Riaz &middot;
       <a href="mailto:support@dozealert.app">support@dozealert.app</a>
     </p>
@@ -161,6 +161,7 @@
         <li><strong>No advertising</strong> &mdash; we do not show ads or sell your data.</li>
         <li><strong>No DozeAlert cloud</strong> &mdash; trip data stays on your device.</li>
         <li><strong>Location is essential</strong> for trip monitoring and map features.</li>
+        <li><strong>Physical activity (Android)</strong> may be used on transit trips to tell riding from waiting at a platform.</li>
         <li><strong>Google Maps Platform</strong> may receive data when you use map search or the map picker.</li>
       </ul>
     </section>
@@ -177,26 +178,35 @@
         not uploaded to DozeAlert servers.
       </p>
 
-      <h3>2. Destinations and trip data you choose</h3>
+      <h3>2. Physical activity (Android)</h3>
+      <p>
+        When you grant the <strong>Physical activity</strong> permission and turn this on in
+        Location settings, Android may provide motion-activity signals (for example in a
+        vehicle, walking, or stationary) during trip monitoring. DozeAlert uses this
+        on-device to help tell when you are riding versus waiting at a station on transit.
+        Off by default. Not uploaded to DozeAlert servers; not shared with third parties.
+      </p>
+
+      <h3>3. Destinations and trip data you choose</h3>
       <p>
         Destination names, coordinates, wake radius, favorites, recent destinations,
         trip history (destination, times, alarm events), and monitoring settings.
         Stored on your device only.
       </p>
 
-      <h3>3. App settings</h3>
+      <h3>4. App settings</h3>
       <p>
         Alarm volumes, transit and line preferences, theme, and onboarding progress.
         Stored on your device only.
       </p>
 
-      <h3>4. Transit stop lists you download</h3>
+      <h3>5. Transit stop lists you download</h3>
       <p>
         Public schedule and stop files (GTFS format) downloaded from agency or open-data URLs
         you select. Cached on your device. Downloads use HTTPS to third-party hosts we do not operate.
       </p>
 
-      <h3>5. Third-party services</h3>
+      <h3>6. Third-party services</h3>
       <table>
         <thead>
           <tr>
@@ -227,7 +237,7 @@
         We do <strong>not</strong> use analytics, advertising, or crash-reporting SDKs in the production app.
       </p>
 
-      <h3>6. Support email</h3>
+      <h3>7. Support email</h3>
       <p>
         If you contact <a href="mailto:support@dozealert.app">support@dozealert.app</a>,
         we receive what you include in your message to respond to you.
@@ -244,6 +254,7 @@
           <tr><td>Location (while in use)</td><td>Maps and first step of monitoring setup</td></tr>
           <tr><td>Location (all the time)</td><td>Background trip monitoring when screen is off</td></tr>
           <tr><td>Notifications</td><td>Ongoing monitoring notification and arrival alerts</td></tr>
+          <tr><td>Physical activity (Android)</td><td>Tell riding on transit from waiting at a platform</td></tr>
           <tr><td>Internet</td><td>Maps, place search, transit stop list downloads</td></tr>
           <tr><td>Vibrate</td><td>Approach alerts</td></tr>
           <tr><td>Foreground service (location)</td><td>Reliable monitoring on Android</td></tr>
@@ -295,9 +306,9 @@
     <section class="card">
       <h2>Google Play Data safety (summary)</h2>
       <ul>
-        <li><strong>Collected:</strong> Precise location; on-device trip/destination data; permissions as needed.</li>
-        <li><strong>Shared:</strong> Location-related data with Google when using Maps/Places.</li>
-        <li><strong>Not collected in-app:</strong> Account email, payments, ads profiles, health data.</li>
+        <li><strong>Collected:</strong> Precise location; physical activity on Android when permitted; on-device trip/destination data; permissions as needed.</li>
+        <li><strong>Shared:</strong> Location-related data with Google when using Maps/Places. Activity data is not shared.</li>
+        <li><strong>Not collected in-app:</strong> Account email, payments, ads profiles, health records, financial data.</li>
         <li><strong>Purpose:</strong> App functionality only.</li>
         <li><strong>Deletion:</strong> Uninstall or clear app storage.</li>
       </ul>

@@ -9,6 +9,7 @@ import '../models/app_permission_snapshot.dart';
 import '../models/transit_preferences.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
+import '../providers/settings_provider.dart';
 import '../providers/transit_provider.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/transit_data_screen.dart';
@@ -117,7 +118,14 @@ class _TripSetupChecklistState extends State<TripSetupChecklist>
           feedProvider,
         );
 
-    final permissionsReady = permissions?.allRequiredForMonitoring ?? false;
+    final requireActivityRecognition = context.select<SettingsProvider, bool>(
+      (provider) => provider.activityRecognitionEnabled,
+    );
+    final permissionsReady =
+        permissions?.allRequiredForMonitoring(
+          requireActivityRecognition: requireActivityRecognition,
+        ) ??
+        false;
 
     final items = <_ChecklistItem>[
       if (needsTransitData)

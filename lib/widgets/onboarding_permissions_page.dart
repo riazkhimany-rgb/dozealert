@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_permission_snapshot.dart';
+import '../providers/settings_provider.dart';
 import '../services/app_permissions_service.dart';
 import '../utils/permission_setup_steps.dart';
 import '../utils/trip_ux_copy.dart';
@@ -70,8 +71,14 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     }
   }
 
-  bool _needsAutomaticFlow(AppPermissionSnapshot snapshot) {
-    return _setupStarted && !snapshot.allRequiredForMonitoring;
+  bool _needsAutomaticFlow(
+    AppPermissionSnapshot snapshot, {
+    required bool requireActivityRecognition,
+  }) {
+    return _setupStarted &&
+        !snapshot.allRequiredForMonitoring(
+          requireActivityRecognition: requireActivityRecognition,
+        );
   }
 
   Future<void> _scheduleAutomaticFlow({bool resume = false}) async {
@@ -80,7 +87,15 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     }
 
     final snapshot = _snapshot;
-    if (snapshot == null || !_needsAutomaticFlow(snapshot)) {
+    if (snapshot == null) {
+      return;
+    }
+    final requireActivityRecognition =
+        context.read<SettingsProvider>().activityRecognitionEnabled;
+    if (!_needsAutomaticFlow(
+      snapshot,
+      requireActivityRecognition: requireActivityRecognition,
+    )) {
       return;
     }
 
@@ -108,7 +123,13 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
     }
 
     final snapshot = _snapshot;
-    if (snapshot == null || !_needsAutomaticFlow(snapshot)) {
+    final requireActivityRecognition =
+        context.read<SettingsProvider>().activityRecognitionEnabled;
+    if (snapshot == null ||
+        !_needsAutomaticFlow(
+          snapshot,
+          requireActivityRecognition: requireActivityRecognition,
+        )) {
       return;
     }
 
@@ -117,6 +138,7 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
 
     final permissions = context.read<AppPermissionsService>();
     await permissions.runAutomaticSetupFlow(
+      requireActivityRecognition: requireActivityRecognition,
       onStep: (step) {
         if (!mounted) {
           return;
@@ -156,11 +178,16 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
   }
 
   void _notifyUiState() {
+    final requireActivityRecognition =
+        context.read<SettingsProvider>().activityRecognitionEnabled;
     widget.onUiStateChanged?.call(
       OnboardingPermissionsUiState(
         setupStarted: _setupStarted,
         autoFlowRunning: _autoFlowRunning,
-        permissionsReady: _snapshot?.allRequiredForMonitoring ?? false,
+        permissionsReady: _snapshot?.allRequiredForMonitoring(
+              requireActivityRecognition: requireActivityRecognition,
+            ) ??
+            false,
       ),
     );
   }
@@ -177,14 +204,24 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
       return;
     }
 
-    if (_needsAutomaticFlow(snapshot)) {
+    final requireActivityRecognition =
+        context.read<SettingsProvider>().activityRecognitionEnabled;
+    if (_needsAutomaticFlow(
+      snapshot,
+      requireActivityRecognition: requireActivityRecognition,
+    )) {
       await _runAutomaticFlow();
     }
   }
 
   Future<void> _runStepAction(String itemId) async {
     final permissions = context.read<AppPermissionsService>();
-    final step = setupStepForItemId(itemId);
+    final requireActivityRecognition =
+        context.read<SettingsProvider>().activityRecognitionEnabled;
+    final step = setupStepForItemId(
+      itemId,
+      requireActivityRecognition: requireActivityRecognition,
+    );
 
     if (step != null) {
       final proceed = await showPermissionStepConfirmDialog(context, step);
@@ -241,10 +278,23 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
       return const Center(child: CircularProgressIndicator());
     }
 
-    final requiredComplete = snapshot.allRequiredForMonitoring;
-    final stepProgress = completedRequiredSetupStepCount(snapshot);
-    final stepTotal = requiredSetupStepCount();
-    final nextItem = nextIncompleteSetupItem(snapshot);
+    final requireActivityRecognition = context.select<SettingsProvider, bool>(
+      (provider) => provider.activityRecognitionEnabled,
+    );
+    final requiredComplete = snapshot.allRequiredForMonitoring(
+      requireActivityRecognition: requireActivityRecognition,
+    );
+    final stepProgress = completedRequiredSetupStepCount(
+      snapshot,
+      requireActivityRecognition: requireActivityRecognition,
+    );
+    final stepTotal = requiredSetupStepCount(
+      requireActivityRecognition: requireActivityRecognition,
+    );
+    final nextItem = nextIncompleteSetupItem(
+      snapshot,
+      requireActivityRecognition: requireActivityRecognition,
+    );
     final showSuccess = _setupStarted && requiredComplete && !_autoFlowRunning;
     final inStepMode = _setupStarted && !_showAllDetails;
     final showRecovery = needsBackgroundLocationRecovery(snapshot);
@@ -286,7 +336,9 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         ),
         if (!_setupStarted) ...[
           const SizedBox(height: 20),
-          const PermissionReasonTable(),
+          PermissionReasonTable(
+            includeActivityRecognition: requireActivityRecognition,
+          ),
         ],
         if (_setupStarted) ...[
           const SizedBox(height: 16),
@@ -355,6 +407,7 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           snapshot: snapshot,
           activeStep: _activeStep,
           dimIncomplete: !_setupStarted,
+          requireActivityRecognition: requireActivityRecognition,
         ),
         if (widget.embedded) ...[
           const SizedBox(height: 16),
@@ -367,7 +420,11 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
                 label: const Text(TripUxCopy.enableAndContinue),
               ),
             )
-          else if (_needsAutomaticFlow(snapshot) && !_autoFlowRunning)
+          else if (_needsAutomaticFlow(
+                snapshot,
+                requireActivityRecognition: requireActivityRecognition,
+              ) &&
+              !_autoFlowRunning)
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -407,7 +464,7 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         ] else if (_setupStarted && !requiredComplete && inStepMode) ...[
           const SizedBox(height: 8),
           Text(
-            'Still needed:\n${snapshot.missingRequiredLabels.map((item) => '• $item').join('\n')}',
+            'Still needed:\n${snapshot.missingRequiredLabels(requireActivityRecognition: requireActivityRecognition).map((item) => '• $item').join('\n')}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.error,
               height: 1.5,

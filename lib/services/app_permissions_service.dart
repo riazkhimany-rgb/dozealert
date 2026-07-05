@@ -121,6 +121,7 @@ class AppPermissionsService {
   Future<AppPermissionSnapshot> runAutomaticSetupFlow({
     void Function(PermissionSetupStep step)? onStep,
     Future<bool> Function(PermissionSetupStep step)? onBeforeStep,
+    bool requireActivityRecognition = false,
   }) async {
     var snapshot = await this.snapshot();
 
@@ -193,7 +194,9 @@ class AppPermissionsService {
       snapshot = await this.snapshot();
     }
 
-    if (Platform.isAndroid && !snapshot.activityRecognitionGranted) {
+    if (Platform.isAndroid &&
+        requireActivityRecognition &&
+        !snapshot.activityRecognitionGranted) {
       if (!await proceed(PermissionSetupStep.activityRecognition)) {
         return snapshot;
       }

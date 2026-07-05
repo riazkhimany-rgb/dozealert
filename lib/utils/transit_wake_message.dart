@@ -43,6 +43,21 @@ class WakeAlertCopy {
   final String? wearSubline;
 }
 
+/// Alarm copy pushed to Wear OS when a background transit wake fires.
+class WearAlarmSyncFields {
+  const WearAlarmSyncFields({
+    required this.uiHeadline,
+    required this.headline,
+    required this.subline,
+    required this.stopName,
+  });
+
+  final String uiHeadline;
+  final String headline;
+  final String subline;
+  final String stopName;
+}
+
 abstract final class TransitWakeMessage {
   static const _alarmDismissFooter = TripUxCopy.alarmContinuesUntilDismiss;
 
@@ -64,7 +79,7 @@ abstract final class TransitWakeMessage {
 
     if (snapshot.isActive) {
       if (gpsSignalLost) {
-        return 'GPS signal weak — showing last known position on $selectedLine';
+        return TripUxCopy.gpsSignalWeakMessage(lineName: selectedLine);
       }
       if (snapshot.tripConcern == TripPatternConcern.wrongDirection) {
         final direction = snapshot.directionLabel;
@@ -83,7 +98,10 @@ abstract final class TransitWakeMessage {
         return 'Locking direction: ${snapshot.directionLabel}…';
       }
       if (snapshot.stopsRemaining == 0) {
-        return 'At your stop on $selectedLine';
+        return TripUxCopy.stopsRemainingLabel(
+          0,
+          style: StopsRemainingStyle.notification,
+        );
       }
       return 'Waking by stops on $selectedLine';
     }
@@ -95,11 +113,56 @@ abstract final class TransitWakeMessage {
     return 'Tap Start when you are on board.';
   }
 
+  /// Stop count shown on the alarm when wake-by-stops fires.
+  ///
+  /// The background isolate can trigger the wake one GPS tick ahead of the
+  /// foreground snapshot. Cap inflated counts so "1 stop before" never reads
+  /// as "2 more stops to go" on the alarm screen.
+  static int stopsLeftForAlarmDisplay({
+    required int stopsRemaining,
+    required TransitModeWakeSetting wakeSetting,
+  }) {
+    if (wakeSetting == TransitModeWakeSetting.atDestination) {
+      return stopsRemaining;
+    }
+
+    final wakeCount = wakeSetting.wakeStopCount;
+    return stopsRemaining > wakeCount ? wakeCount : stopsRemaining;
+  }
+
+  /// Alarm fields for Wear OS / background wake when the foreground snapshot
+  /// may still be one GPS tick behind the background evaluator.
+  static WearAlarmSyncFields wearAlarmFieldsForWake({
+    required int stopsRemaining,
+    required TransitModeWakeSetting wakeSetting,
+    required String destinationName,
+  }) {
+    final displayName = GtfsStopNameUtils.stationDisplayName(destinationName);
+    final stopsLeft = stopsLeftForAlarmDisplay(
+      stopsRemaining: stopsRemaining,
+      wakeSetting: wakeSetting,
+    );
+
+    return WearAlarmSyncFields(
+      uiHeadline: wakeSetting == TransitModeWakeSetting.atDestination &&
+              stopsLeft == 0
+          ? TripUxCopy.timeToGetOffHeadline
+          : TripUxCopy.getReadyHeadline,
+      headline: TripUxCopy.destinationIsYourStop(displayName),
+      subline: TripUxCopy.stopsRemainingLabel(
+        stopsLeft,
+        style: StopsRemainingStyle.alarm,
+      ),
+      stopName: displayName,
+    );
+  }
+
   static WakeAlertCopy forTransitAlarm({
     required TransitModeSnapshot snapshot,
     required TransitModeWakeSetting wakeSetting,
     List<TransitStop> segmentStops = const [],
     String? fallbackDestinationName,
+    int? stopsRemainingOverride,
   }) {
     final destinationName = GtfsStopNameUtils.stationDisplayName(
       snapshot.destinationStop?.stopName ??
@@ -110,33 +173,32 @@ abstract final class TransitWakeMessage {
         ? GtfsStopNameUtils.stationDisplayName(snapshot.currentStop!.stopName)
         : destinationName;
 
-    final uiHeadline = wakeSetting == TransitModeWakeSetting.atDestination
+    final stopsLeft = stopsLeftForAlarmDisplay(
+      stopsRemaining: stopsRemainingOverride ?? snapshot.stopsRemaining,
+      wakeSetting: wakeSetting,
+    );
+    final uiHeadline = wakeSetting == TransitModeWakeSetting.atDestination &&
+            stopsLeft == 0
         ? TripUxCopy.timeToGetOffHeadline
         : TripUxCopy.getReadyHeadline;
     final headline = TripUxCopy.destinationIsYourStop(destinationName);
 
-    final wearSubline = switch (wakeSetting) {
-      TransitModeWakeSetting.atDestination => 'Time to get off',
-      TransitModeWakeSetting.oneStopBefore => '1 stop to go',
-      TransitModeWakeSetting.twoStopsBefore => '2 stops to go',
-    };
+    final wearSubline = TripUxCopy.stopsRemainingLabel(
+      stopsLeft,
+      style: StopsRemainingStyle.alarm,
+    );
 
-    final secondaryLine = switch (wakeSetting) {
-      TransitModeWakeSetting.atDestination => null,
-      TransitModeWakeSetting.oneStopBefore => TripUxCopy.stayOnBoardOneMoreStop,
-      TransitModeWakeSetting.twoStopsBefore => TripUxCopy.stayOnBoardTwoMoreStops,
-    };
+    final secondaryLine = stopsLeft <= 0
+        ? null
+        : TripUxCopy.stayOnBoardForStopsRemaining(stopsLeft);
 
     const detailMessage = _alarmDismissFooter;
 
-    final ttsPhrase = switch (wakeSetting) {
-      TransitModeWakeSetting.atDestination =>
-        'Heads up! Your stop $destinationName is here.',
-      TransitModeWakeSetting.oneStopBefore =>
-        'Heads up! Get ready to get off at $destinationName, one stop away.',
-      TransitModeWakeSetting.twoStopsBefore =>
-        'Heads up! Get ready to get off at $destinationName, two stops away.',
-    };
+    final ttsPhrase = stopsLeft <= 0
+        ? 'Heads up! Your stop $destinationName is here.'
+        : stopsLeft == 1
+            ? 'Heads up! Get ready to get off at $destinationName, one stop away.'
+            : 'Heads up! Get ready to get off at $destinationName, $stopsLeft stops away.';
 
     return WakeAlertCopy(
       uiHeadline: uiHeadline,

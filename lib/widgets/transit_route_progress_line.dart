@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/transit_stop.dart';
+import '../utils/trip_ux_copy.dart';
 
 enum _RouteDotKind { current, upcoming, destination, ellipsis }
 
@@ -23,8 +24,7 @@ class TransitRouteProgressLine extends StatelessWidget {
     required this.stopsRemaining,
     this.lineLabel,
     this.nextStopName,
-    this.inactiveMessage =
-        'Start monitoring on your line to see stop-by-stop progress.',
+    this.inactiveMessage = TripUxCopy.routeProgressBeforeStart,
   });
 
   final bool isActive;
@@ -78,11 +78,10 @@ class TransitRouteProgressLine extends StatelessWidget {
     final dots = _condenseStops(stops);
     final currentName = stops.first.stopName;
     final destinationName = stops.last.stopName;
-    final stopsLabel = stopsRemaining == 0
-        ? 'At destination stop'
-        : stopsRemaining == 1
-            ? '1 stop to go'
-            : '$stopsRemaining stops to go';
+    final stopsLabel = TripUxCopy.stopsRemainingLabel(
+      stopsRemaining,
+      style: StopsRemainingStyle.progress,
+    );
 
     return Semantics(
       label:

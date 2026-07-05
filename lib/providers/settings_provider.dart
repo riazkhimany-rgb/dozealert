@@ -14,6 +14,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get transitModeEnabled => _settingsService.settings.transitModeEnabled;
   TransitModeWakeSetting get transitModeWake =>
       _settingsService.settings.transitModeWake;
+  bool get activityRecognitionEnabled =>
+      _settingsService.settings.activityRecognitionEnabled;
   AlarmSoundMode get alarmSoundMode => _settingsService.settings.alarmSoundMode;
   bool get alwaysPlayAlarmSound => _settingsService.settings.alwaysPlayAlarmSound;
   double get alarmVolume => _settingsService.settings.alarmVolume;
@@ -50,6 +52,17 @@ class SettingsProvider extends ChangeNotifier {
 
     await _settingsService.saveSettings(
       _settingsService.settings.copyWith(transitModeWake: wakeSetting),
+    );
+    notifyListeners();
+  }
+
+  Future<void> setActivityRecognitionEnabled(bool enabled) async {
+    if (enabled == activityRecognitionEnabled) {
+      return;
+    }
+
+    await _settingsService.saveSettings(
+      _settingsService.settings.copyWith(activityRecognitionEnabled: enabled),
     );
     notifyListeners();
   }

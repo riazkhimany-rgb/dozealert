@@ -1,7 +1,7 @@
 # DozeAlert Privacy Policy
 
 **Effective date:** June 18, 2026  
-**Last updated:** June 18, 2026
+**Last updated:** July 5, 2026
 
 **App:** DozeAlert (`app.dozealert`)  
 **Developer:** Riaz (Creator of DozeAlert)  
@@ -18,6 +18,7 @@ This Privacy Policy describes how DozeAlert (“the app”, “we”, “us”) 
 - **No advertising.** We do not show ads or sell your data.
 - **No DozeAlert cloud.** Trip data is stored on your device, not on our servers.
 - **Location is essential** for trip monitoring and optional map features.
+- **Physical activity (Android)** may be used on transit trips to tell riding from waiting at a platform.
 - **Third-party services** (Google Maps Platform and public transit data hosts) may receive limited data when you use those features, as described below.
 
 ---
@@ -36,7 +37,19 @@ This Privacy Policy describes how DozeAlert (“the app”, “we”, “us”) 
 
 **Stored where:** On your device only (for example active destination, monitoring session state, and trip history). We do not upload your live GPS track to DozeAlert servers.
 
-### 2. Destination and trip information you choose
+### 2. Physical activity (Android)
+
+**What:** Motion-activity signals from Android’s activity recognition API (for example in a vehicle, walking, or stationary), when you grant the **Physical activity** permission.
+
+**When:** During trip monitoring on Android, if you allow this permission in setup.
+
+**Why:** To help DozeAlert tell when you are riding versus waiting at a station, so wake timing and route detection stay accurate on transit trips.
+
+**Required?** Optional. Off by default — wake uses GPS only. When turned on in Location settings, Android physical activity permission is required.
+
+**Stored where:** Processed on your device during an active trip. We do not upload activity recognition data to DozeAlert servers.
+
+### 3. Destination and trip information you choose
 
 **What:** Destination names, coordinates, wake radius, favorites, recent destinations, trip history entries (destination label, start/end times, whether an alarm fired), and monitoring settings.
 
@@ -44,7 +57,7 @@ This Privacy Policy describes how DozeAlert (“the app”, “we”, “us”) 
 
 **Stored where:** On your device only (local app storage).
 
-### 3. App settings and onboarding state
+### 4. App settings and onboarding state
 
 **What:** Alarm volume preferences, transit agency selections, theme choice, test-mode flags, and whether you completed onboarding steps.
 
@@ -52,7 +65,7 @@ This Privacy Policy describes how DozeAlert (“the app”, “we”, “us”) 
 
 **Stored where:** On your device only.
 
-### 4. Transit data (GTFS) you download
+### 5. Transit data (GTFS) you download
 
 **What:** Public transit schedule and stop data files downloaded from agency or open-data URLs you choose in the app.
 
@@ -60,7 +73,7 @@ This Privacy Policy describes how DozeAlert (“the app”, “we”, “us”) 
 
 **Stored where:** On your device only. Downloads are standard HTTP requests to third-party transit data providers; we do not control those servers.
 
-### 5. Information sent to third parties when you use certain features
+### 6. Information sent to third parties when you use certain features
 
 DozeAlert does **not** operate backend servers that collect your personal profile. However, these third parties may receive data when you use related features:
 
@@ -72,7 +85,7 @@ DozeAlert does **not** operate backend servers that collect your personal profil
 
 We do **not** use analytics, advertising, or crash-reporting SDKs in the production app.
 
-### 6. Support email
+### 7. Support email
 
 If you email [support@dozealert.app](mailto:support@dozealert.app), we receive whatever you choose to include (your email address, message content, and attachments). We use that only to respond to you.
 
@@ -87,6 +100,7 @@ The app may request these permissions. Each is used only for the stated purpose:
 | **Location (while in use)** | First step for map and monitoring features. |
 | **Location (all the time / background)** | Continue trip monitoring when the screen is off or another app is open. |
 | **Notifications** | Show the ongoing trip monitoring notification and arrival alerts. |
+| **Physical activity** (Android) | Distinguish riding on transit from waiting at a platform during trip monitoring. |
 | **Internet** | Map search, GTFS downloads, and HTTPS requests to third-party data sources. |
 | **Vibrate** | Approach and alarm vibration. |
 | **Foreground service (location)** | Reliable background trip monitoring on Android. |
@@ -166,11 +180,11 @@ Questions about privacy or this policy:
 
 This summary aligns with how we complete Google Play’s Data safety form:
 
-- **Collected:** Precise location; app activity related to destinations/trips stored on device; device permissions status as needed for features.
-- **Shared:** Location-related and search data may be processed by **Google** when you use Maps/Places features.
-- **Not collected:** Name, email, or payment info through the app itself; advertising ID for ads; health or financial data.
+- **Collected:** Precise location; physical activity signals on Android when permitted; app activity related to destinations/trips stored on device; device permissions status as needed for features.
+- **Shared:** Location-related and search data may be processed by **Google** when you use Maps/Places features. Activity recognition data is **not** shared with third parties.
+- **Not collected:** Name, email, or payment info through the app itself; advertising ID for ads; health records or financial data.
 - **Purpose:** App functionality only.
-- **Optional:** Some permissions (for example battery optimization) are optional; trip monitoring requires location and notifications on Android.
+- **Optional:** Some permissions (for example battery optimization) are optional; trip monitoring on Android requires location and notifications. Physical activity is optional and only used when enabled in Location settings.
 - **Deletion:** Uninstall or clear app storage on your device.
 
 For the official store declaration, see the Data safety section on our Google Play listing once published.

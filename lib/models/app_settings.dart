@@ -14,6 +14,7 @@ class AppSettings {
     this.testModeEnabled = false,
     this.transitModeEnabled = true,
     this.transitModeWake = TransitModeWakeSetting.oneStopBefore,
+    this.activityRecognitionEnabled = false,
     this.alarmSoundMode = AlarmSoundMode.followDevice,
     this.alarmVolume = 1.0,
     this.approachSystemVolume = defaultApproachSystemVolume,
@@ -24,6 +25,7 @@ class AppSettings {
   final bool testModeEnabled;
   final bool transitModeEnabled;
   final TransitModeWakeSetting transitModeWake;
+  final bool activityRecognitionEnabled;
   final AlarmSoundMode alarmSoundMode;
   final double alarmVolume;
   final double approachSystemVolume;
@@ -37,6 +39,7 @@ class AppSettings {
     bool? testModeEnabled,
     bool? transitModeEnabled,
     TransitModeWakeSetting? transitModeWake,
+    bool? activityRecognitionEnabled,
     AlarmSoundMode? alarmSoundMode,
     double? alarmVolume,
     double? approachSystemVolume,
@@ -47,6 +50,8 @@ class AppSettings {
       testModeEnabled: testModeEnabled ?? this.testModeEnabled,
       transitModeEnabled: transitModeEnabled ?? this.transitModeEnabled,
       transitModeWake: transitModeWake ?? this.transitModeWake,
+      activityRecognitionEnabled:
+          activityRecognitionEnabled ?? this.activityRecognitionEnabled,
       alarmSoundMode: alarmSoundMode ?? this.alarmSoundMode,
       alarmVolume: alarmVolume ?? this.alarmVolume,
       approachSystemVolume: approachSystemVolume ?? this.approachSystemVolume,

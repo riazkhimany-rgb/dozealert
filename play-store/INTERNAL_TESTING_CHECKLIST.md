@@ -22,7 +22,7 @@
 - [ ] FULL_DESCRIPTION.txt
 - [ ] PRIVACY_POLICY_URL.txt → `https://dozealert.app/privacy` (live before production)
 - [ ] Deploy `website/privacy/index.html` with main site
-- [ ] Complete Data safety in Play Console (`play-store/DATA_SAFETY_PLAY_CONSOLE.md`)
+- [ ] Complete Data safety in Play Console (`play-store/DATA_SAFETY_PLAY_CONSOLE.md`) — include **Fitness info / physical activity**
 
 ## Release Notes
 - [ ] RELEASE_NOTES.txt (paste into Play Console)
@@ -35,6 +35,7 @@
 - [x] Location permission dialogs
 - [x] Notification permission (POST_NOTIFICATIONS)
 - [x] Background location permission flow
+- [x] Physical activity permission (ACTIVITY_RECOGNITION) — onboarding + Data safety / privacy policy aligned
 - [x] Battery optimization guidance
 - [x] Foreground service notification while monitoring
 - [x] Splash: DozeAlert + "Sleep peacefully. Arrive confidently."
@@ -43,7 +44,7 @@
 1. Create app in Google Play Console
 2. Complete store listing with assets above
 3. Set Privacy Policy URL to `https://dozealert.app/privacy`
-4. Complete Data safety (see `DATA_SAFETY_PLAY_CONSOLE.md`)
+4. Complete Data safety (see `DATA_SAFETY_PLAY_CONSOLE.md`) — **Fitness info / physical activity** on Android
 5. Upload `app-release.aab` to **Internal testing**
 5. Add internal testers
 6. Roll out release

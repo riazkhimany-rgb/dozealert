@@ -10,6 +10,7 @@ class SettingsService {
   static const _testModeKey = 'test_mode_enabled';
   static const _transitModeEnabledKey = 'transit_mode_enabled';
   static const _transitModeWakeKey = 'transit_mode_wake';
+  static const activityRecognitionEnabledKey = 'activity_recognition_enabled';
   static const _alarmSoundModeKey = 'alarm_sound_mode';
   static const _alarmVolumeKey = 'alarm_volume';
   static const _approachSystemVolumeKey = 'approach_system_volume';
@@ -34,6 +35,8 @@ class SettingsService {
     final alarmVolume = prefs.getDouble(_alarmVolumeKey);
     final approachSystemVolume = prefs.getDouble(_approachSystemVolumeKey);
     final vibrationIntensity = prefs.getDouble(_vibrationIntensityKey);
+    final activityRecognitionEnabled =
+        prefs.getBool(activityRecognitionEnabledKey) ?? false;
 
     _settings = AppSettings(
       themeMode: themeIndex != null && themeIndex < ThemeMode.values.length
@@ -45,6 +48,7 @@ class SettingsService {
         transitModeWakeIndex ??
             TransitModeWakeSetting.oneStopBefore.index,
       ),
+      activityRecognitionEnabled: activityRecognitionEnabled,
       alarmSoundMode: AlarmSoundModeX.fromIndex(
         alarmSoundModeIndex ?? AlarmSoundMode.followDevice.index,
       ),
@@ -87,6 +91,10 @@ class SettingsService {
     await prefs.setBool(_testModeKey, settings.testModeEnabled);
     await prefs.setBool(_transitModeEnabledKey, settings.transitModeEnabled);
     await prefs.setInt(_transitModeWakeKey, settings.transitModeWake.index);
+    await prefs.setBool(
+      activityRecognitionEnabledKey,
+      settings.activityRecognitionEnabled,
+    );
     await prefs.setInt(_alarmSoundModeKey, settings.alarmSoundMode.index);
     await prefs.setDouble(_alarmVolumeKey, settings.alarmVolume.clamp(0.0, 1.0));
     await prefs.setDouble(

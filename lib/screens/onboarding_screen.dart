@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/settings_provider.dart';
 import '../services/app_tour_service.dart';
 import '../services/onboarding_service.dart';
 import '../utils/transit_user_copy.dart';
@@ -273,7 +274,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 return;
               }
               setState(() {
-                _permissionsReady = snapshot.allRequiredForMonitoring;
+                _permissionsReady = snapshot.allRequiredForMonitoring(
+                  requireActivityRecognition: context
+                      .read<SettingsProvider>()
+                      .activityRecognitionEnabled,
+                );
               });
             },
             onUiStateChanged: (state) {

@@ -36,6 +36,23 @@ Use this guide when completing **App content → Data safety** for DozeAlert (`a
 |-------|--------|
 | Collected | **Optional / No** if form allows skip — app primarily uses **precise** GPS. If required to pick one, declare **Precise** only. |
 
+### Health and fitness — Fitness info (physical activity)
+
+Android **ACTIVITY_RECOGNITION** permission. Used on transit trips to distinguish riding from waiting at a platform.
+
+| Field | Value |
+|-------|--------|
+| Collected | **Yes** (when user grants Physical activity permission on Android) |
+| Shared | **No** |
+| Ephemeral | **No** (processed on device during active trip monitoring) |
+| Required | **No** — optional; enable in Location settings if you want transit motion detection |
+| Purpose | **App functionality** |
+| User can choose not to share | **Yes** — off by default; leave off or deny permission |
+
+**Play Console path:** Data safety → Health and fitness → **Fitness info** → Collected → Not shared → App functionality → Required for your app’s core features (or equivalent wording).
+
+**In-app label:** “Physical activity — tell when you're on the train” (permission setup).
+
 ### Personal info
 
 | Type | Collected? |
@@ -46,12 +63,14 @@ Use this guide when completing **App content → Data safety** for DozeAlert (`a
 
 **No** — not collected by the app.
 
-### App activity
+### App activity (in-app interactions)
 
 | Field | Value |
 |-------|--------|
 | In-app search history (place search) | **Optional:** Some forms include “App interactions” — if shown, **Yes** for place search queries sent to Google; purpose **App functionality**; not used for advertising. |
 | Other analytics | **No** — no Firebase Analytics / similar in release build. |
+
+**Note:** This section is **not** the same as Android **Physical activity** / ACTIVITY_RECOGNITION — declare that under **Health and fitness → Fitness info** above.
 
 ### App info and performance — Crash logs / Diagnostics
 
@@ -88,17 +107,19 @@ Ensure listing text matches required permissions:
 
 - Location — **All the time** (background monitoring)
 - Notifications
+- **Physical activity** (Android — transit trip detection)
 - Foreground service (location)
 
 ---
 
 ## Before submitting
 
-1. Upload `website/privacy/index.html` with the site so `https://dozealert.app/privacy` loads.
+1. Upload `website/privacy/index.html` with the site so `https://dozealert.app/privacy` loads (includes physical activity disclosure).
 2. Enter the same URL in Play Console **Privacy policy**.
-3. Complete **Data safety** using the table above.
+3. Complete **Data safety** using the table above — include **Fitness info (physical activity)** on Android.
 4. In **App access**, note if testers need instructions (no login required).
 5. **Ads:** No, app does not contain ads.
 6. **Target audience:** Not designed for children under 13.
+7. Confirm **Privacy policy** and **Data safety** both mention physical activity if the APK requests `ACTIVITY_RECOGNITION`.
 
 If Google rejects a mismatch, adjust the form to match the live policy — do not change the policy to hide data uses that exist in the app.

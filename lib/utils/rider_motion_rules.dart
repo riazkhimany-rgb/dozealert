@@ -1,4 +1,5 @@
 import 'gps_tracking_confidence.dart';
+import '../services/transit_mode_service.dart';
 
 /// Motion-aware rules for stop progress and approach wake.
 class RiderMotionRules {
@@ -11,9 +12,15 @@ class RiderMotionRules {
   /// GPS speed wins over activity when they disagree — e.g. a train classified
   /// as [ActivityType.still] while moving.
   static bool resolvesInVehicle({
+    required bool useActivityRecognition,
     bool? activityInVehicle,
     double? speedMps,
   }) {
+    if (!useActivityRecognition) {
+      return speedMps != null &&
+          speedMps >= GpsTrackingConfidence.minVehicleSpeedMps;
+    }
+
     if (speedMps != null &&
         speedMps >= GpsTrackingConfidence.minVehicleSpeedMps) {
       return true;
@@ -28,10 +35,15 @@ class RiderMotionRules {
 
   /// True when low speed or activity indicates waiting/walking at a platform.
   static bool resolvesOnFoot({
+    required bool useActivityRecognition,
     bool? activityInVehicle,
     bool? activityOnFoot,
     double? speedMps,
   }) {
+    if (!useActivityRecognition) {
+      return false;
+    }
+
     if (speedMps != null &&
         speedMps >= GpsTrackingConfidence.minVehicleSpeedMps) {
       return false;
@@ -49,6 +61,7 @@ class RiderMotionRules {
   }
 
   static bool allowsRelaxedStopProgress({
+    required bool useActivityRecognition,
     required bool? activityInVehicle,
     required bool? activityOnFoot,
     required bool directionLocked,
@@ -56,7 +69,20 @@ class RiderMotionRules {
     required double accuracyMeters,
     required double? speedMps,
   }) {
+    if (!useActivityRecognition) {
+      if (!directionLocked) {
+        return false;
+      }
+      final offRoute = offRouteMeters;
+      if (offRoute != null && offRoute > TransitModeService.routeStopMatchMeters) {
+        return false;
+      }
+      return accuracyMeters <= 0 ||
+          accuracyMeters <= GpsTrackingConfidence.highAccuracyMeters * 4;
+    }
+
     if (resolvesOnFoot(
+      useActivityRecognition: useActivityRecognition,
       activityInVehicle: activityInVehicle,
       activityOnFoot: activityOnFoot,
       speedMps: speedMps,
@@ -70,6 +96,7 @@ class RiderMotionRules {
       accuracyMeters: accuracyMeters,
       speedMps: speedMps,
       inVehicle: resolvesInVehicle(
+        useActivityRecognition: useActivityRecognition,
         activityInVehicle: activityInVehicle,
         speedMps: speedMps,
       ),
@@ -77,11 +104,17 @@ class RiderMotionRules {
   }
 
   static bool allowsApproachWake({
+    required bool useActivityRecognition,
     required bool? activityInVehicle,
     required bool? activityOnFoot,
     required double? speedMps,
   }) {
+    if (!useActivityRecognition) {
+      return true;
+    }
+
     if (resolvesOnFoot(
+      useActivityRecognition: useActivityRecognition,
       activityInVehicle: activityInVehicle,
       activityOnFoot: activityOnFoot,
       speedMps: speedMps,
@@ -90,6 +123,7 @@ class RiderMotionRules {
     }
 
     return resolvesInVehicle(
+      useActivityRecognition: useActivityRecognition,
       activityInVehicle: activityInVehicle,
       speedMps: speedMps,
     );

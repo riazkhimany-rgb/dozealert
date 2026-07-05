@@ -39,6 +39,7 @@ import '../widgets/trip_ready_sheet.dart';
 import '../widgets/gtfs_updating_banner.dart';
 import '../widgets/trip_concern_banner.dart';
 import '../widgets/transit_agency_line_picker_sheet.dart';
+import '../widgets/watch_connection_indicator.dart';
 import '../screens/settings/transit_mode_settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -140,6 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<HomeTourStepContent> _tourStepContents(BuildContext context) {
     final transitModeEnabled = context.read<SettingsProvider>().transitModeEnabled;
+    final wakeSetting = context.read<SettingsProvider>().transitModeWake;
     if (transitModeEnabled) {
       return [
         const HomeTourStepContent(
@@ -149,12 +151,10 @@ class _HomeScreenState extends State<HomeScreen> {
               'Tap Pick your stop, confirm your transit and line if needed, '
               'then search for the station where you want to get off.',
         ),
-        const HomeTourStepContent(
+        HomeTourStepContent(
           id: HomeTourStepId.wakeSettings,
           title: TripUxCopy.changeWakeStops,
-          body:
-              'Choose when to wake up — one stop before your stop is the '
-              'default. You can change this anytime before or during a trip.',
+          body: TripUxCopy.wakeSettingsTourBody(wakeSetting),
         ),
         const HomeTourStepContent(
           id: HomeTourStepId.startMonitoring,
@@ -475,7 +475,7 @@ class _DestinationCard extends StatelessWidget {
     final routeSegmentStops = context.select<TransitModeProvider, List<TransitStop>>(
       (provider) => provider.routeSegmentStops,
     );
-    final showConcernBanner = !isMonitoring &&
+    final showConcernBanner = isMonitoring &&
         snapshot.isActive &&
         snapshot.hasTripConcern;
     final showTransitProgress = destination != null &&
@@ -489,6 +489,9 @@ class _DestinationCard extends StatelessWidget {
         : transitModeEnabled
             ? TripUxCopy.yourStop
             : TripUxCopy.yourDestination;
+    final transitModeWake = context.select<SettingsProvider, TransitModeWakeSetting>(
+      (provider) => provider.transitModeWake,
+    );
     final clearDestinationLabel = transitModeEnabled
         ? TripUxCopy.clearStop
         : TripUxCopy.clearDestination;
@@ -500,6 +503,7 @@ class _DestinationCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Center(child: WatchConnectionIndicatorIfInstalled()),
           HomeCardHeader(
             icon: transitModeEnabled
                 ? Icons.location_on_outlined
@@ -528,7 +532,7 @@ class _DestinationCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               transitModeEnabled
-                  ? TripUxCopy.emptySubtitle
+                  ? TripUxCopy.emptySubtitleForWake(transitModeWake)
                   : TripUxCopy.emptySubtitleDistance,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -555,20 +559,15 @@ class _DestinationCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 8),
-            if (!isMonitoring)
+            if (!isMonitoring && !snapshot.isActive)
               Text(
                 transitModeEnabled
                     ? TripUxCopy.wakeTargetLabel(
-                        wakeSetting: context
-                            .read<SettingsProvider>()
-                            .transitModeWake,
+                        wakeSetting: transitModeWake,
                         destinationName: destination.name,
                         wakeAtStopName: TransitWakeMessage.wakeStopNameFor(
                           snapshot: snapshot,
-                          wakeStopCount: context
-                              .read<SettingsProvider>()
-                              .transitModeWake
-                              .wakeStopCount,
+                          wakeStopCount: transitModeWake.wakeStopCount,
                           segmentStops: routeSegmentStops,
                         ),
                       )
@@ -578,35 +577,7 @@ class _DestinationCard extends StatelessWidget {
                   height: 1.4,
                 ),
               )
-            else if (transitModeEnabled && snapshot.isActive)
-              Text(
-                TripUxCopy.wakeTargetLabel(
-                  wakeSetting:
-                      context.read<SettingsProvider>().transitModeWake,
-                  destinationName: destination.name,
-                  wakeAtStopName: TransitWakeMessage.wakeStopNameFor(
-                    snapshot: snapshot,
-                    wakeStopCount: context
-                        .read<SettingsProvider>()
-                        .transitModeWake
-                        .wakeStopCount,
-                    segmentStops: routeSegmentStops,
-                  ),
-                ),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
-              )
-            else if (transitModeEnabled)
-              Text(
-                TripUxCopy.confirmingRoute,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
-              )
-            else
+            else if (!transitModeEnabled)
               Text(
                 WakeRadiusFormat.wakeByDescription(radiusMeters),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -636,7 +607,9 @@ class _DestinationCard extends StatelessWidget {
                       snapshot.nextStop!.stopName,
                     )
                   : null,
-              inactiveMessage: '',
+              inactiveMessage: isMonitoring
+                  ? TripUxCopy.confirmingRoute
+                  : TripUxCopy.routeProgressBeforeStart,
             ),
             if (transitModeEnabled &&
                 !isMonitoring &&
@@ -957,8 +930,9 @@ class _MonitoringCard extends StatelessWidget {
         ? _compactWakeSettingLabel(transitWakeSetting)
         : WakeRadiusFormat.wakeByDescription(radiusMeters);
     final distanceStale = distanceIsStale || gpsSignalLost;
-    final distanceSubtitle =
-        distanceStale ? 'Last known distance — GPS signal weak' : null;
+    final distanceSubtitle = distanceStale
+        ? '${TripUxCopy.staleDistanceSubtitle} — ${TripUxCopy.gpsSignalWeakBase}'
+        : null;
     final distanceInlineNote =
         !distanceStale && usingAlongRoute ? 'along route' : null;
     final canStart = hasDestination &&
@@ -1067,13 +1041,13 @@ class _MonitoringCard extends StatelessWidget {
           const SizedBox(height: 10),
           if (!hasDestination)
             Text(
-              TripUxCopy.emptySubtitle,
+              TripUxCopy.readyWhenYouAre,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 height: 1.4,
               ),
             )
-          else if (hasDistance && !(isMonitoring && transitModeEnabled))
+          else if (hasDistance)
             MonitoringDistanceProgress(
               distanceKm: distanceKm,
               progress: tripProgress,
@@ -1081,7 +1055,7 @@ class _MonitoringCard extends StatelessWidget {
               subtitle: distanceSubtitle,
               inlineNote: distanceInlineNote,
             )
-          else if (!hasDistance && isMonitoring && !transitModeEnabled)
+          else if (!hasDistance && isMonitoring)
             Text(
               'Waiting for GPS fix…',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(

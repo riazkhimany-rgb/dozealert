@@ -3,6 +3,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../providers/location_provider.dart';
 import '../services/background_monitor_service.dart';
+import '../utils/trip_ux_copy.dart';
 
 abstract final class LocationPermissionDialogs {
   static Future<void> showDenied(BuildContext context) {
@@ -14,7 +15,7 @@ abstract final class LocationPermissionDialogs {
           title: const Text('Location permission required'),
           content: const Text(
             'DozeAlert needs location access while you use the app to '
-            'monitor your progress toward your destination.',
+            'watch your progress toward your stop.',
           ),
           actions: [
             FilledButton(
@@ -35,7 +36,7 @@ abstract final class LocationPermissionDialogs {
           icon: const Icon(Icons.location_searching),
           title: const Text('Background location required'),
           content: const Text(
-            'DozeAlert needs background location access to keep monitoring '
+            'DozeAlert needs background location access to keep watching '
             'your trip when the screen is off or the app is minimized.',
           ),
           actions: [
@@ -121,11 +122,8 @@ abstract final class LocationPermissionDialogs {
       builder: (dialogContext) {
         return AlertDialog(
           icon: const Icon(Icons.error_outline),
-          title: const Text('Monitoring could not start'),
-          content: const Text(
-            'DozeAlert could not start background monitoring. Check location, '
-            'notification, and battery settings, then try again.',
-          ),
+          title: const Text(TripUxCopy.tripCouldNotStartTitle),
+          content: const Text(TripUxCopy.tripCouldNotStartBody),
           actions: [
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
@@ -156,7 +154,7 @@ abstract final class LocationFeedback {
       case LocationStartResult.cancelled:
         return;
       case LocationStartResult.noDestination:
-        showSnackBar(context, 'Select a destination before monitoring.');
+        showSnackBar(context, TripUxCopy.selectDestinationBeforeTrip);
       case LocationStartResult.permissionDenied:
         await LocationPermissionDialogs.showDenied(context);
       case LocationStartResult.permissionPermanentlyDenied:
@@ -164,7 +162,7 @@ abstract final class LocationFeedback {
       case LocationStartResult.backgroundPermissionDenied:
         await LocationPermissionDialogs.showBackgroundDenied(context);
       case LocationStartResult.locationServiceDisabled:
-        showSnackBar(context, 'Turn on GPS to start location monitoring.');
+        showSnackBar(context, TripUxCopy.turnOnGpsToStartTrip);
       case LocationStartResult.foregroundServiceFailure:
         await LocationPermissionDialogs.showForegroundServiceFailure(context);
       case LocationStartResult.batteryOptimizationRequired:
@@ -179,7 +177,7 @@ abstract final class LocationFeedback {
         } else if (!openSettings) {
           showSnackBar(
             context,
-            'Monitoring may stop when the screen is off.',
+            TripUxCopy.tripMayStopWhenScreenOff,
           );
         }
         if (onContinueAfterBatteryPrompt != null && context.mounted) {

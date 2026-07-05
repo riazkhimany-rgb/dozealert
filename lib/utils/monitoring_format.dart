@@ -1,4 +1,5 @@
 import '../models/monitoring_state.dart';
+import '../utils/trip_ux_copy.dart';
 
 abstract final class MonitoringFormat {
   static String stateLabel(MonitoringState state) {
@@ -12,8 +13,8 @@ abstract final class MonitoringFormat {
 
   static String homeStatusLabel(MonitoringState state) {
     return switch (state) {
-      MonitoringState.idle => 'Idle',
-      MonitoringState.monitoring => 'Monitoring',
+      MonitoringState.idle => 'Ready',
+      MonitoringState.monitoring => TripUxCopy.watchingTripLine1,
       MonitoringState.arrived => 'Arriving',
       MonitoringState.missed => 'Missed',
     };

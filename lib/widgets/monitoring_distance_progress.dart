@@ -23,38 +23,40 @@ class MonitoringDistanceProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final fraction = progress?.clamp(0.0, 1.0);
+    final remainingText = inlineNote == null
+        ? 'km remaining'
+        : 'km remaining ($inlineNote)';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Flexible(
-              child: Text(
-                distanceKm.toStringAsFixed(1),
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: accentColor,
-                  height: 1,
-                  letterSpacing: -0.5,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: distanceKm.toStringAsFixed(1),
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: accentColor,
+                    height: 1,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                inlineNote == null
-                    ? 'km remaining'
-                    : 'km remaining ($inlineNote)',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
+                TextSpan(
+                  text: ' $remainingText',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+            maxLines: 1,
+            softWrap: false,
+          ),
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 4),

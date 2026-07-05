@@ -5,10 +5,12 @@ class GpsQualityGate {
   const GpsQualityGate({
     this.maxAccuracyMeters = 80,
     this.degradedAccuracyMeters = 150,
+    this.bootstrapMaxAccuracyMeters = 200,
   });
 
   final double maxAccuracyMeters;
   final double degradedAccuracyMeters;
+  final double bootstrapMaxAccuracyMeters;
 
   bool accept(CurrentLocation location, {bool allowDegraded = false}) {
     return _acceptWithLimit(
@@ -20,6 +22,11 @@ class GpsQualityGate {
   /// Looser gate for direction seeding / inference while position is still warming.
   bool acceptForDirectionInference(CurrentLocation location) {
     return _acceptWithLimit(location, limitMeters: degradedAccuracyMeters);
+  }
+
+  /// Widest gate used only to confirm GPS is alive during route bootstrap.
+  bool acceptForBootstrap(CurrentLocation location) {
+    return _acceptWithLimit(location, limitMeters: bootstrapMaxAccuracyMeters);
   }
 
   bool _acceptWithLimit(
@@ -37,7 +44,14 @@ class GpsQualityGate {
 class GpsPositionSmoother {
   CurrentLocation? _previous;
 
+  static const _highAccuracyMeters = 30.0;
+
   CurrentLocation smooth(CurrentLocation location) {
+    if (location.accuracy > 0 && location.accuracy <= _highAccuracyMeters) {
+      _previous = location;
+      return location;
+    }
+
     final previous = _previous;
     if (previous == null) {
       _previous = location;
@@ -45,13 +59,17 @@ class GpsPositionSmoother {
     }
 
     final accuracyWeight = (1 / (1 + location.accuracy / 25)).clamp(0.15, 0.85);
-    final alpha = (0.35 + accuracyWeight * 0.35).clamp(0.35, 0.75);
+    var alpha = (0.35 + accuracyWeight * 0.35).clamp(0.35, 0.75);
+    if (location.speed >= 2) {
+      // On a moving vehicle, trust fresh fixes more to reduce lag.
+      alpha = (alpha + 0.12).clamp(0.35, 0.9);
+    }
 
     final smoothed = CurrentLocation(
       latitude: _lerp(previous.latitude, location.latitude, alpha),
       longitude: _lerp(previous.longitude, location.longitude, alpha),
       speed: location.speed >= 0 ? location.speed : previous.speed,
-      accuracy: mathMin(previous.accuracy, location.accuracy),
+      accuracy: location.accuracy,
       timestamp: location.timestamp,
       heading: location.heading >= 0 ? location.heading : previous.heading,
     );
@@ -65,6 +83,4 @@ class GpsPositionSmoother {
   }
 
   double _lerp(double from, double to, double t) => from + (to - from) * t;
-
-  double mathMin(double a, double b) => a < b ? a : b;
 }

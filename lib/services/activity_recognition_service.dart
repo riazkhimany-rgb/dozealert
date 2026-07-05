@@ -4,11 +4,14 @@ import 'dart:io';
 import 'package:activity_recognition_flutter/activity_recognition_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../services/settings_service.dart';
 import '../utils/app_log.dart';
 
 /// Detects rider motion so GPS priority and stop rules can adapt.
 class ActivityRecognitionService {
-  ActivityRecognitionService();
+  ActivityRecognitionService(this._settingsService);
+
+  final SettingsService _settingsService;
 
   final StreamController<bool> _vehicleActivityController =
       StreamController<bool>.broadcast();
@@ -28,9 +31,13 @@ class ActivityRecognitionService {
 
   bool get onFoot => _onFoot;
 
+  bool get isFeatureEnabled =>
+      Platform.isAndroid &&
+      _settingsService.settings.activityRecognitionEnabled;
+
   /// Null when activity recognition is not running or has no confident signal.
   bool? get activityInVehicleHint {
-    if (!_listening) {
+    if (!isFeatureEnabled || !_listening) {
       return null;
     }
     if (_inVehicle) {
@@ -43,7 +50,7 @@ class ActivityRecognitionService {
   }
 
   bool? get activityOnFootHint {
-    if (!_listening) {
+    if (!isFeatureEnabled || !_listening) {
       return null;
     }
     if (_onFoot) {
@@ -70,7 +77,7 @@ class ActivityRecognitionService {
   }
 
   Future<void> startListening() async {
-    if (_listening || !Platform.isAndroid) {
+    if (!isFeatureEnabled || _listening || !Platform.isAndroid) {
       return;
     }
 
@@ -112,6 +119,10 @@ class ActivityRecognitionService {
   }
 
   void _applyActivity(ActivityEvent event) {
+    if (!isFeatureEnabled) {
+      return;
+    }
+
     if (event.confidence < 50) {
       return;
     }

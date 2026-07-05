@@ -1,4 +1,5 @@
 import '../models/monitoring_state.dart';
+import '../models/transit_mode_wake_setting.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
@@ -6,6 +7,7 @@ import '../providers/settings_provider.dart';
 import '../providers/transit_mode_provider.dart';
 import '../services/alarm_service.dart';
 import '../utils/gtfs_stop_name_utils.dart';
+import '../utils/trip_ux_copy.dart';
 
 /// Shared trip-state map for phone → Wear OS sync.
 abstract final class WearTripStatePayload {
@@ -49,11 +51,17 @@ abstract final class WearTripStatePayload {
           ? (arrivalContext?.destinationName ?? destination?.name ?? '')
           : '',
       'alarmHeadline': alarmActive
-          ? (arrivalContext?.headline ?? 'Wake up!')
+          ? (arrivalContext?.headline ?? TripUxCopy.getReadyHeadline)
+          : '',
+      'alarmUiHeadline': alarmActive
+          ? (arrivalContext?.uiHeadline ?? TripUxCopy.getReadyHeadline)
           : '',
       'alarmSubline': alarmActive
           ? (arrivalContext?.wearSubline ?? arrivalContext?.secondaryLine ?? '')
           : '',
+      'wakeStopCount': transitModeEnabled
+          ? settings.transitModeWake.wakeStopCount
+          : -1,
     };
   }
 
@@ -74,7 +82,9 @@ abstract final class WearTripStatePayload {
       'hasDestination': source['hasDestination'] != false,
       'alarmStopName': source['alarmStopName']?.toString() ?? '',
       'alarmHeadline': source['alarmHeadline']?.toString() ?? '',
+      'alarmUiHeadline': source['alarmUiHeadline']?.toString() ?? '',
       'alarmSubline': source['alarmSubline']?.toString() ?? '',
+      'wakeStopCount': _asInt(source['wakeStopCount'], fallback: -1),
     };
   }
 

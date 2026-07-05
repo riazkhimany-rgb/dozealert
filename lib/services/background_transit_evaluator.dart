@@ -51,6 +51,7 @@ class BackgroundTransitEvaluator {
     double? headingDegrees,
     double? speedMps,
     double accuracyMeters = 0,
+    bool useActivityRecognition = false,
     bool? activityInVehicle,
     bool? activityOnFoot,
   }) {
@@ -106,6 +107,7 @@ class BackgroundTransitEvaluator {
     }
 
     final highConfidence = RiderMotionRules.allowsRelaxedStopProgress(
+      useActivityRecognition: useActivityRecognition,
       activityInVehicle: activityInVehicle,
       activityOnFoot: activityOnFoot,
       directionLocked: pattern.directionLocked,

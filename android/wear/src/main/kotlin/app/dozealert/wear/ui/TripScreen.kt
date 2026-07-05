@@ -145,6 +145,10 @@ private fun ActiveTripContent(
 
             item { StatusChip(state = state) }
 
+            if (state.showTripConcernBanner) {
+                item { TripConcernBanner(state = state) }
+            }
+
             item {
                 Text(
                     text = state.headline,
@@ -279,6 +283,46 @@ private fun StatusChip(state: TripState) {
             .background(color.copy(alpha = 0.15f))
             .padding(horizontal = 12.dp, vertical = 4.dp),
     )
+}
+
+@Composable
+private fun TripConcernBanner(state: TripState) {
+    val title = when (state.tripConcern) {
+        "wrong_direction" -> "Wrong direction?"
+        "unlikely_route" -> "Route uncertain"
+        else -> "Trip check needed"
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(StatusMissedColor.copy(alpha = 0.18f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontWeight = FontWeight.Bold,
+            ),
+            color = StatusMissedColor,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            text = state.tripConcernDetail,
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+            ),
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.82f),
+            textAlign = TextAlign.Center,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 }
 
 @Composable

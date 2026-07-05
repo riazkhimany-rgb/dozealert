@@ -230,6 +230,19 @@ void main() {
 
       expect(gate.accept(degraded, allowDegraded: true), isTrue);
     });
+
+    test('accepts bootstrap accuracy only via bootstrap gate', () {
+      final bootstrap = CurrentLocation(
+        latitude: 43.6,
+        longitude: -79.4,
+        speed: 0,
+        accuracy: 180,
+        timestamp: _fixedTime,
+      );
+
+      expect(gate.accept(bootstrap, allowDegraded: true), isFalse);
+      expect(gate.acceptForBootstrap(bootstrap), isTrue);
+    });
   });
 }
 

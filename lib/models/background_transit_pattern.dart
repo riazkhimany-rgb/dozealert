@@ -63,17 +63,26 @@ class BackgroundTransitPattern {
       }
 
       final stops = stopsRaw
+          .whereType<Map>()
           .map(
-            (entry) => TransitStop(
-              stopId: entry['stopId'] as String,
-              stopName: entry['stopName'] as String,
-              latitude: (entry['latitude'] as num).toDouble(),
-              longitude: (entry['longitude'] as num).toDouble(),
-              routeId: entry['routeId'] as String,
-              stopSequence: entry['stopSequence'] as int,
-            ),
+            (entry) {
+              final map = Map<String, dynamic>.from(entry);
+              return TransitStop(
+                stopId: map['stopId'] as String? ?? '',
+                stopName: map['stopName'] as String? ?? '',
+                latitude: (map['latitude'] as num?)?.toDouble() ?? 0,
+                longitude: (map['longitude'] as num?)?.toDouble() ?? 0,
+                routeId: map['routeId'] as String? ?? '',
+                stopSequence: (map['stopSequence'] as num?)?.toInt() ?? 0,
+              );
+            },
           )
+          .where((stop) => stop.stopId.isNotEmpty)
           .toList(growable: false);
+
+      if (stops.length < 2) {
+        return null;
+      }
 
       return BackgroundTransitPattern(
         routeId: decoded['routeId'] as String? ?? '',

@@ -22,12 +22,13 @@ class ArrivalDialog extends StatelessWidget {
     );
     final uiHeadline =
         arrivalContext?.uiHeadline ?? TripUxCopy.getReadyHeadline;
-    final headline = arrivalContext?.headline ?? 'Destination';
+    final destinationName =
+        arrivalContext?.destinationName ?? 'Destination';
     final statusLine = arrivalContext?.wearSubline;
     final currentStopName =
         arrivalContext?.currentStopName ?? arrivalContext?.destinationName;
     final showCurrentStop = currentStopName != null &&
-        currentStopName.toLowerCase() != headline.toLowerCase();
+        currentStopName.toLowerCase() != destinationName.toLowerCase();
     final secondaryLine = arrivalContext?.secondaryLine;
     final detailMessage = arrivalContext?.detailMessage;
 
@@ -75,11 +76,20 @@ class ArrivalDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  headline,
+                  destinationName,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppBranding.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  TripUxCopy.isYourStopLine,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppBranding.white.withValues(alpha: 0.9),
                   ),
                 ),
                 if (statusLine != null) ...[

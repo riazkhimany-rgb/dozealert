@@ -44,6 +44,7 @@ abstract final class TripReadiness {
     required TransitPreferences preferences,
     required GtfsProvider gtfsProvider,
     required GtfsFeedProvider feedProvider,
+    bool requireActivityRecognition = false,
   }) {
     final items = <TripReadinessItem>[];
 
@@ -56,7 +57,11 @@ abstract final class TripReadiness {
       ),
     );
 
-    final permissionsReady = permissions?.allRequiredForMonitoring ?? false;
+    final permissionsReady =
+        permissions?.allRequiredForMonitoring(
+          requireActivityRecognition: requireActivityRecognition,
+        ) ??
+        false;
     items.add(
       TripReadinessItem(
         issue: TripReadinessIssue.permissions,
