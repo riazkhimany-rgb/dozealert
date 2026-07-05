@@ -21,16 +21,18 @@ Upload in numeric order (01 → 08) on the **Phone** screenshots tab.
 
 ## Wear OS (4) — `wear/`
 
-Upload in numeric order (01 → 04) on the **Wear OS** screenshots tab (separate Wear listing).
+Upload the **`.jpg` files** in numeric order (01 → 04) on the **Wear OS** screenshots tab (separate Wear listing).
+
+Play rejects images with transparency — these are flattened onto the app midnight background (`#0D1B2A`).
 
 | File | Suggested caption (optional) |
 |------|------------------------------|
-| `01-set-up-on-phone.png` | Set up on phone — watch syncs over Bluetooth. |
-| `02-ready.png` | Ready when you are — start from wrist or phone. |
-| `03-watching.png` | Stops remaining at a glance on your wrist. |
-| `04-get-ready-alarm.png` | GET READY wake alert on your watch. |
+| `01-set-up-on-phone.jpg` | Set up on phone — watch syncs over Bluetooth. |
+| `02-ready.jpg` | Ready when you are — start from wrist or phone. |
+| `03-watching.jpg` | Stops remaining at a glance on your wrist. |
+| `04-get-ready-alarm.jpg` | GET READY wake alert on your watch. |
 
-**Specs:** 480 × 480 px (square). Meets Play minimum 384 px.
+**Specs:** 480 × 480 px (square), opaque JPEG. Meets Play minimum 384 px.
 
 ## Swap candidates
 
