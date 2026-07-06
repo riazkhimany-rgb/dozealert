@@ -422,7 +422,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
 
     final pattern = _transitPattern;
     if (pattern == null || !pattern.isValid) {
-      return _transitStopsRemaining <= _transitWakeStopCount;
+      return false;
     }
 
     final currentStop = _stopForSequence(
@@ -446,6 +446,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       segmentStops: pattern.segmentStops,
       currentStop: currentStop,
       destinationStop: destinationStop,
+      vehicleType: pattern.vehicleType,
       activityInVehicle: !_activityRecognitionEnabled ? null : _riderInVehicle,
       activityOnFoot: !_activityRecognitionEnabled ? null : _riderOnFoot,
     );

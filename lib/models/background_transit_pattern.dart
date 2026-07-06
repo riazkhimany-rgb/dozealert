@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'transit_stop.dart';
+import 'transit_vehicle_type.dart';
 
 /// Compact route segment persisted for background stop evaluation.
 class BackgroundTransitPattern {
@@ -12,6 +13,7 @@ class BackgroundTransitPattern {
     required this.stabilizedStopSequence,
     required this.segmentStops,
     this.lineLabel = '',
+    this.vehicleType,
   });
 
   final String routeId;
@@ -21,6 +23,7 @@ class BackgroundTransitPattern {
   final int stabilizedStopSequence;
   final List<TransitStop> segmentStops;
   final String lineLabel;
+  final TransitVehicleType? vehicleType;
 
   bool get isValid =>
       routeId.isNotEmpty &&
@@ -35,6 +38,7 @@ class BackgroundTransitPattern {
       'destinationStopSequence': destinationStopSequence,
       'stabilizedStopSequence': stabilizedStopSequence,
       'lineLabel': lineLabel,
+      if (vehicleType != null) 'vehicleType': vehicleType!.name,
       'segmentStops': segmentStops
           .map(
             (stop) => {
@@ -93,6 +97,9 @@ class BackgroundTransitPattern {
         stabilizedStopSequence:
             decoded['stabilizedStopSequence'] as int? ?? -1,
         lineLabel: decoded['lineLabel'] as String? ?? '',
+        vehicleType: TransitVehicleTypeX.fromName(
+          decoded['vehicleType'] as String?,
+        ),
         segmentStops: stops,
       );
     } catch (_) {
@@ -112,6 +119,7 @@ class BackgroundTransitPattern {
           stabilizedStopSequence ?? this.stabilizedStopSequence,
       segmentStops: segmentStops,
       lineLabel: lineLabel,
+      vehicleType: vehicleType,
     );
   }
 }

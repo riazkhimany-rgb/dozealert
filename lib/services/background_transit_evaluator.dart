@@ -1,7 +1,7 @@
 import '../models/background_transit_pattern.dart';
 import '../models/transit_stop.dart';
-import '../utils/gps_tracking_confidence.dart';
 import '../utils/rider_motion_rules.dart';
+import '../utils/transit_wake_tuning.dart';
 import 'route_geometry_service.dart';
 import 'transit_mode_service.dart';
 import 'transit_stop_progress_tracker.dart';
@@ -89,6 +89,8 @@ class BackgroundTransitEvaluator {
       maxOffRouteMeters: TransitModeService.routeStopMatchMeters,
       headingDegrees: headingDegrees,
       speedMps: speedMps,
+      stopSnapAlongToleranceMeters:
+          TransitWakeTuning.stopSnapAlongToleranceMeters(pattern.vehicleType),
     );
 
     currentStop ??= _routeGeometry.bestStopAtOrBehindProjection(
@@ -120,7 +122,10 @@ class BackgroundTransitEvaluator {
       destinationStop: destinationStop,
       rawStop: currentStop,
       routeStops: pattern.segmentStops,
-      maxStepsPerFix: highConfidence ? 2 : 1,
+      maxStepsPerFix: TransitWakeTuning.maxStepsPerFix(
+        vehicleType: pattern.vehicleType,
+        highConfidence: highConfidence,
+      ),
     );
 
     final stopsRemaining = _stopsBetween(

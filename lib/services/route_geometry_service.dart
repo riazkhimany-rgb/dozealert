@@ -327,7 +327,10 @@ class RouteGeometryService {
     required int maxOffRouteMeters,
     double? headingDegrees,
     double? speedMps,
+    double? stopSnapAlongToleranceMeters,
   }) {
+    final snapTolerance =
+        stopSnapAlongToleranceMeters ?? RouteGeometryService.stopSnapAlongToleranceMeters;
     if (projection.offRouteMeters > maxOffRouteMeters) {
       return null;
     }
@@ -341,9 +344,9 @@ class RouteGeometryService {
       // Do not snap to stops ahead of the GPS projection — that inflates
       // progress and can trigger stop-based alarms too early.
       if (polyline.travelingForward) {
-        return along <= projection.alongRouteMeters + stopSnapAlongToleranceMeters;
+        return along <= projection.alongRouteMeters + snapTolerance;
       }
-      return along >= projection.alongRouteMeters - stopSnapAlongToleranceMeters;
+      return along >= projection.alongRouteMeters - snapTolerance;
     }).toList();
 
     if (candidates.isEmpty) {

@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import app.dozealert.wear.WearBridge
@@ -19,6 +20,14 @@ import kotlin.math.roundToInt
 
 class MainActivity : FlutterActivity() {
     private var wearCommandSink: EventChannel.EventSink? = null
+    private var wearConnectionSink: EventChannel.EventSink? = null
+
+    private val wearCapabilityListener =
+        CapabilityClient.OnCapabilityChangedListener { capabilityInfo ->
+            if (capabilityInfo.name == WearPaths.WEAR_CAPABILITY) {
+                WearBridge.connectionChangeHandler?.invoke()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +48,17 @@ class MainActivity : FlutterActivity() {
                 wearCommandSink?.success(command)
             }
         }
+        WearBridge.connectionChangeHandler = {
+            runOnUiThread {
+                wearConnectionSink?.success("changed")
+            }
+        }
+
+        Wearable.getCapabilityClient(this).addListener(
+            wearCapabilityListener,
+            Uri.parse("wear://*/"),
+            CapabilityClient.FILTER_ALL,
+        )
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -98,23 +118,35 @@ class MainActivity : FlutterActivity() {
 
                 "wearAppStatus" -> {
                     val capabilityClient = Wearable.getCapabilityClient(this)
+                    val nodeClient = Wearable.getNodeClient(this)
                     capabilityClient
-                        .getCapability(WEAR_CAPABILITY, CapabilityClient.FILTER_ALL)
+                        .getCapability(WearPaths.WEAR_CAPABILITY, CapabilityClient.FILTER_ALL)
                         .addOnSuccessListener { all ->
-                            // FILTER_ALL includes paired watches that have the
-                            // app but are currently offline, so this is true iff
-                            // the DozeAlert watch app is installed somewhere.
+                            // FILTER_ALL includes paired watches that have the app but
+                            // are currently offline, so this is true iff the DozeAlert
+                            // watch app is installed somewhere.
                             val installed = all.nodes.isNotEmpty()
-                            capabilityClient
-                                .getCapability(
-                                    WEAR_CAPABILITY,
-                                    CapabilityClient.FILTER_REACHABLE,
+                            if (!installed) {
+                                result.success(
+                                    mapOf(
+                                        "installed" to false,
+                                        "connected" to false,
+                                    ),
                                 )
-                                .addOnSuccessListener { reachable ->
+                                return@addOnSuccessListener
+                            }
+
+                            val dozeAlertNodeIds = all.nodes.map { it.id }.toSet()
+                            nodeClient.connectedNodes
+                                .addOnSuccessListener { connected ->
+                                    // connectedNodes reflects live Bluetooth reachability.
+                                    // Capability FILTER_REACHABLE can stay stale for minutes
+                                    // after a watch powers off, which is why we avoid it.
+                                    val reachable = connected.any { it.id in dozeAlertNodeIds }
                                     result.success(
                                         mapOf(
-                                            "installed" to installed,
-                                            "connected" to reachable.nodes.isNotEmpty(),
+                                            "installed" to true,
+                                            "connected" to reachable,
                                         ),
                                     )
                                 }
@@ -155,11 +187,28 @@ class MainActivity : FlutterActivity() {
                 }
             },
         )
+
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            WEAR_CONNECTION_EVENT_CHANNEL,
+        ).setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    wearConnectionSink = events
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    wearConnectionSink = null
+                }
+            },
+        )
     }
 
     override fun onDestroy() {
         if (isFinishing) {
+            Wearable.getCapabilityClient(this).removeListener(wearCapabilityListener)
             WearBridge.commandHandler = null
+            WearBridge.connectionChangeHandler = null
         }
         super.onDestroy()
     }
@@ -223,8 +272,9 @@ class MainActivity : FlutterActivity() {
         private const val SYSTEM_VOLUME_CHANNEL = "app.dozealert/system_volume"
         private const val WEAR_CHANNEL = "app.dozealert/wear"
         private const val WEAR_EVENT_CHANNEL = "app.dozealert/wear_commands"
+        private const val WEAR_CONNECTION_EVENT_CHANNEL = "app.dozealert/wear_connection"
 
         // Must match android_wear_capabilities in the wear module's wear.xml.
-        private const val WEAR_CAPABILITY = "dozealert_wear_app"
+        private const val WEAR_CAPABILITY = WearPaths.WEAR_CAPABILITY
     }
 }

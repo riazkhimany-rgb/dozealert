@@ -1,4 +1,5 @@
 import 'package:dozealert/models/transit_stop.dart';
+import 'package:dozealert/models/transit_vehicle_type.dart';
 import 'package:dozealert/utils/transit_wake_trigger.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -51,7 +52,7 @@ void main() {
       );
     });
 
-    test('wakes at the configured wake stop', () {
+    test('wakes at the configured wake stop when near along route', () {
       expect(
         TransitWakeTrigger.shouldTrigger(
           stopsRemaining: 1,
@@ -67,6 +68,33 @@ void main() {
           destinationStop: segmentStops[2],
         ),
         isTrue,
+      );
+    });
+
+    test('does not wake when stop sequence advanced but still far along route', () {
+      final wakeToDestination = TransitWakeTrigger.alongRouteMetersBetweenStops(
+        segmentStops: segmentStops,
+        fromStop: segmentStops[1],
+        toStop: segmentStops[2],
+        destinationStop: segmentStops[2],
+      );
+
+      expect(
+        TransitWakeTrigger.shouldTrigger(
+          stopsRemaining: 1,
+          wakeStopCount: 1,
+          directionLocked: true,
+          hasEstablishedProgress: true,
+          alongRouteRemainingMeters: (wakeToDestination ?? 0) + 500,
+          offRouteMeters: 15,
+          accuracyMeters: 12,
+          speedMps: 30,
+          segmentStops: segmentStops,
+          currentStop: segmentStops[1],
+          destinationStop: segmentStops[2],
+          vehicleType: TransitVehicleType.train,
+        ),
+        isFalse,
       );
     });
 
@@ -89,7 +117,7 @@ void main() {
       );
     });
 
-    test('wakes two stops before at the second segment stop', () {
+    test('wakes two stops before at the first segment stop when near along route', () {
       expect(
         TransitWakeTrigger.shouldTrigger(
           stopsRemaining: 2,
@@ -108,14 +136,14 @@ void main() {
       );
     });
 
-    test('at destination wakes only at destination or on-route snap', () {
+    test('at destination wakes only when at destination along route', () {
       expect(
         TransitWakeTrigger.shouldTrigger(
           stopsRemaining: 0,
           wakeStopCount: 0,
           directionLocked: true,
           hasEstablishedProgress: true,
-          alongRouteRemainingMeters: 0,
+          alongRouteRemainingMeters: 50,
           offRouteMeters: 10,
           accuracyMeters: 12,
           speedMps: 0,
@@ -124,6 +152,23 @@ void main() {
           destinationStop: segmentStops[2],
         ),
         isTrue,
+      );
+
+      expect(
+        TransitWakeTrigger.shouldTrigger(
+          stopsRemaining: 1,
+          wakeStopCount: 0,
+          directionLocked: true,
+          hasEstablishedProgress: true,
+          alongRouteRemainingMeters: 100,
+          offRouteMeters: 10,
+          accuracyMeters: 12,
+          speedMps: 8,
+          segmentStops: segmentStops,
+          currentStop: segmentStops[1],
+          destinationStop: segmentStops[2],
+        ),
+        isFalse,
       );
 
       expect(
@@ -144,7 +189,7 @@ void main() {
       );
     });
 
-    test('wakes on short segment when stop count alone qualifies', () {
+    test('wakes on short segment when at the implicit wake stop', () {
       final shortSegment = [
         segmentStops[1],
         segmentStops[2],

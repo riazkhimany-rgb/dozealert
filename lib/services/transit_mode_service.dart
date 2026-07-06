@@ -3,6 +3,8 @@ import 'package:geolocator/geolocator.dart';
 import '../models/destination.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_stop.dart';
+import '../models/transit_vehicle_type.dart';
+import '../utils/transit_wake_tuning.dart';
 import '../utils/along_route_smoother.dart';
 import '../utils/gtfs_stop_name_utils.dart';
 import '../utils/trip_pattern_validation.dart';
@@ -161,6 +163,7 @@ class TransitModeService {
       headingDegrees: headingDegrees,
       speedMps: speedMps,
       patternStops: routeStops,
+      vehicleType: route.vehicleType,
     );
 
     currentStop ??= _corridorFallbackStop(
@@ -528,7 +531,10 @@ class TransitModeService {
     double? headingDegrees,
     double? speedMps,
     List<TransitStop>? patternStops,
+    TransitVehicleType? vehicleType,
   }) {
+    final snapTolerance =
+        TransitWakeTuning.stopSnapAlongToleranceMeters(vehicleType);
     if (projection != null) {
       if (projection.offRouteMeters <= maxStopProximityMeters) {
         final matched = _routeGeometry.matchCurrentStop(
@@ -538,6 +544,7 @@ class TransitModeService {
           maxOffRouteMeters: maxStopProximityMeters,
           headingDegrees: headingDegrees,
           speedMps: speedMps,
+          stopSnapAlongToleranceMeters: snapTolerance,
         );
         if (matched != null) {
           if (patternStops != null) {

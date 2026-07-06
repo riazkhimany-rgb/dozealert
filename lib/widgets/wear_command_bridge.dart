@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/gtfs_provider.dart';
@@ -35,6 +36,7 @@ class _WearCommandBridgeState extends State<WearCommandBridge>
   WearSyncService? _wearSyncService;
   Timer? _wearConnectionTimer;
   StreamSubscription<Map<String, Object>>? _wearSyncSubscription;
+  StreamSubscription<dynamic>? _wearConnectionSubscription;
 
   @override
   void initState() {
@@ -78,7 +80,12 @@ class _WearCommandBridgeState extends State<WearCommandBridge>
     await wearSyncService.initialize();
     await _refreshWearConnection(wearSyncService);
     _wearConnectionTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      const Duration(seconds: 15),
+      (_) => unawaited(_refreshWearConnection()),
+    );
+    _wearConnectionSubscription = const EventChannel(
+      'app.dozealert/wear_connection',
+    ).receiveBroadcastStream().listen(
       (_) => unawaited(_refreshWearConnection()),
     );
 
@@ -181,6 +188,7 @@ class _WearCommandBridgeState extends State<WearCommandBridge>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _wearConnectionTimer?.cancel();
+    unawaited(_wearConnectionSubscription?.cancel());
     unawaited(_wearSyncSubscription?.cancel());
     unawaited(_wearSyncService?.dispose());
     super.dispose();

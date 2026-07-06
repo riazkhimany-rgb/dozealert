@@ -113,7 +113,7 @@ class WearSyncService {
       }
       return WearAppStatus(
         appInstalled: status['installed'] == true,
-        connected: status['connected'] == true,
+        connected: status['installed'] == true && status['connected'] == true,
       );
     } on PlatformException {
       return const WearAppStatus(appInstalled: false, connected: false);

@@ -8,6 +8,8 @@ import '../models/monitoring_state.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
 import '../models/transit_stop.dart';
+import '../models/transit_vehicle_type.dart';
+import '../utils/transit_wake_tuning.dart';
 import '../models/trip_pattern_concern.dart';
 import '../services/activity_recognition_service.dart';
 import '../services/monitoring_storage_service.dart';
@@ -166,6 +168,7 @@ class TransitModeProvider extends ChangeNotifier {
       segmentStops: routeSegmentStops,
       currentStop: _snapshot.currentStop,
       destinationStop: _snapshot.destinationStop,
+      vehicleType: _snapshot.vehicleType,
       activityInVehicle: _activityRecognitionService.activityInVehicleHint,
       activityOnFoot: _activityRecognitionService.activityOnFootHint,
     );
@@ -329,6 +332,7 @@ class TransitModeProvider extends ChangeNotifier {
           stabilizedStopSequence: current?.stopSequence ?? -1,
           segmentStops: segmentStops,
           lineLabel: route.lineName,
+          vehicleType: snapshot.vehicleType ?? route.vehicleType,
         ),
       );
     }
@@ -466,7 +470,10 @@ class TransitModeProvider extends ChangeNotifier {
     }
 
     final routeId = rawSnapshot.route!.routeId;
-    final maxStepsPerFix = rawSnapshot.directionLocked ? 2 : 1;
+    final maxStepsPerFix = TransitWakeTuning.maxStepsPerFix(
+      vehicleType: rawSnapshot.vehicleType,
+      highConfidence: rawSnapshot.directionLocked,
+    );
     final stabilizedStop = _stopProgressTracker.reconcile(
       routeId: routeId,
       destinationStop: rawSnapshot.destinationStop!,

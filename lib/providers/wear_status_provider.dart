@@ -15,12 +15,13 @@ class WearStatusProvider extends ChangeNotifier {
   bool get hasChecked => _checked;
 
   void setWearStatus({required bool appInstalled, required bool connected}) {
+    final effectiveConnected = appInstalled && connected;
     final changed = _appInstalled != appInstalled ||
-        _watchConnected != connected ||
+        _watchConnected != effectiveConnected ||
         !_checked;
     _checked = true;
     _appInstalled = appInstalled;
-    _watchConnected = connected;
+    _watchConnected = effectiveConnected;
     if (changed) {
       notifyListeners();
     }

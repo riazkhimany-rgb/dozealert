@@ -51,8 +51,8 @@ class WatchConnectionIndicator extends StatelessWidget {
   }
 }
 
-/// Shows [WatchConnectionIndicator] only when the DozeAlert watch app is
-/// installed on a paired watch (Android only).
+/// Shows [WatchConnectionIndicator] only after we confirm the DozeAlert watch
+/// app is installed on a paired watch (Android only). Hidden when not installed.
 class WatchConnectionIndicatorIfInstalled extends StatelessWidget {
   const WatchConnectionIndicatorIfInstalled({super.key});
 
@@ -62,21 +62,22 @@ class WatchConnectionIndicatorIfInstalled extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final watchAppInstalled = context.select<WearStatusProvider, bool>(
-      (provider) => provider.appInstalled,
+    final wearStatus = context.select<WearStatusProvider, ({bool checked, bool installed, bool connected})>(
+      (provider) => (
+        checked: provider.hasChecked,
+        installed: provider.appInstalled,
+        connected: provider.watchConnected,
+      ),
     );
-    if (!watchAppInstalled) {
+
+    if (!wearStatus.checked || !wearStatus.installed) {
       return const SizedBox.shrink();
     }
-
-    final watchConnected = context.select<WearStatusProvider, bool>(
-      (provider) => provider.watchConnected,
-    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        WatchConnectionIndicator(connected: watchConnected),
+        WatchConnectionIndicator(connected: wearStatus.connected),
         const SizedBox(height: 10),
       ],
     );

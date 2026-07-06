@@ -9,6 +9,9 @@ object WearBridge {
     var commandHandler: ((String) -> Unit)? = null
 
     @Volatile
+    var connectionChangeHandler: (() -> Unit)? = null
+
+    @Volatile
     var pendingCommand: String? = null
 
     fun deliverCommand(context: Context, command: String) {

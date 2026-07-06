@@ -1,12 +1,16 @@
+import 'dart:math' as math;
+
+import 'package:geolocator/geolocator.dart';
+
 import '../models/transit_stop.dart';
+import '../models/transit_vehicle_type.dart';
 import 'gps_tracking_confidence.dart';
 import 'rider_motion_rules.dart';
+import 'transit_wake_tuning.dart';
 
 /// Shared stop-based wake rules for foreground and background isolates.
 class TransitWakeTrigger {
   const TransitWakeTrigger._();
-
-  static const onRouteSnapMeters = 400.0;
 
   static bool shouldTrigger({
     required int stopsRemaining,
@@ -20,6 +24,7 @@ class TransitWakeTrigger {
     required List<TransitStop> segmentStops,
     required TransitStop? currentStop,
     required TransitStop? destinationStop,
+    TransitVehicleType? vehicleType,
     bool? activityInVehicle,
     bool? activityOnFoot,
   }) {
@@ -31,30 +36,35 @@ class TransitWakeTrigger {
       return false;
     }
 
-    if (wakeStopCount == 0) {
-      if (stopsRemaining == 0) {
-        return true;
-      }
-
-      if (stopsRemaining == 1 &&
-          offRouteMeters != null &&
-          offRouteMeters <= onRouteSnapMeters) {
-        return true;
-      }
-
-      return false;
-    }
-
-    if (stopsRemaining > wakeStopCount) {
-      return false;
-    }
-
     final current = currentStop;
     final destination = destinationStop;
     if (current == null ||
         destination == null ||
         segmentStops.length < 2) {
-      return stopsRemaining <= wakeStopCount;
+      return false;
+    }
+
+    if (wakeStopCount == 0) {
+      if (!hasReachedWakeStop(
+        segmentStops: segmentStops,
+        currentStop: current,
+        wakeStop: destination,
+        destinationStop: destination,
+      )) {
+        return false;
+      }
+
+      return isNearWakeStopAlongRoute(
+        alongRouteRemainingMeters: alongRouteRemainingMeters,
+        segmentStops: segmentStops,
+        wakeStop: destination,
+        destinationStop: destination,
+        vehicleType: vehicleType,
+      );
+    }
+
+    if (stopsRemaining > wakeStopCount) {
+      return false;
     }
 
     final wakeStop = wakeStopInSegment(
@@ -63,14 +73,24 @@ class TransitWakeTrigger {
       wakeStopCount: wakeStopCount,
     );
     if (wakeStop == null) {
-      return stopsRemaining <= wakeStopCount;
+      return false;
     }
 
-    return hasReachedWakeStop(
+    if (!hasReachedWakeStop(
       segmentStops: segmentStops,
       currentStop: current,
       wakeStop: wakeStop,
       destinationStop: destination,
+    )) {
+      return false;
+    }
+
+    return isNearWakeStopAlongRoute(
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
+      segmentStops: segmentStops,
+      wakeStop: wakeStop,
+      destinationStop: destination,
+      vehicleType: vehicleType,
     );
   }
 
@@ -85,7 +105,7 @@ class TransitWakeTrigger {
     }
 
     if (segmentStops.length <= wakeStopCount) {
-      return null;
+      return segmentStops.first;
     }
 
     final index = segmentStops.length - 1 - wakeStopCount;
@@ -120,6 +140,74 @@ class TransitWakeTrigger {
     }
 
     return currentIndex <= wakeIndex;
+  }
+
+  /// True when GPS is physically near [wakeStop] along the route, not merely
+  /// assigned to that stop by noisy sequence advancement.
+  static bool isNearWakeStopAlongRoute({
+    required double? alongRouteRemainingMeters,
+    required List<TransitStop> segmentStops,
+    required TransitStop wakeStop,
+    required TransitStop destinationStop,
+    TransitVehicleType? vehicleType,
+  }) {
+    if (alongRouteRemainingMeters == null) {
+      return false;
+    }
+
+    final wakeToDestinationMeters = alongRouteMetersBetweenStops(
+      segmentStops: segmentStops,
+      fromStop: wakeStop,
+      toStop: destinationStop,
+      destinationStop: destinationStop,
+    );
+    if (wakeToDestinationMeters == null) {
+      return false;
+    }
+
+    final buffer = TransitWakeTuning.approachBufferMeters(vehicleType);
+    return alongRouteRemainingMeters <= wakeToDestinationMeters + buffer;
+  }
+
+  static double? alongRouteMetersBetweenStops({
+    required List<TransitStop> segmentStops,
+    required TransitStop fromStop,
+    required TransitStop toStop,
+    required TransitStop destinationStop,
+  }) {
+    final travelingForward =
+        destinationStop.stopSequence >= segmentStops.first.stopSequence;
+    final ordered = List<TransitStop>.from(segmentStops)
+      ..sort(
+        (a, b) => travelingForward
+            ? a.stopSequence.compareTo(b.stopSequence)
+            : b.stopSequence.compareTo(a.stopSequence),
+      );
+
+    final fromIndex = ordered.indexWhere(
+      (stop) => stop.stopSequence == fromStop.stopSequence,
+    );
+    final toIndex = ordered.indexWhere(
+      (stop) => stop.stopSequence == toStop.stopSequence,
+    );
+    if (fromIndex < 0 || toIndex < 0) {
+      return null;
+    }
+
+    final start = math.min(fromIndex, toIndex);
+    final end = math.max(fromIndex, toIndex);
+    var total = 0.0;
+    for (var index = start; index < end; index++) {
+      final a = ordered[index];
+      final b = ordered[index + 1];
+      total += Geolocator.distanceBetween(
+        a.latitude,
+        a.longitude,
+        b.latitude,
+        b.longitude,
+      );
+    }
+    return total;
   }
 
   /// Legacy approach-wake path — kept for tests; no longer used in production.

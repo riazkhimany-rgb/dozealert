@@ -1,5 +1,6 @@
 package app.dozealert.wear
 
+import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 
@@ -11,6 +12,12 @@ class WearListenerService : WearableListenerService() {
             WearPaths.CMD_STOP_MONITORING,
             WearPaths.CMD_DISMISS_ALARM,
             -> WearBridge.deliverCommand(applicationContext, messageEvent.path)
+        }
+    }
+
+    override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
+        if (capabilityInfo.name == WearPaths.WEAR_CAPABILITY) {
+            WearBridge.connectionChangeHandler?.invoke()
         }
     }
 }

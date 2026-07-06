@@ -23,6 +23,7 @@ class AlarmService {
   static const _defaultChannelId = 'arrival_alerts';
   static const _forcedAlarmChannelId = 'arrival_alerts_forced';
   static const _approachPhrase = 'Heads up! Approaching destination.';
+  static const _pauseBetweenTtsRepeats = Duration(seconds: 1);
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -33,7 +34,7 @@ class AlarmService {
   bool _alarmActive = false;
   bool _ttsConfigured = false;
   String _activeTtsPhrase = _approachPhrase;
-  Timer? _ttsRepeatTimer;
+  int _ttsLoopGeneration = 0;
   DateTime? _lastAlarmTriggeredAt;
   DateTime? _lastAlarmDismissedAt;
 
@@ -144,8 +145,7 @@ class AlarmService {
     _lastAlarmDismissedAt = DateTime.now();
     _activeTtsPhrase = _approachPhrase;
 
-    _ttsRepeatTimer?.cancel();
-    _ttsRepeatTimer = null;
+    _ttsLoopGeneration++;
     await _tts.stop();
     await _audioPlayer.stop();
     await _stopVibration();
@@ -276,17 +276,24 @@ class AlarmService {
         await _tts.setVolume(volume);
       }
 
-      unawaited(_speakApproachOnce(volume: volume));
-
-      _ttsRepeatTimer?.cancel();
-      _ttsRepeatTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-        if (_alarmActive) {
-          unawaited(_speakApproachOnce());
-        }
-      });
+      final generation = ++_ttsLoopGeneration;
+      unawaited(_runApproachSpeechLoop(volume: volume, generation: generation));
     } catch (error, stackTrace) {
       AppLog.d('AlarmService: failed to start approach speech: $error');
       AppLog.d('$stackTrace');
+    }
+  }
+
+  Future<void> _runApproachSpeechLoop({
+    required double volume,
+    required int generation,
+  }) async {
+    while (_alarmActive && generation == _ttsLoopGeneration) {
+      await _speakApproachOnce(volume: volume);
+      if (!_alarmActive || generation != _ttsLoopGeneration) {
+        return;
+      }
+      await Future<void>.delayed(_pauseBetweenTtsRepeats);
     }
   }
 
