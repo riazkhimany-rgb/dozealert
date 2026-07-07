@@ -33,6 +33,35 @@ TransitModeSnapshot _snapshot({
 }
 
 void main() {
+  group('AlarmTtsCopy', () {
+    test('transit at destination names the stop', () {
+      expect(
+        AlarmTtsCopy.transitAtDestination('Bronte GO'),
+        'Heads up! Your stop Bronte GO is here.',
+      );
+    });
+
+    test('transit one stop away uses singular phrasing', () {
+      expect(
+        AlarmTtsCopy.transitStopsAway(
+          destinationName: 'Union Station',
+          stopsLeft: 1,
+        ),
+        'Heads up! Get ready to get off at Union Station, one stop away.',
+      );
+    });
+
+    test('transit multiple stops away includes count', () {
+      expect(
+        AlarmTtsCopy.transitStopsAway(
+          destinationName: 'Union Station',
+          stopsLeft: 2,
+        ),
+        contains('2 stops away'),
+      );
+    });
+  });
+
   group('TransitWakeMessage.forTransitAlarm', () {
     final destination = _stop('Union Station', 10);
     final queen = _stop('Queen', 9);

@@ -1065,7 +1065,7 @@ class _MonitoringCard extends StatelessWidget {
             )
           else if (!isMonitoring)
             Text(
-              TripUxCopy.readyWhenYouAre,
+              TripUxCopy.startWhenOnBoard,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,

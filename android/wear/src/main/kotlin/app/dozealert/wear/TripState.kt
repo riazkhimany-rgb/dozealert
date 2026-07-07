@@ -73,7 +73,8 @@ data class TripState(
             isMonitoring -> "Watching your trip"
             state == "arrived" -> "You've arrived"
             state == "missed" -> "Trip missed"
-            else -> "Ready when you are"
+            hasDestination -> destinationName.ifBlank { lineLabel }.ifBlank { "Your trip" }
+            else -> "Set up on phone"
         }
 
     val alarmPrimaryStopName: String
@@ -116,6 +117,13 @@ data class TripState(
             isMonitoring && transitActive -> buildMonitoringSubline()
             isMonitoring && !distanceReady -> destinationName.ifBlank { "Waiting for GPS…" }
             isMonitoring -> destinationName.ifBlank { "Trip in progress" }
+            hasDestination && !isMonitoring && state != "arrived" && state != "missed" -> {
+                val line = lineLabel.ifBlank { null }
+                when {
+                    line != null -> line
+                    else -> "Tap Start when on board"
+                }
+            }
             hasDestination -> {
                 val dest = destinationName.ifBlank { null }
                 val line = lineLabel.ifBlank { null }

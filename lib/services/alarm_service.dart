@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:vibration/vibration.dart';
 
 import '../services/settings_service.dart';
+import '../utils/transit_wake_message.dart';
 import '../models/app_settings.dart';
 import '../services/system_volume_service.dart';
 import '../utils/app_log.dart';
@@ -22,8 +23,8 @@ class AlarmService {
   static const _alarmAssetPath = 'sounds/alarm.mp3';
   static const _defaultChannelId = 'arrival_alerts';
   static const _forcedAlarmChannelId = 'arrival_alerts_forced';
-  static const _approachPhrase = 'Heads up! Approaching destination.';
-  static const _pauseBetweenTtsRepeats = Duration(seconds: 1);
+  static const _approachPhrase = AlarmTtsCopy.defaultApproaching;
+  static const _pauseBetweenTtsRepeats = Duration(milliseconds: 1500);
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -250,7 +251,7 @@ class AlarmService {
     await _tts.awaitSpeakCompletion(true);
 
     if (Platform.isAndroid) {
-      await _tts.setQueueMode(1);
+      await _tts.setQueueMode(0);
     }
 
     if (Platform.isIOS) {
@@ -289,29 +290,88 @@ class AlarmService {
     required int generation,
   }) async {
     while (_alarmActive && generation == _ttsLoopGeneration) {
-      await _speakApproachOnce(volume: volume);
-      if (!_alarmActive || generation != _ttsLoopGeneration) {
+      final spoke = await _speakApproachOnce(
+        volume: volume,
+        generation: generation,
+      );
+      if (!spoke || !_alarmActive || generation != _ttsLoopGeneration) {
         return;
       }
       await Future<void>.delayed(_pauseBetweenTtsRepeats);
     }
   }
 
-  Future<void> _speakApproachOnce({double? volume}) async {
-    if (!_alarmActive) {
-      return;
+  Future<bool> _speakApproachOnce({
+    required double volume,
+    required int generation,
+  }) async {
+    if (!_alarmActive || generation != _ttsLoopGeneration) {
+      return false;
     }
 
     try {
-      final effectiveVolume = (volume ?? _settingsService.settings.alarmVolume)
-          .clamp(0.0, 1.0);
+      final effectiveVolume = volume.clamp(0.0, 1.0);
       await _tts.setVolume(effectiveVolume);
-      await _tts.stop();
-      await _tts.speak(_activeTtsPhrase);
+      return await _speakPhraseAndWait(
+        _activeTtsPhrase,
+        generation: generation,
+        volume: effectiveVolume,
+      );
     } catch (error, stackTrace) {
       AppLog.d('AlarmService: TTS speak failed: $error');
       AppLog.d('$stackTrace');
+      return false;
     }
+  }
+
+  Future<bool> _speakPhraseAndWait(
+    String phrase, {
+    required int generation,
+    required double volume,
+  }) async {
+    if (!_alarmActive || generation != _ttsLoopGeneration) {
+      return false;
+    }
+
+    final completer = Completer<void>();
+    void completeOnce() {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
+
+    _tts.setCompletionHandler(completeOnce);
+    _tts.setErrorHandler((message) {
+      AppLog.d('AlarmService: TTS error: $message');
+      completeOnce();
+    });
+
+    try {
+      await _tts.speak(phrase);
+      await completer.future.timeout(
+        _estimatedTtsDuration(phrase),
+        onTimeout: () {
+          AppLog.d(
+            'AlarmService: TTS completion timeout (${phrase.length} chars)',
+          );
+        },
+      );
+      return _alarmActive && generation == _ttsLoopGeneration;
+    } catch (error, stackTrace) {
+      AppLog.d('AlarmService: TTS wait failed: $error');
+      AppLog.d('$stackTrace');
+      return false;
+    } finally {
+      _tts.setCompletionHandler(() {});
+      _tts.setErrorHandler((message) {});
+    }
+  }
+
+  Duration _estimatedTtsDuration(String phrase) {
+    // Speech rate 0.48 — allow roughly 100ms per character, min 4s for short lines.
+    return Duration(
+      milliseconds: (phrase.length * 100).clamp(4000, 35000),
+    );
   }
 
   Future<void> _startForcedAlarmSound({required double volume}) async {

@@ -58,6 +58,30 @@ class WearAlarmSyncFields {
   final String stopName;
 }
 
+abstract final class AlarmTtsCopy {
+  /// Default when no custom phrase is passed to [AlarmService.playApproachAlarm].
+  static const defaultApproaching = 'Heads up! Approaching destination.';
+
+  /// Transit wake: rider should get off now ([stopsLeft] == 0).
+  static String transitAtDestination(String destinationName) =>
+      'Heads up! Your stop $destinationName is here.';
+
+  /// Transit wake: [stopsLeft] stops before destination.
+  static String transitStopsAway({
+    required String destinationName,
+    required int stopsLeft,
+  }) {
+    if (stopsLeft == 1) {
+      return 'Heads up! Get ready to get off at $destinationName, one stop away.';
+    }
+    return 'Heads up! Get ready to get off at $destinationName, $stopsLeft stops away.';
+  }
+
+  /// Non-transit / distance-based wake.
+  static String distanceApproaching(String destinationName) =>
+      'Heads up! Approaching $destinationName.';
+}
+
 abstract final class TransitWakeMessage {
   static const _alarmDismissFooter = TripUxCopy.alarmContinuesUntilDismiss;
 
@@ -195,10 +219,11 @@ abstract final class TransitWakeMessage {
     const detailMessage = _alarmDismissFooter;
 
     final ttsPhrase = stopsLeft <= 0
-        ? 'Heads up! Your stop $destinationName is here.'
-        : stopsLeft == 1
-            ? 'Heads up! Get ready to get off at $destinationName, one stop away.'
-            : 'Heads up! Get ready to get off at $destinationName, $stopsLeft stops away.';
+        ? AlarmTtsCopy.transitAtDestination(destinationName)
+        : AlarmTtsCopy.transitStopsAway(
+            destinationName: destinationName,
+            stopsLeft: stopsLeft,
+          );
 
     return WakeAlertCopy(
       uiHeadline: uiHeadline,
@@ -217,7 +242,7 @@ abstract final class TransitWakeMessage {
     bool transitFallback = false,
   }) {
     final displayName = GtfsStopNameUtils.stationDisplayName(destinationName);
-    final ttsPhrase = 'Heads up! Approaching $displayName.';
+    final ttsPhrase = AlarmTtsCopy.distanceApproaching(displayName);
 
     return WakeAlertCopy(
       uiHeadline: TripUxCopy.getReadyHeadline,

@@ -41,9 +41,12 @@ abstract final class TripUxCopy {
   static const watchingTripLine2 = 'your trip';
 
   static const watchConnected = 'Watch connected';
-  static const watchNotConnected = 'Watch not connected';
+  static const watchNotConnected = 'Watch Disconnected';
 
   static const readyWhenYouAre = 'Ready when you are';
+
+  /// Shown when destination is set but monitoring has not started (avoids repeating "ready").
+  static const startWhenOnBoard = 'Tap Start when you\'re on board';
 
   static const yourStop = 'Your stop';
 
