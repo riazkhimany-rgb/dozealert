@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/favorite_transit_line.dart';
 import '../models/transit_line_option.dart';
 import '../models/transit_vehicle_type.dart';
+import '../providers/favorite_transit_line_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../screens/settings/preferred_agencies_screen.dart';
@@ -57,6 +59,41 @@ class _TransitAgencyLinePickerSheetState
     }
   }
 
+  Future<void> _selectFavorite(FavoriteTransitLine favorite) async {
+    await _selectLine(favorite.lineName);
+  }
+
+  List<FavoriteTransitLine> _agencyFavorites({
+    required List<FavoriteTransitLine> favorites,
+    required String transitSystem,
+    required GtfsProvider gtfsProvider,
+  }) {
+    final normalizedQuery = _query.trim().toLowerCase();
+    return favorites
+        .where((favorite) => favorite.transitSystem == transitSystem)
+        .where((favorite) {
+          if (normalizedQuery.isEmpty) {
+            return true;
+          }
+          final label = gtfsProvider.favoriteLineLabel(favorite).toLowerCase();
+          return label.contains(normalizedQuery) ||
+              favorite.lineName.toLowerCase().contains(normalizedQuery);
+        })
+        .toList(growable: false);
+  }
+
+  String _favoriteLineLabel(
+    FavoriteTransitLine favorite,
+    GtfsProvider gtfsProvider,
+    List<TransitLineOption> allLineOptions,
+  ) {
+    final option = gtfsProvider.lineOptionForPreference(
+      favorite.lineName,
+      allLineOptions,
+    );
+    return option?.singleLineLabel ?? gtfsProvider.favoriteLineLabel(favorite);
+  }
+
   Future<void> _openFullSettings() async {
     final navigator = Navigator.of(context);
     navigator.pop();
@@ -72,6 +109,12 @@ class _TransitAgencyLinePickerSheetState
     final colorScheme = Theme.of(context).colorScheme;
     final preferences = context.watch<TransitProvider>().preferences;
     final gtfsProvider = context.watch<GtfsProvider>();
+    final favorites = context.watch<FavoriteTransitLineProvider>().favorites;
+    final agencyFavorites = _agencyFavorites(
+      favorites: favorites,
+      transitSystem: preferences.transitSystem,
+      gtfsProvider: gtfsProvider,
+    );
     final vehicleTypes = gtfsProvider.availableVehicleTypesForSelectedAgency();
     final lineOptions = gtfsProvider.availableLineOptionsForSelectedAgency(
       vehicleType: _vehicleTypeFilter,
@@ -95,6 +138,7 @@ class _TransitAgencyLinePickerSheetState
     final showGtfsPrompt = _vehicleTypeFilter != null &&
         lineOptions.isEmpty &&
         vehicleTypes.contains(_vehicleTypeFilter);
+    final canPickLines = lineOptions.isNotEmpty || agencyFavorites.isNotEmpty;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final sheetHeight = MediaQuery.sizeOf(context).height * 0.9;
 
@@ -185,7 +229,7 @@ class _TransitAgencyLinePickerSheetState
                   onDownloadComplete: () => setState(() {}),
                 ),
               ),
-            if (lineOptions.isEmpty && !showGtfsPrompt)
+            if (lineOptions.isEmpty && !showGtfsPrompt && agencyFavorites.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Text(
@@ -199,7 +243,7 @@ class _TransitAgencyLinePickerSheetState
                   ),
                 ),
               )
-            else if (lineOptions.isNotEmpty) ...[
+            else if (canPickLines) ...[
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: SearchBar(
@@ -221,7 +265,7 @@ class _TransitAgencyLinePickerSheetState
                 ),
               ),
               Expanded(
-                child: filteredLines.isEmpty
+                child: filteredLines.isEmpty && agencyFavorites.isEmpty
                     ? Center(
                         child: Text(
                           'No routes match "$_query".',
@@ -230,18 +274,128 @@ class _TransitAgencyLinePickerSheetState
                           ),
                         ),
                       )
-                    : ListView.separated(
-                        padding: EdgeInsets.fromLTRB(20, 8, 20, 8 + bottomInset),
-                        itemCount: filteredLines.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final option = filteredLines[index];
-                          return TransitLineListTile(
-                            option: option,
-                            selected: highlightedLineName == option.lineName,
-                            onTap: () => unawaited(_selectLine(option.lineName)),
-                          );
-                        },
+                    : CustomScrollView(
+                        slivers: [
+                          SliverPadding(
+                            padding: EdgeInsets.fromLTRB(
+                              20,
+                              8,
+                              20,
+                              8 + bottomInset,
+                            ),
+                            sliver: SliverMainAxisGroup(
+                              slivers: [
+                          if (agencyFavorites.isNotEmpty) ...[
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(
+                                  TransitUserCopy.favoriteLinesSectionTitle,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final favorite = agencyFavorites[index];
+                                  final isSelected = favorite.matches(preferences);
+                                  return Column(
+                                    children: [
+                                      if (index > 0) const Divider(height: 1),
+                                      ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        leading: Icon(
+                                          Icons.star_rounded,
+                                          color: colorScheme.primary,
+                                        ),
+                                        title: Text(
+                                          _favoriteLineLabel(
+                                            favorite,
+                                            gtfsProvider,
+                                            allLineOptions,
+                                          ),
+                                        ),
+                                        trailing: isSelected
+                                            ? Icon(
+                                                Icons.check,
+                                                color: colorScheme.primary,
+                                              )
+                                            : null,
+                                        onTap: () => unawaited(
+                                          _selectFavorite(favorite),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                                childCount: agencyFavorites.length,
+                              ),
+                            ),
+                          ],
+                          if (filteredLines.isNotEmpty) ...[
+                            if (agencyFavorites.isNotEmpty)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 16, bottom: 4),
+                                  child: Text(
+                                    TransitUserCopy.allRoutesSectionTitle,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final option = filteredLines[index];
+                                  return Column(
+                                    children: [
+                                      if (index > 0) const Divider(height: 1),
+                                      TransitLineListTile(
+                                        option: option,
+                                        selected: highlightedLineName ==
+                                            option.lineName,
+                                        onTap: () => unawaited(
+                                          _selectLine(option.lineName),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                                childCount: filteredLines.length,
+                              ),
+                            ),
+                          ] else if (lineOptions.isEmpty && agencyFavorites.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  TransitUserCopy.downloadStopListsForRoutes(
+                                    preferences.transitSystem,
+                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                            ),
+                          ),
+                        ],
                       ),
               ),
             ] else

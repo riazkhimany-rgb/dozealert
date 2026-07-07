@@ -57,8 +57,8 @@ class TransitAgencyChoicePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Select all that apply — for example if one trip uses both '
-                  'TTC and GO Transit. We download stop lists in the '
+                  'Select all that apply — for example if one trip uses more '
+                  'than one agency. We download stop lists in the '
                   'background for each one you pick.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(

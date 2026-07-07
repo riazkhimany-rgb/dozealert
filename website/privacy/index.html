@@ -203,7 +203,9 @@
       <h3>5. Transit stop lists you download</h3>
       <p>
         Public schedule and stop files (GTFS format) downloaded from agency or open-data URLs
-        you select. Cached on your device. Downloads use HTTPS to third-party hosts we do not operate.
+        you select. Where permitted by an agency&rsquo;s terms, the app may download a file mirrored on
+        <a href="https://dozealert.app/gtfs-mirror/" rel="noopener noreferrer">dozealert.app</a>
+        instead of the agency&rsquo;s direct host. Cached on your device. Downloads use HTTPS to third-party hosts or the DozeAlert website mirror.
       </p>
 
       <h3>6. Third-party services</h3>
@@ -225,6 +227,11 @@
             <td>Transit / open data hosts</td>
             <td>Stop list download</td>
             <td>Standard HTTP request metadata (URL, IP address)</td>
+          </tr>
+          <tr>
+            <td>dozealert.app (GTFS mirror)</td>
+            <td>Mirrored stop list download</td>
+            <td>Standard HTTP request metadata for the mirrored GTFS file</td>
           </tr>
           <tr>
             <td>Share targets you choose</td>
@@ -312,6 +319,15 @@
         <li><strong>Purpose:</strong> App functionality only.</li>
         <li><strong>Deletion:</strong> Uninstall or clear app storage.</li>
       </ul>
+    </section>
+
+    <section class="card">
+      <h2>Transit agencies</h2>
+      <p>
+        DozeAlert is an independent app. We are <strong>not affiliated with, endorsed by, or sponsored by any transit agency</strong>.
+        Transit agency names may appear when you choose a supported feed; those references are for identification and open-data attribution only.
+        See <a href="../transit-licenses/index.html">Transit Data Licenses</a>.
+      </p>
     </section>
 
     <section class="card">

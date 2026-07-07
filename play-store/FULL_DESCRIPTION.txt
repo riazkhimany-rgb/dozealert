@@ -15,12 +15,14 @@ FEATURES
 • Map destination picker and place search
 • Saved favorites and trip history
 • First-time setup guide with alarm test
-• Transit schedules (GTFS) where supported, including Ontario and GTA agencies
+• Transit schedules (GTFS) where supported for public transit agencies in your region
 • Battery-conscious design for daily commutes and long trips
 
 PERMISSIONS
 DozeAlert uses location (including in the background while monitoring), notifications, physical activity on Android (to tell riding from waiting at a platform on transit trips), and optional battery optimization so alerts work when your screen is off. You control permissions in Android Settings.
 
 No account required. No ads.
+
+DozeAlert is not affiliated with, endorsed by, or sponsored by any transit agency.
 
 Sleep peacefully. Arrive confidently.

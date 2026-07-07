@@ -11,7 +11,7 @@ Upload in numeric order (01 → 08) on the **Phone** screenshots tab.
 | `01-brand-splash.jpg` | Sleep peacefully. Arrive confidently. |
 | `02-welcome.jpg` | Wake up before your stop — no account required. |
 | `03-home-pick-stop.jpg` | Trip-first Home: pick your stop and tap Start. |
-| `04-pick-stop.jpg` | Search stops on your route — GO, TTC, and more. |
+| `04-pick-stop.jpg` | Search stops on your route — buses, trains, and more. |
 | `05-ready-to-sleep.jpg` | Confirm you're ready, then relax. |
 | `06-monitoring.jpg` | Stop-by-stop progress while you ride. |
 | `07-get-ready-alarm.jpg` | GET READY — full-screen wake alert before your stop. |

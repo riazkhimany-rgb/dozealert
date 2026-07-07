@@ -84,16 +84,13 @@ abstract final class TransitCatalog {
         agencyName: 'York Region Transit',
         province: 'Ontario',
         vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl: 'https://dozealert.app/gtfs-mirror/gtfs_yrt.zip',
         openDataPageUrl: 'https://www.yrt.ca/en/about-us/open-data.aspx',
-        openDataPageLabel: 'Open YRT Download Page',
-        requiresUserAcknowledgement: true,
-        acknowledgementMessage:
-            'YRT open data requires you to review their terms on the YRT website '
-            'before downloading the GTFS feed. Import the downloaded zip using '
-            'Import GTFS Zip on this screen.',
+        openDataPageLabel: 'YRT Open Data terms',
         licenseUrl: 'https://www.yrt.ca/en/about-us/open-data.aspx',
         attributionText:
-            'Contains data from York Region Transit Open Data (review YRT terms).',
+            'Contains data from York Region Transit Open Data. '
+            'GTFS mirrored on dozealert.app under YRT open data terms.',
       ),
       lines: ['All routes'],
     ),
@@ -111,12 +108,13 @@ abstract final class TransitCatalog {
           TransitVehicleType.bus,
           TransitVehicleType.lightRail,
         ],
+        downloadUrl:
+            'https://www.regionofwaterloo.ca/opendatadownloads/GRT_GTFS.zip',
         openDataPageUrl: 'https://www.grt.ca/about-grt/open-data/',
         openDataPageLabel: 'Open GRT Open Data Page',
         licenseUrl:
             'https://www.regionofwaterloo.ca/government-and-council/transparency-and-accountability/open-data/',
-        attributionText:
-            'Contains data from Grand River Transit Open Data (manual download).',
+        attributionText: 'Contains data from Grand River Transit Open Data.',
       ),
       lines: ['All routes'],
     ),
@@ -131,13 +129,14 @@ abstract final class TransitCatalog {
         agencyName: 'Brampton Transit',
         province: 'Ontario',
         vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'https://www.arcgis.com/sharing/rest/content/items/a355aabd5a8c490186bdce559c9c75fb/data',
         openDataPageUrl:
             'https://geohub.brampton.ca/datasets/a355aabd5a8c490186bdce559c9c75fb',
         openDataPageLabel: 'Open Brampton Transit Data',
-        licenseUrl:
-            'https://geohub.brampton.ca/datasets/a355aabd5a8c490186bdce559c9c75fb',
+        licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
         attributionText:
-            'Contains data from Brampton Transit Open Data (manual download).',
+            'Contains data from Brampton Transit Open Data (CC BY 4.0).',
       ),
       lines: ['All routes'],
     ),

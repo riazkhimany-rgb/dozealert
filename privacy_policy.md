@@ -1,7 +1,7 @@
 # DozeAlert Privacy Policy
 
 **Effective date:** June 18, 2026  
-**Last updated:** July 5, 2026
+**Last updated:** July 7, 2026
 
 **App:** DozeAlert (`app.dozealert`)  
 **Developer:** Riaz (Creator of DozeAlert)  
@@ -67,11 +67,11 @@ This Privacy Policy describes how DozeAlert (“the app”, “we”, “us”) 
 
 ### 5. Transit data (GTFS) you download
 
-**What:** Public transit schedule and stop data files downloaded from agency or open-data URLs you choose in the app.
+**What:** Public transit schedule and stop data files downloaded from agency or open-data URLs you choose in the app. Where permitted by an agency's terms, the app may download a GTFS file mirrored on [dozealert.app](https://dozealert.app/gtfs-mirror/) instead of the agency's direct host.
 
 **Why:** To support stop lists, transit mode, and line detection.
 
-**Stored where:** On your device only. Downloads are standard HTTP requests to third-party transit data providers; we do not control those servers.
+**Stored where:** On your device only. Downloads are standard HTTP requests to third-party transit data providers or the DozeAlert website mirror; we do not control third-party agency servers.
 
 ### 6. Information sent to third parties when you use certain features
 
@@ -81,6 +81,7 @@ DozeAlert does **not** operate backend servers that collect your personal profil
 |--------|------------------|------------------|
 | **Google Maps Platform** (Maps SDK, Places) | Map picker, place search, map display | Search queries you type, map tile requests, and location-related data needed to show the map and resolve places. Governed by [Google’s Privacy Policy](https://policies.google.com/privacy). |
 | **Public GTFS / open data hosts** | When you download transit feeds | Standard download requests (URL, IP address, device network information). No account is created by DozeAlert. |
+| **dozealert.app (GTFS mirror)** | When you download a mirrored transit feed in the app | Standard download requests for the mirrored GTFS file. No account is created. |
 | **Your chosen share target** | When you tap Share in the app | Only what you explicitly share through Android’s system share sheet (for example a message or link you send). |
 
 We do **not** use analytics, advertising, or crash-reporting SDKs in the production app.
@@ -156,6 +157,12 @@ DozeAlert is not directed at children under 13 (or the minimum age required in y
 DozeAlert is developed in Canada. If you use the app outside Canada, your information may be processed on your device and by third-party services (such as Google) under their own policies and applicable laws.
 
 If you are in the European Economic Area, United Kingdom, or similar regions, you may have rights to access, correct, or delete personal data we hold about you (primarily via device controls and contacting us). We rely on **contract necessity** and **legitimate interests** to provide the app you requested, and on **consent** where Android prompts you for permissions.
+
+---
+
+## Transit agencies
+
+DozeAlert is an independent app. **We are not affiliated with, endorsed by, or sponsored by any transit agency.** Transit agency names, logos, and schedule data may appear when you choose a supported feed; those references are for identification and open-data attribution only. See **Settings → About → Transit Data Licenses** in the app or [Transit Data Licenses](https://dozealert.app/transit-licenses/) on our website.
 
 ---
 

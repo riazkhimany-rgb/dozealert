@@ -44,6 +44,10 @@ void main() {
   });
 
   group('TransitDataLicenses', () {
+    test('includes non-affiliation notice', () {
+      expect(TransitDataLicenses.nonAffiliationNotice, contains('not affiliated'));
+    });
+
     test('lists no bundled bootstrap agencies', () {
       expect(TransitDataLicenses.bundledBootstrapAgencies, isEmpty);
     });
@@ -76,17 +80,64 @@ void main() {
       );
     });
 
-    test('GRT feed uses current open data and licence pages', () {
+    test('GRT feed uses in-app download and current licence pages', () {
       final grtFeed = TransitCatalog.feedById('grt');
 
       expect(grtFeed, isNotNull);
+      expect(grtFeed!.dataAccessMode, TransitDataAccessMode.inAppDownload);
       expect(
-        grtFeed!.openDataPageUrl,
+        grtFeed.downloadUrl,
+        'https://www.regionofwaterloo.ca/opendatadownloads/GRT_GTFS.zip',
+      );
+      expect(
+        grtFeed.openDataPageUrl,
         'https://www.grt.ca/about-grt/open-data/',
       );
       expect(
         grtFeed.resolvedLicenseUrl,
         'https://www.regionofwaterloo.ca/government-and-council/transparency-and-accountability/open-data/',
+      );
+    });
+
+    test('Brampton feed uses in-app download from ArcGIS', () {
+      final bramptonFeed = TransitCatalog.feedById('brampton_transit');
+
+      expect(bramptonFeed, isNotNull);
+      expect(
+        bramptonFeed!.dataAccessMode,
+        TransitDataAccessMode.inAppDownload,
+      );
+      expect(
+        bramptonFeed.downloadUrl,
+        'https://www.arcgis.com/sharing/rest/content/items/a355aabd5a8c490186bdce559c9c75fb/data',
+      );
+      expect(
+        bramptonFeed.resolvedLicenseUrl,
+        'https://creativecommons.org/licenses/by/4.0/',
+      );
+      expect(
+        bramptonFeed.attributionText,
+        contains('CC BY 4.0'),
+      );
+    });
+
+    test('YRT feed uses in-app download from DozeAlert mirror', () {
+      final yrtFeed = TransitCatalog.feedById('yrt');
+
+      expect(yrtFeed, isNotNull);
+      expect(yrtFeed!.dataAccessMode, TransitDataAccessMode.inAppDownload);
+      expect(yrtFeed.requiresUserAcknowledgement, isFalse);
+      expect(
+        yrtFeed.downloadUrl,
+        'https://dozealert.app/gtfs-mirror/gtfs_yrt.zip',
+      );
+      expect(
+        yrtFeed.resolvedLicenseUrl,
+        'https://www.yrt.ca/en/about-us/open-data.aspx',
+      );
+      expect(
+        yrtFeed.attributionText,
+        contains('mirrored on dozealert.app'),
       );
     });
   });

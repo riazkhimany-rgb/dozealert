@@ -63,11 +63,15 @@ abstract final class TransitUserCopy {
   static const homeTourConfirmTransitTitle = 'Confirm your transit & line';
 
   static const homeTourConfirmTransitBody =
-      'Make sure the right transit and line are selected — for example '
-      'TTC or GO Transit. Tap to change if you ride something else.';
+      'Make sure the right transit and line are selected for your ride. '
+      'Tap to change if you need a different agency or route.';
 
   static const saveTransitLinePairsHint =
       'Save transit and line pairs for quick switching on Home.';
+
+  static const favoriteLinesSectionTitle = 'Favorite lines';
+
+  static const allRoutesSectionTitle = 'All routes';
 
   static const favoriteLinesQuickSwitchHint =
       'Quick-switch transit and line pairs from Home during transfers.';

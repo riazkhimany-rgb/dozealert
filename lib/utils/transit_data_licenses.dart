@@ -6,9 +6,15 @@ import '../models/transit_catalog_agency.dart';
 abstract final class TransitDataLicenses {
   static const generalNotice =
       'DozeAlert uses public transit schedule and stop data (GTFS format) from '
-      'transit agencies. Data is cached on your device for offline alarms and is not '
-      'redistributed by DozeAlert. Each agency sets its own open data terms — review '
-      'them before downloading or importing stop lists.';
+      'transit agencies. Data is cached on your device for offline alarms. '
+      'Where permitted, DozeAlert may host a mirror of a GTFS file on '
+      'dozealert.app for in-app download; agency open data terms still apply. '
+      'Review each agency\'s terms before downloading stop lists.';
+
+  static const nonAffiliationNotice =
+      'DozeAlert is not affiliated with, endorsed by, or sponsored by any '
+      'transit agency. Agency names and attributions below identify open data '
+      'sources only.';
 
   static const bundledNotice =
       'During first-run setup, DozeAlert downloads stop lists in the background for '

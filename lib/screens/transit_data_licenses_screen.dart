@@ -47,6 +47,14 @@ class TransitDataLicensesScreen extends StatelessWidget {
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
+                const SizedBox(height: 12),
+                BrandedMentionText(
+                  TransitDataLicenses.nonAffiliationNotice,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -239,6 +247,13 @@ class _FeedLicenseCard extends StatelessWidget {
                   onPressed: () => onOpenUrl(feed.openDataPageUrl!),
                   icon: const Icon(Icons.open_in_new, size: 18),
                   label: Text(feed.openDataPageLabel ?? 'Open data page'),
+                ),
+              if (feed.hasDirectDownload &&
+                  feed.downloadUrl!.contains('dozealert.app'))
+                OutlinedButton.icon(
+                  onPressed: () => onOpenUrl(feed.downloadUrl!),
+                  icon: const Icon(Icons.cloud_download_outlined, size: 18),
+                  label: const Text('GTFS mirror'),
                 ),
             ],
           ),
