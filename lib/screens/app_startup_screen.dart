@@ -102,7 +102,8 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     final onboardingService = context.read<OnboardingService>();
     final transitProvider = context.read<TransitProvider>();
 
-    await catalogStore.refreshIfStale();
+    // Feeds initialize from the bundled/cached catalog loaded in main(), so the
+    // splash -> home transition never waits on the network.
     await gtfsFeedProvider.initialize();
 
     await Future.wait([
@@ -126,6 +127,16 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
         },
       );
     }
+
+    // Refresh the agency list in the background; apply new feeds if the remote
+    // catalog is newer. Off the critical path so it can't slow cold start.
+    unawaited(
+      catalogStore.refreshIfStale().then((updated) async {
+        if (updated) {
+          await gtfsFeedProvider.applyCatalogFeeds();
+        }
+      }),
+    );
 
     return onboardingService.isComplete();
   }

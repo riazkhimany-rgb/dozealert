@@ -49,16 +49,22 @@ class TransitCatalogStore extends ChangeNotifier {
     this.remoteCatalogUrl =
         '${AppBranding.websiteUrl}/transit-catalog/transit-catalog.json',
     this.refreshInterval = const Duration(hours: 24),
+    this.failureBackoff = const Duration(hours: 1),
   }) : _httpClient = httpClient ?? http.Client();
 
   static const _assetPath = 'assets/transit-catalog.json';
   static const _cacheJsonKey = 'transit_catalog_cache_json';
   static const _cacheVersionKey = 'transit_catalog_cache_version';
   static const _lastRefreshKey = 'transit_catalog_last_refresh_ms';
+  static const _lastFailedRefreshKey = 'transit_catalog_last_failed_ms';
 
   final http.Client _httpClient;
   final String remoteCatalogUrl;
   final Duration refreshInterval;
+
+  /// Minimum wait before retrying after a failed remote fetch, so an offline
+  /// device does not attempt the network on every cold start.
+  final Duration failureBackoff;
 
   bool _initialized = false;
   bool _refreshing = false;
@@ -136,27 +142,35 @@ class TransitCatalogStore extends ChangeNotifier {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now().millisecondsSinceEpoch;
     if (!force) {
       final lastRefresh = prefs.getInt(_lastRefreshKey);
-      if (lastRefresh != null) {
-        final elapsed = DateTime.now().millisecondsSinceEpoch - lastRefresh;
-        if (elapsed < refreshInterval.inMilliseconds) {
-          return TransitCatalogRefreshResult(
-            TransitCatalogRefreshStatus.upToDate,
-            catalogVersion: catalogVersion,
-          );
-        }
+      if (lastRefresh != null &&
+          now - lastRefresh < refreshInterval.inMilliseconds) {
+        return TransitCatalogRefreshResult(
+          TransitCatalogRefreshStatus.upToDate,
+          catalogVersion: catalogVersion,
+        );
+      }
+      final lastFailure = prefs.getInt(_lastFailedRefreshKey);
+      if (lastFailure != null &&
+          now - lastFailure < failureBackoff.inMilliseconds) {
+        return const TransitCatalogRefreshResult(
+          TransitCatalogRefreshStatus.failed,
+        );
       }
     }
 
     final remote = await _fetchRemoteManifest();
     if (remote == null) {
+      await prefs.setInt(_lastFailedRefreshKey, now);
       return const TransitCatalogRefreshResult(
         TransitCatalogRefreshStatus.failed,
       );
     }
 
-    await prefs.setInt(_lastRefreshKey, DateTime.now().millisecondsSinceEpoch);
+    await prefs.remove(_lastFailedRefreshKey);
+    await prefs.setInt(_lastRefreshKey, now);
 
     final currentVersion = _activeManifest?.catalogVersion ?? 0;
     if (remote.catalogVersion <= currentVersion) {

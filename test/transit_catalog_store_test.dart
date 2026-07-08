@@ -161,6 +161,26 @@ void main() {
       expect(prefs.getInt('transit_catalog_last_refresh_ms'), isNull);
     });
 
+    test('refreshIfStale skips network within failure backoff', () async {
+      var fetchCount = 0;
+      final store = TransitCatalogStore(
+        httpClient: MockClient((_) async {
+          fetchCount++;
+          throw Exception('offline');
+        }),
+        refreshInterval: const Duration(hours: 24),
+        failureBackoff: const Duration(hours: 1),
+      );
+      await store.initialize();
+
+      final first = await store.refreshIfStale();
+      final second = await store.refreshIfStale();
+
+      expect(first, isFalse);
+      expect(second, isFalse);
+      expect(fetchCount, 1);
+    });
+
     test('refreshIfStale ignores incompatible minAppVersion', () async {
       final remote = TransitCatalogManifest(
         catalogVersion: TransitCatalogBundled.catalogVersion + 1,
