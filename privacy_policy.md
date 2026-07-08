@@ -82,6 +82,7 @@ DozeAlert does **not** operate backend servers that collect your personal profil
 | **Google Maps Platform** (Maps SDK, Places) | Map picker, place search, map display | Search queries you type, map tile requests, and location-related data needed to show the map and resolve places. Governed by [Google’s Privacy Policy](https://policies.google.com/privacy). |
 | **Public GTFS / open data hosts** | When you download transit feeds | Standard download requests (URL, IP address, device network information). No account is created by DozeAlert. |
 | **dozealert.app (GTFS mirror)** | When you download a mirrored transit feed in the app | Standard download requests for the mirrored GTFS file. No account is created. |
+| **dozealert.app (transit catalog)** | Periodically (about once per day) when the app checks for catalog updates | A small JSON manifest listing supported transit agencies, download URLs, and license metadata. No account is created. GTFS schedule files are **not** downloaded automatically. |
 | **Your chosen share target** | When you tap Share in the app | Only what you explicitly share through Android’s system share sheet (for example a message or link you send). |
 
 We do **not** use analytics, advertising, or crash-reporting SDKs in the production app.

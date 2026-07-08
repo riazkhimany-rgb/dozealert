@@ -38,22 +38,7 @@ Copy-Item $apkSource (Join-Path $downloadsDir $versionedName) -Force
 Copy-Item $apkSource (Join-Path $downloadsDir $latestName) -Force
 
 $versionLabel = "$versionName+$versionCode"
-@{"version"=$versionName;"build"=[int]$versionCode;"label"=$versionLabel} | ConvertTo-Json -Compress |
-    Set-Content (Join-Path $projectRoot "website/app-version.json") -Encoding utf8
-
-Get-ChildItem -Path (Join-Path $projectRoot 'website') -Filter 'index.html' -Recurse -File | ForEach-Object {
-    $html = Get-Content $_.FullName -Raw
-    $html = [regex]::Replace($html, 'brand\.css\?v=\d+', "brand.css?v=$versionCode")
-    $html = [regex]::Replace($html, 'brand\.js\?v=\d+', "brand.js?v=$versionCode")
-    if ($_.DirectoryName -eq (Join-Path $projectRoot 'website')) {
-        $html = [regex]::Replace(
-            $html,
-            '(<span id="app-version">)[^<]*(</span>)',
-            "`${1}$versionLabel`${2}"
-        )
-    }
-    Set-Content -Path $_.FullName -Value $html -Encoding utf8 -NoNewline
-}
+& (Join-Path $PSScriptRoot 'sync-website-versions.ps1')
 
 Write-Host ""
 Write-Host "Success:" -ForegroundColor Green

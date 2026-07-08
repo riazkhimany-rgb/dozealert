@@ -6,3 +6,11 @@
 /app-version.json
   Cache-Control: no-store, must-revalidate
   Pragma: no-cache
+
+/wear-version.json
+  Cache-Control: no-store, must-revalidate
+  Pragma: no-cache
+
+/transit-catalog/*
+  Cache-Control: no-store, must-revalidate
+  Pragma: no-cache

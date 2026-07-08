@@ -10,6 +10,7 @@ import '../providers/gtfs_provider.dart';
 import '../providers/transit_provider.dart';
 import '../providers/trip_history_provider.dart';
 import '../services/onboarding_service.dart';
+import '../services/transit_catalog_store.dart';
 import '../utils/app_branding.dart';
 import 'branded_splash_screen.dart';
 import 'main_screen.dart';
@@ -92,6 +93,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
   }
 
   Future<bool> _bootstrap() async {
+    final catalogStore = context.read<TransitCatalogStore>();
     final gtfsProvider = context.read<GtfsProvider>();
     final gtfsFeedProvider = context.read<GtfsFeedProvider>();
     final destinationHistoryProvider =
@@ -100,6 +102,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     final onboardingService = context.read<OnboardingService>();
     final transitProvider = context.read<TransitProvider>();
 
+    await catalogStore.refreshIfStale();
     await gtfsFeedProvider.initialize();
 
     await Future.wait([

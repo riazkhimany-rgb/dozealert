@@ -34,6 +34,7 @@ import 'package:dozealert/services/place_search_service.dart';
 import 'package:dozealert/services/preferences_service.dart';
 import 'package:dozealert/services/settings_service.dart';
 import 'package:dozealert/services/transit_mode_service.dart';
+import 'package:dozealert/services/transit_catalog_store.dart';
 import 'package:dozealert/services/trip_history_service.dart';
 import 'package:dozealert/utils/app_branding.dart';
 import 'package:dozealert/widgets/branded_app_name.dart';
@@ -124,6 +125,8 @@ Future<DozeAlertApp> _createTestApp() async {
 
   final placeSearchService = PlaceSearchService();
   final preferencesService = PreferencesService();
+  final catalogStore = TransitCatalogStore();
+  await catalogStore.initialize();
   final gtfsCacheStore = GtfsCacheStore();
   final gtfsParserService = GtfsParserService();
   final gtfsDownloadService = GtfsDownloadService();
@@ -218,6 +221,7 @@ Future<DozeAlertApp> _createTestApp() async {
       onboardingService: onboardingService,
       appTourService: appTourService,
       activityRecognitionService: activityRecognitionService,
+      catalogStore: catalogStore,
     skipSplash: true,
     skipBootstrap: true,
   );

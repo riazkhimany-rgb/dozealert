@@ -89,6 +89,16 @@ class GtfsFeedProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Rebuilds feed seeds after the transit catalog manifest changes.
+  Future<void> applyCatalogFeeds() async {
+    final cachedInfos = await _cacheStore.loadFeedInfos();
+    _feeds = DefaultGtfsFeeds.feeds
+        .map((seed) => _mergeSeedWithCache(seed, cachedInfos))
+        .toList(growable: false);
+    notifyListeners();
+    await onFeedsChanged?.call();
+  }
+
   /// Feeds whose cached stop data predates the current parse schema.
   Future<List<GtfsFeedInfo>> listStaleFeeds() async {
     final cachedFeeds = await _cacheStore.loadAllFeeds();

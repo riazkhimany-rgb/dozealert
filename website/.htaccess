@@ -1,6 +1,10 @@
 # Apache — revalidate on every visit (304 when unchanged).
 <IfModule mod_headers.c>
-  <FilesMatch "app-version\.json$">
+  <FilesMatch "(app-version|wear-version)\.json$">
+    Header set Cache-Control "no-store, must-revalidate"
+    Header set Pragma "no-cache"
+  </FilesMatch>
+  <FilesMatch "transit-catalog\.json$">
     Header set Cache-Control "no-store, must-revalidate"
     Header set Pragma "no-cache"
   </FilesMatch>

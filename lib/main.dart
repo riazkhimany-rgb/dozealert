@@ -35,6 +35,7 @@ import 'services/onboarding_service.dart';
 import 'services/place_search_service.dart';
 import 'services/preferences_service.dart';
 import 'services/settings_service.dart';
+import 'services/transit_catalog_store.dart';
 import 'services/transit_mode_service.dart';
 import 'services/trip_history_service.dart';
 import 'utils/app_log.dart';
@@ -61,6 +62,9 @@ Future<void> main() async {
 
   final placeSearchService = PlaceSearchService();
   final preferencesService = PreferencesService();
+  final catalogStore = TransitCatalogStore();
+  await catalogStore.initialize();
+
   final gtfsCacheStore = GtfsCacheStore();
   final gtfsParserService = GtfsParserService();
   final gtfsDownloadService = GtfsDownloadService();
@@ -146,6 +150,7 @@ Future<void> main() async {
       onboardingService: onboardingService,
       appTourService: appTourService,
       activityRecognitionService: activityRecognitionService,
+      catalogStore: catalogStore,
     ),
   );
 }
@@ -190,6 +195,7 @@ class DozeAlertApp extends StatelessWidget {
     required this.onboardingService,
     required this.appTourService,
     required this.activityRecognitionService,
+    required this.catalogStore,
     this.skipSplash = false,
     this.skipBootstrap = false,
   });
@@ -218,6 +224,7 @@ class DozeAlertApp extends StatelessWidget {
   final OnboardingService onboardingService;
   final AppTourService appTourService;
   final ActivityRecognitionService activityRecognitionService;
+  final TransitCatalogStore catalogStore;
   final bool skipSplash;
   final bool skipBootstrap;
 
@@ -303,6 +310,9 @@ class DozeAlertApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<WearStatusProvider>(
           create: (_) => WearStatusProvider(),
+        ),
+        ChangeNotifierProvider<TransitCatalogStore>.value(
+          value: catalogStore,
         ),
         ChangeNotifierProvider(
           create: (context) => LocationProvider(
