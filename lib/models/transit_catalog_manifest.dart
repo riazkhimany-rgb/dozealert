@@ -11,6 +11,7 @@ class TransitCatalogManifest {
     required this.countries,
     required this.defaultRegionByCountry,
     required this.agencies,
+    this.generatedAt,
   });
 
   static const supportedSchemaVersion = 1;
@@ -18,6 +19,7 @@ class TransitCatalogManifest {
   final int catalogVersion;
   final int schemaVersion;
   final String minAppVersion;
+  final DateTime? generatedAt;
   final List<String> countries;
   final Map<String, String> defaultRegionByCountry;
   final List<TransitCatalogAgency> agencies;
@@ -39,6 +41,9 @@ class TransitCatalogManifest {
       catalogVersion: json['catalogVersion'] as int? ?? 0,
       schemaVersion: json['schemaVersion'] as int? ?? 1,
       minAppVersion: json['minAppVersion'] as String? ?? '1.0.0',
+      generatedAt: json['generatedAt'] == null
+          ? null
+          : DateTime.parse(json['generatedAt'] as String),
       countries: (json['countries'] as List<dynamic>? ?? const [])
           .map((entry) => entry.toString())
           .toList(growable: false),
@@ -57,14 +62,39 @@ class TransitCatalogManifest {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  TransitCatalogManifest copyWith({
+    int? catalogVersion,
+    int? schemaVersion,
+    String? minAppVersion,
+    DateTime? generatedAt,
+    List<String>? countries,
+    Map<String, String>? defaultRegionByCountry,
+    List<TransitCatalogAgency>? agencies,
+  }) {
+    return TransitCatalogManifest(
+      catalogVersion: catalogVersion ?? this.catalogVersion,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      minAppVersion: minAppVersion ?? this.minAppVersion,
+      generatedAt: generatedAt ?? this.generatedAt,
+      countries: countries ?? this.countries,
+      defaultRegionByCountry:
+          defaultRegionByCountry ?? this.defaultRegionByCountry,
+      agencies: agencies ?? this.agencies,
+    );
+  }
+
+  /// Immutable catalog serialization (bundled asset, remote JSON, device cache).
+  Map<String, dynamic> toCatalogJson() {
     return {
       'catalogVersion': catalogVersion,
       'schemaVersion': schemaVersion,
       'minAppVersion': minAppVersion,
+      if (generatedAt != null) 'generatedAt': generatedAt!.toUtc().toIso8601String(),
       'countries': countries,
       'defaultRegionByCountry': defaultRegionByCountry,
-      'agencies': agencies.map((agency) => agency.toJson()).toList(),
+      'agencies': agencies.map((agency) => agency.toCatalogJson()).toList(),
     };
   }
+
+  Map<String, dynamic> toJson() => toCatalogJson();
 }

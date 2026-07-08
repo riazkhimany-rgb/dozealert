@@ -9,11 +9,11 @@ void main() {
     expect(TransitCatalog.countries, isNot(contains('United Kingdom')));
   });
 
-  test('Ontario includes GTA transit agencies with GTFS feeds', () {
+  test('Ontario includes catalog agencies with GTFS feeds', () {
     final ontarioAgencies = TransitCatalog.agenciesForRegion('Canada', 'Ontario');
     final ontarioFeeds = TransitCatalog.gtfsFeedsForRegion('Canada', 'Ontario');
 
-    const gtaAgencies = [
+    const ontarioAgenciesFromList = [
       'GO Transit',
       'TTC',
       'MiWay',
@@ -24,20 +24,30 @@ void main() {
       'Oakville Transit',
       'Burlington Transit',
       'Hamilton Street Railway',
+      'Grand River Transit',
+      'Guelph Transit',
+      'London Transit',
+      'OC Transpo',
+      'Barrie Transit',
+      'Niagara Region Transit',
+      'Kingston Transit',
+      'Windsor Transit',
+      'Sault Ste. Marie Transit',
+      'Thunder Bay Transit',
     ];
 
-    for (final agency in gtaAgencies) {
+    for (final agency in ontarioAgenciesFromList) {
       expect(ontarioAgencies, contains(agency));
     }
 
-    expect(ontarioAgencies, contains('Grand River Transit'));
-    expect(ontarioAgencies, contains('Niagara Region Transit'));
-    expect(ontarioAgencies, contains('OC Transpo'));
-    expect(ontarioFeeds.length, 12);
+    expect(ontarioFeeds.length, 20);
 
     for (final feed in ontarioFeeds) {
       expect(ontarioAgencies, contains(feed.agencyName));
     }
+
+    expect(TransitCatalog.feedById('guelph_transit')?.hasDirectDownload, isTrue);
+    expect(TransitCatalog.feedById('oc_transpo')?.hasDirectDownload, isTrue);
   });
 
   test('normalize migrates legacy preferences without region', () {

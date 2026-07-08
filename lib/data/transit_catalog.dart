@@ -118,7 +118,7 @@ abstract final class TransitCatalog {
             agencyName: agency.agencyName,
             country: agency.country,
             city: agency.city,
-            supportsRealtime: agency.gtfsFeed?.supportsRealtime ?? false,
+            supportsRealtime: agency.gtfsFeed?.supportsRealtimeCapability ?? false,
           ),
         )
         .toList(growable: false);

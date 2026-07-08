@@ -1,7 +1,8 @@
 {
-  "catalogVersion": 1,
+  "catalogVersion": 3,
   "schemaVersion": 1,
   "minAppVersion": "1.1.0",
+  "generatedAt": "2026-07-08T16:54:15.182261Z",
   "countries": [
     "Canada",
     "United States"
@@ -20,27 +21,21 @@
       "gtfsFeed": {
         "feedId": "go_transit",
         "agencyName": "GO Transit",
-        "feedName": "GO Transit",
         "province": "Ontario",
         "vehicleTypes": [
           "train",
           "bus"
         ],
         "downloadUrl": "https://assets.metrolinx.com/raw/upload/v1683228856/Documents/Metrolinx/Open%20Data/GO-GTFS.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
         "supportsRealtime": true,
-        "openDataPageUrl": null,
-        "openDataPageLabel": null,
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://www.gotransit.com/en/partner-with-us/software-developers",
         "attributionText": "Contains data from GO Transit (Metrolinx) Open Data Catalogue.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -62,7 +57,6 @@
       "gtfsFeed": {
         "feedId": "ttc",
         "agencyName": "TTC",
-        "feedName": "TTC",
         "province": "Ontario",
         "vehicleTypes": [
           "subway",
@@ -70,20 +64,15 @@
           "bus"
         ],
         "downloadUrl": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/7795b45e-e65a-4465-81fc-c36b9dfff169/resource/cfb6b2b8-6191-41e3-bda1-b175c51148cb/download/TTC%20Routes%20and%20Schedules%20Data.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
         "supportsRealtime": true,
-        "openDataPageUrl": null,
-        "openDataPageLabel": null,
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://open.toronto.ca/open-data-licence/",
         "attributionText": "Contains data licensed under the City of Toronto Open Data License.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -99,26 +88,20 @@
       "gtfsFeed": {
         "feedId": "yrt",
         "agencyName": "York Region Transit",
-        "feedName": "York Region Transit",
         "province": "Ontario",
         "vehicleTypes": [
           "bus"
         ],
         "downloadUrl": "https://dozealert.app/gtfs-mirror/gtfs_yrt.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
         "supportsRealtime": false,
         "openDataPageUrl": "https://www.yrt.ca/en/about-us/open-data.aspx",
         "openDataPageLabel": "YRT Open Data terms",
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://www.yrt.ca/en/about-us/open-data.aspx",
         "attributionText": "Contains data from York Region Transit Open Data. GTFS mirrored on dozealert.app under YRT open data terms.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -134,27 +117,79 @@
       "gtfsFeed": {
         "feedId": "grt",
         "agencyName": "Grand River Transit",
-        "feedName": "Grand River Transit",
         "province": "Ontario",
         "vehicleTypes": [
           "bus",
           "lightRail"
         ],
         "downloadUrl": "https://www.regionofwaterloo.ca/opendatadownloads/GRT_GTFS.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
         "supportsRealtime": false,
         "openDataPageUrl": "https://www.grt.ca/about-grt/open-data/",
         "openDataPageLabel": "Open GRT Open Data Page",
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://www.regionofwaterloo.ca/government-and-council/transparency-and-accountability/open-data/",
         "attributionText": "Contains data from Grand River Transit Open Data.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "guelph_transit",
+      "agencyName": "Guelph Transit",
+      "country": "Canada",
+      "region": "Ontario",
+      "city": "Guelph",
+      "gtfsFeed": {
+        "feedId": "guelph_transit",
+        "agencyName": "Guelph Transit",
+        "province": "Ontario",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://gismaps.guelph.ca/Pages/GTFS/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://guelph.ca/city-government/plans-and-strategies/digital-innovation/open-data/",
+        "openDataPageLabel": "Guelph Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://guelph.ca/city-government/plans-and-strategies/digital-innovation/open-data/",
+        "attributionText": "Contains data from Guelph Transit Open Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "london_transit",
+      "agencyName": "London Transit",
+      "country": "Canada",
+      "region": "Ontario",
+      "city": "London",
+      "gtfsFeed": {
+        "feedId": "london_transit",
+        "agencyName": "London Transit",
+        "province": "Ontario",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://www.londontransit.ca/gtfsfeed/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.londontransit.ca/open-data/",
+        "openDataPageLabel": "London Transit Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.londontransit.ca/open-data/ltcs-open-data-terms-of-use/",
+        "attributionText": "Contains data from London Transit Commission Open Data.",
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -170,26 +205,20 @@
       "gtfsFeed": {
         "feedId": "brampton_transit",
         "agencyName": "Brampton Transit",
-        "feedName": "Brampton Transit",
         "province": "Ontario",
         "vehicleTypes": [
           "bus"
         ],
         "downloadUrl": "https://www.arcgis.com/sharing/rest/content/items/a355aabd5a8c490186bdce559c9c75fb/data",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
         "supportsRealtime": false,
         "openDataPageUrl": "https://geohub.brampton.ca/datasets/a355aabd5a8c490186bdce559c9c75fb",
         "openDataPageLabel": "Open Brampton Transit Data",
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
         "attributionText": "Contains data from Brampton Transit Open Data (CC BY 4.0).",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -205,26 +234,22 @@
       "gtfsFeed": {
         "feedId": "miway",
         "agencyName": "MiWay",
-        "feedName": "MiWay",
         "province": "Ontario",
         "vehicleTypes": [
           "bus"
         ],
         "downloadUrl": "https://www.miapp.ca/GTFS/google_transit.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
         "supportsRealtime": true,
         "openDataPageUrl": "https://www.mississauga.ca/miway-transit/developer-download/",
         "openDataPageLabel": "MiWay Developer Download",
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://www.mississauga.ca/miway-transit/developer-download/",
         "attributionText": "Contains data from MiWay Open GTFS.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -240,26 +265,22 @@
       "gtfsFeed": {
         "feedId": "durham_region_transit",
         "agencyName": "Durham Region Transit",
-        "feedName": "Durham Region Transit",
         "province": "Ontario",
         "vehicleTypes": [
           "bus"
         ],
         "downloadUrl": "https://maps.durham.ca/OpenDataGTFS/GTFS_Durham_TXT.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
         "supportsRealtime": true,
         "openDataPageUrl": "https://www.durham.ca/en/regional-government/open-data.aspx",
         "openDataPageLabel": "Durham Region Open Data",
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://www.durham.ca/en/regional-government/open-data.aspx",
         "attributionText": "Contains data from Durham Region Transit Open Data.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -275,26 +296,18 @@
       "gtfsFeed": {
         "feedId": "milton_transit",
         "agencyName": "Milton Transit",
-        "feedName": "Milton Transit",
         "province": "Ontario",
         "vehicleTypes": [
           "bus"
         ],
         "downloadUrl": "http://metrolinx.tmix.se/gtfs/gtfs-milton.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
         "supportsRealtime": false,
-        "openDataPageUrl": null,
-        "openDataPageLabel": null,
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://www.gotransit.com/en/partner-with-us/software-developers",
         "attributionText": "Contains data from Milton Transit GTFS (Metrolinx host).",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -310,26 +323,20 @@
       "gtfsFeed": {
         "feedId": "oakville_transit",
         "agencyName": "Oakville Transit",
-        "feedName": "Oakville Transit",
         "province": "Ontario",
         "vehicleTypes": [
           "bus"
         ],
         "downloadUrl": "https://www.arcgis.com/sharing/rest/content/items/d78a1c1ad6a940009de8b68839a8f606/data",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
         "supportsRealtime": false,
         "openDataPageUrl": "https://www.oakvilletransit.ca/",
         "openDataPageLabel": "Oakville Transit",
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://www.oakvilletransit.ca/",
         "attributionText": "Contains data from Oakville Transit Open Data.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -345,26 +352,20 @@
       "gtfsFeed": {
         "feedId": "burlington_transit",
         "agencyName": "Burlington Transit",
-        "feedName": "Burlington Transit",
         "province": "Ontario",
         "vehicleTypes": [
           "bus"
         ],
         "downloadUrl": "https://opendata.burlington.ca/gtfs-rt/GTFS_Data.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
         "supportsRealtime": false,
         "openDataPageUrl": "https://www.burlington.ca/en/services-for-you/transit",
         "openDataPageLabel": "Burlington Transit Open Data",
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://opendata.burlington.ca/",
         "attributionText": "Contains data from Burlington Transit Open Data.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -380,27 +381,52 @@
       "gtfsFeed": {
         "feedId": "hsr",
         "agencyName": "Hamilton Street Railway",
-        "feedName": "Hamilton Street Railway",
         "province": "Ontario",
         "vehicleTypes": [
           "bus",
           "lightRail"
         ],
         "downloadUrl": "https://opendata.hamilton.ca/GTFS-Static/google_transit.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
         "supportsRealtime": true,
         "openDataPageUrl": "https://opendata.hamilton.ca/GTFS-Static/",
         "openDataPageLabel": "Hamilton Open Data GTFS",
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://opendata.hamilton.ca/GTFS-Static/",
         "attributionText": "Contains data from Hamilton Street Railway Open Data.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "barrie_transit",
+      "agencyName": "Barrie Transit",
+      "country": "Canada",
+      "region": "Ontario",
+      "city": "Barrie",
+      "gtfsFeed": {
+        "feedId": "barrie_transit",
+        "agencyName": "Barrie Transit",
+        "province": "Ontario",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "http://www.myridebarrie.ca/gtfs/Google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.barrie.ca/services-payments/transportation-parking/barrie-transit/barrie-gtfs",
+        "openDataPageLabel": "Barrie GTFS terms",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.barrie.ca/services-payments/transportation-parking/barrie-transit/barrie-gtfs",
+        "attributionText": "Contains data from Barrie Transit Open Data.",
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -416,26 +442,18 @@
       "gtfsFeed": {
         "feedId": "niagara_region_transit",
         "agencyName": "Niagara Region Transit",
-        "feedName": "Niagara Region Transit",
         "province": "Ontario",
         "vehicleTypes": [
           "bus"
         ],
         "downloadUrl": "http://68.71.24.110/gtfs/GTFSExport.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
         "supportsRealtime": false,
-        "openDataPageUrl": null,
-        "openDataPageLabel": null,
         "requiresUserAcknowledgement": false,
-        "acknowledgementMessage": null,
         "licenseUrl": "https://niagaraopendata.ca/pages/open-government-license-2-0-niagara-region",
         "attributionText": "Contains data from Niagara Region Transit Open Data.",
-        "agencyCount": 0,
-        "routeCount": 0,
-        "stopCount": 0,
-        "lastUpdated": null,
-        "sourceFileName": null,
-        "status": "notDownloaded",
-        "errorMessage": null,
         "parseSchemaVersion": 1
       },
       "lines": [
@@ -448,9 +466,144 @@
       "country": "Canada",
       "region": "Ontario",
       "city": "Ottawa",
+      "gtfsFeed": {
+        "feedId": "oc_transpo",
+        "agencyName": "OC Transpo",
+        "province": "Ontario",
+        "vehicleTypes": [
+          "bus",
+          "lightRail"
+        ],
+        "downloadUrl": "https://oct-gtfs-emasagcnfmcgeham.z01.azurefd.net/public-access/GTFSExport.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": true,
+        "openDataPageUrl": "https://www.octranspo.com/en/plan-your-trip/travel-tools/developers/",
+        "openDataPageLabel": "OC Transpo developer portal",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.octranspo.com/en/plan-your-trip/travel-tools/developers/dev-terms",
+        "attributionText": "Contains data provided by OC Transpo, licensed under the City of Ottawa Open Government Licence.",
+        "parseSchemaVersion": 1
+      },
       "lines": [
-        "Line 1",
-        "Line 2"
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "kingston_transit",
+      "agencyName": "Kingston Transit",
+      "country": "Canada",
+      "region": "Ontario",
+      "city": "Kingston",
+      "gtfsFeed": {
+        "feedId": "kingston_transit",
+        "agencyName": "Kingston Transit",
+        "province": "Ontario",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://api.cityofkingston.ca/gtfs/gtfs.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.cityofkingston.ca/transit/",
+        "openDataPageLabel": "Kingston Transit",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.cityofkingston.ca/government/open-data/",
+        "attributionText": "Contains data from Kingston Transit Open Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "windsor_transit",
+      "agencyName": "Windsor Transit",
+      "country": "Canada",
+      "region": "Ontario",
+      "city": "Windsor",
+      "gtfsFeed": {
+        "feedId": "windsor_transit",
+        "agencyName": "Windsor Transit",
+        "province": "Ontario",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://opendata.citywindsor.ca/Uploads/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://opendata.citywindsor.ca/Details/218",
+        "openDataPageLabel": "Windsor Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "http://www.citywindsor.ca/opendata/Documents/OpenDataTermsofUse.pdf",
+        "attributionText": "Contains data from Windsor Transit Open Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "sault_ste_marie_transit",
+      "agencyName": "Sault Ste. Marie Transit",
+      "country": "Canada",
+      "region": "Ontario",
+      "city": "Sault Ste. Marie",
+      "gtfsFeed": {
+        "feedId": "sault_ste_marie_transit",
+        "agencyName": "Sault Ste. Marie Transit",
+        "province": "Ontario",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "http://metrolinx.tmix.se/gtfs/gtfs-saultstemarie.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.gotransit.com/en/partner-with-us/software-developers",
+        "attributionText": "Contains data from Sault Ste. Marie Transit GTFS (Metrolinx host).",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "thunder_bay_transit",
+      "agencyName": "Thunder Bay Transit",
+      "country": "Canada",
+      "region": "Ontario",
+      "city": "Thunder Bay",
+      "gtfsFeed": {
+        "feedId": "thunder_bay_transit",
+        "agencyName": "Thunder Bay Transit",
+        "province": "Ontario",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "http://api.nextlift.ca/gtfs.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.thunderbay.ca/en/city-services/developers---open-data.aspx",
+        "openDataPageLabel": "Thunder Bay Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.thunderbay.ca/en/city-services/developers---open-data.aspx",
+        "attributionText": "Contains data from Thunder Bay Transit Open Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
       ]
     },
     {

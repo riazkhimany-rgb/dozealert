@@ -3,9 +3,9 @@ import '../models/transit_catalog_agency.dart';
 import '../models/transit_catalog_manifest.dart';
 import '../models/transit_vehicle_type.dart';
 
-/// Shipped catalog snapshot (catalogVersion 1). Also written to assets/transit-catalog.json.
+/// Shipped catalog snapshot. Also written to assets/transit-catalog.json.
 abstract final class TransitCatalogBundled {
-  static const catalogVersion = 1;
+  static const catalogVersion = 3;
 
   static const countries = <String>[
     'Canada',
@@ -111,6 +111,50 @@ abstract final class TransitCatalogBundled {
         licenseUrl:
             'https://www.regionofwaterloo.ca/government-and-council/transparency-and-accountability/open-data/',
         attributionText: 'Contains data from Grand River Transit Open Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'guelph_transit',
+      agencyName: 'Guelph Transit',
+      country: 'Canada',
+      region: 'Ontario',
+      city: 'Guelph',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'guelph_transit',
+        agencyName: 'Guelph Transit',
+        province: 'Ontario',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'https://gismaps.guelph.ca/Pages/GTFS/google_transit.zip',
+        openDataPageUrl:
+            'https://guelph.ca/city-government/plans-and-strategies/digital-innovation/open-data/',
+        openDataPageLabel: 'Guelph Open Data',
+        licenseUrl:
+            'https://guelph.ca/city-government/plans-and-strategies/digital-innovation/open-data/',
+        attributionText: 'Contains data from Guelph Transit Open Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'london_transit',
+      agencyName: 'London Transit',
+      country: 'Canada',
+      region: 'Ontario',
+      city: 'London',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'london_transit',
+        agencyName: 'London Transit',
+        province: 'Ontario',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'https://www.londontransit.ca/gtfsfeed/google_transit.zip',
+        openDataPageUrl: 'https://www.londontransit.ca/open-data/',
+        openDataPageLabel: 'London Transit Open Data',
+        licenseUrl:
+            'https://www.londontransit.ca/open-data/ltcs-open-data-terms-of-use/',
+        attributionText:
+            'Contains data from London Transit Commission Open Data.',
       ),
       lines: ['All routes'],
     ),
@@ -264,6 +308,27 @@ abstract final class TransitCatalogBundled {
       lines: ['All routes'],
     ),
     TransitCatalogAgency(
+      agencyId: 'barrie_transit',
+      agencyName: 'Barrie Transit',
+      country: 'Canada',
+      region: 'Ontario',
+      city: 'Barrie',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'barrie_transit',
+        agencyName: 'Barrie Transit',
+        province: 'Ontario',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl: 'http://www.myridebarrie.ca/gtfs/Google_transit.zip',
+        openDataPageUrl:
+            'https://www.barrie.ca/services-payments/transportation-parking/barrie-transit/barrie-gtfs',
+        openDataPageLabel: 'Barrie GTFS terms',
+        licenseUrl:
+            'https://www.barrie.ca/services-payments/transportation-parking/barrie-transit/barrie-gtfs',
+        attributionText: 'Contains data from Barrie Transit Open Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
       agencyId: 'niagara_region_transit',
       agencyName: 'Niagara Region Transit',
       country: 'Canada',
@@ -287,7 +352,108 @@ abstract final class TransitCatalogBundled {
       country: 'Canada',
       region: 'Ontario',
       city: 'Ottawa',
-      lines: ['Line 1', 'Line 2'],
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'oc_transpo',
+        agencyName: 'OC Transpo',
+        province: 'Ontario',
+        vehicleTypes: [
+          TransitVehicleType.bus,
+          TransitVehicleType.lightRail,
+        ],
+        downloadUrl:
+            'https://oct-gtfs-emasagcnfmcgeham.z01.azurefd.net/public-access/GTFSExport.zip',
+        openDataPageUrl:
+            'https://www.octranspo.com/en/plan-your-trip/travel-tools/developers/',
+        openDataPageLabel: 'OC Transpo developer portal',
+        supportsRealtime: true,
+        licenseUrl:
+            'https://www.octranspo.com/en/plan-your-trip/travel-tools/developers/dev-terms',
+        attributionText:
+            'Contains data provided by OC Transpo, licensed under the City of '
+            'Ottawa Open Government Licence.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'kingston_transit',
+      agencyName: 'Kingston Transit',
+      country: 'Canada',
+      region: 'Ontario',
+      city: 'Kingston',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'kingston_transit',
+        agencyName: 'Kingston Transit',
+        province: 'Ontario',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl: 'https://api.cityofkingston.ca/gtfs/gtfs.zip',
+        openDataPageUrl: 'https://www.cityofkingston.ca/transit/',
+        openDataPageLabel: 'Kingston Transit',
+        licenseUrl: 'https://www.cityofkingston.ca/government/open-data/',
+        attributionText: 'Contains data from Kingston Transit Open Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'windsor_transit',
+      agencyName: 'Windsor Transit',
+      country: 'Canada',
+      region: 'Ontario',
+      city: 'Windsor',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'windsor_transit',
+        agencyName: 'Windsor Transit',
+        province: 'Ontario',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'https://opendata.citywindsor.ca/Uploads/google_transit.zip',
+        openDataPageUrl: 'https://opendata.citywindsor.ca/Details/218',
+        openDataPageLabel: 'Windsor Open Data',
+        licenseUrl:
+            'http://www.citywindsor.ca/opendata/Documents/OpenDataTermsofUse.pdf',
+        attributionText: 'Contains data from Windsor Transit Open Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'sault_ste_marie_transit',
+      agencyName: 'Sault Ste. Marie Transit',
+      country: 'Canada',
+      region: 'Ontario',
+      city: 'Sault Ste. Marie',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'sault_ste_marie_transit',
+        agencyName: 'Sault Ste. Marie Transit',
+        province: 'Ontario',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'http://metrolinx.tmix.se/gtfs/gtfs-saultstemarie.zip',
+        licenseUrl:
+            'https://www.gotransit.com/en/partner-with-us/software-developers',
+        attributionText:
+            'Contains data from Sault Ste. Marie Transit GTFS (Metrolinx host).',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'thunder_bay_transit',
+      agencyName: 'Thunder Bay Transit',
+      country: 'Canada',
+      region: 'Ontario',
+      city: 'Thunder Bay',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'thunder_bay_transit',
+        agencyName: 'Thunder Bay Transit',
+        province: 'Ontario',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl: 'http://api.nextlift.ca/gtfs.zip',
+        openDataPageUrl:
+            'https://www.thunderbay.ca/en/city-services/developers---open-data.aspx',
+        openDataPageLabel: 'Thunder Bay Open Data',
+        licenseUrl:
+            'https://www.thunderbay.ca/en/city-services/developers---open-data.aspx',
+        attributionText: 'Contains data from Thunder Bay Transit Open Data.',
+      ),
+      lines: ['All routes'],
     ),
     TransitCatalogAgency(
       agencyId: 'stm_montreal',

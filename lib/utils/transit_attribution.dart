@@ -34,9 +34,6 @@ abstract final class TransitAttribution {
   }
 
   static const _listOnlyAttribution = <String, String>{
-    'OC Transpo':
-        'OC Transpo line names are listed for convenience. Schedule and stop '
-        'data is subject to City of Ottawa open data terms when you import GTFS.',
     'STM Montreal':
         'STM line names are listed for convenience. Data is subject to STM '
         'open data terms when you import GTFS.',
@@ -55,7 +52,6 @@ abstract final class TransitAttribution {
   };
 
   static const _listOnlyLicenseUrls = <String, String>{
-    'OC Transpo': 'https://open.ottawa.ca/pages/open-data-licence',
     'STM Montreal': 'https://www.stm.info/en/about/developers',
     'Exo': 'https://exo.quebec/fr/a-propos/donnees-ouvertes',
     'TransLink Vancouver':

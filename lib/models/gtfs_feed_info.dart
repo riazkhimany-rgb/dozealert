@@ -1,3 +1,4 @@
+import 'gtfs_capabilities.dart';
 import 'transit_vehicle_type.dart';
 import 'gtfs_parse_schema.dart';
 
@@ -53,6 +54,7 @@ class GtfsFeedInfo {
     required this.vehicleTypes,
     this.downloadUrl,
     this.supportsRealtime = false,
+    this.capabilities = const [],
     this.openDataPageUrl,
     this.openDataPageLabel,
     this.requiresUserAcknowledgement = false,
@@ -75,6 +77,7 @@ class GtfsFeedInfo {
   final List<TransitVehicleType> vehicleTypes;
   final String? downloadUrl;
   final bool supportsRealtime;
+  final List<String> capabilities;
   final String? openDataPageUrl;
   final String? openDataPageLabel;
   final bool requiresUserAcknowledgement;
@@ -110,6 +113,9 @@ class GtfsFeedInfo {
       status == GtfsFeedStatus.updating ||
       (stopCount > 0 && lastUpdated != null);
 
+  bool get supportsRealtimeCapability =>
+      supportsRealtime || GtfsCapabilities.impliesRealtime(resolvedCapabilities);
+
   TransitDataAccessMode get dataAccessMode {
     if (requiresUserAcknowledgement ||
         (!hasDirectDownload && hasOpenDataPage)) {
@@ -134,6 +140,25 @@ class GtfsFeedInfo {
     return hasOpenDataPage ? openDataPageUrl : null;
   }
 
+  /// Capability tokens emitted in the immutable transit catalog.
+  List<String> get resolvedCapabilities {
+    final resolved = <String>{...capabilities};
+    if (hasDirectDownload) {
+      resolved.add(GtfsCapabilities.gtfsStaticDownload);
+    }
+    if (!hasDirectDownload && hasOpenDataPage) {
+      resolved.add(GtfsCapabilities.manualImport);
+    }
+    if (supportsRealtime) {
+      resolved.add(GtfsCapabilities.gtfsRtTripUpdates);
+      resolved.add(GtfsCapabilities.gtfsRtVehiclePositions);
+    }
+    if (requiresUserAcknowledgement) {
+      resolved.add(GtfsCapabilities.requiresUserAcknowledgement);
+    }
+    return resolved.toList()..sort();
+  }
+
   GtfsFeedInfo copyWith({
     String? feedId,
     String? agencyName,
@@ -141,6 +166,7 @@ class GtfsFeedInfo {
     List<TransitVehicleType>? vehicleTypes,
     String? downloadUrl,
     bool? supportsRealtime,
+    List<String>? capabilities,
     String? openDataPageUrl,
     String? openDataPageLabel,
     bool? requiresUserAcknowledgement,
@@ -163,6 +189,7 @@ class GtfsFeedInfo {
       vehicleTypes: vehicleTypes ?? this.vehicleTypes,
       downloadUrl: downloadUrl ?? this.downloadUrl,
       supportsRealtime: supportsRealtime ?? this.supportsRealtime,
+      capabilities: capabilities ?? this.capabilities,
       openDataPageUrl: openDataPageUrl ?? this.openDataPageUrl,
       openDataPageLabel: openDataPageLabel ?? this.openDataPageLabel,
       requiresUserAcknowledgement:
@@ -182,12 +209,49 @@ class GtfsFeedInfo {
     );
   }
 
+  /// Parses immutable catalog metadata (no per-device runtime fields).
+  factory GtfsFeedInfo.fromCatalogJson(Map<String, dynamic> json) {
+    final parsedCapabilities = _capabilitiesFromJson(json['capabilities']);
+    final supportsRealtime = json['supportsRealtime'] as bool? ??
+        GtfsCapabilities.impliesRealtime(parsedCapabilities);
+
+    return GtfsFeedInfo(
+      feedId: json['feedId'] as String,
+      agencyName:
+          json['agencyName'] as String? ?? json['feedName'] as String? ?? '',
+      province: json['province'] as String? ?? 'Ontario',
+      vehicleTypes: json['vehicleTypes'] != null
+          ? TransitVehicleTypeX.listFromJson(json['vehicleTypes'])
+          : TransitVehicleTypeX.listFromJson(json['vehicleType']),
+      downloadUrl: json['downloadUrl'] as String?,
+      supportsRealtime: supportsRealtime,
+      capabilities: parsedCapabilities,
+      openDataPageUrl: json['openDataPageUrl'] as String?,
+      openDataPageLabel: json['openDataPageLabel'] as String?,
+      requiresUserAcknowledgement:
+          json['requiresUserAcknowledgement'] as bool? ?? false,
+      acknowledgementMessage: json['acknowledgementMessage'] as String?,
+      licenseUrl: json['licenseUrl'] as String?,
+      attributionText: json['attributionText'] as String?,
+      parseSchemaVersion: json['parseSchemaVersion'] as int? ??
+          GtfsParseSchema.legacy,
+    );
+  }
+
+  /// Parses on-device feed state from [feed_info.json].
   factory GtfsFeedInfo.fromJson(Map<String, dynamic> json) {
+    if (!_hasRuntimeFields(json)) {
+      return GtfsFeedInfo.fromCatalogJson(json);
+    }
+
     final agencyName =
         json['agencyName'] as String? ?? json['feedName'] as String? ?? '';
     final vehicleTypes = json['vehicleTypes'] != null
         ? TransitVehicleTypeX.listFromJson(json['vehicleTypes'])
         : TransitVehicleTypeX.listFromJson(json['vehicleType']);
+    final parsedCapabilities = _capabilitiesFromJson(json['capabilities']);
+    final supportsRealtime = json['supportsRealtime'] as bool? ??
+        GtfsCapabilities.impliesRealtime(parsedCapabilities);
 
     return GtfsFeedInfo(
       feedId: json['feedId'] as String,
@@ -195,7 +259,8 @@ class GtfsFeedInfo {
       province: json['province'] as String? ?? 'Ontario',
       vehicleTypes: vehicleTypes,
       downloadUrl: json['downloadUrl'] as String?,
-      supportsRealtime: json['supportsRealtime'] as bool? ?? false,
+      supportsRealtime: supportsRealtime,
+      capabilities: parsedCapabilities,
       openDataPageUrl: json['openDataPageUrl'] as String?,
       openDataPageLabel: json['openDataPageLabel'] as String?,
       requiresUserAcknowledgement:
@@ -210,31 +275,44 @@ class GtfsFeedInfo {
           ? null
           : DateTime.parse(json['lastUpdated'] as String),
       sourceFileName: json['sourceFileName'] as String?,
-      status: GtfsFeedStatus.values.firstWhere(
-        (value) => value.name == json['status'],
-        orElse: () => GtfsFeedStatus.downloaded,
-      ),
+      status: json['status'] == null
+          ? GtfsFeedStatus.notDownloaded
+          : GtfsFeedStatus.values.firstWhere(
+              (value) => value.name == json['status'],
+              orElse: () => GtfsFeedStatus.notDownloaded,
+            ),
       errorMessage: json['errorMessage'] as String?,
       parseSchemaVersion: json['parseSchemaVersion'] as int? ??
           GtfsParseSchema.legacy,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  /// Immutable catalog serialization (remote/bundled transit-catalog.json).
+  Map<String, dynamic> toCatalogJson() {
     return {
       'feedId': feedId,
       'agencyName': agencyName,
-      'feedName': agencyName,
       'province': province,
       'vehicleTypes': vehicleTypes.map((type) => type.name).toList(),
-      'downloadUrl': downloadUrl,
-      'supportsRealtime': supportsRealtime,
-      'openDataPageUrl': openDataPageUrl,
-      'openDataPageLabel': openDataPageLabel,
+      if (downloadUrl != null) 'downloadUrl': downloadUrl,
+      'capabilities': resolvedCapabilities,
+      'supportsRealtime': supportsRealtimeCapability,
+      if (openDataPageUrl != null) 'openDataPageUrl': openDataPageUrl,
+      if (openDataPageLabel != null) 'openDataPageLabel': openDataPageLabel,
       'requiresUserAcknowledgement': requiresUserAcknowledgement,
-      'acknowledgementMessage': acknowledgementMessage,
-      'licenseUrl': licenseUrl,
-      'attributionText': attributionText,
+      if (acknowledgementMessage != null)
+        'acknowledgementMessage': acknowledgementMessage,
+      if (licenseUrl != null) 'licenseUrl': licenseUrl,
+      if (attributionText != null) 'attributionText': attributionText,
+      'parseSchemaVersion': parseSchemaVersion,
+    };
+  }
+
+  /// Full on-device serialization ([feed_info.json] in gtfs_cache).
+  Map<String, dynamic> toJson() {
+    return {
+      ...toCatalogJson(),
+      'feedName': agencyName,
       'agencyCount': agencyCount,
       'routeCount': routeCount,
       'stopCount': stopCount,
@@ -242,7 +320,23 @@ class GtfsFeedInfo {
       'sourceFileName': sourceFileName,
       'status': status.name,
       'errorMessage': errorMessage,
-      'parseSchemaVersion': parseSchemaVersion,
     };
+  }
+
+  static List<String> _capabilitiesFromJson(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+    return value.map((entry) => entry.toString()).toList(growable: false);
+  }
+
+  static bool _hasRuntimeFields(Map<String, dynamic> json) {
+    return json.containsKey('status') ||
+        json.containsKey('lastUpdated') ||
+        json.containsKey('stopCount') ||
+        json.containsKey('routeCount') ||
+        json.containsKey('agencyCount') ||
+        json.containsKey('sourceFileName') ||
+        json.containsKey('errorMessage');
   }
 }

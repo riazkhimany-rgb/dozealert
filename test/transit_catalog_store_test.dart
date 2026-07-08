@@ -40,12 +40,24 @@ void main() {
     test('round-trips through JSON', () {
       final manifest = TransitCatalogBundled.manifest;
       final decoded = TransitCatalogManifest.fromJson(
-        jsonDecode(jsonEncode(manifest.toJson())) as Map<String, dynamic>,
+        jsonDecode(jsonEncode(manifest.toCatalogJson())) as Map<String, dynamic>,
       );
 
       expect(decoded.catalogVersion, manifest.catalogVersion);
       expect(decoded.agencies.length, manifest.agencies.length);
       expect(decoded.agencies.first.agencyId, manifest.agencies.first.agencyId);
+    });
+
+    test('catalog JSON excludes per-device runtime fields', () {
+      final catalogJson = TransitCatalogBundled.manifest.toCatalogJson();
+      final encoded = jsonEncode(catalogJson);
+      final feed = catalogJson['agencies'][0]['gtfsFeed'] as Map<String, dynamic>;
+
+      expect(encoded, isNot(contains('"status"')));
+      expect(encoded, isNot(contains('"stopCount"')));
+      expect(encoded, isNot(contains('"lastUpdated"')));
+      expect(feed['capabilities'], isA<List<dynamic>>());
+      expect(feed['capabilities'], isNotEmpty);
     });
 
     test('rejects future schema versions for this app', () {
@@ -92,7 +104,7 @@ void main() {
 
       final store = TransitCatalogStore(
         httpClient: MockClient(
-          (_) async => http.Response(jsonEncode(remote.toJson()), 200),
+          (_) async => http.Response(jsonEncode(remote.toCatalogJson()), 200),
         ),
         refreshInterval: Duration.zero,
       );
@@ -122,7 +134,7 @@ void main() {
       );
 
       SharedPreferences.setMockInitialValues({
-        'transit_catalog_cache_json': jsonEncode(incompatible.toJson()),
+        'transit_catalog_cache_json': jsonEncode(incompatible.toCatalogJson()),
       });
 
       final store = TransitCatalogStore();
@@ -164,7 +176,7 @@ void main() {
 
       final store = TransitCatalogStore(
         httpClient: MockClient(
-          (_) async => http.Response(jsonEncode(remote.toJson()), 200),
+          (_) async => http.Response(jsonEncode(remote.toCatalogJson()), 200),
         ),
         refreshInterval: Duration.zero,
       );
@@ -177,6 +189,93 @@ void main() {
         store.activeManifest.catalogVersion,
         TransitCatalogBundled.catalogVersion,
       );
+    });
+
+    test('forceRefresh returns updated when newer catalog is available', () async {
+      final remote = TransitCatalogManifest(
+        catalogVersion: TransitCatalogBundled.catalogVersion + 1,
+        schemaVersion: TransitCatalogManifest.supportedSchemaVersion,
+        minAppVersion: '1.0.0',
+        countries: TransitCatalogBundled.countries,
+        defaultRegionByCountry: const {
+          'Canada': 'Ontario',
+          'United States': 'New York',
+        },
+        agencies: TransitCatalogBundled.agencies,
+      );
+
+      final store = TransitCatalogStore(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(remote.toCatalogJson()), 200),
+        ),
+      );
+      await store.initialize();
+
+      final result = await store.forceRefresh();
+
+      expect(result.status, TransitCatalogRefreshStatus.updated);
+      expect(result.catalogVersion, remote.catalogVersion);
+      expect(store.activeManifest.catalogVersion, remote.catalogVersion);
+    });
+
+    test('forceRefresh returns upToDate when remote matches active version',
+        () async {
+      final store = TransitCatalogStore(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            jsonEncode(TransitCatalogBundled.manifest.toCatalogJson()),
+            200,
+          ),
+        ),
+      );
+      await store.initialize();
+
+      final result = await store.forceRefresh();
+
+      expect(result.status, TransitCatalogRefreshStatus.upToDate);
+      expect(result.catalogVersion, TransitCatalogBundled.catalogVersion);
+    });
+
+    test('forceRefresh returns incompatible when minAppVersion is too high',
+        () async {
+      final remote = TransitCatalogManifest(
+        catalogVersion: TransitCatalogBundled.catalogVersion + 1,
+        schemaVersion: TransitCatalogManifest.supportedSchemaVersion,
+        minAppVersion: '99.0.0',
+        countries: TransitCatalogBundled.countries,
+        defaultRegionByCountry: const {
+          'Canada': 'Ontario',
+          'United States': 'New York',
+        },
+        agencies: TransitCatalogBundled.agencies,
+      );
+
+      final store = TransitCatalogStore(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(remote.toCatalogJson()), 200),
+        ),
+      );
+      await store.initialize();
+
+      final result = await store.forceRefresh();
+
+      expect(result.status, TransitCatalogRefreshStatus.incompatible);
+      expect(result.minAppVersion, '99.0.0');
+      expect(
+        store.activeManifest.catalogVersion,
+        TransitCatalogBundled.catalogVersion,
+      );
+    });
+
+    test('forceRefresh returns failed when remote is unreachable', () async {
+      final store = TransitCatalogStore(
+        httpClient: MockClient((_) async => throw Exception('offline')),
+      );
+      await store.initialize();
+
+      final result = await store.forceRefresh();
+
+      expect(result.status, TransitCatalogRefreshStatus.failed);
     });
   });
 }

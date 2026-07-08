@@ -31,7 +31,7 @@ class TransitCatalogAgency {
       region: json['region'] as String,
       city: json['city'] as String,
       gtfsFeed: gtfsJson is Map<String, dynamic>
-          ? GtfsFeedInfo.fromJson(gtfsJson)
+          ? GtfsFeedInfo.fromCatalogJson(gtfsJson)
           : null,
       lines: (json['lines'] as List<dynamic>? ?? const [])
           .map((entry) => entry.toString())
@@ -39,15 +39,17 @@ class TransitCatalogAgency {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toCatalogJson() {
     return {
       'agencyId': agencyId,
       'agencyName': agencyName,
       'country': country,
       'region': region,
       'city': city,
-      if (gtfsFeed != null) 'gtfsFeed': gtfsFeed!.toJson(),
+      if (gtfsFeed != null) 'gtfsFeed': gtfsFeed!.toCatalogJson(),
       'lines': lines,
     };
   }
+
+  Map<String, dynamic> toJson() => toCatalogJson();
 }
