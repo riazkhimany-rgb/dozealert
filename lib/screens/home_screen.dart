@@ -172,14 +172,15 @@ class _HomeScreenState extends State<HomeScreen> {
         title: TripUxCopy.pickDestination,
         body:
             'Tap Pick destination, search on the map or drop a pin, '
-            'then set it as your destination.',
+            'then set it as your destination — great for taxi, Uber, '
+            'or any ride where you wake by distance instead of stops.',
       ),
       const HomeTourStepContent(
         id: HomeTourStepId.wakeSettings,
         title: TripUxCopy.changeWakeDistance,
         body:
             'Choose how close to your destination you want to wake up. '
-            'You can change your alert distance anytime before or during a trip.',
+            'Turn off Transit Mode in Settings if you only need distance alerts.',
       ),
       const HomeTourStepContent(
         id: HomeTourStepId.startMonitoring,

@@ -100,18 +100,6 @@ class _TransitSettingsScreenState extends State<TransitSettingsScreen> {
       body: ListView(
         children: [
           SettingsNavTile(
-            icon: Icons.cloud_download_outlined,
-            title: 'Transit stops',
-            subtitle: 'Download and update agency stop lists',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const TransitDataScreen(),
-                ),
-              );
-            },
-          ),
-          SettingsNavTile(
             icon: Icons.directions_transit,
             title: 'Transit Mode',
             subtitle: 'Transit Mode toggle, wake timing, and alert distance',
@@ -152,6 +140,18 @@ class _TransitSettingsScreenState extends State<TransitSettingsScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const FavoriteLinesSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          SettingsNavTile(
+            icon: Icons.cloud_download_outlined,
+            title: 'Transit stops',
+            subtitle: 'Download and update agency stop lists',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TransitDataScreen(),
                 ),
               );
             },

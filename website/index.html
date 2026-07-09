@@ -9,8 +9,8 @@
   <meta name="description" content="DozeAlert wakes you before you reach your destination. Android phone app plus Wear OS companion. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
-  <link rel="icon" type="image/png" href="assets/icon-512.png?v=40">
-  <link rel="stylesheet" href="assets/brand.css?v=40">
+  <link rel="icon" type="image/png" href="assets/icon-512.png?v=42">
+  <link rel="stylesheet" href="assets/brand.css?v=42">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -188,6 +188,7 @@
       max-width: 140px;
       aspect-ratio: 1 / 1;
       object-fit: cover;
+      object-position: center center;
       margin: 0 auto 0.5rem;
       border-radius: 50%;
       border: 2px solid rgba(76, 201, 240, 0.2);
@@ -400,7 +401,7 @@
         </div>
       </details>
       <p class="meta">
-        Phone <span id="app-version">1.1.0+40</span> &middot; Wear <span id="wear-version">1.1.0+100054</span>
+        Phone <span id="app-version">1.1.0+42</span> &middot; Wear <span id="wear-version">1.1.0+100054</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
@@ -409,16 +410,17 @@
       <h2>About</h2>
       <p>
         DozeAlert helps commuters sleep peacefully and arrive confidently.
-        Whether you&rsquo;re on a train, bus, car, or rideshare, DozeAlert monitors
-        your trip and wakes you before you miss your stop.
+        Whether you&rsquo;re on a train, bus, taxi, Uber, or another rideshare,
+        DozeAlert monitors your trip and wakes you before you miss where you need to get off.
       </p>
       <p style="margin-top: 0.75rem;">
         <a class="text-link" href="screenshots/index.html">Take the app tour &rarr;</a>
       </p>
       <ul>
-        <li>Trip-first Home: pick your stop, set wake timing, tap Start</li>
+        <li>Trip-first Home: pick your stop or map destination, set wake timing, tap Start</li>
         <li>Transit Mode with stop countdown for supported public transit agencies</li>
-        <li>Pick a stop on your route, or jump to saved stops and favorite lines</li>
+        <li>Distance-only wake-ups when Transit Mode is off &mdash; taxi, Uber, Lyft, and more</li>
+        <li>Pick a stop on your route, search the map, or jump to saved stops and favorite lines</li>
         <li>Three-step onboarding: welcome, pick transit (multi-agency), guided permissions</li>
         <li>Three-step Home tour plus &ldquo;Ready to sleep?&rdquo; before monitoring begins</li>
         <li><strong>My Trips</strong> tab for saved stops, favorite lines, and recents</li>
@@ -446,8 +448,8 @@
           <figcaption><strong>Set up on phone</strong>Open DozeAlert on your phone to pick a destination.</figcaption>
         </figure>
         <figure class="watch-card">
-          <img class="watch-shot" src="assets/screens/w_shot2.png" width="512" height="512" alt="Wear app ready screen with Start trip button.">
-          <figcaption><strong>Ready when you are</strong>See destination and line, then start from watch or phone.</figcaption>
+          <img class="watch-shot" src="assets/screens/w_shot2_new.png" width="512" height="512" alt="Wear app ready screen with Phone connected, destination, and Start trip.">
+          <figcaption><strong>Ready when you are</strong>Phone connected, destination and line, then start from watch or phone.</figcaption>
         </figure>
         <figure class="watch-card">
           <img class="watch-shot" src="assets/screens/w_shot3.png" width="512" height="512" alt="Wear app monitoring trip with stop countdown.">
@@ -610,6 +612,6 @@
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=40"></script>
+  <script src="assets/brand.js?v=42"></script>
 </body>
 </html>

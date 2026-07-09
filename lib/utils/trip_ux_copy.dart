@@ -166,14 +166,16 @@ abstract final class TripUxCopy {
     return lockPhoneHint;
   }
 
-  static const onboardingIntroTitle = 'Wake up before your stop';
+  static const onboardingIntroTitle = 'Wake up before you arrive';
 
   static const onboardingIntroBody =
       'DozeAlert tracks your ride and sounds an alarm when you are '
-      'approaching your destination.\n\n'
-      'First, choose the transit you ride. Then we\'ll ask for a few '
-      'phone permissions so we can watch your trip while you sleep.\n\n'
-      'After that, pick your stop on Home and tap Start.';
+      'approaching your destination — on transit, in a taxi or rideshare, '
+      'or any trip where GPS works.\n\n'
+      'First, choose the transit you ride (or skip agencies you don\'t use). '
+      'Then we\'ll ask for a few phone permissions so we can watch your trip '
+      'while you sleep.\n\n'
+      'After that, pick your stop or destination on Home and tap Start.';
 
   static const permissionsHeadline = 'Allow what DozeAlert needs';
 

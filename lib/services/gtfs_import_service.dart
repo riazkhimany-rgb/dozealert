@@ -24,6 +24,15 @@ class GtfsImportService {
     return _cacheStore.loadAllFeeds();
   }
 
+  Future<GtfsCachedFeed?> tryLoadFeed(String feedId) async {
+    try {
+      return await _cacheStore.loadFeed(feedId);
+    } catch (error) {
+      AppLog.d('GtfsImportService: feed $feedId not in cache: $error');
+      return null;
+    }
+  }
+
   Future<List<GtfsFeedInfo>> loadFeedInfos() {
     return _cacheStore.loadFeedInfos();
   }

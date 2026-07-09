@@ -26,6 +26,7 @@ class TripStopPickerSheet extends StatelessWidget {
     }
 
     final gtfsProvider = context.read<GtfsProvider>();
+    await gtfsProvider.ensureSelectedFeedLoaded();
     if (!gtfsProvider.canShowStopPicker()) {
       await DestinationPickerSheet.show(context);
       return;

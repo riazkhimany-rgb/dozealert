@@ -122,7 +122,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       gtfsFeedProvider.preloadFeedIfNeeded(
         preloadFeed,
         onComplete: () async {
-          await gtfsProvider.refreshFromCache();
+          await gtfsProvider.loadFeedById(preloadFeed);
           await gtfsProvider.notifyDataUpdated();
         },
       );

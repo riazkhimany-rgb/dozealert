@@ -116,8 +116,21 @@ class GtfsCacheStore {
   }
 
   Future<List<GtfsFeedInfo>> loadFeedInfos() async {
-    final feeds = await loadAllFeeds();
-    return feeds.map((feed) => feed.info).toList(growable: false);
+    try {
+      final cacheDir = await _resolveCacheDirectory();
+      if (!cacheDir.existsSync()) {
+        return const [];
+      }
+
+      final infos = _useBackgroundIsolate
+          ? await compute(loadGtfsFeedInfosInIsolate, cacheDir.path)
+          : loadGtfsFeedInfosInIsolate(cacheDir.path);
+      AppLog.d('GtfsCacheStore: loaded ${infos.length} cached feed infos');
+      return infos;
+    } catch (error) {
+      AppLog.d('GtfsCacheStore: feed infos unavailable: $error');
+      return const [];
+    }
   }
 
   Future<void> deleteFeed(String feedId) async {

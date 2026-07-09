@@ -6,11 +6,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="App tour — phone and Wear OS: onboarding, pick your stop, transit mode, My Trips, watch controls, and wake alerts.">
+  <meta name="description" content="App tour — phone and Wear OS: transit stop countdown, map destinations for taxi and rideshare, My Trips, watch controls, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=40">
-  <link rel="stylesheet" href="../assets/brand.css?v=40">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=42">
+  <link rel="stylesheet" href="../assets/brand.css?v=42">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -163,6 +163,7 @@
       max-width: 220px;
       aspect-ratio: 1 / 1;
       object-fit: cover;
+      object-position: center center;
       border-radius: 50%;
       border: 2px solid rgba(76, 201, 240, 0.2);
       box-shadow:
@@ -287,10 +288,10 @@
       <h1>App tour</h1>
       <p class="tagline">Sleep peacefully. Arrive confidently.</p>
       <p class="lead">
-        DozeAlert is a commute alarm for riders who want to rest without missing their stop.
-        Pick your transit, choose where you get off, tap Start, and get a reliable wake-up on
-        supported public transit agencies. No account required &mdash; trip data
-        stays on your device.
+        DozeAlert is a commute alarm for riders who want to rest without missing where
+        they need to get off. Use Transit Mode on supported agencies with stop-by-stop
+        progress, or turn it off and wake by distance for taxi, Uber, and other rides.
+        No account required &mdash; trip data stays on your device.
       </p>
     </header>
 
@@ -307,7 +308,8 @@
           <h3>Wake up before your stop</h3>
           <p>
             DozeAlert monitors your trip in the background and alerts you as you approach
-            your destination &mdash; on a train, bus, or any ride where GPS works.
+            your destination &mdash; on transit with stop countdown, or by GPS distance
+            for taxi, rideshare, and other trips.
           </p>
           <div class="pill-row">
             <span class="pill">No account</span>
@@ -379,8 +381,8 @@
         <div class="copy">
           <h3>Guided Home tour</h3>
           <p>
-            After setup, a three-step tour on Home shows where to pick your stop, adjust wake
-            timing, and start monitoring. Replay anytime from
+            After setup, a three-step tour on Home shows where to pick your stop or
+            destination, adjust wake timing, and start monitoring. Replay anytime from
             <strong>Settings &rarr; Show app tour</strong>.
           </p>
         </div>
@@ -471,6 +473,54 @@
     </section>
 
     <section class="card">
+      <h2>Rideshare &amp; any commute</h2>
+      <p class="section-lead">
+        Not every trip needs stop counting. Turn Transit Mode off and DozeAlert wakes you
+        by straight-line distance to a map pin or searched address &mdash; ideal for taxi,
+        Uber, Lyft, airport shuttles, and other rides where GPS is the signal.
+      </p>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot31.jpg" width="280" height="606" alt="Pick destination screen with map search for Highway 7 in Markham.">
+        </div>
+        <div class="copy">
+          <h3>Pick any destination</h3>
+          <p>
+            Search an address or landmark, fine-tune the pin on the map, and set your
+            destination. Save frequent drop-offs to <strong>My Trips</strong> for one-tap
+            restarts on your next ride.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot32.jpg" width="280" height="606" alt="Transit Mode settings with Transit Mode off and 500m alert distance.">
+        </div>
+        <div class="copy">
+          <h3>Wake by distance</h3>
+          <p>
+            In <strong>Settings &rarr; Transit &rarr; Transit Mode</strong>, turn Transit Mode
+            off when you do not need stop countdown. Choose your alert distance &mdash; for
+            example 500&nbsp;m before you arrive.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/shot30.jpg" width="280" height="606" alt="Home screen monitoring a trip to Highway 7 with distance remaining and wake by 500m.">
+        </div>
+        <div class="copy">
+          <h3>Distance on Home</h3>
+          <p>
+            While monitoring, Home shows how far you are from your destination and your
+            wake distance. Lock your phone and rest &mdash; the same voice, vibration, and
+            GET READY alerts work for every mode of commute.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
       <h2>My Trips</h2>
       <p class="section-lead">
         Saved stops and favorite lines stay one tap away on the My Trips tab (heart icon).
@@ -508,8 +558,8 @@
         <div class="copy">
           <h3>Settings hub</h3>
           <p>
-            Permissions, theme, transit stop lists, location accuracy, and alarm sound all
-            live under Settings. Trip history and missed trips are under
+            Theme, permissions, transit mode, location accuracy, and alarm sound all
+            live under Settings. Trip history and missed trips are at the bottom under
             <strong>Trip history</strong>.
           </p>
         </div>
@@ -563,14 +613,14 @@
       </div>
       <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot watch-shot" src="../assets/screens/w_shot2.png" width="512" height="512" alt="Wear app ready screen with destination and Start trip.">
+          <img class="shot watch-shot" src="../assets/screens/w_shot2_new.png" width="512" height="512" alt="Wear app ready screen with Phone connected, Bronte GO destination, and Start trip.">
         </div>
         <div class="copy">
           <h3>Ready when you are</h3>
           <p>
-            With a destination set, the watch shows <strong>Ready</strong> and your stop or line.
-            Tap <strong>Start trip</strong> on your wrist or phone &mdash; either starts monitoring
-            on the phone.
+            With a destination set, the watch shows <strong>Phone connected</strong>,
+            <strong>Ready</strong>, and your stop or line. Tap <strong>Start trip</strong>
+            on your wrist or phone &mdash; either starts monitoring on the phone.
           </p>
         </div>
       </div>
@@ -655,6 +705,6 @@
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=40"></script>
+  <script src="../assets/brand.js?v=42"></script>
 </body>
 </html>

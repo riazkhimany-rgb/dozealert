@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/default_gtfs_feeds.dart';
 import '../data/transit_catalog.dart';
 import '../models/agency_detection_result.dart';
 import '../models/destination.dart';
@@ -41,33 +42,84 @@ class GtfsProvider extends ChangeNotifier {
   final MonitoringProvider _monitoringProvider;
   final TransitModeProvider _transitModeProvider;
 
-  bool _initialized = false;
+  bool _seedInitialized = false;
+  final Set<String> _loadedFeedIds = {};
   AgencyDetectionResult? _lastDetection;
   bool _suppressDestinationDetection = false;
+  Future<void>? _preferredFeedLoad;
 
-  bool get isInitialized => _initialized;
+  bool get isInitialized => _seedInitialized;
+  bool get isSelectedFeedLoaded =>
+      _hasLoadedDataForTransitSystem(_transitProvider.preferences.transitSystem);
   AgencyDetectionResult? get lastDetection => _lastDetection;
   List<TransitAgency> get agencies => _gtfsService.agencies;
 
   Future<void> initialize() async {
-    if (_initialized) {
+    if (_seedInitialized) {
       return;
     }
 
-    final cachedFeeds = await _gtfsImportService.loadCache();
-    await _gtfsService.initializeFromFallbackData(cachedFeeds: cachedFeeds);
-    _initialized = true;
-    await _syncDefaultLineIfNeeded();
+    await _gtfsService.initializeFromFallbackData(cachedFeeds: const []);
+    _seedInitialized = true;
     notifyListeners();
 
     final destination = _monitoringProvider.selectedDestination;
-    if (destination != null) {
+    if (_monitoringProvider.isMonitoring && destination != null) {
+      await ensureSelectedFeedLoaded();
       await detectAndApplyForDestination(destination);
+      return;
+    }
+
+    unawaited(loadPreferredFeedInBackground());
+  }
+
+  /// Loads the GTFS cache for the user's selected transit agency when needed.
+  Future<void> ensureSelectedFeedLoaded() async {
+    if (!_seedInitialized) {
+      await initialize();
+    }
+
+    final feedId = _feedIdForTransitSystem(
+      _transitProvider.preferences.transitSystem,
+    );
+    if (feedId == null) {
+      return;
+    }
+
+    await _loadFeedIds({feedId});
+  }
+
+  /// Background-loads the selected agency feed after startup (non-blocking).
+  Future<void> loadPreferredFeedInBackground() async {
+    if (!_seedInitialized) {
+      await initialize();
+    }
+
+    final feedId = _feedIdForTransitSystem(
+      _transitProvider.preferences.transitSystem,
+    );
+    if (feedId == null || _loadedFeedIds.contains(feedId)) {
+      return;
+    }
+
+    _preferredFeedLoad ??= _loadFeedIds({feedId});
+    try {
+      await _preferredFeedLoad;
+    } finally {
+      _preferredFeedLoad = null;
     }
   }
 
+  /// Loads a single cached feed into memory (e.g. after download completes).
+  Future<void> loadFeedById(String feedId) async {
+    if (!_seedInitialized) {
+      await initialize();
+    }
+    await _loadFeedIds({feedId});
+  }
+
   Future<void> notifyDataUpdated() async {
-    if (!_initialized) {
+    if (!_seedInitialized) {
       return;
     }
     await _syncDefaultLineIfNeeded();
@@ -75,15 +127,37 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   Future<void> refreshFromCache() async {
-    final cachedFeeds = await _gtfsImportService.loadCache();
-    await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);
-    _initialized = true;
+    if (!_seedInitialized) {
+      await initialize();
+      return;
+    }
+
+    if (_loadedFeedIds.isEmpty) {
+      return;
+    }
+
+    await _loadFeedIds(Set<String>.from(_loadedFeedIds), forceReload: true);
     await _syncDefaultLineIfNeeded();
     notifyListeners();
   }
 
   Future<void> onFeedDataChanged() async {
-    await refreshFromCache();
+    if (!_seedInitialized) {
+      return;
+    }
+
+    final selectedFeedId = _feedIdForTransitSystem(
+      _transitProvider.preferences.transitSystem,
+    );
+    final feedIds = Set<String>.from(_loadedFeedIds);
+    if (selectedFeedId != null) {
+      feedIds.add(selectedFeedId);
+    }
+    if (feedIds.isEmpty) {
+      return;
+    }
+
+    await _loadFeedIds(feedIds, forceReload: true);
     await notifyDataUpdated();
   }
 
@@ -92,45 +166,39 @@ class GtfsProvider extends ChangeNotifier {
     required String fileName,
     String? feedName,
   }) async {
-    await _gtfsImportService.importZipBytes(
+    final parsed = await _gtfsImportService.importZipBytes(
       bytes: bytes,
       fileName: fileName,
       feedName: feedName,
     );
 
-    if (_initialized) {
-      await _gtfsService.reinitialize(
-        cachedFeeds: await _gtfsImportService.loadCache(),
-      );
+    if (!_seedInitialized) {
+      await initialize();
     }
-
+    await _loadFeedIds({parsed.feedInfo.feedId}, forceReload: true);
     notifyListeners();
   }
 
   Future<void> refreshImportedFeeds() async {
-    final cachedFeeds = await _gtfsImportService.refreshCache();
-    if (_initialized) {
-      await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);
-      notifyListeners();
-    }
+    await refreshFromCache();
   }
 
   List<TransitStop> searchStops(String query) {
-    if (!_initialized) {
+    if (_loadedFeedIds.isEmpty) {
       return const [];
     }
     return _gtfsService.searchStops(query);
   }
 
   List<TransitStopSearchResult> searchStopResults(String query) {
-    if (!_initialized) {
+    if (_loadedFeedIds.isEmpty) {
       return const [];
     }
     return _gtfsService.searchStopResults(query);
   }
 
   bool hasStopsForSelectedLine() {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return false;
     }
 
@@ -145,7 +213,7 @@ class GtfsProvider extends ChangeNotifier {
     required String transitSystem,
     required String lineName,
   }) {
-    if (!_initialized) {
+    if (!_hasLoadedDataForTransitSystem(transitSystem)) {
       return false;
     }
 
@@ -156,7 +224,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   bool hasStopsForSelectedAgency() {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return false;
     }
 
@@ -190,7 +258,7 @@ class GtfsProvider extends ChangeNotifier {
     String transitSystem, {
     TransitVehicleType? vehicleType,
   }) {
-    if (!_initialized) {
+    if (!_hasLoadedDataForTransitSystem(transitSystem)) {
       return const [];
     }
 
@@ -201,7 +269,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   List<TransitVehicleType> vehicleTypesForAgency(String transitSystem) {
-    if (!_initialized) {
+    if (!_hasLoadedDataForTransitSystem(transitSystem)) {
       return const [];
     }
 
@@ -210,7 +278,7 @@ class GtfsProvider extends ChangeNotifier {
 
   /// First selectable line for [transitSystem], preferring GTFS routes when loaded.
   String defaultLineForAgency(String transitSystem) {
-    if (_initialized) {
+    if (_hasLoadedDataForTransitSystem(transitSystem)) {
       final lines = _gtfsService.linesForTransitSystem(transitSystem);
       if (lines.isNotEmpty) {
         return lines.first;
@@ -224,7 +292,7 @@ class GtfsProvider extends ChangeNotifier {
   /// loaded GTFS routes. Falls back to the favorite's stored label when GTFS
   /// is not yet available.
   String favoriteLineLabel(FavoriteTransitLine favorite) {
-    if (_initialized) {
+    if (_hasLoadedDataForTransitSystem(favorite.transitSystem)) {
       return _gtfsService.favoriteLineLabel(
         transitSystem: favorite.transitSystem,
         lineName: favorite.lineName,
@@ -234,7 +302,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   String displayLabelForSelectedLine() {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return _transitProvider.preferences.defaultLine;
     }
 
@@ -260,7 +328,7 @@ class GtfsProvider extends ChangeNotifier {
       }
     }
 
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return null;
     }
 
@@ -294,7 +362,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   List<TransitVehicleType> availableVehicleTypesForSelectedAgency() {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return const [];
     }
 
@@ -307,7 +375,7 @@ class GtfsProvider extends ChangeNotifier {
   /// a valid catalog line. Mirrors the rules used by [_syncDefaultLineIfNeeded]
   /// so UI can avoid clobbering a still-valid line selection.
   bool selectedAgencyHasRouteForLine(String lineRef) {
-    if (!_initialized || lineRef.trim().isEmpty) {
+    if (!_selectedTransitSystemLoaded || lineRef.trim().isEmpty) {
       return false;
     }
 
@@ -327,7 +395,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   bool get usesDynamicLinesForSelectedAgency {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return false;
     }
 
@@ -337,7 +405,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   List<TransitStopSearchResult> searchStopsForSelectedAgency(String query) {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return const [];
     }
 
@@ -348,7 +416,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   List<GtfsStationSearchResult> searchStationsForSelectedAgency(String query) {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return const [];
     }
 
@@ -359,7 +427,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   List<GtfsStation> filterStationsForSelectedLine(String query) {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return const [];
     }
 
@@ -379,7 +447,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   List<TransitStop> filterStopsForSelectedLine(String query) {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return const [];
     }
 
@@ -400,7 +468,7 @@ class GtfsProvider extends ChangeNotifier {
 
   String get selectedLineLabel {
     final preferences = _transitProvider.preferences;
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return '${preferences.transitSystem} · ${preferences.defaultLine}';
     }
 
@@ -411,7 +479,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   Future<void> syncTransitModeRouteForSelectedLine() async {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return;
     }
 
@@ -566,7 +634,7 @@ class GtfsProvider extends ChangeNotifier {
       }
     }
 
-    if (_initialized) {
+    if (_loadedFeedIds.isNotEmpty) {
       final selectedRoute = _selectedRoute();
       if (selectedRoute != null) {
         final onSelectedRoute = _gtfsService.detectDestinationOnRoute(
@@ -618,7 +686,7 @@ class GtfsProvider extends ChangeNotifier {
       return badge == null ? const [] : [badge];
     }
 
-    if (_initialized) {
+    if (_loadedFeedIds.isNotEmpty) {
       final selectedRoute = _selectedRoute();
       if (selectedRoute != null) {
         final onSelectedRoute = _gtfsService.detectDestinationOnRoute(
@@ -762,9 +830,10 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   Future<void> detectAndApplyForDestination(Destination destination) async {
-    if (!_initialized) {
-      return;
+    if (!_seedInitialized) {
+      await initialize();
     }
+    await ensureSelectedFeedLoaded();
 
     if (_monitoringProvider.selectedDestination == null) {
       notifyListeners();
@@ -823,7 +892,7 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   TransitRoute? _selectedRoute() {
-    if (!_initialized) {
+    if (!_selectedTransitSystemLoaded) {
       return null;
     }
 
@@ -851,7 +920,43 @@ class GtfsProvider extends ChangeNotifier {
       return;
     }
 
-    unawaited(detectAndApplyForDestination(destination));
+    unawaited(_detectAndApplyWhenFeedReady(destination));
+  }
+
+  Future<void> _detectAndApplyWhenFeedReady(Destination destination) async {
+    await ensureSelectedFeedLoaded();
+    await detectAndApplyForDestination(destination);
+  }
+
+  bool get _selectedTransitSystemLoaded =>
+      _hasLoadedDataForTransitSystem(_transitProvider.preferences.transitSystem);
+
+  String? _feedIdForTransitSystem(String transitSystem) {
+    return DefaultGtfsFeeds.byAgencyName(transitSystem)?.feedId;
+  }
+
+  bool _hasLoadedDataForTransitSystem(String transitSystem) {
+    final feedId = _feedIdForTransitSystem(transitSystem);
+    return feedId != null && _loadedFeedIds.contains(feedId);
+  }
+
+  Future<void> _loadFeedIds(
+    Set<String> feedIds, {
+    bool forceReload = false,
+  }) async {
+    for (final feedId in feedIds) {
+      if (!forceReload && _loadedFeedIds.contains(feedId)) {
+        continue;
+      }
+
+      final cached = await _gtfsImportService.tryLoadFeed(feedId);
+      if (cached == null) {
+        continue;
+      }
+
+      _gtfsService.mergeCachedFeed(cached);
+      _loadedFeedIds.add(feedId);
+    }
   }
 
   @override

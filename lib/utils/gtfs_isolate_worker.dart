@@ -79,6 +79,45 @@ GtfsCachedFeed loadGtfsCachedFeedInIsolate(String feedDirectoryPath) {
   );
 }
 
+/// Reads only the lightweight `feed_info.json` metadata for each cached feed,
+/// skipping the expensive stops/routes/shapes parse. Used on the startup path
+/// where only feed status and counts are needed.
+List<GtfsFeedInfo> loadGtfsFeedInfosInIsolate(String cacheDirectoryPath) {
+  final cacheDir = Directory(cacheDirectoryPath);
+  if (!cacheDir.existsSync()) {
+    return const [];
+  }
+
+  final infos = <GtfsFeedInfo>[];
+  for (final entity in cacheDir.listSync()) {
+    if (entity is! Directory) {
+      continue;
+    }
+
+    final infoFile = File('${entity.path}/feed_info.json');
+    if (!infoFile.existsSync()) {
+      continue;
+    }
+
+    try {
+      infos.add(
+        GtfsFeedInfo.fromJson(
+          jsonDecode(infoFile.readAsStringSync()) as Map<String, dynamic>,
+        ),
+      );
+    } catch (_) {
+      continue;
+    }
+  }
+
+  infos.sort((a, b) {
+    final aDate = a.lastUpdated ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final bDate = b.lastUpdated ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return bDate.compareTo(aDate);
+  });
+  return infos;
+}
+
 List<GtfsCachedFeed> loadAllGtfsCachedFeedsInIsolate(String cacheDirectoryPath) {
   final cacheDir = Directory(cacheDirectoryPath);
   if (!cacheDir.existsSync()) {

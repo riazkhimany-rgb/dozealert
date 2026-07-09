@@ -30,18 +30,6 @@ class SettingsScreen extends StatelessWidget {
         children: [
           const SettingsSectionHeader(title: 'General'),
           SettingsNavTile(
-            icon: Icons.admin_panel_settings_outlined,
-            title: 'Permissions',
-            subtitle: 'GPS, notifications, battery, and background access',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const PermissionsSettingsScreen(),
-                ),
-              );
-            },
-          ),
-          SettingsNavTile(
             icon: Icons.palette_outlined,
             title: 'Theme',
             subtitle: 'Light, dark, and system appearance',
@@ -49,18 +37,6 @@ class SettingsScreen extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const ThemeSettingsScreen(),
-                ),
-              );
-            },
-          ),
-          SettingsNavTile(
-            icon: Icons.info_outline,
-            title: 'About',
-            subtitle: 'App info, our story, and version',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AboutSettingsScreen(),
                 ),
               );
             },
@@ -80,17 +56,26 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Trip history'),
           SettingsNavTile(
-            key: const Key('settings_trip_history'),
-            icon: Icons.history,
-            title: 'Trip history',
-            subtitle: 'Past trips and missed stops',
+            icon: Icons.admin_panel_settings_outlined,
+            title: 'Permissions',
+            subtitle: 'GPS, notifications, battery, and background access',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const ActivitySettingsScreen(),
+                  builder: (_) => const PermissionsSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          SettingsNavTile(
+            icon: Icons.info_outline,
+            title: 'About',
+            subtitle: 'App info, our story, and version',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AboutSettingsScreen(),
                 ),
               );
             },
@@ -100,7 +85,7 @@ class SettingsScreen extends StatelessWidget {
           SettingsNavTile(
             icon: Icons.directions_transit_outlined,
             title: 'Transit',
-            subtitle: 'Stop lists, transit mode, and transit & line',
+            subtitle: 'Transit mode, agencies, stop lists, and favorite lines',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -133,6 +118,21 @@ class SettingsScreen extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const AlarmSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 32),
+          const SettingsSectionHeader(title: 'Trip history'),
+          SettingsNavTile(
+            key: const Key('settings_trip_history'),
+            icon: Icons.history,
+            title: 'Trip history',
+            subtitle: 'Past trips and missed stops',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ActivitySettingsScreen(),
                 ),
               );
             },
