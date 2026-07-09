@@ -1,8 +1,8 @@
 {
-  "catalogVersion": 3,
+  "catalogVersion": 4,
   "schemaVersion": 1,
   "minAppVersion": "1.1.0",
-  "generatedAt": "2026-07-08T16:54:15.182261Z",
+  "generatedAt": "2026-07-09T22:10:56.157457Z",
   "countries": [
     "Canada",
     "United States"
@@ -647,9 +647,466 @@
       "country": "United States",
       "region": "New York",
       "city": "New York City",
+      "gtfsFeed": {
+        "feedId": "mta",
+        "agencyName": "MTA",
+        "province": "New York",
+        "vehicleTypes": [
+          "subway",
+          "bus",
+          "train"
+        ],
+        "downloadUrl": "https://rrgtfsfeeds.s3.amazonaws.com/gtfs_supplemented.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": true,
+        "openDataPageUrl": "https://www.mta.info/developers",
+        "openDataPageLabel": "MTA Developer Resources",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.mta.info/developers/terms-and-conditions",
+        "attributionText": "Contains data from MTA New York City Transit under the MTA Developer Terms and Conditions.",
+        "parseSchemaVersion": 1
+      },
       "lines": [
-        "Hudson",
-        "Harlem"
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "cta",
+      "agencyName": "CTA",
+      "country": "United States",
+      "region": "Illinois",
+      "city": "Chicago",
+      "gtfsFeed": {
+        "feedId": "cta",
+        "agencyName": "CTA",
+        "province": "Illinois",
+        "vehicleTypes": [
+          "bus",
+          "subway"
+        ],
+        "downloadUrl": "https://www.transitchicago.com/downloads/sch_data/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.transitchicago.com/developers/gtfs/",
+        "openDataPageLabel": "CTA GTFS",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "http://www.transitchicago.com/downloads/sch_data/developers_license_agreement.htm",
+        "attributionText": "Contains data from the Chicago Transit Authority (CTA).",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "mbta",
+      "agencyName": "MBTA",
+      "country": "United States",
+      "region": "Massachusetts",
+      "city": "Boston",
+      "gtfsFeed": {
+        "feedId": "mbta",
+        "agencyName": "MBTA",
+        "province": "Massachusetts",
+        "vehicleTypes": [
+          "train",
+          "bus",
+          "subway",
+          "lightRail"
+        ],
+        "downloadUrl": "https://cdn.mbta.com/MBTA_GTFS.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": true,
+        "openDataPageUrl": "https://www.mbta.com/developers",
+        "openDataPageLabel": "MBTA Developers",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.mass.gov/files/documents/2017/10/27/develop_license_agree_0.pdf",
+        "attributionText": "Contains data from the Massachusetts Bay Transportation Authority (MBTA) under the MassDOT Developers License Agreement.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "septa",
+      "agencyName": "SEPTA",
+      "country": "United States",
+      "region": "Pennsylvania",
+      "city": "Philadelphia",
+      "gtfsFeed": {
+        "feedId": "septa",
+        "agencyName": "SEPTA",
+        "province": "Pennsylvania",
+        "vehicleTypes": [
+          "train",
+          "bus",
+          "subway",
+          "lightRail"
+        ],
+        "downloadUrl": "https://www3.septa.org/developer/gtfs_public.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": true,
+        "openDataPageUrl": "https://www3.septa.org/developer/",
+        "openDataPageLabel": "SEPTA Developer Download",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www3.septa.org/developer/",
+        "attributionText": "Contains data from SEPTA under the SEPTA License Agreement.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "nj_transit",
+      "agencyName": "NJ Transit",
+      "country": "United States",
+      "region": "New Jersey",
+      "city": "New Jersey",
+      "gtfsFeed": {
+        "feedId": "nj_transit",
+        "agencyName": "NJ Transit",
+        "province": "New Jersey",
+        "vehicleTypes": [
+          "bus",
+          "lightRail"
+        ],
+        "downloadUrl": "https://www.njtransit.com/bus_data.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://developer.njtransit.com/",
+        "openDataPageLabel": "NJ Transit Developer Portal",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://developer.njtransit.com/terms/",
+        "attributionText": "Contains data from NJ Transit under the NJ Transit Developer Terms and Conditions.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "nj_transit_rail",
+      "agencyName": "NJ Transit Rail",
+      "country": "United States",
+      "region": "New Jersey",
+      "city": "New Jersey",
+      "gtfsFeed": {
+        "feedId": "nj_transit_rail",
+        "agencyName": "NJ Transit Rail",
+        "province": "New Jersey",
+        "vehicleTypes": [
+          "train"
+        ],
+        "downloadUrl": "https://www.njtransit.com/rail_data.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://developer.njtransit.com/",
+        "openDataPageLabel": "NJ Transit Developer Portal",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://developer.njtransit.com/terms/",
+        "attributionText": "Contains data from NJ Transit under the NJ Transit Developer Terms and Conditions.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "la_metro",
+      "agencyName": "LA Metro",
+      "country": "United States",
+      "region": "California",
+      "city": "Los Angeles",
+      "gtfsFeed": {
+        "feedId": "la_metro",
+        "agencyName": "LA Metro",
+        "province": "California",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://gitlab.com/LACMTA/gtfs_bus/raw/master/gtfs_bus.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://developer.metro.net/gtfs-schedule-data/",
+        "openDataPageLabel": "Metro GTFS Schedule Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://developer.metro.net/",
+        "attributionText": "Contains data from LA Metro (LACMTA) bus service.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "la_metro_rail",
+      "agencyName": "LA Metro Rail",
+      "country": "United States",
+      "region": "California",
+      "city": "Los Angeles",
+      "gtfsFeed": {
+        "feedId": "la_metro_rail",
+        "agencyName": "LA Metro Rail",
+        "province": "California",
+        "vehicleTypes": [
+          "train",
+          "lightRail"
+        ],
+        "downloadUrl": "https://gitlab.com/LACMTA/gtfs_rail/raw/master/gtfs_rail.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://developer.metro.net/gtfs-schedule-data/",
+        "openDataPageLabel": "Metro GTFS Schedule Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://developer.metro.net/",
+        "attributionText": "Contains data from LA Metro (LACMTA) rail service.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "bart",
+      "agencyName": "BART",
+      "country": "United States",
+      "region": "California",
+      "city": "San Francisco Bay Area",
+      "gtfsFeed": {
+        "feedId": "bart",
+        "agencyName": "BART",
+        "province": "California",
+        "vehicleTypes": [
+          "train"
+        ],
+        "downloadUrl": "https://www.bart.gov/dev/schedules/google_transit.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": true,
+        "openDataPageUrl": "https://www.bart.gov/schedules/developers/gtfs",
+        "openDataPageLabel": "BART GTFS",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.bart.gov/schedules/developers/developer-license-agreement",
+        "attributionText": "Contains data from Bay Area Rapid Transit (BART) under the BART Developer License Agreement.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "caltrain",
+      "agencyName": "Caltrain",
+      "country": "United States",
+      "region": "California",
+      "city": "San Francisco Peninsula",
+      "gtfsFeed": {
+        "feedId": "caltrain",
+        "agencyName": "Caltrain",
+        "province": "California",
+        "vehicleTypes": [
+          "train"
+        ],
+        "downloadUrl": "https://data.trilliumtransit.com/gtfs/caltrain-ca-us/caltrain-ca-us.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "http://www.caltrain.com/developer.html",
+        "openDataPageLabel": "Caltrain Developer",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "http://www.caltrain.com/developer.html",
+        "attributionText": "Contains data from Caltrain.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "vta",
+      "agencyName": "VTA",
+      "country": "United States",
+      "region": "California",
+      "city": "Santa Clara Valley",
+      "gtfsFeed": {
+        "feedId": "vta",
+        "agencyName": "VTA",
+        "province": "California",
+        "vehicleTypes": [
+          "bus",
+          "lightRail"
+        ],
+        "downloadUrl": "https://gtfs.vta.org/gtfs_vta.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://gtfs.vta.org/",
+        "openDataPageLabel": "VTA GTFS",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://gtfs.vta.org/",
+        "attributionText": "Contains data from the Santa Clara Valley Transportation Authority (VTA).",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "sound_transit",
+      "agencyName": "Sound Transit",
+      "country": "United States",
+      "region": "Washington",
+      "city": "Seattle",
+      "gtfsFeed": {
+        "feedId": "sound_transit",
+        "agencyName": "Sound Transit",
+        "province": "Washington",
+        "vehicleTypes": [
+          "train",
+          "lightRail",
+          "bus"
+        ],
+        "downloadUrl": "https://gtfs.sound.obaweb.org/prod/40_gtfs.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": true,
+        "openDataPageUrl": "https://www.soundtransit.org/help-contacts/business-information/open-transit-data-otd/otd-downloads",
+        "openDataPageLabel": "Sound Transit Open Transit Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.soundtransit.org/help-contacts/business-information/open-transit-data-otd/transit-data-terms-use",
+        "attributionText": "Contains data from Sound Transit Open Transit Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "trimet",
+      "agencyName": "TriMet",
+      "country": "United States",
+      "region": "Oregon",
+      "city": "Portland",
+      "gtfsFeed": {
+        "feedId": "trimet",
+        "agencyName": "TriMet",
+        "province": "Oregon",
+        "vehicleTypes": [
+          "bus",
+          "train",
+          "lightRail"
+        ],
+        "downloadUrl": "https://developer.trimet.org/schedule/gtfs.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": true,
+        "openDataPageUrl": "https://developer.trimet.org/GTFS.shtml",
+        "openDataPageLabel": "TriMet GTFS",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "http://developer.trimet.org/terms_of_use.shtml",
+        "attributionText": "Contains data from TriMet under the TriMet Terms of Use.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "marta",
+      "agencyName": "MARTA",
+      "country": "United States",
+      "region": "Georgia",
+      "city": "Atlanta",
+      "gtfsFeed": {
+        "feedId": "marta",
+        "agencyName": "MARTA",
+        "province": "Georgia",
+        "vehicleTypes": [
+          "train",
+          "bus"
+        ],
+        "downloadUrl": "https://itsmarta.com/google_transit_feed/google_transit.zip",
+        "capabilities": [
+          "gtfs_rt_trip_updates",
+          "gtfs_rt_vehicle_positions",
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": true,
+        "openDataPageUrl": "https://itsmarta.com/app-developer-resources.aspx",
+        "openDataPageLabel": "MARTA Developer Resources",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://itsmarta.com/app-developer-resources.aspx",
+        "attributionText": "Contains data from the Metropolitan Atlanta Rapid Transit Authority (MARTA).",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "dart",
+      "agencyName": "DART",
+      "country": "United States",
+      "region": "Texas",
+      "city": "Dallas",
+      "gtfsFeed": {
+        "feedId": "dart",
+        "agencyName": "DART",
+        "province": "Texas",
+        "vehicleTypes": [
+          "bus",
+          "lightRail",
+          "train"
+        ],
+        "downloadUrl": "https://www.dart.org/transitdata/latest/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://dart.org/about/about-dart/fixed-route-schedule",
+        "openDataPageLabel": "DART Fixed Route Schedule",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://dart.org/about/about-dart/fixed-route-schedule",
+        "attributionText": "Contains data from Dallas Area Rapid Transit (DART).",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
       ]
     },
     {

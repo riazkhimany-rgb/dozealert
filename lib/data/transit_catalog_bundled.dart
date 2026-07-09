@@ -5,7 +5,7 @@ import '../models/transit_vehicle_type.dart';
 
 /// Shipped catalog snapshot. Also written to assets/transit-catalog.json.
 abstract final class TransitCatalogBundled {
-  static const catalogVersion = 3;
+  static const catalogVersion = 4;
 
   static const countries = <String>[
     'Canada',
@@ -485,7 +485,362 @@ abstract final class TransitCatalogBundled {
       country: 'United States',
       region: 'New York',
       city: 'New York City',
-      lines: ['Hudson', 'Harlem'],
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'mta',
+        agencyName: 'MTA',
+        province: 'New York',
+        vehicleTypes: [
+          TransitVehicleType.subway,
+          TransitVehicleType.bus,
+          TransitVehicleType.train,
+        ],
+        downloadUrl:
+            'https://rrgtfsfeeds.s3.amazonaws.com/gtfs_supplemented.zip',
+        openDataPageUrl: 'https://www.mta.info/developers',
+        openDataPageLabel: 'MTA Developer Resources',
+        supportsRealtime: true,
+        licenseUrl: 'https://www.mta.info/developers/terms-and-conditions',
+        attributionText:
+            'Contains data from MTA New York City Transit under the MTA '
+            'Developer Terms and Conditions.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'cta',
+      agencyName: 'CTA',
+      country: 'United States',
+      region: 'Illinois',
+      city: 'Chicago',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'cta',
+        agencyName: 'CTA',
+        province: 'Illinois',
+        vehicleTypes: [
+          TransitVehicleType.bus,
+          TransitVehicleType.subway,
+        ],
+        downloadUrl:
+            'https://www.transitchicago.com/downloads/sch_data/google_transit.zip',
+        openDataPageUrl: 'https://www.transitchicago.com/developers/gtfs/',
+        openDataPageLabel: 'CTA GTFS',
+        licenseUrl:
+            'http://www.transitchicago.com/downloads/sch_data/developers_license_agreement.htm',
+        attributionText:
+            'Contains data from the Chicago Transit Authority (CTA).',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'mbta',
+      agencyName: 'MBTA',
+      country: 'United States',
+      region: 'Massachusetts',
+      city: 'Boston',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'mbta',
+        agencyName: 'MBTA',
+        province: 'Massachusetts',
+        vehicleTypes: [
+          TransitVehicleType.train,
+          TransitVehicleType.bus,
+          TransitVehicleType.subway,
+          TransitVehicleType.lightRail,
+        ],
+        downloadUrl: 'https://cdn.mbta.com/MBTA_GTFS.zip',
+        openDataPageUrl: 'https://www.mbta.com/developers',
+        openDataPageLabel: 'MBTA Developers',
+        supportsRealtime: true,
+        licenseUrl:
+            'https://www.mass.gov/files/documents/2017/10/27/develop_license_agree_0.pdf',
+        attributionText:
+            'Contains data from the Massachusetts Bay Transportation Authority '
+            '(MBTA) under the MassDOT Developers License Agreement.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'septa',
+      agencyName: 'SEPTA',
+      country: 'United States',
+      region: 'Pennsylvania',
+      city: 'Philadelphia',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'septa',
+        agencyName: 'SEPTA',
+        province: 'Pennsylvania',
+        vehicleTypes: [
+          TransitVehicleType.train,
+          TransitVehicleType.bus,
+          TransitVehicleType.subway,
+          TransitVehicleType.lightRail,
+        ],
+        downloadUrl: 'https://www3.septa.org/developer/gtfs_public.zip',
+        openDataPageUrl: 'https://www3.septa.org/developer/',
+        openDataPageLabel: 'SEPTA Developer Download',
+        supportsRealtime: true,
+        licenseUrl: 'https://www3.septa.org/developer/',
+        attributionText: 'Contains data from SEPTA under the SEPTA License Agreement.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'nj_transit',
+      agencyName: 'NJ Transit',
+      country: 'United States',
+      region: 'New Jersey',
+      city: 'New Jersey',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'nj_transit',
+        agencyName: 'NJ Transit',
+        province: 'New Jersey',
+        vehicleTypes: [
+          TransitVehicleType.bus,
+          TransitVehicleType.lightRail,
+        ],
+        downloadUrl: 'https://www.njtransit.com/bus_data.zip',
+        openDataPageUrl: 'https://developer.njtransit.com/',
+        openDataPageLabel: 'NJ Transit Developer Portal',
+        licenseUrl: 'https://developer.njtransit.com/terms/',
+        attributionText:
+            'Contains data from NJ Transit under the NJ Transit Developer Terms '
+            'and Conditions.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'nj_transit_rail',
+      agencyName: 'NJ Transit Rail',
+      country: 'United States',
+      region: 'New Jersey',
+      city: 'New Jersey',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'nj_transit_rail',
+        agencyName: 'NJ Transit Rail',
+        province: 'New Jersey',
+        vehicleTypes: [TransitVehicleType.train],
+        downloadUrl: 'https://www.njtransit.com/rail_data.zip',
+        openDataPageUrl: 'https://developer.njtransit.com/',
+        openDataPageLabel: 'NJ Transit Developer Portal',
+        licenseUrl: 'https://developer.njtransit.com/terms/',
+        attributionText:
+            'Contains data from NJ Transit under the NJ Transit Developer Terms '
+            'and Conditions.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'la_metro',
+      agencyName: 'LA Metro',
+      country: 'United States',
+      region: 'California',
+      city: 'Los Angeles',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'la_metro',
+        agencyName: 'LA Metro',
+        province: 'California',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'https://gitlab.com/LACMTA/gtfs_bus/raw/master/gtfs_bus.zip',
+        openDataPageUrl: 'https://developer.metro.net/gtfs-schedule-data/',
+        openDataPageLabel: 'Metro GTFS Schedule Data',
+        licenseUrl: 'https://developer.metro.net/',
+        attributionText: 'Contains data from LA Metro (LACMTA) bus service.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'la_metro_rail',
+      agencyName: 'LA Metro Rail',
+      country: 'United States',
+      region: 'California',
+      city: 'Los Angeles',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'la_metro_rail',
+        agencyName: 'LA Metro Rail',
+        province: 'California',
+        vehicleTypes: [
+          TransitVehicleType.train,
+          TransitVehicleType.lightRail,
+        ],
+        downloadUrl:
+            'https://gitlab.com/LACMTA/gtfs_rail/raw/master/gtfs_rail.zip',
+        openDataPageUrl: 'https://developer.metro.net/gtfs-schedule-data/',
+        openDataPageLabel: 'Metro GTFS Schedule Data',
+        licenseUrl: 'https://developer.metro.net/',
+        attributionText: 'Contains data from LA Metro (LACMTA) rail service.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'bart',
+      agencyName: 'BART',
+      country: 'United States',
+      region: 'California',
+      city: 'San Francisco Bay Area',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'bart',
+        agencyName: 'BART',
+        province: 'California',
+        vehicleTypes: [TransitVehicleType.train],
+        downloadUrl:
+            'https://www.bart.gov/dev/schedules/google_transit.zip',
+        openDataPageUrl: 'https://www.bart.gov/schedules/developers/gtfs',
+        openDataPageLabel: 'BART GTFS',
+        supportsRealtime: true,
+        licenseUrl:
+            'https://www.bart.gov/schedules/developers/developer-license-agreement',
+        attributionText:
+            'Contains data from Bay Area Rapid Transit (BART) under the BART '
+            'Developer License Agreement.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'caltrain',
+      agencyName: 'Caltrain',
+      country: 'United States',
+      region: 'California',
+      city: 'San Francisco Peninsula',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'caltrain',
+        agencyName: 'Caltrain',
+        province: 'California',
+        vehicleTypes: [TransitVehicleType.train],
+        downloadUrl:
+            'https://data.trilliumtransit.com/gtfs/caltrain-ca-us/caltrain-ca-us.zip',
+        openDataPageUrl: 'http://www.caltrain.com/developer.html',
+        openDataPageLabel: 'Caltrain Developer',
+        licenseUrl: 'http://www.caltrain.com/developer.html',
+        attributionText: 'Contains data from Caltrain.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'vta',
+      agencyName: 'VTA',
+      country: 'United States',
+      region: 'California',
+      city: 'Santa Clara Valley',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'vta',
+        agencyName: 'VTA',
+        province: 'California',
+        vehicleTypes: [
+          TransitVehicleType.bus,
+          TransitVehicleType.lightRail,
+        ],
+        downloadUrl: 'https://gtfs.vta.org/gtfs_vta.zip',
+        openDataPageUrl: 'https://gtfs.vta.org/',
+        openDataPageLabel: 'VTA GTFS',
+        licenseUrl: 'https://gtfs.vta.org/',
+        attributionText:
+            'Contains data from the Santa Clara Valley Transportation Authority '
+            '(VTA).',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'sound_transit',
+      agencyName: 'Sound Transit',
+      country: 'United States',
+      region: 'Washington',
+      city: 'Seattle',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'sound_transit',
+        agencyName: 'Sound Transit',
+        province: 'Washington',
+        vehicleTypes: [
+          TransitVehicleType.train,
+          TransitVehicleType.lightRail,
+          TransitVehicleType.bus,
+        ],
+        downloadUrl: 'https://gtfs.sound.obaweb.org/prod/40_gtfs.zip',
+        openDataPageUrl:
+            'https://www.soundtransit.org/help-contacts/business-information/open-transit-data-otd/otd-downloads',
+        openDataPageLabel: 'Sound Transit Open Transit Data',
+        supportsRealtime: true,
+        licenseUrl:
+            'https://www.soundtransit.org/help-contacts/business-information/open-transit-data-otd/transit-data-terms-use',
+        attributionText: 'Contains data from Sound Transit Open Transit Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'trimet',
+      agencyName: 'TriMet',
+      country: 'United States',
+      region: 'Oregon',
+      city: 'Portland',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'trimet',
+        agencyName: 'TriMet',
+        province: 'Oregon',
+        vehicleTypes: [
+          TransitVehicleType.bus,
+          TransitVehicleType.train,
+          TransitVehicleType.lightRail,
+        ],
+        downloadUrl: 'https://developer.trimet.org/schedule/gtfs.zip',
+        openDataPageUrl: 'https://developer.trimet.org/GTFS.shtml',
+        openDataPageLabel: 'TriMet GTFS',
+        supportsRealtime: true,
+        licenseUrl: 'http://developer.trimet.org/terms_of_use.shtml',
+        attributionText: 'Contains data from TriMet under the TriMet Terms of Use.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'marta',
+      agencyName: 'MARTA',
+      country: 'United States',
+      region: 'Georgia',
+      city: 'Atlanta',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'marta',
+        agencyName: 'MARTA',
+        province: 'Georgia',
+        vehicleTypes: [
+          TransitVehicleType.train,
+          TransitVehicleType.bus,
+        ],
+        downloadUrl:
+            'https://itsmarta.com/google_transit_feed/google_transit.zip',
+        openDataPageUrl: 'https://itsmarta.com/app-developer-resources.aspx',
+        openDataPageLabel: 'MARTA Developer Resources',
+        supportsRealtime: true,
+        licenseUrl: 'https://itsmarta.com/app-developer-resources.aspx',
+        attributionText:
+            'Contains data from the Metropolitan Atlanta Rapid Transit Authority '
+            '(MARTA).',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'dart',
+      agencyName: 'DART',
+      country: 'United States',
+      region: 'Texas',
+      city: 'Dallas',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'dart',
+        agencyName: 'DART',
+        province: 'Texas',
+        vehicleTypes: [
+          TransitVehicleType.bus,
+          TransitVehicleType.lightRail,
+          TransitVehicleType.train,
+        ],
+        downloadUrl:
+            'https://www.dart.org/transitdata/latest/google_transit.zip',
+        openDataPageUrl:
+            'https://dart.org/about/about-dart/fixed-route-schedule',
+        openDataPageLabel: 'DART Fixed Route Schedule',
+        licenseUrl: 'https://dart.org/about/about-dart/fixed-route-schedule',
+        attributionText:
+            'Contains data from Dallas Area Rapid Transit (DART).',
+      ),
+      lines: ['All routes'],
     ),
     TransitCatalogAgency(
       agencyId: 'amtrak',
