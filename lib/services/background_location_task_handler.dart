@@ -401,7 +401,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       'transitActive': _transitOnRoute,
       'lineLabel': _lineLabel,
       // Propagate concern type so the watch shows the correct message
-      // ("Wrong direction?" / "Route uncertain") while the phone is backgrounded.
+      // ("Wrong direction?") while the phone is backgrounded.
       'tripConcern': _transitHasTripConcern ? _transitTripConcernType : '',
       'wakeStopCount': _transitWakeStopCount,
       'alarmActive': false,

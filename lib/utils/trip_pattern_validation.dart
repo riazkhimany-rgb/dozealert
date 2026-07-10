@@ -51,20 +51,10 @@ TripPatternValidation validateTripOnPattern({
 
   final forward = destination.stopSequence >= current.stopSequence;
   final remaining = (destination.stopSequence - current.stopSequence).abs();
-  final patternLength = pattern.length;
 
   if (directionLocked && !forward && remaining >= _wrongDirectionStopMargin) {
     return TripPatternValidation(
       concern: TripPatternConcern.wrongDirection,
-      directionLabel: directionLabel,
-    );
-  }
-
-  if (directionLocked &&
-      remaining > 8 &&
-      remaining > (patternLength * 0.55).ceil()) {
-    return TripPatternValidation(
-      concern: TripPatternConcern.unlikelyRoute,
       directionLabel: directionLabel,
     );
   }

@@ -4,7 +4,7 @@ import '../models/transit_mode_snapshot.dart';
 import '../models/trip_pattern_concern.dart';
 import '../utils/transit_wake_message.dart';
 
-/// Prominent warning when route confidence is low (wrong direction / unlikely route).
+/// Prominent warning when route confidence is low (wrong direction).
 class TripConcernBanner extends StatelessWidget {
   const TripConcernBanner({
     super.key,
@@ -35,10 +35,6 @@ class TripConcernBanner extends StatelessWidget {
       TripPatternConcern.wrongDirection => (
         'Wrong direction?',
         Icons.swap_horiz_rounded,
-      ),
-      TripPatternConcern.unlikelyRoute => (
-        'Route uncertain',
-        Icons.help_outline_rounded,
       ),
       _ => ('Trip check needed', Icons.warning_amber_rounded),
     };

@@ -23,7 +23,7 @@ val phoneVersionCode =
 val phoneVersionName =
     localProperties.getProperty("flutter.versionName") ?: "1.0.0"
 // Increment when shipping a wear-only update without bumping the phone versionCode.
-val wearVersionExtra = 17
+val wearVersionExtra = 18
 
 android {
     namespace = "app.dozealert.wear"
@@ -89,14 +89,15 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.wear.compose:compose-material3:1.5.0")
-    implementation("androidx.wear.compose:compose-foundation:1.6.2")
-    implementation(files("libs/wear-1.3.0.aar"))
-    implementation(files("libs/wear-ongoing-1.1.0.aar"))
-    implementation("androidx.wear.protolayout:protolayout-material:1.2.0")
-    implementation("androidx.wear.tiles:tiles:1.4.0")
-    implementation("androidx.wear.tiles:tiles-material:1.4.0")
-    implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
-    implementation("com.google.android.gms:play-services-wearable:18.2.0")
+    implementation("androidx.wear.compose:compose-foundation:1.5.0")
+    implementation("androidx.wear:wear:1.4.0")
+    implementation("androidx.wear:wear-ongoing:1.1.0")
+    implementation("androidx.wear.protolayout:protolayout:1.4.1")
+    implementation("androidx.wear.protolayout:protolayout-material:1.4.1")
+    implementation("androidx.wear.protolayout:protolayout-expression:1.4.1")
+    implementation("androidx.wear.tiles:tiles:1.6.1")
+    implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.3.0")
+    implementation("com.google.android.gms:play-services-wearable:20.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.9.0")

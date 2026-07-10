@@ -103,7 +103,7 @@ void main() {
     expect(result.directionLabel, 'finch');
   });
 
-  test('flags unlikely route when too many stops remain', () {
+  test('does not flag a long forward trip as a concern', () {
     final longPattern = List<TransitStop>.generate(
       20,
       (index) => TransitStop(
@@ -124,6 +124,6 @@ void main() {
       directionLocked: true,
     );
 
-    expect(result.concern, TripPatternConcern.unlikelyRoute);
+    expect(result.concern, isNull);
   });
 }

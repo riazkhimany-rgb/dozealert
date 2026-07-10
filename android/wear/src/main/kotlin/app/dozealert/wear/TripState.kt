@@ -61,8 +61,7 @@ data class TripState(
             !hasDestination -> "Set up on phone"
             isMonitoring && hasTripConcern && tripConcern == "wrong_direction" ->
                 "Wrong direction?"
-            isMonitoring && hasTripConcern && tripConcern == "unlikely_route" ->
-                "Route uncertain"
+            isMonitoring && hasTripConcern -> "Trip check needed"
             isMonitoring && gpsStale -> "GPS signal weak"
             isMonitoring && transitActive && stopsRemaining >= 0 -> when (stopsRemaining) {
                 0 -> "At destination stop"
@@ -106,7 +105,6 @@ data class TripState(
     val tripConcernDetail: String
         get() = when (tripConcern) {
             "wrong_direction" -> "Check line & direction on phone."
-            "unlikely_route" -> "Confirm your trip on phone."
             else -> "Check your line and direction on phone."
         }
 

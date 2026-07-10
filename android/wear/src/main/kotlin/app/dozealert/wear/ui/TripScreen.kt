@@ -289,7 +289,6 @@ private fun StatusChip(state: TripState) {
 private fun TripConcernBanner(state: TripState) {
     val title = when (state.tripConcern) {
         "wrong_direction" -> "Wrong direction?"
-        "unlikely_route" -> "Route uncertain"
         else -> "Trip check needed"
     }
 

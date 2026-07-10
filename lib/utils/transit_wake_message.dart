@@ -114,10 +114,6 @@ abstract final class TransitWakeMessage {
         return 'This trip may be the wrong direction on $selectedLine. '
             'Check your line and direction.';
       }
-      if (snapshot.tripConcern == TripPatternConcern.unlikelyRoute) {
-        return 'Stop count looks off for this direction on $selectedLine. '
-            'You may not be on this trip yet.';
-      }
       if (!snapshot.directionLocked && snapshot.directionLabel != null) {
         return 'Locking direction: ${snapshot.directionLabel}…';
       }
