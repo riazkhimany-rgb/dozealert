@@ -14,8 +14,11 @@ import '../providers/location_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/trip_history_provider.dart';
+import '../screens/settings/activity_settings_screen.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/location_format.dart';
+import '../utils/trip_stats.dart';
 import '../utils/trip_ux_copy.dart';
 import '../widgets/add_favorite_destination_sheet.dart';
 import '../widgets/favorite_transit_lines_section.dart';
@@ -41,6 +44,9 @@ class TripsScreen extends StatelessWidget {
         context.select<FavoriteTransitLineProvider, List<FavoriteTransitLine>>(
       (provider) => provider.favorites,
     );
+    final stats = context.select<TripHistoryProvider, TripStats>(
+      (provider) => provider.stats,
+    );
     final hasAnyTrips = recentDestinations.isNotEmpty ||
         favorites.isNotEmpty ||
         lineFavorites.isNotEmpty;
@@ -61,6 +67,10 @@ class TripsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
+          if (stats.hasData) ...[
+            _TripStatsTeaser(stats: stats),
+            const SizedBox(height: 16),
+          ],
           if (!hasAnyTrips)
             HomeCard(
               child: EmptyStateMessage(
@@ -83,6 +93,62 @@ class TripsScreen extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _TripStatsTeaser extends StatelessWidget {
+  const _TripStatsTeaser({required this.stats});
+
+  final TripStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const ActivitySettingsScreen(),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                Icons.insights_outlined,
+                size: 20,
+                color: colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  TripStatsFormat.teaser(stats),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

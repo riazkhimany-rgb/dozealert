@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/trip_history_entry.dart';
 import '../../providers/trip_history_provider.dart';
 import '../../utils/trip_history_format.dart';
+import '../../utils/trip_stats.dart';
 import '../../widgets/home_card.dart';
 
 class ActivitySettingsScreen extends StatelessWidget {
@@ -14,8 +15,12 @@ class ActivitySettingsScreen extends StatelessWidget {
     final history = context.select<TripHistoryProvider, List<TripHistoryEntry>>(
       (provider) => provider.completedTrips,
     );
-    final missedTrips = context.select<TripHistoryProvider, List<TripHistoryEntry>>(
+    final missedTrips =
+        context.select<TripHistoryProvider, List<TripHistoryEntry>>(
       (provider) => provider.missedTrips,
+    );
+    final stats = context.select<TripHistoryProvider, TripStats>(
+      (provider) => provider.stats,
     );
 
     return Scaffold(
@@ -32,6 +37,8 @@ class ActivitySettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          _TripStatsCard(stats: stats),
+          const SizedBox(height: 16),
           _HistorySection(
             title: 'Trip History',
             icon: Icons.route_outlined,
@@ -45,6 +52,157 @@ class ActivitySettingsScreen extends StatelessWidget {
             emptyMessage: 'No missed trips recorded.',
             entries: missedTrips,
             highlightMissed: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TripStatsCard extends StatelessWidget {
+  const _TripStatsCard({required this.stats});
+
+  final TripStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return HomeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const HomeCardHeader(
+            icon: Icons.insights_outlined,
+            title: 'Your trips',
+          ),
+          const SizedBox(height: 12),
+          if (!stats.hasData)
+            Text(
+              'Stats appear after you finish a monitored trip.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            )
+          else ...[
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _StatChip(
+                  label: 'Completed',
+                  value: '${stats.completedCount}',
+                ),
+                _StatChip(
+                  label: 'Missed',
+                  value: '${stats.missedCount}',
+                ),
+                if (stats.successRate != null)
+                  _StatChip(
+                    label: 'Success',
+                    value: TripStatsFormat.successRate(stats.successRate!),
+                  ),
+                _StatChip(
+                  label: 'Streak',
+                  value: '${stats.currentStreak}',
+                ),
+                if (stats.bestStreak > stats.currentStreak)
+                  _StatChip(
+                    label: 'Best streak',
+                    value: '${stats.bestStreak}',
+                  ),
+                _StatChip(
+                  label: 'Alarms',
+                  value: '${stats.alarmsFiredCount}',
+                ),
+                if (stats.timeSlept > Duration.zero)
+                  _StatChip(
+                    label: 'Time slept',
+                    value: TripStatsFormat.duration(stats.timeSlept),
+                  ),
+              ],
+            ),
+            if (stats.topDestinations.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Top destinations',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...stats.topDestinations.map(
+                (dest) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          dest.name,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                      Text(
+                        dest.count == 1 ? '1 trip' : '${dest.count} trips',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              'Time slept is from Start until your wake alarm (or trip end). '
+              'Stopping early still counts as completed.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),

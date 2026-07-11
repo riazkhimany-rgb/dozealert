@@ -95,20 +95,6 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Location'),
-          SettingsNavTile(
-            icon: Icons.my_location_outlined,
-            title: 'Location',
-            subtitle: 'Wake radius, accuracy, battery, background',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const LocationSettingsScreen(),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 32),
           const SettingsSectionHeader(title: 'Alarm'),
           SettingsNavTile(
             icon: Icons.notifications_active_outlined,
@@ -123,12 +109,26 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           const Divider(height: 32),
+          const SettingsSectionHeader(title: 'Location'),
+          SettingsNavTile(
+            icon: Icons.my_location_outlined,
+            title: 'Location',
+            subtitle: 'Wake radius, accuracy, battery, background',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const LocationSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 32),
           const SettingsSectionHeader(title: 'Trip history'),
           SettingsNavTile(
             key: const Key('settings_trip_history'),
             icon: Icons.history,
             title: 'Trip history',
-            subtitle: 'Past trips and missed stops',
+            subtitle: 'Past trips, stats, and missed stops',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

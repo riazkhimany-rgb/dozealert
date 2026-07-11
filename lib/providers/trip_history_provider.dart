@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/trip_history_entry.dart';
 import '../services/trip_history_service.dart';
+import '../utils/trip_stats.dart';
 
 class TripHistoryProvider extends ChangeNotifier {
   TripHistoryProvider(this._tripHistoryService);
@@ -23,6 +24,8 @@ class TripHistoryProvider extends ChangeNotifier {
         .where((entry) => entry.missedTrip)
         .toList(growable: false);
   }
+
+  TripStats get stats => TripStats.fromEntries(_entries);
 
   Future<void> load() async {
     _entries = await _tripHistoryService.loadHistory();
