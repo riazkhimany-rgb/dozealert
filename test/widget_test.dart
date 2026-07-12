@@ -36,8 +36,6 @@ import 'package:dozealert/services/settings_service.dart';
 import 'package:dozealert/services/transit_mode_service.dart';
 import 'package:dozealert/services/transit_catalog_store.dart';
 import 'package:dozealert/services/trip_history_service.dart';
-import 'package:dozealert/utils/app_branding.dart';
-import 'package:dozealert/widgets/branded_app_name.dart';
 import 'package:dozealert/widgets/branded_app_bar_title.dart';
 
 class _FakePathProvider {
@@ -284,7 +282,7 @@ void main() {
 
     expect(find.text('General'), findsOneWidget);
     expect(find.text('Permissions'), findsOneWidget);
-    expect(find.text('Trip history'), findsWidgets);
+    expect(find.text('About'), findsWidgets);
   });
 
   testWidgets('persists and clears selected destination', (

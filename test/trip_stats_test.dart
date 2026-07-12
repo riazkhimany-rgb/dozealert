@@ -133,4 +133,41 @@ void main() {
       '12 trips · 5-trip streak',
     );
   });
+
+  test('filters stats to the selected window', () {
+    final now = DateTime(2026, 7, 12, 12);
+    final recentStart = now.subtract(const Duration(days: 5));
+    final oldStart = now.subtract(const Duration(days: 60));
+    final entries = [
+      TripHistoryEntry(
+        id: 'new',
+        destination: 'Recent',
+        tripStart: recentStart,
+        tripEnd: recentStart.add(const Duration(hours: 1)),
+        alarmTriggered: recentStart.add(const Duration(minutes: 50)),
+      ),
+      TripHistoryEntry(
+        id: 'old',
+        destination: 'Old',
+        tripStart: oldStart,
+        tripEnd: oldStart.add(const Duration(hours: 1)),
+        alarmTriggered: oldStart.add(const Duration(minutes: 40)),
+      ),
+    ];
+
+    final last30 = TripStats.fromEntries(
+      entries,
+      window: TripStatsWindow.days30,
+      now: now,
+    );
+    final last90 = TripStats.fromEntries(
+      entries,
+      window: TripStatsWindow.days90,
+      now: now,
+    );
+
+    expect(last30.completedCount, 1);
+    expect(last30.topDestinations.single.name, 'Recent');
+    expect(last90.completedCount, 2);
+  });
 }

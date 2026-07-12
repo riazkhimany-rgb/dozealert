@@ -12,8 +12,23 @@ abstract final class AppBranding {
   static const String websiteUrl = 'https://dozealert.app';
   static const String apkDownloadUrl =
       'https://dozealert.app/downloads/dozealert-latest.apk';
-  static const String privacyPolicyUrl = 'https://dozealert.app/privacy';
+  static const String privacyPolicyUrl = 'https://dozealert.app/privacy/';
+  static const String feedbackUrl = 'https://dozealert.app/feedback/';
+  static const String transitLicensesUrl =
+      'https://dozealert.app/transit-licenses/';
+  static const String screenshotsUrl = 'https://dozealert.app/screenshots/';
 
+  /// Feedback form with optional prefilled app version (`1.1.0+45`).
+  static String feedbackUrlForApp({
+    required String version,
+    required String buildNumber,
+  }) {
+    return Uri.parse(feedbackUrl).replace(
+      queryParameters: <String, String>{
+        'app_version': '$version+$buildNumber',
+      },
+    ).toString();
+  }
   static const Color midnightBlue = Color(0xFF0D1B2A);
   static const Color cyanAccent = Color(0xFF4CC9F0);
   static const Color white = Color(0xFFFFFFFF);

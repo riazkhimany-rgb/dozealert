@@ -22,14 +22,23 @@ $websiteRoot = Join-Path $projectRoot 'website'
     label   = $versionLabel
 } | ConvertTo-Json -Compress | Set-Content (Join-Path $websiteRoot 'app-version.json') -Encoding utf8
 
-$wearVersionPath = Join-Path $websiteRoot 'wear-version.json'
-if (Test-Path $wearVersionPath) {
-    $wear = Get-Content $wearVersionPath -Raw | ConvertFrom-Json
-    $wear.phoneBuild = [int]$versionCode
-    $wear | ConvertTo-Json -Compress | Set-Content $wearVersionPath -Encoding utf8
+$wearExtra = 18
+$wearGradle = Join-Path $projectRoot 'android/wear/build.gradle.kts'
+if (Test-Path $wearGradle) {
+    $wearText = Get-Content $wearGradle -Raw
+    if ($wearText -match 'wearVersionExtra\s*=\s*(\d+)') {
+        $wearExtra = [int]$Matches[1]
+    }
 }
+$wearBuild = 100000 + [int]$versionCode + $wearExtra
+@{
+    version    = $versionName
+    build      = $wearBuild
+    phoneBuild = [int]$versionCode
+    label      = "$versionName+$wearBuild"
+} | ConvertTo-Json -Compress | Set-Content (Join-Path $websiteRoot 'wear-version.json') -Encoding utf8
 
-Get-ChildItem -Path $websiteRoot -Filter 'index.html' -Recurse -File | ForEach-Object {
+Get-ChildItem -Path $websiteRoot -Filter 'index.asp' -Recurse -File | ForEach-Object {
     $html = Get-Content $_.FullName -Raw
     $html = [regex]::Replace($html, 'brand\.css\?v=\d+', "brand.css?v=$versionCode")
     $html = [regex]::Replace($html, 'brand\.js\?v=\d+', "brand.js?v=$versionCode")
@@ -44,8 +53,13 @@ Get-ChildItem -Path $websiteRoot -Filter 'index.html' -Recurse -File | ForEach-O
             '(<span id="app-version">)[^<]*(</span>)',
             "`${1}$versionLabel`${2}"
         )
+        $html = [regex]::Replace(
+            $html,
+            '(<span id="wear-version">)[^<]*(</span>)',
+            "`${1}$versionName+$wearBuild`${2}"
+        )
     }
     Set-Content -Path $_.FullName -Value $html -Encoding utf8 -NoNewline
 }
 
-Write-Host "Website synced to $versionLabel (asset cache bust ?v=$versionCode)" -ForegroundColor Green
+Write-Host "Website synced to $versionLabel (asset cache bust ?v=$versionCode; wear $versionName+$wearBuild)" -ForegroundColor Green

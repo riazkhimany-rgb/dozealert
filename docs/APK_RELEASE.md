@@ -61,7 +61,7 @@ The landing page lives in `website/`:
 
 ```
 website/
-  index.html          # Download page
+  index.asp           # Download page
   assets/icon-512.png
   downloads/          # Put APK here (not committed to git)
     dozealert-latest.apk
@@ -83,7 +83,7 @@ The `website/` folder includes cache-control config for common hosts (`_headers`
 
 1. Run `.\tools\build_apk.ps1`
 2. Create a GitHub Release and attach `website/downloads/dozealert-1.0.0.apk`
-3. Point the download button in `index.html` to the release asset URL
+3. Point the download button in `index.asp` to the release asset URL
 
 ### Option C — Local preview
 

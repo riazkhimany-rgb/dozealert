@@ -19,8 +19,8 @@ class ActivitySettingsScreen extends StatelessWidget {
         context.select<TripHistoryProvider, List<TripHistoryEntry>>(
       (provider) => provider.missedTrips,
     );
-    final stats = context.select<TripHistoryProvider, TripStats>(
-      (provider) => provider.stats,
+    final entries = context.select<TripHistoryProvider, List<TripHistoryEntry>>(
+      (provider) => provider.entries,
     );
 
     return Scaffold(
@@ -37,7 +37,7 @@ class ActivitySettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _TripStatsCard(stats: stats),
+          _TripStatsCard(entries: entries),
           const SizedBox(height: 16),
           _HistorySection(
             title: 'Trip History',
@@ -59,14 +59,22 @@ class ActivitySettingsScreen extends StatelessWidget {
   }
 }
 
-class _TripStatsCard extends StatelessWidget {
-  const _TripStatsCard({required this.stats});
+class _TripStatsCard extends StatefulWidget {
+  const _TripStatsCard({required this.entries});
 
-  final TripStats stats;
+  final List<TripHistoryEntry> entries;
+
+  @override
+  State<_TripStatsCard> createState() => _TripStatsCardState();
+}
+
+class _TripStatsCardState extends State<_TripStatsCard> {
+  TripStatsWindow _window = TripStatsWindow.defaultWindow;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final stats = TripStats.fromEntries(widget.entries, window: _window);
 
     return HomeCard(
       child: Column(
@@ -77,9 +85,29 @@ class _TripStatsCard extends StatelessWidget {
             title: 'Your trips',
           ),
           const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final window in TripStatsWindow.values)
+                FilterChip(
+                  label: Text(window.label),
+                  selected: _window == window,
+                  onSelected: (_) {
+                    if (_window == window) {
+                      return;
+                    }
+                    setState(() => _window = window);
+                  },
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
           if (!stats.hasData)
             Text(
-              'Stats appear after you finish a monitored trip.',
+              'No trips in the last ${_window.days} days.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -155,8 +183,9 @@ class _TripStatsCard extends StatelessWidget {
             ],
             const SizedBox(height: 8),
             Text(
-              'Time slept is from Start until your wake alarm (or trip end). '
-              'Stopping early still counts as completed.',
+              'Stats cover the last ${_window.days} days. Time slept is from '
+              'Start until your wake alarm (or trip end). Stopping early still '
+              'counts as completed.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 height: 1.35,

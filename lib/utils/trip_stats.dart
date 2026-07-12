@@ -1,5 +1,23 @@
 import '../models/trip_history_entry.dart';
 
+enum TripStatsWindow {
+  days30(30, '30 days'),
+  days90(90, '90 days'),
+  days180(180, '180 days');
+
+  const TripStatsWindow(this.days, this.label);
+
+  final int days;
+  final String label;
+
+  static const TripStatsWindow defaultWindow = TripStatsWindow.days30;
+
+  DateTime startOfWindow({DateTime? now}) {
+    final reference = (now ?? DateTime.now()).toLocal();
+    return reference.subtract(Duration(days: days));
+  }
+}
+
 /// Read-only aggregates from [TripHistoryEntry] lists. Does not write prefs or
 /// touch monitoring / GPS / alarm paths.
 class TripStats {
@@ -46,7 +64,26 @@ class TripStats {
 
   bool get hasData => finishedCount > 0 || alarmsFiredCount > 0;
 
-  static TripStats fromEntries(List<TripHistoryEntry> entries) {
+  static List<TripHistoryEntry> entriesInWindow(
+    List<TripHistoryEntry> entries,
+    TripStatsWindow window, {
+    DateTime? now,
+  }) {
+    final cutoff = window.startOfWindow(now: now);
+    return entries
+        .where((entry) => !entry.tripStart.isBefore(cutoff))
+        .toList(growable: false);
+  }
+
+  static TripStats fromEntries(
+    List<TripHistoryEntry> entries, {
+    TripStatsWindow? window,
+    DateTime? now,
+  }) {
+    final scoped = window == null
+        ? entries
+        : entriesInWindow(entries, window, now: now);
+
     var completed = 0;
     var missed = 0;
     var alarms = 0;
@@ -54,7 +91,7 @@ class TripStats {
     final destinationCounts = <String, int>{};
 
     // Newest-first (how history is stored).
-    for (final entry in entries) {
+    for (final entry in scoped) {
       if (entry.alarmTriggered != null) {
         alarms++;
       }
@@ -81,7 +118,7 @@ class TripStats {
       }
     }
 
-    final (current, best) = _streaks(entries);
+    final (current, best) = _streaks(scoped);
     final top = destinationCounts.entries.toList()
       ..sort((a, b) {
         final byCount = b.value.compareTo(a.value);

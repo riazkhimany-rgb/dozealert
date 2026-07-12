@@ -89,7 +89,7 @@ We do **not** use analytics, advertising, or crash-reporting SDKs in the product
 
 ### 7. Support email
 
-If you email [support@dozealert.app](mailto:support@dozealert.app), we receive whatever you choose to include (your email address, message content, and attachments). We use that only to respond to you.
+If you email [support@dozealert.app](mailto:support@dozealert.app) or use the [website feedback form](https://dozealert.app/feedback/), we receive whatever you choose to include (your email address, message content, and optional screenshots). Feedback is emailed to us via Amazon SES. Google reCAPTCHA may run on the form to reduce spam. We use submissions only to respond and improve the app.
 
 ---
 

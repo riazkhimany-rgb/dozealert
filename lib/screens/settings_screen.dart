@@ -71,7 +71,7 @@ class SettingsScreen extends StatelessWidget {
           SettingsNavTile(
             icon: Icons.info_outline,
             title: 'About',
-            subtitle: 'App info, our story, and version',
+            subtitle: 'App info, feedback, and version',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

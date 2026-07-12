@@ -21,7 +21,7 @@
 - [ ] SHORT_DESCRIPTION.txt
 - [ ] FULL_DESCRIPTION.txt
 - [ ] PRIVACY_POLICY_URL.txt → `https://dozealert.app/privacy` (live before production)
-- [ ] Deploy `website/privacy/index.html` with main site
+- [ ] Deploy `website/privacy/index.asp` with main site
 - [ ] Complete Data safety in Play Console (`play-store/DATA_SAFETY_PLAY_CONSOLE.md`) — include **Fitness info / physical activity**
 
 ## Release Notes

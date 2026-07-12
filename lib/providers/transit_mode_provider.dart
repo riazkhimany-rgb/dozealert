@@ -8,7 +8,6 @@ import '../models/monitoring_state.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
 import '../models/transit_stop.dart';
-import '../models/transit_vehicle_type.dart';
 import '../utils/transit_wake_tuning.dart';
 import '../models/trip_pattern_concern.dart';
 import '../services/activity_recognition_service.dart';

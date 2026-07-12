@@ -104,6 +104,9 @@ class _ActivityRecognitionToggle extends StatelessWidget {
       }
       if (!granted) {
         await settings.setActivityRecognitionEnabled(false);
+        if (!context.mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(TripUxCopy.activityRecognitionPermissionDenied),

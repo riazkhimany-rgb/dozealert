@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿<%
+Response.CodePage = 65001
+Response.Charset = "UTF-8"
+Response.CacheControl = "no-cache"
+Response.AddHeader "Cache-Control", "no-cache, no-store, must-revalidate"
+Response.AddHeader "Pragma", "no-cache"
+Response.Expires = -1
+%><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,8 +16,8 @@
   <meta name="description" content="DozeAlert wakes you before you reach your destination. Android phone app plus Wear OS companion. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
-  <link rel="icon" type="image/png" href="assets/icon-512.png?v=44">
-  <link rel="stylesheet" href="assets/brand.css?v=44">
+  <link rel="icon" type="image/png" href="assets/icon-512.png?v=45">
+  <link rel="stylesheet" href="assets/brand.css?v=45">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -401,7 +408,7 @@
         </div>
       </details>
       <p class="meta">
-        Phone <span id="app-version">1.1.0+44</span> &middot; Wear <span id="wear-version">1.1.0+100062</span>
+        Phone <span id="app-version">1.1.0+45</span> &middot; Wear <span id="wear-version">1.1.0+100063</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
@@ -414,7 +421,7 @@
         DozeAlert monitors your trip and wakes you before you miss where you need to get off.
       </p>
       <p style="margin-top: 0.75rem;">
-        <a class="text-link" href="screenshots/index.html">Take the app tour &rarr;</a>
+        <a class="text-link" href="screenshots/index.asp">Take the app tour &rarr;</a>
       </p>
       <ul>
         <li>Trip-first Home: pick your stop or map destination, set wake timing, tap Start</li>
@@ -461,7 +468,7 @@
         </figure>
       </div>
       <p style="margin-top: 1rem;">
-        <a class="text-link" href="screenshots/index.html#wear">Wear app tour &rarr;</a>
+        <a class="text-link" href="screenshots/index.asp#wear">Wear app tour &rarr;</a>
       </p>
       <div class="note" style="margin-top: 1rem;">
         <strong>Install order:</strong> Install the <strong>phone APK</strong> first, then the
@@ -488,9 +495,9 @@
         We do not show ads, sell personal data, or require an account. Map search uses
         Google Maps Platform; optional transit stop list downloads use public open-data hosts.
         Read the full policy:
-        <a class="text-link" href="privacy/index.html">Privacy Policy</a>.
+        <a class="text-link" href="privacy/index.asp">Privacy Policy</a>.
         Transit open data attributions and licence links:
-        <a class="text-link" href="transit-licenses/index.html">Transit Data Licenses</a>.
+        <a class="text-link" href="transit-licenses/index.asp">Transit Data Licenses</a>.
       </p>
     </section>
 
@@ -526,7 +533,7 @@
           (you can select more than one agency on the same day).
           Stop lists download in the background when available. Then grant permissions
           as prompted (location all the time, notifications, GPS on). See
-          <a class="text-link" href="privacy/index.html">Privacy Policy</a> for details.
+          <a class="text-link" href="privacy/index.asp">Privacy Policy</a> for details.
         </li>
         <li>
           <strong>Open DozeAlert</strong>, tap <strong>Pick your stop</strong> if needed,
@@ -566,18 +573,20 @@
 
     <footer>
       <p class="footer-links">
-        <a href="screenshots/index.html">App tour</a>
+        <a href="screenshots/index.asp">App tour</a>
         <span aria-hidden="true"> &middot; </span>
-        <a href="privacy/index.html">Privacy Policy</a>
+        <a href="privacy/index.asp">Privacy Policy</a>
         <span aria-hidden="true"> &middot; </span>
-        <a href="transit-licenses/index.html">Transit Data Licenses</a>
+        <a href="transit-licenses/index.asp">Transit Data Licenses</a>
+        <span aria-hidden="true"> &middot; </span>
+        <a href="feedback/index.asp">Feedback</a>
         <span aria-hidden="true"> &middot; </span>
         <a href="mailto:support@dozealert.app">support@dozealert.app</a>
       </p>
       <p style="margin-top: 0.75rem;">No ads &middot; No sale of personal data</p>
       <p style="margin-top: 0.5rem; font-size: 0.8125rem; color: var(--muted); max-width: 36rem; margin-left: auto; margin-right: auto;">
         DozeAlert is not affiliated with, endorsed by, or sponsored by any transit agency.
-        Agency names on the <a href="transit-licenses/index.html">Transit Data Licenses</a> page identify open data sources only.
+        Agency names on the <a href="transit-licenses/index.asp">Transit Data Licenses</a> page identify open data sources only.
       </p>
       <p style="margin-top: 0.5rem;">&copy; DozeAlert &middot; Developer: Riaz</p>
     </footer>
@@ -612,6 +621,6 @@
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=44"></script>
+  <script src="assets/brand.js?v=45"></script>
 </body>
 </html>

@@ -96,7 +96,7 @@ version: 1.0.0+1   # versionName+versionCode
 
 Before publishing:
 
-1. Deploy `website/` so **https://dozealert.app/privacy** loads (`website/privacy/index.html`).
+1. Deploy `website/` so **https://dozealert.app/privacy** loads (`website/privacy/index.asp`).
 2. In Play Console → **App content** → **Privacy policy**, enter `https://dozealert.app/privacy`.
 3. Complete **Data safety** using `play-store/DATA_SAFETY_PLAY_CONSOLE.md` (must match `privacy_policy.md`).
 4. Declare **Precise location** (collected + shared with Google for Maps/Places), **no ads**, **no account**.

@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿<%
+Response.CodePage = 65001
+Response.Charset = "UTF-8"
+Response.CacheControl = "no-cache"
+Response.AddHeader "Cache-Control", "no-cache, no-store, must-revalidate"
+Response.AddHeader "Pragma", "no-cache"
+Response.Expires = -1
+%><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,8 +16,8 @@
   <meta name="description" content="DozeAlert transit open data attributions and licence links for supported transit systems.">
   <meta name="theme-color" content="#0D1B2A">
   <title>Transit Data Licenses &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=44">
-  <link rel="stylesheet" href="../assets/brand.css?v=44">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=45">
+  <link rel="stylesheet" href="../assets/brand.css?v=45">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -100,7 +107,7 @@
 <body>
   <div class="glow" aria-hidden="true"></div>
   <div class="wrap">
-    <nav class="nav"><a href="../index.html">&larr; dozealert.app</a></nav>
+    <nav class="nav"><a href="../index.asp">&larr; dozealert.app</a></nav>
 
     <h1>Transit Data Licenses</h1>
     <p class="meta">Open data attributions for transit systems supported in <span class="brand-name"><span class="brand-doze">Doze</span><span class="brand-alert">Alert</span></span></p>
@@ -345,12 +352,12 @@
 
     <footer>
       <p>
-        <a href="../index.html">dozealert.app</a>
-        &middot; <a href="../privacy/index.html">Privacy Policy</a>
+        <a href="../index.asp">dozealert.app</a>
+        &middot; <a href="../privacy/index.asp">Privacy Policy</a>
         &middot; &copy; <span class="brand-name"><span class="brand-doze">Doze</span><span class="brand-alert">Alert</span></span>
       </p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=44"></script>
+  <script src="../assets/brand.js?v=45"></script>
 </body>
 </html>

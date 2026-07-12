@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿<%
+Response.CodePage = 65001
+Response.Charset = "UTF-8"
+Response.CacheControl = "no-cache"
+Response.AddHeader "Cache-Control", "no-cache, no-store, must-revalidate"
+Response.AddHeader "Pragma", "no-cache"
+Response.Expires = -1
+%><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,8 +16,8 @@
   <meta name="description" content="DozeAlert Privacy Policy &mdash; how we handle location, on-device storage, and third-party services.">
   <meta name="theme-color" content="#0D1B2A">
   <title>Privacy Policy &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=44">
-  <link rel="stylesheet" href="../assets/brand.css?v=44">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=45">
+  <link rel="stylesheet" href="../assets/brand.css?v=45">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -141,11 +148,11 @@
 <body>
   <div class="glow" aria-hidden="true"></div>
   <div class="wrap">
-    <nav class="nav"><a href="../index.html">&larr; DozeAlert home</a></nav>
+    <nav class="nav"><a href="../index.asp">&larr; DozeAlert home</a></nav>
 
     <h1>Privacy Policy</h1>
     <p class="meta">
-      Effective date: June 18, 2026 &middot; Last updated: July 5, 2026 &middot; App: DozeAlert (<code>app.dozealert</code>) &middot;
+      Effective date: June 18, 2026 &middot; Last updated: July 12, 2026 &middot; App: DozeAlert (<code>app.dozealert</code>) &middot;
       Developer: Riaz &middot;
       <a href="mailto:support@dozealert.app">support@dozealert.app</a>
     </p>
@@ -326,7 +333,21 @@
       <p>
         DozeAlert is an independent app. We are <strong>not affiliated with, endorsed by, or sponsored by any transit agency</strong>.
         Transit agency names may appear when you choose a supported feed; those references are for identification and open-data attribution only.
-        See <a href="../transit-licenses/index.html">Transit Data Licenses</a>.
+        See <a href="../transit-licenses/index.asp">Transit Data Licenses</a>.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Website feedback</h2>
+      <p>
+        The optional <a href="../feedback/index.asp">feedback form</a> on dozealert.app lets you
+        send a message (and optional screenshots) to <a href="mailto:support@dozealert.app">support@dozealert.app</a>.
+        Submissions are emailed via Amazon SES. We use Google reCAPTCHA to reduce spam; Google may
+        collect device and usage data under
+        <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Google&rsquo;s Privacy Policy</a>
+        and
+        <a href="https://policies.google.com/terms" rel="noopener noreferrer">Terms of Service</a>.
+        Do not include passwords or other sensitive credentials in feedback.
       </p>
     </section>
 
@@ -342,9 +363,9 @@
     </section>
 
     <footer>
-      <p><a href="../index.html">dozealert.app</a> &middot; <a href="../transit-licenses/index.html">Transit Data Licenses</a> &middot; &copy; DozeAlert &middot; App version synced with release build</p>
+      <p><a href="../index.asp">dozealert.app</a> &middot; <a href="../feedback/index.asp">Feedback</a> &middot; <a href="../transit-licenses/index.asp">Transit Data Licenses</a> &middot; &copy; DozeAlert &middot; App version synced with release build</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=44"></script>
+  <script src="../assets/brand.js?v=45"></script>
 </body>
 </html>

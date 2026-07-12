@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿<%
+Response.CodePage = 65001
+Response.Charset = "UTF-8"
+Response.CacheControl = "no-cache"
+Response.AddHeader "Cache-Control", "no-cache, no-store, must-revalidate"
+Response.AddHeader "Pragma", "no-cache"
+Response.Expires = -1
+%><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -6,11 +13,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="App tour — phone and Wear OS: transit stop countdown, map destinations for taxi and rideshare, My Trips, watch controls, and wake alerts.">
+  <meta name="description" content="App tour â€” phone and Wear OS: transit stop countdown, map destinations for taxi and rideshare, My Trips, watch controls, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=44">
-  <link rel="stylesheet" href="../assets/brand.css?v=44">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=45">
+  <link rel="stylesheet" href="../assets/brand.css?v=45">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -281,7 +288,7 @@
 
   <div class="wrap">
     <nav class="nav" aria-label="Breadcrumb">
-      <a href="../index.html">&larr; DozeAlert home</a>
+      <a href="../index.asp">&larr; DozeAlert home</a>
     </nav>
 
     <header>
@@ -696,15 +703,17 @@
 
     <footer>
       <p>
-        <a href="../index.html">Home</a>
+        <a href="../index.asp">Home</a>
         <span aria-hidden="true"> &middot; </span>
-        <a href="../privacy/index.html">Privacy Policy</a>
+        <a href="../privacy/index.asp">Privacy Policy</a>
+        <span aria-hidden="true"> &middot; </span>
+        <a href="../feedback/index.asp">Feedback</a>
         <span aria-hidden="true"> &middot; </span>
         <a href="mailto:support@dozealert.app">support@dozealert.app</a>
       </p>
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=44"></script>
+  <script src="../assets/brand.js?v=45"></script>
 </body>
 </html>

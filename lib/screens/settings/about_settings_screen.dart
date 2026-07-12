@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../utils/app_branding.dart';
+import '../../utils/external_link_launcher.dart';
 import '../../widgets/branded_app_name.dart';
 import '../../widgets/branding_logo.dart';
 import '../../widgets/settings_section_tile.dart';
@@ -33,6 +34,20 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
     setState(() {
       _version = '${info.version}+${info.buildNumber}';
     });
+  }
+
+  Future<void> _openFeedback() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) {
+      return;
+    }
+    await ExternalLinkLauncher.openOrSnackBar(
+      context,
+      AppBranding.feedbackUrlForApp(
+        version: info.version,
+        buildNumber: info.buildNumber,
+      ),
+    );
   }
 
   @override
@@ -81,6 +96,16 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                 ),
               );
             },
+          ),
+          ListTile(
+            leading: Icon(Icons.feedback_outlined, color: colorScheme.primary),
+            title: const Text('Send feedback'),
+            subtitle: Text(
+              'Bugs, ideas, or praise - opens the website form',
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+            trailing: const Icon(Icons.open_in_new),
+            onTap: _openFeedback,
           ),
           const Divider(height: 32),
           const SettingsSectionHeader(title: 'Open Data'),

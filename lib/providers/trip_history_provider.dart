@@ -25,7 +25,11 @@ class TripHistoryProvider extends ChangeNotifier {
         .toList(growable: false);
   }
 
-  TripStats get stats => TripStats.fromEntries(_entries);
+  TripStats get stats =>
+      TripStats.fromEntries(_entries, window: TripStatsWindow.defaultWindow);
+
+  TripStats statsFor(TripStatsWindow window) =>
+      TripStats.fromEntries(_entries, window: window);
 
   Future<void> load() async {
     _entries = await _tripHistoryService.loadHistory();

@@ -84,6 +84,18 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
+                onPressed: () => _launchUrl(
+                  context,
+                  AppBranding.feedbackUrlForApp(
+                    version: version,
+                    buildNumber: buildNumber,
+                  ),
+                ),
+                icon: const Icon(Icons.feedback_outlined),
+                label: const Text('Send feedback'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
                 onPressed: () =>
                     _launchUrl(context, AppBranding.privacyPolicyUrl),
                 icon: const Icon(Icons.language_outlined),

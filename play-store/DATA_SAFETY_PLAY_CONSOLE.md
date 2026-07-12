@@ -114,7 +114,7 @@ Ensure listing text matches required permissions:
 
 ## Before submitting
 
-1. Upload `website/privacy/index.html` with the site so `https://dozealert.app/privacy` loads (includes physical activity disclosure).
+1. Upload `website/privacy/index.asp` with the site so `https://dozealert.app/privacy` loads (includes physical activity disclosure).
 2. Enter the same URL in Play Console **Privacy policy**.
 3. Complete **Data safety** using the table above — include **Fitness info (physical activity)** on Android.
 4. In **App access**, note if testers need instructions (no login required).

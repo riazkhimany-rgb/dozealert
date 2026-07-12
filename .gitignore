@@ -43,6 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
+/android/.gradle/
+android/.tmp-truststore.jks
 
 # Environment variables (API keys)
 .env
@@ -53,6 +56,11 @@ android/key.properties
 
 # Built APKs (host on website / GitHub Releases instead)
 website/downloads/*.apk
+
+# Feedback form secrets (copy from config.example.asp)
+website/feedback/config.asp
+website/feedback/tmp/*
+!website/feedback/tmp/.gitkeep
 
 # Android build artifact (unmerged manifest output)
 base/
