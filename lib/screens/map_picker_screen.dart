@@ -10,6 +10,7 @@ import '../config/env_config.dart';
 import '../providers/destination_history_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../providers/settings_provider.dart';
 import '../providers/transit_provider.dart';
 import '../services/location_service.dart';
 import '../services/place_search_service.dart';
@@ -166,8 +167,13 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     }
 
     if (addToMyTrips) {
+      final includeTransit =
+          context.read<SettingsProvider>().transitModeEnabled;
       await context.read<DestinationHistoryProvider>().addFavoriteItem(
-        context.read<GtfsProvider>().buildFavoriteDestination(destination),
+        context.read<GtfsProvider>().buildFavoriteDestination(
+          destination,
+          includeTransit: includeTransit,
+        ),
       );
       if (!mounted) {
         return;

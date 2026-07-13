@@ -7,7 +7,6 @@ abstract final class AppBranding {
       'DozeAlert helps travelers wake up before reaching their '
       'destination using smart location-based alarms.';
   static const String privacyPolicyAsset = 'privacy_policy.md';
-  static const String githubUrl = 'https://github.com/dozealert/dozealert';
   static const String supportEmail = 'support@dozealert.app';
   static const String websiteUrl = 'https://dozealert.app';
   static const String apkDownloadUrl =

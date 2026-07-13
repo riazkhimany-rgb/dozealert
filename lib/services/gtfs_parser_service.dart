@@ -583,9 +583,37 @@ class GtfsParserService {
 
   String _inferCity(String feedName) {
     final normalized = feedName.toLowerCase();
-    if (normalized.contains('montreal') ||
-        normalized.contains('exo') ||
-        normalized.contains('stm')) {
+    if (normalized.contains('montreal') || normalized.contains('stm')) {
+      return 'Montreal';
+    }
+    if (normalized.contains('laurentides')) {
+      return 'Laurentides';
+    }
+    if (normalized.contains('terrebonne') || normalized.contains('mascouche')) {
+      return 'Terrebonne';
+    }
+    if (normalized.contains('assomption')) {
+      return 'L\'Assomption';
+    }
+    if (normalized.contains('sorel') || normalized.contains('varennes')) {
+      return 'Sorel-Tracy';
+    }
+    if (normalized.contains('richelieu') && normalized.contains('vall')) {
+      return 'Richelieu Valley';
+    }
+    if (normalized.contains('chambly')) {
+      return 'Chambly';
+    }
+    if (normalized.contains('presqu')) {
+      return 'Vaudreuil-Soulanges';
+    }
+    if (normalized.contains('sainte-julie') || normalized.contains('ste-julie')) {
+      return 'Sainte-Julie';
+    }
+    if (normalized.contains('roussillon') || normalized.contains('richelain')) {
+      return 'Roussillon';
+    }
+    if (normalized.contains('exo')) {
       return 'Montreal';
     }
     if (normalized.contains('vancouver') || normalized.contains('translink')) {

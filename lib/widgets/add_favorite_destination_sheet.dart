@@ -8,6 +8,7 @@ import '../models/transit_stop.dart';
 import '../providers/destination_history_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/transit_user_copy.dart';
 import 'stop_picker_sheet.dart';
 import 'accessible_scroll_body.dart';
@@ -169,6 +170,8 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
       hostContext.read<GtfsProvider>().buildFavoriteDestination(
         destination,
         stop: stop,
+        includeTransit: stop != null ||
+            hostContext.read<SettingsProvider>().transitModeEnabled,
       ),
     );
     if (!hostContext.mounted) {

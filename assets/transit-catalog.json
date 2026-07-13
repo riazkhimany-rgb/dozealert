@@ -2,7 +2,7 @@
   "catalogVersion": 5,
   "schemaVersion": 1,
   "minAppVersion": "1.1.0",
-  "generatedAt": "2026-07-13T01:57:57.050781Z",
+  "generatedAt": "2026-07-13T02:09:12.255610Z",
   "countries": [
     "Canada",
     "United States"
@@ -755,14 +755,14 @@
       ]
     },
     {
-      "agencyId": "exo_montreal",
-      "agencyName": "Exo",
+      "agencyId": "exo_trains",
+      "agencyName": "Exo Trains",
       "country": "Canada",
       "region": "Quebec",
       "city": "Montreal",
       "gtfsFeed": {
-        "feedId": "exo_montreal",
-        "agencyName": "Exo",
+        "feedId": "exo_trains",
+        "agencyName": "Exo Trains",
         "province": "Quebec",
         "vehicleTypes": [
           "train"
@@ -776,7 +776,326 @@
         "openDataPageLabel": "Exo Open Data",
         "requiresUserAcknowledgement": false,
         "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
-        "attributionText": "Contains Exo train schedule data from Exo open data. Bus sectors are published as separate feeds on Exo Open Data.",
+        "attributionText": "Contains Exo train schedule data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_laurentides",
+      "agencyName": "Exo Laurentides",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Laurentides",
+      "gtfsFeed": {
+        "feedId": "exo_laurentides",
+        "agencyName": "Exo Laurentides",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/citla/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_terrebonne_mascouche",
+      "agencyName": "Exo Terrebonne-Mascouche",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Terrebonne",
+      "gtfsFeed": {
+        "feedId": "exo_terrebonne_mascouche",
+        "agencyName": "Exo Terrebonne-Mascouche",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/mrclm/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_lassomption",
+      "agencyName": "Exo L'Assomption",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "L'Assomption",
+      "gtfsFeed": {
+        "feedId": "exo_lassomption",
+        "agencyName": "Exo L'Assomption",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/mrclasso/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_sud_ouest",
+      "agencyName": "Exo Sud-Ouest",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Montreal",
+      "gtfsFeed": {
+        "feedId": "exo_sud_ouest",
+        "agencyName": "Exo Sud-Ouest",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/citso/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_sorel_varennes",
+      "agencyName": "Exo Sorel-Varennes",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Sorel-Tracy",
+      "gtfsFeed": {
+        "feedId": "exo_sorel_varennes",
+        "agencyName": "Exo Sorel-Varennes",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/citsv/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_vallee_du_richelieu",
+      "agencyName": "Exo Vallée du Richelieu",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Richelieu Valley",
+      "gtfsFeed": {
+        "feedId": "exo_vallee_du_richelieu",
+        "agencyName": "Exo Vallée du Richelieu",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/citvr/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_le_richelain_roussillon",
+      "agencyName": "Exo Le Richelain-Roussillon",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Roussillon",
+      "gtfsFeed": {
+        "feedId": "exo_le_richelain_roussillon",
+        "agencyName": "Exo Le Richelain-Roussillon",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/lrrs/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_chambly_richelieu_carignan",
+      "agencyName": "Exo Chambly-Richelieu-Carignan",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Chambly",
+      "gtfsFeed": {
+        "feedId": "exo_chambly_richelieu_carignan",
+        "agencyName": "Exo Chambly-Richelieu-Carignan",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/citcrc/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_la_presquile",
+      "agencyName": "Exo La Presqu'île",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Vaudreuil-Soulanges",
+      "gtfsFeed": {
+        "feedId": "exo_la_presquile",
+        "agencyName": "Exo La Presqu'île",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/citpi/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_sainte_julie",
+      "agencyName": "Exo Sainte-Julie",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Sainte-Julie",
+      "gtfsFeed": {
+        "feedId": "exo_sainte_julie",
+        "agencyName": "Exo Sainte-Julie",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/omitsju/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "exo_roussillon",
+      "agencyName": "Exo Roussillon",
+      "country": "Canada",
+      "region": "Quebec",
+      "city": "Roussillon",
+      "gtfsFeed": {
+        "feedId": "exo_roussillon",
+        "agencyName": "Exo Roussillon",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/citrous/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo bus data from Exo open data.",
         "parseSchemaVersion": 1
       },
       "lines": [

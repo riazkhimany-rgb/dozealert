@@ -571,7 +571,9 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   Future<void> selectFavoriteDestination(FavoriteDestination item) async {
-    final appliedFromSavedLine = await _applySavedTransitLine(item);
+    final applyTransit = _transitModeProvider.isEnabled;
+    final appliedFromSavedLine =
+        applyTransit ? await _applySavedTransitLine(item) : false;
     final enriched = enrichDestination(item.destination);
 
     _suppressDestinationDetection = true;
@@ -579,6 +581,11 @@ class GtfsProvider extends ChangeNotifier {
       await _monitoringProvider.setDestination(enriched);
     } finally {
       _suppressDestinationDetection = false;
+    }
+
+    if (!applyTransit) {
+      notifyListeners();
+      return;
     }
 
     if (appliedFromSavedLine) {
@@ -592,7 +599,14 @@ class GtfsProvider extends ChangeNotifier {
   FavoriteDestination buildFavoriteDestination(
     Destination destination, {
     TransitStop? stop,
+    bool includeTransit = true,
   }) {
+    // Distance-mode map pins and address searches should stay address-only.
+    // Never invent transit/line from leftover preferences when nothing matches.
+    if (!includeTransit && stop == null) {
+      return FavoriteDestination(destination: destination);
+    }
+
     final transit = _savedTransitInfoForDestination(
       destination,
       stop: stop,
@@ -606,15 +620,7 @@ class GtfsProvider extends ChangeNotifier {
       );
     }
 
-    final preferences = _transitProvider.preferences;
-    return FavoriteDestination(
-      destination: destination,
-      badges: [
-        '${preferences.transitSystem} · ${preferences.defaultLine}',
-      ],
-      transitSystem: preferences.transitSystem,
-      lineName: preferences.defaultLine,
-    );
+    return FavoriteDestination(destination: destination);
   }
 
   ({String badge, String lineName, String transitSystem})?
@@ -712,8 +718,7 @@ class GtfsProvider extends ChangeNotifier {
       }
     }
 
-    final preferences = _transitProvider.preferences;
-    return ['${preferences.transitSystem} · ${preferences.defaultLine}'];
+    return const [];
   }
 
   Future<bool> _applySavedTransitLine(FavoriteDestination item) async {

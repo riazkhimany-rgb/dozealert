@@ -29,7 +29,12 @@ class ActivitySettingsScreen extends StatelessWidget {
         title: const Text(TripUxCopy.pastTripsTitle),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          8,
+          20,
+          24 + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           Text(
             TripUxCopy.pastTripsIntro,

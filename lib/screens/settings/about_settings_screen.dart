@@ -73,7 +73,9 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
         title: const Text('About'),
       ),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: EdgeInsets.only(
+          bottom: 24 + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(24, 24, 24, 8),
@@ -183,12 +185,6 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           ),
           const Divider(height: 32),
           const SettingsSectionHeader(title: 'More'),
-          ListTile(
-            leading: Icon(Icons.code_outlined, color: colorScheme.primary),
-            title: const Text('GitHub Repository'),
-            trailing: const Icon(Icons.open_in_new),
-            onTap: () => _launchUrl(AppBranding.githubUrl),
-          ),
           ListTile(
             leading: Icon(Icons.mail_outline, color: colorScheme.primary),
             title: const Text('Support'),

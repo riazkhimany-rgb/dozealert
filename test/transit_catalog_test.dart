@@ -73,6 +73,15 @@ void main() {
         'BC Transit Kamloops',
       ]),
     );
+    expect(
+      TransitCatalog.agenciesForRegion('Canada', 'Quebec'),
+      containsAll([
+        'STM Montreal',
+        'Exo Trains',
+        'Exo Laurentides',
+        'Exo Roussillon',
+      ]),
+    );
 
     for (final feedId in [
       'calgary_transit',
@@ -80,7 +89,9 @@ void main() {
       'winnipeg_transit',
       'halifax_transit',
       'stm_montreal',
-      'exo_montreal',
+      'exo_trains',
+      'exo_laurentides',
+      'exo_terrebonne_mascouche',
       'translink_vancouver',
       'bc_transit_victoria',
       'bc_transit_kelowna',

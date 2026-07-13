@@ -63,6 +63,7 @@ class TransitModeProvider extends ChangeNotifier {
 
   bool get isActive => _snapshot.isActive;
   bool get gpsSignalLost => displaySnapshot.gpsStale;
+  bool get isEnabled => _settingsService.settings.transitModeEnabled;
 
   /// Route stops from the user's current stop through the destination, inclusive.
   List<TransitStop> get routeSegmentStops =>
