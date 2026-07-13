@@ -21,13 +21,14 @@ class OnboardingScreen extends StatefulWidget {
   });
 
   /// When true, finishing or skipping returns to the previous screen instead
-  /// of replacing the app root (used from the home first-time setup checklist).
+  /// of replacing the app root (used when reopening setup from Settings).
   final bool popOnComplete;
 
-  static const pageCount = 3;
+  static const pageCount = 4;
   static const introPageIndex = 0;
-  static const agencyPageIndex = 1;
-  static const permissionsPageIndex = 2;
+  static const modePageIndex = 1;
+  static const agencyPageIndex = 2;
+  static const permissionsPageIndex = 3;
   static const lastPageIndex = pageCount - 1;
 
   @override
@@ -40,6 +41,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       GlobalKey<OnboardingPermissionsPageState>();
   final OnboardingService _onboardingService = OnboardingService();
   int _pageIndex = 0;
+  bool? _wantsTransitMode;
   final Set<String> _selectedAgencies = {};
   String? _primaryAgency;
   bool _permissionsReady = false;
@@ -130,13 +132,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
 
     if (skip == true && mounted) {
+      final messenger = ScaffoldMessenger.of(context);
+      await _onboardingService.markComplete();
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        const SnackBar(content: Text(TripUxCopy.onboardingSkipSnackBar)),
+      );
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(builder: (_) => const MainScreen()),
       );
     }
   }
 
+  Future<void> _goToPage(int index) async {
+    await _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
   Future<void> _onPrimaryAction() async {
+    if (_pageIndex == OnboardingScreen.modePageIndex) {
+      if (_wantsTransitMode == null) {
+        return;
+      }
+      await context.read<SettingsProvider>().setTransitModeEnabled(
+            _wantsTransitMode!,
+          );
+      if (!mounted) {
+        return;
+      }
+      if (_wantsTransitMode!) {
+        await _goToPage(OnboardingScreen.agencyPageIndex);
+      } else {
+        await _goToPage(OnboardingScreen.permissionsPageIndex);
+      }
+      return;
+    }
+
     if (_pageIndex == OnboardingScreen.agencyPageIndex &&
         _selectedAgencies.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -169,10 +205,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
 
     if (_pageIndex < OnboardingScreen.lastPageIndex) {
-      await _pageController.nextPage(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
+      await _goToPage(_pageIndex + 1);
       return;
     }
 
@@ -180,6 +213,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   bool get _canPressPrimary {
+    if (_pageIndex == OnboardingScreen.modePageIndex) {
+      return _wantsTransitMode != null;
+    }
     if (_pageIndex == OnboardingScreen.agencyPageIndex) {
       return _selectedAgencies.isNotEmpty && _primaryAgency != null;
     }
@@ -216,6 +252,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         !_permissionsFlowRunning) {
       return 'Finish the remaining steps above, or tap Resume setup.';
     }
+    if (_pageIndex == OnboardingScreen.modePageIndex &&
+        _wantsTransitMode == null) {
+      return 'Choose transit or map-based travel above.';
+    }
     if (_pageIndex == OnboardingScreen.agencyPageIndex &&
         _selectedAgencies.isEmpty) {
       return TransitUserCopy.selectTransitAbove;
@@ -229,6 +269,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return const NeverScrollableScrollPhysics();
     }
     return const PageScrollPhysics();
+  }
+
+  void _onPageChanged(int index) {
+    if (_wantsTransitMode == false &&
+        index == OnboardingScreen.agencyPageIndex) {
+      final target = _pageIndex < index
+          ? OnboardingScreen.permissionsPageIndex
+          : OnboardingScreen.modePageIndex;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _pageController.jumpToPage(target);
+        setState(() => _pageIndex = target);
+      });
+      return;
+    }
+    setState(() => _pageIndex = index);
   }
 
   @override
@@ -254,12 +312,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: PageView(
         controller: _pageController,
         physics: _pagePhysics,
-        onPageChanged: (index) => setState(() => _pageIndex = index),
+        onPageChanged: _onPageChanged,
         children: [
           const _IntroPage(
             title: TripUxCopy.onboardingIntroTitle,
             body: TripUxCopy.onboardingIntroBody,
             useBrandMentions: true,
+          ),
+          _ModeChoicePage(
+            wantsTransitMode: _wantsTransitMode,
+            onChanged: (value) => setState(() => _wantsTransitMode = value),
           ),
           TransitAgencyChoicePage(
             selectedAgencies: _selectedAgencies,
@@ -356,6 +418,135 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeChoicePage extends StatelessWidget {
+  const _ModeChoicePage({
+    required this.wantsTransitMode,
+    required this.onChanged,
+  });
+
+  final bool? wantsTransitMode;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        Text(
+          TripUxCopy.onboardingModeTitle,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          TripUxCopy.onboardingModeBody,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 24),
+        _ModeOptionCard(
+          icon: Icons.directions_transit_outlined,
+          title: TripUxCopy.onboardingModeTransitTitle,
+          subtitle: TripUxCopy.onboardingModeTransitSubtitle,
+          selected: wantsTransitMode == true,
+          onTap: () => onChanged(true),
+        ),
+        const SizedBox(height: 12),
+        _ModeOptionCard(
+          icon: Icons.map_outlined,
+          title: TripUxCopy.onboardingModeDistanceTitle,
+          subtitle: TripUxCopy.onboardingModeDistanceSubtitle,
+          selected: wantsTransitMode == false,
+          onTap: () => onChanged(false),
+        ),
+      ],
+    );
+  }
+}
+
+class _ModeOptionCard extends StatelessWidget {
+  const _ModeOptionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: selected
+          ? colorScheme.primaryContainer.withValues(alpha: 0.55)
+          : colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: selected
+              ? colorScheme.primary
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
+          width: selected ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(icon, color: colorScheme.primary, size: 28),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                selected ? Icons.check_circle : Icons.circle_outlined,
+                color: selected
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
             ],
           ),
         ),

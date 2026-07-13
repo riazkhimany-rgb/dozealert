@@ -1,7 +1,7 @@
 # DozeAlert Privacy Policy
 
 **Effective date:** June 18, 2026  
-**Last updated:** July 7, 2026
+**Last updated:** July 12, 2026
 
 **App:** DozeAlert (`app.dozealert`)  
 **Developer:** Riaz (Creator of DozeAlert)  

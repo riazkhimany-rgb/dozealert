@@ -1,10 +1,8 @@
-Version 1.0.0
+Version 1.1.0
 
-Initial Release
-
-• Smart sleep detection
-• Supports bus, train and car travel
-• Audible alarms and vibration
-• Background monitoring
-• Adjustable sensitivity
-• Battery optimized
+• Transit and distance travel modes
+• Stop-by-stop progress in Transit Mode
+• Background trip monitoring with wake alarms
+• Saved stops, destinations, and favorite lines
+• Past trips and missed-stop history
+• Wear OS companion support

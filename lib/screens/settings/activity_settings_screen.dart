@@ -5,6 +5,7 @@ import '../../models/trip_history_entry.dart';
 import '../../providers/trip_history_provider.dart';
 import '../../utils/trip_history_format.dart';
 import '../../utils/trip_stats.dart';
+import '../../utils/trip_ux_copy.dart';
 import '../../widgets/home_card.dart';
 
 class ActivitySettingsScreen extends StatelessWidget {
@@ -25,13 +26,13 @@ class ActivitySettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trip history'),
+        title: const Text(TripUxCopy.pastTripsTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
           Text(
-            'Past trips and alerts when you missed your stop.',
+            TripUxCopy.pastTripsIntro,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -40,16 +41,18 @@ class ActivitySettingsScreen extends StatelessWidget {
           _TripStatsCard(entries: entries),
           const SizedBox(height: 16),
           _HistorySection(
-            title: 'Trip History',
+            title: TripUxCopy.pastTripsCompletedSection,
+            subtitle: TripUxCopy.pastTripsCompletedSubtitle,
             icon: Icons.route_outlined,
-            emptyMessage: 'Completed trips will appear here.',
+            emptyMessage: TripUxCopy.pastTripsCompletedEmpty,
             entries: history,
           ),
           const SizedBox(height: 16),
           _HistorySection(
-            title: 'Missed Trips',
+            title: TripUxCopy.pastTripsMissedSection,
+            subtitle: TripUxCopy.pastTripsMissedSubtitle,
             icon: Icons.warning_amber_outlined,
-            emptyMessage: 'No missed trips recorded.',
+            emptyMessage: TripUxCopy.pastTripsMissedEmpty,
             entries: missedTrips,
             highlightMissed: true,
           ),
@@ -83,6 +86,14 @@ class _TripStatsCardState extends State<_TripStatsCard> {
           const HomeCardHeader(
             icon: Icons.insights_outlined,
             title: 'Your trips',
+            iconColor: Color(0xFF4CC9F0),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            TripUxCopy.pastTripsStatsSubtitle,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -242,6 +253,7 @@ class _StatChip extends StatelessWidget {
 class _HistorySection extends StatefulWidget {
   const _HistorySection({
     required this.title,
+    required this.subtitle,
     required this.icon,
     required this.emptyMessage,
     required this.entries,
@@ -251,6 +263,7 @@ class _HistorySection extends StatefulWidget {
   static const _collapsedVisibleCount = 1;
 
   final String title;
+  final String subtitle;
   final IconData icon;
   final String emptyMessage;
   final List<TripHistoryEntry> entries;
@@ -282,6 +295,14 @@ class _HistorySectionState extends State<_HistorySection> {
             title: entries.length > 1
                 ? '${widget.title} (${entries.length})'
                 : widget.title,
+            iconColor: const Color(0xFF4CC9F0),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            widget.subtitle,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 12),
           if (entries.isEmpty)

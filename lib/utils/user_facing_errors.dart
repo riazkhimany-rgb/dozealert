@@ -13,7 +13,7 @@ abstract final class UserFacingErrors {
     if (message.contains('zip') ||
         message.contains('archive') ||
         message.contains('invalid') && message.contains('file')) {
-      return 'Invalid GTFS zip file. Choose a valid transit feed archive.';
+      return 'Invalid stop data zip. Choose a valid transit feed archive.';
     }
 
     if (message.contains('404') || message.contains('not found')) {

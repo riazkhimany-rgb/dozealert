@@ -208,7 +208,7 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                'Download GTFS for $_transitSystem to load routes.',
+                TransitUserCopy.downloadStopsToLoadRoutes(_transitSystem),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),

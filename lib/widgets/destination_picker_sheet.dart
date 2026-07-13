@@ -130,9 +130,9 @@ class DestinationPickerSheet extends StatelessWidget {
                 if (transitMode) ...[
                   _PickerOption(
                     icon: Icons.star_outline,
-                    title: 'Saved stops',
+                    title: TripUxCopy.savedStopsTitle,
                     subtitle: favoriteStopCount == 0
-                        ? 'No saved stops yet'
+                        ? TripUxCopy.noSavedStopsYet
                         : '$favoriteStopCount saved stop${favoriteStopCount == 1 ? '' : 's'}',
                     onTap: () {
                       Navigator.of(context).pop();
@@ -141,9 +141,9 @@ class DestinationPickerSheet extends StatelessWidget {
                   ),
                   _PickerOption(
                     icon: Icons.history,
-                    title: 'Recent stops',
+                    title: TripUxCopy.recentStopsTitle,
                     subtitle: recentCount == 0
-                        ? 'No recent stops yet'
+                        ? TripUxCopy.noRecentStopsYet
                         : '$recentCount recent stop${recentCount == 1 ? '' : 's'}',
                     onTap: () {
                       Navigator.of(context).pop();
@@ -161,12 +161,35 @@ class DestinationPickerSheet extends StatelessWidget {
                       FavoriteLinesPickerSheet.show(context);
                     },
                   ),
+                ] else ...[
+                  _PickerOption(
+                    icon: Icons.star_outline,
+                    title: TripUxCopy.savedDestinationsTitle,
+                    subtitle: favoriteStopCount == 0
+                        ? TripUxCopy.noSavedDestinationsYet
+                        : '$favoriteStopCount saved destination${favoriteStopCount == 1 ? '' : 's'}',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      FavoriteStopsPickerSheet.show(context);
+                    },
+                  ),
+                  _PickerOption(
+                    icon: Icons.history,
+                    title: TripUxCopy.recentDestinationsTitle,
+                    subtitle: recentCount == 0
+                        ? TripUxCopy.noRecentDestinationsYet
+                        : '$recentCount recent destination${recentCount == 1 ? '' : 's'}',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      RecentDestinationsPickerSheet.show(context);
+                    },
+                  ),
                 ],
                 if (transitMode && !canPickStop)
                   _PickerOption(
                     icon: Icons.map_outlined,
                     title: 'Search on map',
-                    subtitle: TransitUserCopy.mapPinSubtitle,
+                    subtitle: TransitUserCopy.mapPinSubtitleFallback,
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(

@@ -4,7 +4,7 @@ import '../models/gtfs_feed_info.dart';
 /// User-facing attribution strings for open-data compliance.
 abstract final class TransitAttribution {
   static const bundledPrefix =
-      'Download GTFS for the latest agency data. ';
+      'Download stop lists for the latest agency data. ';
 
   static GtfsFeedInfo? feedForAgency(String agencyName) {
     return TransitCatalog.feedByAgencyName(agencyName);
@@ -34,28 +34,15 @@ abstract final class TransitAttribution {
   }
 
   static const _listOnlyAttribution = <String, String>{
-    'STM Montreal':
-        'STM line names are listed for convenience. Data is subject to STM '
-        'open data terms when you import GTFS.',
-    'Exo':
-        'Exo line names are listed for convenience. Data is subject to Exo '
-        'open data terms when you import GTFS.',
-    'TransLink Vancouver':
-        'TransLink line names are listed for convenience. Data is subject to '
-        'TransLink open data terms when you import GTFS.',
     'MTA':
         'MTA line names are listed for convenience. Data is subject to MTA '
-        'open data terms when you import GTFS.',
+        'open data terms when you import stop data.',
     'Amtrak':
         'Amtrak line names are listed for convenience. Data is subject to '
-        'Amtrak open data terms when you import GTFS.',
+        'Amtrak open data terms when you import stop data.',
   };
 
   static const _listOnlyLicenseUrls = <String, String>{
-    'STM Montreal': 'https://www.stm.info/en/about/developers',
-    'Exo': 'https://exo.quebec/fr/a-propos/donnees-ouvertes',
-    'TransLink Vancouver':
-        'https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs/gtfs-data',
     'MTA': 'https://www.mta.info/developers/developer-data-terms',
     'Amtrak': 'https://www.amtrak.com/developer-resources',
   };

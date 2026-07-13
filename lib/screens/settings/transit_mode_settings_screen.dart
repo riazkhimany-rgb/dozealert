@@ -91,7 +91,7 @@ class TransitModeSettingsScreen extends StatelessWidget {
               transitModeEnabled
                   ? 'For map-pin destinations or when you are not on a transit route, '
                       'DozeAlert uses straight-line distance instead of stops. '
-                      'GTFS stop destinations wake by stops once you are on the route.'
+                      'Transit stop destinations wake by stops once you are on the route.'
                   : 'With Transit Mode off, DozeAlert always wakes you by straight-line '
                       'distance to your destination.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),

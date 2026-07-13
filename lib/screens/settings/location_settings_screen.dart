@@ -11,7 +11,7 @@ import '../../services/app_permissions_service.dart';
 import '../../services/background_monitor_service.dart';
 import '../../utils/trip_ux_copy.dart';
 import '../../widgets/settings_section_tile.dart';
-import '../../widgets/wake_radius_dropdown.dart';
+import 'transit_mode_settings_screen.dart';
 
 class LocationSettingsScreen extends StatelessWidget {
   const LocationSettingsScreen({super.key});
@@ -37,11 +37,22 @@ class LocationSettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          const SettingsSectionHeader(title: 'Wake Radius'),
-          const WakeRadiusDropdown(),
+          const SettingsSectionHeader(title: 'Wake distance'),
+          SettingsNavTile(
+            icon: Icons.social_distance_outlined,
+            title: 'Wake distance & Transit Mode',
+            subtitle: 'Managed in Transit → Transit Mode',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TransitModeSettingsScreen(),
+                ),
+              );
+            },
+          ),
           if (Platform.isAndroid) ...[
             const SizedBox(height: 24),
-            const SettingsSectionHeader(title: 'Transit detection'),
+            const SettingsSectionHeader(title: 'Activity detection'),
             const _ActivityRecognitionToggle(),
           ],
           const SizedBox(height: 24),
@@ -131,7 +142,7 @@ class _ActivityRecognitionToggle extends StatelessWidget {
     );
 
     return SwitchListTile(
-      secondary: Icon(Icons.directions_transit_outlined, color: colorScheme.primary),
+      secondary: Icon(Icons.directions_walk_outlined, color: colorScheme.primary),
       title: const Text(TripUxCopy.activityRecognitionSettingTitle),
       subtitle: Text(
         enabled

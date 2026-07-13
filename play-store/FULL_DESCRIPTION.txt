@@ -3,19 +3,19 @@ DozeAlert helps commuters sleep peacefully and arrive confidently.
 Whether you're travelling by train, bus, car, or rideshare, DozeAlert monitors your trip and wakes you before you miss your destination.
 
 HOW IT WORKS
-• Pick a destination on the map or search for a place
-• Start monitoring — DozeAlert tracks your distance in the background
+• Pick a transit stop or drop a pin on the map
+• Start monitoring — DozeAlert tracks your trip in the background
 • Get a loud alarm and vibration when you're approaching your stop
 
 FEATURES
-• Bus, train, and car trips
-• Smart sleep detection with adjustable sensitivity
+• Bus, train, taxi, rideshare, and map-pin trips
+• Transit Mode with stop-by-stop progress where stop lists are available
 • Background monitoring with a persistent trip notification
-• Adjustable wake radius so you arrive on time
+• Adjustable wake distance so you arrive on time
 • Map destination picker and place search
-• Saved favorites and trip history
-• First-time setup guide with alarm test
-• Transit schedules (GTFS) where supported for public transit agencies in your region
+• Saved favorites and past trip stats
+• First-time setup guide with travel mode choice
+• Agency stop lists where supported across Canada and the US
 • Battery-conscious design for daily commutes and long trips
 
 PERMISSIONS

@@ -7,6 +7,7 @@ import '../models/gtfs_feed_info.dart';
 import '../models/transit_vehicle_type.dart';
 import '../providers/gtfs_feed_provider.dart';
 import '../utils/gtfs_feed_download_handler.dart';
+import '../utils/transit_user_copy.dart';
 import 'gtfs_feed_progress_indicator.dart';
 
 class GtfsVehicleTypeDownloadPrompt extends StatelessWidget {
@@ -55,7 +56,7 @@ class GtfsVehicleTypeDownloadPrompt extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Download GTFS to load ${vehicleType.label.toLowerCase()} routes',
+                  TransitUserCopy.downloadStopsForVehicleType(vehicleType.label),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -66,9 +67,9 @@ class GtfsVehicleTypeDownloadPrompt extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             feed.isDownloaded
-                ? '${vehicleType.label} routes were not found in the downloaded feed. '
-                    'Try updating GTFS or choose All types.'
-                : 'Download the full ${feed.agencyName} GTFS feed to load '
+                ? '${vehicleType.label} routes were not found in the downloaded '
+                    'stop list. Try updating stops or choose All types.'
+                : 'Download the full ${feed.agencyName} stop list to load '
                     '${vehicleType.label.toLowerCase()} route numbers.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
@@ -92,7 +93,9 @@ class GtfsVehicleTypeDownloadPrompt extends StatelessWidget {
                   : null,
               icon: const Icon(Icons.download_outlined, size: 18),
               label: Text(
-                canDownloadDirectly ? 'Download GTFS' : 'Use GTFS card below',
+                canDownloadDirectly
+                    ? TransitUserCopy.downloadStops
+                    : 'Use stop data card below',
               ),
             ),
           ],

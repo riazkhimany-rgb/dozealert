@@ -27,7 +27,56 @@ abstract final class TransitUserCopy {
       'Search stops on your line — best for buses and trains';
 
   static const mapPinSubtitle =
-      'Advanced: drop a pin when you are not using a transit stop';
+      'Drop a pin or search on the map when you are not using a transit stop';
+
+  static const mapPinSubtitleFallback =
+      'Use the map if your stop list is not downloaded yet';
+
+  static const stopDataSectionTitle = 'Stop data';
+
+  static const downloadStops = 'Download stops';
+
+  static const updateStops = 'Update stops';
+
+  static const processingStopData = 'Processing stop data…';
+
+  static String stopDataDownloaded(String agencyName) =>
+      '$agencyName stop list downloaded.';
+
+  static String stopDataUpdated(String agencyName) =>
+      '$agencyName stop list updated.';
+
+  static String couldNotDownloadStopData(String agencyName, String detail) =>
+      'Could not download $agencyName stops. $detail';
+
+  static String couldNotUpdateStopData(String agencyName, String detail) =>
+      'Could not update $agencyName stops. $detail';
+
+  static String noStopFeedConfigured(String agencyName) =>
+      'No stop list is configured for $agencyName.';
+
+  static const importStopDataHint =
+      'Download the zip from the open data page, then import it from '
+      'Settings → Transit → Import GTFS Zip.';
+
+  static const noDirectDownloadLink =
+      'This agency does not provide a direct download link.';
+
+  static String routesLoadedCount(int count, {String? vehicleFilter}) {
+    final filter = vehicleFilter == null ? '' : ' ($vehicleFilter)';
+    return '$count routes loaded from stop data$filter.';
+  }
+
+  static String downloadStopsToLoadRoutes(String transitName) =>
+      'Download stop data below to load routes for $transitName.';
+
+  static const downloadStopsToLoadAllRoutes =
+      'Download stop data below to load all routes including buses.';
+
+  static String downloadStopsForVehicleType(String vehicleLabel) =>
+      'Download stops to load ${vehicleLabel.toLowerCase()} routes';
+
+  static const searchStopsOnRoute = 'Search stops on your route';
 
   static String wakeByStopsHint(String agencyName) =>
       'Wake by stops on $agencyName once you are on your route';
@@ -74,7 +123,7 @@ abstract final class TransitUserCopy {
   static const allRoutesSectionTitle = 'All routes';
 
   static const favoriteLinesQuickSwitchHint =
-      'Quick-switch transit and line pairs from Home during transfers.';
+      'Switch transit and line pairs quickly on Home.';
 
   static String downloadStopListsForRoutes(String transitName) =>
       'Download stop lists in Settings → Transit & line to load routes '

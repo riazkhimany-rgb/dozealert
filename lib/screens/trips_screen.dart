@@ -47,12 +47,12 @@ class TripsScreen extends StatelessWidget {
     final stats = context.select<TripHistoryProvider, TripStats>(
       (provider) => provider.stats,
     );
-    final hasAnyTrips = recentDestinations.isNotEmpty ||
-        favorites.isNotEmpty ||
-        lineFavorites.isNotEmpty;
     final transitModeEnabled = context.select<SettingsProvider, bool>(
       (provider) => provider.transitModeEnabled,
     );
+    final hasAnyTrips = recentDestinations.isNotEmpty ||
+        favorites.isNotEmpty ||
+        (transitModeEnabled && lineFavorites.isNotEmpty);
     final emptyActionLabel = transitModeEnabled
         ? TripUxCopy.pickYourStop
         : TripUxCopy.pickDestination;
@@ -81,14 +81,27 @@ class TripsScreen extends StatelessWidget {
               ),
             )
           else ...[
-            _FavoriteSection(favorites: favorites),
-            const SizedBox(height: 16),
-            FavoriteTransitLinesSection(favorites: lineFavorites),
+            _FavoriteSection(
+              favorites: favorites,
+              transitModeEnabled: transitModeEnabled,
+            ),
+            if (transitModeEnabled) ...[
+              const SizedBox(height: 16),
+              FavoriteTransitLinesSection(favorites: lineFavorites),
+            ],
             const SizedBox(height: 16),
             _TripSection(
-              title: 'Recent stops',
+              title: transitModeEnabled
+                  ? TripUxCopy.recentStopsTitle
+                  : TripUxCopy.recentDestinationsTitle,
               icon: Icons.history,
-              emptyMessage: 'No recent destinations yet.',
+              iconColor: const Color(0xFF4CC9F0),
+              subtitle: transitModeEnabled
+                  ? TripUxCopy.recentStopsSubtitle
+                  : TripUxCopy.recentDestinationsSubtitle,
+              emptyMessage: transitModeEnabled
+                  ? TripUxCopy.noRecentStopsYet
+                  : TripUxCopy.noRecentDestinationsYet,
               destinations: recentDestinations,
             ),
           ],
@@ -160,12 +173,16 @@ class _TripSection extends StatefulWidget {
     required this.icon,
     required this.emptyMessage,
     required this.destinations,
+    this.iconColor,
+    this.subtitle,
   });
 
   static const _collapsedVisibleCount = 2;
 
   final String title;
   final IconData icon;
+  final Color? iconColor;
+  final String? subtitle;
   final String emptyMessage;
   final List<Destination> destinations;
 
@@ -196,7 +213,17 @@ class _TripSectionState extends State<_TripSection> {
             title: destinations.length > _TripSection._collapsedVisibleCount
                 ? '${widget.title} (${destinations.length})'
                 : widget.title,
+            iconColor: widget.iconColor,
           ),
+          if (widget.subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              widget.subtitle!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           if (destinations.isEmpty)
             Text(
@@ -234,23 +261,37 @@ class _TripSectionState extends State<_TripSection> {
 }
 
 class _FavoriteSection extends StatelessWidget {
-  const _FavoriteSection({required this.favorites});
+  const _FavoriteSection({
+    required this.favorites,
+    required this.transitModeEnabled,
+  });
 
   final List<FavoriteDestination> favorites;
+  final bool transitModeEnabled;
 
   @override
   Widget build(BuildContext context) {
+    final title = transitModeEnabled
+        ? TripUxCopy.savedStopsTitle
+        : TripUxCopy.savedDestinationsTitle;
+    final subtitle = transitModeEnabled
+        ? TripUxCopy.savedStopsSubtitle
+        : TripUxCopy.savedDestinationsSubtitle;
+    final emptyMessage = transitModeEnabled
+        ? TripUxCopy.noSavedStopsYet
+        : TripUxCopy.noSavedDestinationsYet;
+
     return HomeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: HomeCardHeader(
                   icon: Icons.star_outline,
-                  title: 'Saved stops',
-                  iconColor: Color(0xFF4CC9F0),
+                  title: title,
+                  iconColor: const Color(0xFF4CC9F0),
                 ),
               ),
               TextButton.icon(
@@ -263,7 +304,7 @@ class _FavoriteSection extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Tap ▶ to start a trip to a saved stop.',
+            subtitle,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -271,7 +312,7 @@ class _FavoriteSection extends StatelessWidget {
           const SizedBox(height: 12),
           if (favorites.isEmpty)
             Text(
-              'No favorite destinations saved.',
+              emptyMessage,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -325,7 +366,7 @@ class _DestinationListTile extends StatelessWidget {
           if (!isMonitoring)
             IconButton(
               icon: const Icon(Icons.play_arrow_rounded),
-              tooltip: 'Use and start monitoring',
+              tooltip: TripUxCopy.useAndStartTrip,
               onPressed: () => unawaited(
                 _selectAndStartMonitoring(
                   context,

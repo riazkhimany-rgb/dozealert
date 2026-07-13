@@ -355,7 +355,7 @@ prefillAppVersion = Prefill("app_version")
   <meta name="description" content="Send feedback, bug reports, or ideas to the DozeAlert team.">
   <meta name="theme-color" content="#0D1B2A">
   <title>Feedback &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=45">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=46">
   <link rel="stylesheet" href="../assets/brand.css">
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <style>

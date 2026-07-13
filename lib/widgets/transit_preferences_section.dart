@@ -12,6 +12,7 @@ import '../providers/transit_provider.dart';
 import '../utils/external_link_launcher.dart';
 import '../utils/transit_line_picker_utils.dart';
 import '../utils/transit_user_copy.dart';
+import '../utils/user_facing_errors.dart';
 import '../widgets/home_card.dart';
 import '../widgets/gtfs_vehicle_type_download_prompt.dart';
 import '../widgets/gtfs_feed_progress_indicator.dart';
@@ -69,7 +70,7 @@ class TransitPreferencesSection extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            subtitle: const Text('GTFS download'),
+            subtitle: const Text('Stop list download'),
             children: [
               _PreferredAgencyGtfsCard(
                 transitSystem: preferences.transitSystem,
@@ -233,10 +234,11 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
           if (lineOptions.isEmpty)
             Text(
               _vehicleTypeFilter == null
-                  ? 'Download GTFS data below to load routes for '
-                      '${preferences.transitSystem}.'
+                  ? TransitUserCopy.downloadStopsToLoadRoutes(
+                      preferences.transitSystem,
+                    )
                   : 'No ${_vehicleTypeFilter!.label.toLowerCase()} routes loaded. '
-                      'Try All types or download GTFS data below.',
+                      'Try All types or download stop data below.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -269,7 +271,7 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
           if (needsGtfsDownload) ...[
             const SizedBox(height: 12),
             Text(
-              'Download GTFS data below to load all routes including buses.',
+              TransitUserCopy.downloadStopsToLoadAllRoutes,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -278,8 +280,10 @@ class _PreferredAgencySetupCardState extends State<_PreferredAgencySetupCard> {
               gtfsProvider.hasStopsForSelectedAgency()) ...[
             const SizedBox(height: 12),
             Text(
-              '${lineOptions.length} routes loaded from GTFS'
-              '${_vehicleTypeFilter == null ? '' : ' (${_vehicleTypeFilter!.label})'}.',
+              TransitUserCopy.routesLoadedCount(
+                lineOptions.length,
+                vehicleFilter: _vehicleTypeFilter?.label,
+              ),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -381,7 +385,9 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${widget.transitSystem} GTFS data downloaded.'),
+          content: Text(
+            TransitUserCopy.stopDataDownloaded(widget.transitSystem),
+          ),
         ),
       );
     } catch (error) {
@@ -391,7 +397,10 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Could not download ${widget.transitSystem} GTFS data: $error',
+            TransitUserCopy.couldNotDownloadStopData(
+              widget.transitSystem,
+              UserFacingErrors.from(error),
+            ),
           ),
           backgroundColor: Theme.of(context).colorScheme.errorContainer,
         ),
@@ -416,7 +425,9 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${widget.transitSystem} GTFS data updated.'),
+          content: Text(
+            TransitUserCopy.stopDataUpdated(widget.transitSystem),
+          ),
         ),
       );
     } catch (error) {
@@ -426,7 +437,10 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Could not update ${widget.transitSystem} GTFS data: $error',
+            TransitUserCopy.couldNotUpdateStopData(
+              widget.transitSystem,
+              UserFacingErrors.from(error),
+            ),
           ),
           backgroundColor: Theme.of(context).colorScheme.errorContainer,
         ),
@@ -452,7 +466,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
             title: Text('${feed.agencyName} Open Data'),
             content: Text(
               feed.acknowledgementMessage ??
-                  'Review the open data terms before downloading GTFS data.',
+                  'Review the open data terms before downloading stop data.',
             ),
             actions: [
               TextButton(
@@ -494,7 +508,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'GTFS Data',
+            TransitUserCopy.stopDataSectionTitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -512,8 +526,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
             const Center(child: CircularProgressIndicator())
           else if (feed == null) ...[
             Text(
-              'No GTFS feed is configured for ${widget.transitSystem}. '
-              'Download stop data to enable transit mode.',
+            TransitUserCopy.noStopFeedConfigured(widget.transitSystem),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -557,7 +570,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
                         ? null
                         : () => _runDownload(feedProvider, feed.feedId),
                     icon: const Icon(Icons.download_outlined, size: 18),
-                    label: const Text('Download GTFS'),
+                    label: Text(TransitUserCopy.downloadStops),
                   ),
                 if (feed.hasDirectDownload && feed.isDownloaded)
                   OutlinedButton.icon(
@@ -565,7 +578,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
                         ? null
                         : () => _runUpdate(feedProvider, feed.feedId),
                     icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Update GTFS'),
+                    label: Text(TransitUserCopy.updateStops),
                   ),
                 if (feed.hasOpenDataPage)
                   OutlinedButton.icon(
@@ -577,7 +590,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
             ),
             if (!feed.hasDirectDownload && !feed.hasOpenDataPage) ...[
               Text(
-                'This agency does not provide a direct GTFS download link.',
+                TransitUserCopy.noDirectDownloadLink,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -585,8 +598,7 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
             ] else if (!feed.hasDirectDownload) ...[
               const SizedBox(height: 8),
               Text(
-                'Download the zip from the open data page, then import it from '
-                'Settings → Transit → Import GTFS Zip.',
+                TransitUserCopy.importStopDataHint,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),

@@ -111,7 +111,7 @@ class TransitDataLicensesScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           BrandedMentionText(
-            'Attribution and how to obtain GTFS for each Ontario feed in DozeAlert.',
+            'Attribution and how to obtain stop data for each feed in DozeAlert.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),

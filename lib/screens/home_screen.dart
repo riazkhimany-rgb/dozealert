@@ -510,7 +510,9 @@ class _DestinationCard extends StatelessWidget {
                 ? Icons.location_on_outlined
                 : Icons.place_outlined,
             title: destinationCardTitle,
-            iconColor: colorScheme.secondary,
+            iconColor: isMonitoring
+                ? colorScheme.secondary
+                : colorScheme.onSurfaceVariant,
             trailing: destination != null && !isMonitoring
                 ? _DestinationActionButton(
                     label: clearDestinationLabel,
@@ -656,17 +658,15 @@ class _DestinationCard extends StatelessWidget {
                         ),
                 ),
               ),
-              if (transitModeEnabled) ...[
-                const SizedBox(height: 8),
-                Center(
-                  child: _DestinationActionButton(
-                    label: TripUxCopy.selectFromMyTrips,
-                    icon: Icons.favorite_border_outlined,
-                    onPressed: () =>
-                        context.read<NavigationProvider>().setIndex(1),
-                  ),
+              const SizedBox(height: 8),
+              Center(
+                child: _DestinationActionButton(
+                  label: TripUxCopy.selectFromMyTrips,
+                  icon: Icons.favorite_border_outlined,
+                  onPressed: () =>
+                      context.read<NavigationProvider>().setIndex(1),
                 ),
-              ],
+              ),
               if (transitModeEnabled && selectedLine.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Center(
@@ -710,15 +710,13 @@ class _DestinationCard extends StatelessWidget {
                           ),
                       ],
                     ),
-                    if (transitModeEnabled) ...[
-                      const SizedBox(height: 8),
-                      _DestinationActionButton(
-                        label: TripUxCopy.selectFromMyTrips,
-                        icon: Icons.favorite_border_outlined,
-                        onPressed: () =>
-                            context.read<NavigationProvider>().setIndex(1),
-                      ),
-                    ],
+                    const SizedBox(height: 8),
+                    _DestinationActionButton(
+                      label: TripUxCopy.selectFromMyTrips,
+                      icon: Icons.favorite_border_outlined,
+                      onPressed: () =>
+                          context.read<NavigationProvider>().setIndex(1),
+                    ),
                   ],
                 ),
               ),
@@ -941,6 +939,9 @@ class _MonitoringCard extends StatelessWidget {
     final canStop = state == MonitoringState.monitoring ||
         state == MonitoringState.arrived;
     final isMonitoring = state == MonitoringState.monitoring;
+    final tripIconTint = isMonitoring
+        ? colorScheme.secondary
+        : colorScheme.onSurfaceVariant;
     final showLockPhoneHint = isMonitoring &&
         !establishingGps &&
         !gpsPrewarming &&
@@ -960,14 +961,14 @@ class _MonitoringCard extends StatelessWidget {
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.14),
+                  color: tripIconTint.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(8),
                   child: Icon(
                     Icons.sensors,
-                    color: colorScheme.primary,
+                    color: tripIconTint,
                     size: 22,
                   ),
                 ),

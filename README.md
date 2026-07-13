@@ -22,10 +22,10 @@ Assets live in `assets/branding/`:
 
 - **Location alarms** — wake before your stop using distance or transit stops
 - **Background monitoring** — track your trip while you rest (foreground notification on Android)
-- **Transit mode** — GTFS stop-by-stop progress on supported Ontario/GTA lines
-- **Favorite locations & trip history** — quick picks for Home, Work, and saved stops
+- **Transit mode** — stop-by-stop progress on supported agencies across Canada and the US
+- **Favorite locations & past trips** — quick picks for saved stops and trip stats
 - **Map picker** — choose any destination on Google Maps
-- **First-time setup guide** — permissions, alarm test, and optional agency setup
+- **First-time setup guide** — travel mode choice, permissions, and optional agency setup
 - **Wake-up radius** — adjustable alert distance (250 m to 2 km)
 - **Missed-trip detection** — records trips where the alarm was not dismissed in time
 - **Wear OS companion** — trip status, start/stop, alarm dismiss, tile, and complication on a paired watch (phone runs monitoring)
@@ -81,7 +81,7 @@ Build the Wear bundle (same signing key and package name `app.dozealert`, separa
 
 Output: `build/wear/outputs/bundle/release/wear-release.aab`
 
-Wear `versionCode` = `100000 + phone versionCode + wearVersionExtra` (see `android/wear/build.gradle.kts`). Phone at `1.1.0+19` → wear version code **100029**.
+Wear `versionCode` = `100000 + phone versionCode + wearVersionExtra` (see `android/wear/build.gradle.kts`). Phone at `1.1.0+45` → wear version code **100045** (+ wear extra if configured).
 
 Upload that AAB to the **Wear OS** release track in Play Console — **not** the phone release. Enable the Wear form factor under **Advanced settings → Form factors → Wear OS** first.
 

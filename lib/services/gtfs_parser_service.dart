@@ -591,6 +591,30 @@ class GtfsParserService {
     if (normalized.contains('vancouver') || normalized.contains('translink')) {
       return 'Vancouver';
     }
+    if (normalized.contains('victoria')) {
+      return 'Victoria';
+    }
+    if (normalized.contains('kelowna')) {
+      return 'Kelowna';
+    }
+    if (normalized.contains('nanaimo')) {
+      return 'Nanaimo';
+    }
+    if (normalized.contains('kamloops')) {
+      return 'Kamloops';
+    }
+    if (normalized.contains('calgary')) {
+      return 'Calgary';
+    }
+    if (normalized.contains('edmonton')) {
+      return 'Edmonton';
+    }
+    if (normalized.contains('winnipeg')) {
+      return 'Winnipeg';
+    }
+    if (normalized.contains('halifax')) {
+      return 'Halifax';
+    }
     if (normalized.contains('ottawa') || normalized.contains('oc transpo')) {
       return 'Ottawa';
     }

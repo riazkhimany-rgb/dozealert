@@ -1,8 +1,8 @@
 {
-  "catalogVersion": 4,
+  "catalogVersion": 5,
   "schemaVersion": 1,
   "minAppVersion": "1.1.0",
-  "generatedAt": "2026-07-09T22:10:56.157457Z",
+  "generatedAt": "2026-07-13T01:57:57.050781Z",
   "countries": [
     "Canada",
     "United States"
@@ -607,15 +607,151 @@
       ]
     },
     {
+      "agencyId": "calgary_transit",
+      "agencyName": "Calgary Transit",
+      "country": "Canada",
+      "region": "Alberta",
+      "city": "Calgary",
+      "gtfsFeed": {
+        "feedId": "calgary_transit",
+        "agencyName": "Calgary Transit",
+        "province": "Alberta",
+        "vehicleTypes": [
+          "bus",
+          "lightRail"
+        ],
+        "downloadUrl": "https://data.calgary.ca/download/npk7-z3bj/application/zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://data.calgary.ca/en/Transportation-Transit/Calgary-Transit-Scheduling-Data/npk7-z3bj",
+        "openDataPageLabel": "Open Calgary Transit Scheduling Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://data.calgary.ca/stories/s/u45n-7awa",
+        "attributionText": "Contains data from Calgary Transit / Open Calgary.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "edmonton_transit",
+      "agencyName": "Edmonton Transit Service",
+      "country": "Canada",
+      "region": "Alberta",
+      "city": "Edmonton",
+      "gtfsFeed": {
+        "feedId": "edmonton_transit",
+        "agencyName": "Edmonton Transit Service",
+        "province": "Alberta",
+        "vehicleTypes": [
+          "bus",
+          "lightRail"
+        ],
+        "downloadUrl": "https://gtfs.edmonton.ca/TMGTFSRealTimeWebService/GTFS/gtfs.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://data.edmonton.ca/Transit/GTFS-Downloads/yiem-dcbw",
+        "openDataPageLabel": "Edmonton GTFS Downloads",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://data.edmonton.ca/stories/s/City-of-Edmonton-Open-Data-Terms-of-Use/msh8-if28/",
+        "attributionText": "Contains data from Edmonton Transit Service Open Data. The regional feed may also include nearby agency routes.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "winnipeg_transit",
+      "agencyName": "Winnipeg Transit",
+      "country": "Canada",
+      "region": "Manitoba",
+      "city": "Winnipeg",
+      "gtfsFeed": {
+        "feedId": "winnipeg_transit",
+        "agencyName": "Winnipeg Transit",
+        "province": "Manitoba",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "http://gtfs.winnipegtransit.com/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://info.winnipegtransit.com/open-data/open-data-web-service/",
+        "openDataPageLabel": "Winnipeg Transit Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://info.winnipegtransit.com/open-data/open-data-web-service/",
+        "attributionText": "Contains data from Winnipeg Transit.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "halifax_transit",
+      "agencyName": "Halifax Transit",
+      "country": "Canada",
+      "region": "Nova Scotia",
+      "city": "Halifax",
+      "gtfsFeed": {
+        "feedId": "halifax_transit",
+        "agencyName": "Halifax Transit",
+        "province": "Nova Scotia",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://gtfs.halifax.ca/static/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://cdn.halifax.ca/transportation/halifax-transit/transit-technology/general-transit-feed-gtfs",
+        "openDataPageLabel": "Halifax Transit GTFS",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.halifax.ca/home/open-data",
+        "attributionText": "Contains data from Halifax Transit Open Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
       "agencyId": "stm_montreal",
       "agencyName": "STM Montreal",
       "country": "Canada",
       "region": "Quebec",
       "city": "Montreal",
+      "gtfsFeed": {
+        "feedId": "stm_montreal",
+        "agencyName": "STM Montreal",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "subway",
+          "bus"
+        ],
+        "downloadUrl": "https://www.stm.info/sites/default/files/gtfs/gtfs_stm.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.stm.info/en/about/developers",
+        "openDataPageLabel": "STM Developers",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.stm.info/en/about/developers/terms-use",
+        "attributionText": "Contains data from Société de transport de Montréal (STM) under Creative Commons Attribution 4.0.",
+        "parseSchemaVersion": 1
+      },
       "lines": [
-        "Line 1",
-        "Line 2",
-        "Line 4"
+        "All routes"
       ]
     },
     {
@@ -624,9 +760,27 @@
       "country": "Canada",
       "region": "Quebec",
       "city": "Montreal",
+      "gtfsFeed": {
+        "feedId": "exo_montreal",
+        "agencyName": "Exo",
+        "province": "Quebec",
+        "vehicleTypes": [
+          "train"
+        ],
+        "downloadUrl": "https://exo.quebec/xdata/trains/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://exo.quebec/en/about/open-data",
+        "openDataPageLabel": "Exo Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.donneesquebec.ca/fr/licence/#cc-by",
+        "attributionText": "Contains Exo train schedule data from Exo open data. Bus sectors are published as separate feeds on Exo Open Data.",
+        "parseSchemaVersion": 1
+      },
       "lines": [
-        "Mont-Saint-Hilaire",
-        "Candiac"
+        "All routes"
       ]
     },
     {
@@ -635,10 +789,146 @@
       "country": "Canada",
       "region": "British Columbia",
       "city": "Vancouver",
+      "gtfsFeed": {
+        "feedId": "translink_vancouver",
+        "agencyName": "TransLink Vancouver",
+        "province": "British Columbia",
+        "vehicleTypes": [
+          "bus",
+          "subway",
+          "lightRail",
+          "train"
+        ],
+        "downloadUrl": "https://gtfs-static.translink.ca/gtfs/google_transit.zip",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs",
+        "openDataPageLabel": "TransLink GTFS",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://developer.translink.ca/ServicesGtfs/GtfsData",
+        "attributionText": "Route and arrival data used in this product or service is provided by permission of TransLink. TransLink assumes no responsibility for the accuracy or currency of the Data used in this product or service.",
+        "parseSchemaVersion": 1
+      },
       "lines": [
-        "Expo Line",
-        "Millennium Line",
-        "Canada Line"
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "bc_transit_victoria",
+      "agencyName": "BC Transit Victoria",
+      "country": "Canada",
+      "region": "British Columbia",
+      "city": "Victoria",
+      "gtfsFeed": {
+        "feedId": "bc_transit_victoria",
+        "agencyName": "BC Transit Victoria",
+        "province": "British Columbia",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://bct.tmix.se/Tmix.Cap.TdExport.WebApi/gtfs/?operatorIds=48",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.bctransit.com/open-data/",
+        "openDataPageLabel": "BC Transit Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.bctransit.com/open-data/terms-of-use",
+        "attributionText": "Contains data from BC Transit Open Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "bc_transit_kelowna",
+      "agencyName": "BC Transit Kelowna",
+      "country": "Canada",
+      "region": "British Columbia",
+      "city": "Kelowna",
+      "gtfsFeed": {
+        "feedId": "bc_transit_kelowna",
+        "agencyName": "BC Transit Kelowna",
+        "province": "British Columbia",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://bct.tmix.se/Tmix.Cap.TdExport.WebApi/gtfs/?operatorIds=47",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.bctransit.com/open-data/",
+        "openDataPageLabel": "BC Transit Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.bctransit.com/open-data/terms-of-use",
+        "attributionText": "Contains data from BC Transit Open Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "bc_transit_nanaimo",
+      "agencyName": "BC Transit Nanaimo",
+      "country": "Canada",
+      "region": "British Columbia",
+      "city": "Nanaimo",
+      "gtfsFeed": {
+        "feedId": "bc_transit_nanaimo",
+        "agencyName": "BC Transit Nanaimo",
+        "province": "British Columbia",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://bct.tmix.se/Tmix.Cap.TdExport.WebApi/gtfs/?operatorIds=41",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.bctransit.com/open-data/",
+        "openDataPageLabel": "BC Transit Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.bctransit.com/open-data/terms-of-use",
+        "attributionText": "Contains data from BC Transit Open Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
+      ]
+    },
+    {
+      "agencyId": "bc_transit_kamloops",
+      "agencyName": "BC Transit Kamloops",
+      "country": "Canada",
+      "region": "British Columbia",
+      "city": "Kamloops",
+      "gtfsFeed": {
+        "feedId": "bc_transit_kamloops",
+        "agencyName": "BC Transit Kamloops",
+        "province": "British Columbia",
+        "vehicleTypes": [
+          "bus"
+        ],
+        "downloadUrl": "https://bct.tmix.se/Tmix.Cap.TdExport.WebApi/gtfs/?operatorIds=46",
+        "capabilities": [
+          "gtfs_static_download"
+        ],
+        "supportsRealtime": false,
+        "openDataPageUrl": "https://www.bctransit.com/open-data/",
+        "openDataPageLabel": "BC Transit Open Data",
+        "requiresUserAcknowledgement": false,
+        "licenseUrl": "https://www.bctransit.com/open-data/terms-of-use",
+        "attributionText": "Contains data from BC Transit Open Data.",
+        "parseSchemaVersion": 1
+      },
+      "lines": [
+        "All routes"
       ]
     },
     {

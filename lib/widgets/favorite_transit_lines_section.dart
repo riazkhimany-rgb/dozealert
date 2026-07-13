@@ -32,7 +32,7 @@ class FavoriteTransitLinesSection extends StatelessWidget {
               const Expanded(
                 child: HomeCardHeader(
                   icon: Icons.swap_horiz,
-                  title: 'Favorite Lines',
+                  title: TransitUserCopy.favoriteLinesSectionTitle,
                   iconColor: Color(0xFF4CC9F0),
                 ),
               ),

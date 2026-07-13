@@ -37,7 +37,7 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
           content: Text(
             feed.acknowledgementMessage ??
                 'YRT requires you to review their open data terms before '
-                'downloading GTFS data.',
+                'downloading stop data.',
           ),
           actions: [
             TextButton(

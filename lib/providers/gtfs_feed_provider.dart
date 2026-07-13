@@ -396,7 +396,7 @@ class GtfsFeedProvider extends ChangeNotifier {
       );
 
       await _yieldToUi();
-      _setProgress(feedId, phase: 'Processing GTFS data…');
+      _setProgress(feedId, phase: 'Processing stop data…');
 
       final parsed = await _parseFeedBytes(
         bytes: bytes,
@@ -541,7 +541,7 @@ class GtfsFeedProvider extends ChangeNotifier {
           return 0.05 + estimated * (_downloadShare - 0.05);
         }
         return 0.08;
-      case 'Processing GTFS data…':
+      case 'Processing stop data…':
         return _processingShare;
       case 'Saving transit data…':
         return _savingShare;

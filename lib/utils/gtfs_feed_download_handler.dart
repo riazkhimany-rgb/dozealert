@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/gtfs_feed_provider.dart';
 import '../providers/gtfs_provider.dart';
+import '../utils/transit_user_copy.dart';
+import '../utils/user_facing_errors.dart';
 
 abstract final class GtfsFeedDownloadHandler {
   static Future<bool> downloadForTransitSystem(
@@ -14,7 +16,7 @@ abstract final class GtfsFeedDownloadHandler {
     if (feed == null) {
       _showSnackBar(
         context,
-        'No GTFS feed is configured for $transitSystem.',
+        TransitUserCopy.noStopFeedConfigured(transitSystem),
         isError: true,
       );
       return false;
@@ -23,8 +25,7 @@ abstract final class GtfsFeedDownloadHandler {
     if (!feed.hasDirectDownload) {
       _showSnackBar(
         context,
-        'Download the GTFS zip from the agency open data page, then import it '
-        'from Settings → Transit → Import GTFS Zip.',
+        TransitUserCopy.importStopDataHint,
       );
       return false;
     }
@@ -42,7 +43,10 @@ abstract final class GtfsFeedDownloadHandler {
       if (!context.mounted) {
         return false;
       }
-      _showSnackBar(context, '$transitSystem GTFS data downloaded.');
+      _showSnackBar(
+        context,
+        TransitUserCopy.stopDataDownloaded(transitSystem),
+      );
       return true;
     } catch (error) {
       if (!context.mounted) {
@@ -50,7 +54,10 @@ abstract final class GtfsFeedDownloadHandler {
       }
       _showSnackBar(
         context,
-        'Could not download $transitSystem GTFS data: $error',
+        TransitUserCopy.couldNotDownloadStopData(
+          transitSystem,
+          UserFacingErrors.from(error),
+        ),
         isError: true,
       );
       return false;

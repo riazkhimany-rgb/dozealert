@@ -41,7 +41,7 @@ abstract final class TripUxCopy {
   static const watchingTripLine2 = 'your trip';
 
   static const watchConnected = 'Watch connected';
-  static const watchNotConnected = 'Watch Disconnected';
+  static const watchNotConnected = 'Watch disconnected';
 
   static const readyWhenYouAre = 'Ready when you are';
 
@@ -73,6 +73,57 @@ abstract final class TripUxCopy {
 
   static const myTripsEmptyMessageDistance =
       'Save destinations you use often and start a trip with one tap.';
+
+  static const savedStopsTitle = 'Saved stops';
+  static const savedDestinationsTitle = 'Saved destinations';
+  static const recentStopsTitle = 'Recent stops';
+  static const recentDestinationsTitle = 'Recent destinations';
+
+  static const savedStopsSubtitle =
+      "Start a trip to a stop you've saved.";
+  static const savedDestinationsSubtitle =
+      "Start a trip to a destination you've saved.";
+  static const recentStopsSubtitle =
+      "Start a trip to a stop you've used recently.";
+  static const recentDestinationsSubtitle =
+      "Start a trip to a destination you've used recently.";
+
+  static const noSavedStopsYet = 'No saved stops yet.';
+  static const noSavedDestinationsYet = 'No saved destinations yet.';
+  static const noRecentStopsYet = 'No recent stops yet.';
+  static const noRecentDestinationsYet = 'No recent destinations yet.';
+
+  static const useAndStartTrip = 'Use and start trip';
+
+  static const pastTripsTitle = 'Past trips';
+  static const pastTripsSettingsSubtitle =
+      'Completed trips, stats, and missed stops';
+  static const pastTripsIntro =
+      'Completed trips and alerts when you missed your stop.';
+  static const pastTripsCompletedSection = 'Completed trips';
+  static const pastTripsCompletedSubtitle =
+      'Trips where you reached your destination.';
+  static const pastTripsMissedSection = 'Missed trips';
+  static const pastTripsMissedSubtitle =
+      'Trips where the wake alert was not dismissed in time.';
+  static const pastTripsStatsSubtitle =
+      'Totals and streaks for recent trip activity.';
+  static const pastTripsCompletedEmpty = 'Completed trips will appear here.';
+  static const pastTripsMissedEmpty = 'No missed trips recorded.';
+
+  static const onboardingSkipSnackBar =
+      'Finish setup anytime in Settings → Permissions.';
+
+  static const onboardingModeTitle = 'How do you usually travel?';
+  static const onboardingModeBody =
+      'Choose one to personalize setup. You can change this later in '
+      'Settings → Transit → Transit Mode.';
+  static const onboardingModeTransitTitle = 'Transit';
+  static const onboardingModeTransitSubtitle =
+      'Bus, train, or subway — wake by stops on your route.';
+  static const onboardingModeDistanceTitle = 'Taxi, rideshare, or map';
+  static const onboardingModeDistanceSubtitle =
+      'Wake by distance to a pin or place on the map.';
 
   static const moreOptions = 'More options';
 
@@ -172,9 +223,8 @@ abstract final class TripUxCopy {
       'DozeAlert tracks your ride and sounds an alarm when you are '
       'approaching your destination — on transit, in a taxi or rideshare, '
       'or any trip where GPS works.\n\n'
-      'First, choose the transit you ride (or skip agencies you don\'t use). '
-      'Then we\'ll ask for a few phone permissions so we can watch your trip '
-      'while you sleep.\n\n'
+      'Next, choose how you usually travel. Then we\'ll ask for a few phone '
+      'permissions so we can watch your trip while you sleep.\n\n'
       'After that, pick your stop or destination on Home and tap Start.';
 
   static const permissionsHeadline = 'Allow what DozeAlert needs';

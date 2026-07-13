@@ -134,7 +134,7 @@ class _TransitSettingsScreenState extends State<TransitSettingsScreen> {
           ),
           SettingsNavTile(
             icon: Icons.star_outline,
-            title: 'Favorite Lines',
+            title: TransitUserCopy.favoriteLinesSectionTitle,
             subtitle: 'Saved transit lines for quick switching',
             onTap: () {
               Navigator.of(context).push(

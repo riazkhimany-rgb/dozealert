@@ -50,6 +50,51 @@ void main() {
     expect(TransitCatalog.feedById('oc_transpo')?.hasDirectDownload, isTrue);
   });
 
+  test('new Canadian regions include direct-download GTFS feeds', () {
+    expect(
+      TransitCatalog.agenciesForRegion('Canada', 'Alberta'),
+      containsAll(['Calgary Transit', 'Edmonton Transit Service']),
+    );
+    expect(
+      TransitCatalog.agenciesForRegion('Canada', 'Manitoba'),
+      contains('Winnipeg Transit'),
+    );
+    expect(
+      TransitCatalog.agenciesForRegion('Canada', 'Nova Scotia'),
+      contains('Halifax Transit'),
+    );
+    expect(
+      TransitCatalog.agenciesForRegion('Canada', 'British Columbia'),
+      containsAll([
+        'TransLink Vancouver',
+        'BC Transit Victoria',
+        'BC Transit Kelowna',
+        'BC Transit Nanaimo',
+        'BC Transit Kamloops',
+      ]),
+    );
+
+    for (final feedId in [
+      'calgary_transit',
+      'edmonton_transit',
+      'winnipeg_transit',
+      'halifax_transit',
+      'stm_montreal',
+      'exo_montreal',
+      'translink_vancouver',
+      'bc_transit_victoria',
+      'bc_transit_kelowna',
+      'bc_transit_nanaimo',
+      'bc_transit_kamloops',
+    ]) {
+      expect(
+        TransitCatalog.feedById(feedId)?.hasDirectDownload,
+        isTrue,
+        reason: feedId,
+      );
+    }
+  });
+
   test('normalize migrates legacy preferences without region', () {
     final normalized = TransitCatalog.normalize(
       const TransitPreferences(

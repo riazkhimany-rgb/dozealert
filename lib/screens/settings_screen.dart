@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/navigation_provider.dart';
 import '../services/app_tour_service.dart';
+import '../utils/trip_ux_copy.dart';
 import '../widgets/settings_section_tile.dart';
 import 'settings/about_settings_screen.dart';
 import 'settings/activity_settings_screen.dart';
@@ -123,12 +124,12 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Trip history'),
+          const SettingsSectionHeader(title: TripUxCopy.pastTripsTitle),
           SettingsNavTile(
             key: const Key('settings_trip_history'),
             icon: Icons.history,
-            title: 'Trip history',
-            subtitle: 'Past trips, stats, and missed stops',
+            title: TripUxCopy.pastTripsTitle,
+            subtitle: TripUxCopy.pastTripsSettingsSubtitle,
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

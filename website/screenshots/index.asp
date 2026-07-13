@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="App tour â€” phone and Wear OS: transit stop countdown, map destinations for taxi and rideshare, My Trips, watch controls, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=45">
-  <link rel="stylesheet" href="../assets/brand.css?v=45">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=46">
+  <link rel="stylesheet" href="../assets/brand.css?v=46">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -714,6 +714,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=45"></script>
+  <script src="../assets/brand.js?v=46"></script>
 </body>
 </html>

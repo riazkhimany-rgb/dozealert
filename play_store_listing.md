@@ -14,13 +14,13 @@ DozeAlert wakes travelers before they reach their destination.
 
 **Features:**
 
-- Location alarms
-- Background monitoring
-- Favorite locations
-- Smart sleep mode
+- Location alarms for transit, taxi, rideshare, and map pins
+- Background monitoring while your phone is locked
+- Saved stops, destinations, and favorite lines
+- Stop-by-stop progress in Transit Mode
+- Adjustable wake distance
 - Missed-stop detection
-- Train mode
-- AI commute assistant (coming soon)
+- Wear OS companion support
 
 ## Tagline
 

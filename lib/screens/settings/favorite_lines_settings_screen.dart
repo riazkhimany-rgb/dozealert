@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/favorite_transit_line_provider.dart';
+import '../../utils/transit_user_copy.dart';
 import '../../widgets/favorite_transit_lines_section.dart';
 
 class FavoriteLinesSettingsScreen extends StatelessWidget {
@@ -14,7 +15,7 @@ class FavoriteLinesSettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorite Lines'),
+        title: const Text(TransitUserCopy.favoriteLinesSectionTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),

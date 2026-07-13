@@ -8,6 +8,7 @@ import '../models/transit_stop.dart';
 import '../providers/destination_history_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
+import '../utils/transit_user_copy.dart';
 import 'stop_picker_sheet.dart';
 import 'accessible_scroll_body.dart';
 
@@ -73,7 +74,7 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
           _AddOption(
             icon: Icons.route_outlined,
             title: 'Pick stop',
-            subtitle: 'Search GTFS stops on your route',
+            subtitle: TransitUserCopy.searchStopsOnRoute,
             onTap: () {
               unawaited(
                 StopPickerSheet.show(

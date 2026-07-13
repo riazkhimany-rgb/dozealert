@@ -24,11 +24,22 @@ void main() {
     );
   });
 
-  test('list-only agencies include terms guidance', () {
+  test('STM Montreal uses catalog feed attribution', () {
     final text = TransitAttribution.textForAgency('STM Montreal');
 
     expect(text, contains('STM'));
-    expect(text, contains('open data'));
+    expect(
+      TransitAttribution.feedForAgency('STM Montreal')?.hasDirectDownload,
+      isTrue,
+    );
     expect(TransitAttribution.licenseUrlForAgency('STM Montreal'), isNotNull);
+  });
+
+  test('list-only agencies include terms guidance', () {
+    final text = TransitAttribution.textForAgency('Amtrak');
+
+    expect(text, contains('Amtrak'));
+    expect(text, contains('open data'));
+    expect(TransitAttribution.licenseUrlForAgency('Amtrak'), isNotNull);
   });
 }

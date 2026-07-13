@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="DozeAlert Privacy Policy &mdash; how we handle location, on-device storage, and third-party services.">
   <meta name="theme-color" content="#0D1B2A">
   <title>Privacy Policy &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=45">
-  <link rel="stylesheet" href="../assets/brand.css?v=45">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=46">
+  <link rel="stylesheet" href="../assets/brand.css?v=46">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -366,6 +366,6 @@ Response.Expires = -1
       <p><a href="../index.asp">dozealert.app</a> &middot; <a href="../feedback/index.asp">Feedback</a> &middot; <a href="../transit-licenses/index.asp">Transit Data Licenses</a> &middot; &copy; DozeAlert &middot; App version synced with release build</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=45"></script>
+  <script src="../assets/brand.js?v=46"></script>
 </body>
 </html>

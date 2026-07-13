@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="DozeAlert wakes you before you reach your destination. Android phone app plus Wear OS companion. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
-  <link rel="icon" type="image/png" href="assets/icon-512.png?v=45">
-  <link rel="stylesheet" href="assets/brand.css?v=45">
+  <link rel="icon" type="image/png" href="assets/icon-512.png?v=46">
+  <link rel="stylesheet" href="assets/brand.css?v=46">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -408,7 +408,7 @@ Response.Expires = -1
         </div>
       </details>
       <p class="meta">
-        Phone <span id="app-version">1.1.0+45</span> &middot; Wear <span id="wear-version">1.1.0+100063</span>
+        Phone <span id="app-version">1.1.0+46</span> &middot; Wear <span id="wear-version">1.1.0+100064</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
@@ -621,6 +621,6 @@ Response.Expires = -1
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=45"></script>
+  <script src="assets/brand.js?v=46"></script>
 </body>
 </html>

@@ -5,7 +5,7 @@ import '../models/transit_vehicle_type.dart';
 
 /// Shipped catalog snapshot. Also written to assets/transit-catalog.json.
 abstract final class TransitCatalogBundled {
-  static const catalogVersion = 4;
+  static const catalogVersion = 5;
 
   static const countries = <String>[
     'Canada',
@@ -456,12 +456,122 @@ abstract final class TransitCatalogBundled {
       lines: ['All routes'],
     ),
     TransitCatalogAgency(
+      agencyId: 'calgary_transit',
+      agencyName: 'Calgary Transit',
+      country: 'Canada',
+      region: 'Alberta',
+      city: 'Calgary',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'calgary_transit',
+        agencyName: 'Calgary Transit',
+        province: 'Alberta',
+        vehicleTypes: [
+          TransitVehicleType.bus,
+          TransitVehicleType.lightRail,
+        ],
+        downloadUrl:
+            'https://data.calgary.ca/download/npk7-z3bj/application/zip',
+        openDataPageUrl:
+            'https://data.calgary.ca/en/Transportation-Transit/Calgary-Transit-Scheduling-Data/npk7-z3bj',
+        openDataPageLabel: 'Open Calgary Transit Scheduling Data',
+        licenseUrl: 'https://data.calgary.ca/stories/s/u45n-7awa',
+        attributionText:
+            'Contains data from Calgary Transit / Open Calgary.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'edmonton_transit',
+      agencyName: 'Edmonton Transit Service',
+      country: 'Canada',
+      region: 'Alberta',
+      city: 'Edmonton',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'edmonton_transit',
+        agencyName: 'Edmonton Transit Service',
+        province: 'Alberta',
+        vehicleTypes: [
+          TransitVehicleType.bus,
+          TransitVehicleType.lightRail,
+        ],
+        downloadUrl:
+            'https://gtfs.edmonton.ca/TMGTFSRealTimeWebService/GTFS/gtfs.zip',
+        openDataPageUrl:
+            'https://data.edmonton.ca/Transit/GTFS-Downloads/yiem-dcbw',
+        openDataPageLabel: 'Edmonton GTFS Downloads',
+        licenseUrl:
+            'https://data.edmonton.ca/stories/s/City-of-Edmonton-Open-Data-Terms-of-Use/msh8-if28/',
+        attributionText:
+            'Contains data from Edmonton Transit Service Open Data. '
+            'The regional feed may also include nearby agency routes.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'winnipeg_transit',
+      agencyName: 'Winnipeg Transit',
+      country: 'Canada',
+      region: 'Manitoba',
+      city: 'Winnipeg',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'winnipeg_transit',
+        agencyName: 'Winnipeg Transit',
+        province: 'Manitoba',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl: 'http://gtfs.winnipegtransit.com/google_transit.zip',
+        openDataPageUrl:
+            'https://info.winnipegtransit.com/open-data/open-data-web-service/',
+        openDataPageLabel: 'Winnipeg Transit Open Data',
+        licenseUrl:
+            'https://info.winnipegtransit.com/open-data/open-data-web-service/',
+        attributionText: 'Contains data from Winnipeg Transit.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'halifax_transit',
+      agencyName: 'Halifax Transit',
+      country: 'Canada',
+      region: 'Nova Scotia',
+      city: 'Halifax',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'halifax_transit',
+        agencyName: 'Halifax Transit',
+        province: 'Nova Scotia',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl: 'https://gtfs.halifax.ca/static/google_transit.zip',
+        openDataPageUrl:
+            'https://cdn.halifax.ca/transportation/halifax-transit/transit-technology/general-transit-feed-gtfs',
+        openDataPageLabel: 'Halifax Transit GTFS',
+        licenseUrl: 'https://www.halifax.ca/home/open-data',
+        attributionText: 'Contains data from Halifax Transit Open Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
       agencyId: 'stm_montreal',
       agencyName: 'STM Montreal',
       country: 'Canada',
       region: 'Quebec',
       city: 'Montreal',
-      lines: ['Line 1', 'Line 2', 'Line 4'],
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'stm_montreal',
+        agencyName: 'STM Montreal',
+        province: 'Quebec',
+        vehicleTypes: [
+          TransitVehicleType.subway,
+          TransitVehicleType.bus,
+        ],
+        downloadUrl:
+            'https://www.stm.info/sites/default/files/gtfs/gtfs_stm.zip',
+        openDataPageUrl: 'https://www.stm.info/en/about/developers',
+        openDataPageLabel: 'STM Developers',
+        licenseUrl: 'https://www.stm.info/en/about/developers/terms-use',
+        attributionText:
+            'Contains data from Société de transport de Montréal (STM) '
+            'under Creative Commons Attribution 4.0.',
+      ),
+      lines: ['All routes'],
     ),
     TransitCatalogAgency(
       agencyId: 'exo_montreal',
@@ -469,7 +579,20 @@ abstract final class TransitCatalogBundled {
       country: 'Canada',
       region: 'Quebec',
       city: 'Montreal',
-      lines: ['Mont-Saint-Hilaire', 'Candiac'],
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'exo_montreal',
+        agencyName: 'Exo',
+        province: 'Quebec',
+        vehicleTypes: [TransitVehicleType.train],
+        downloadUrl: 'https://exo.quebec/xdata/trains/google_transit.zip',
+        openDataPageUrl: 'https://exo.quebec/en/about/open-data',
+        openDataPageLabel: 'Exo Open Data',
+        licenseUrl: 'https://www.donneesquebec.ca/fr/licence/#cc-by',
+        attributionText:
+            'Contains Exo train schedule data from Exo open data. '
+            'Bus sectors are published as separate feeds on Exo Open Data.',
+      ),
+      lines: ['All routes'],
     ),
     TransitCatalogAgency(
       agencyId: 'translink_vancouver',
@@ -477,7 +600,110 @@ abstract final class TransitCatalogBundled {
       country: 'Canada',
       region: 'British Columbia',
       city: 'Vancouver',
-      lines: ['Expo Line', 'Millennium Line', 'Canada Line'],
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'translink_vancouver',
+        agencyName: 'TransLink Vancouver',
+        province: 'British Columbia',
+        vehicleTypes: [
+          TransitVehicleType.bus,
+          TransitVehicleType.subway,
+          TransitVehicleType.lightRail,
+          TransitVehicleType.train,
+        ],
+        downloadUrl:
+            'https://gtfs-static.translink.ca/gtfs/google_transit.zip',
+        openDataPageUrl:
+            'https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs',
+        openDataPageLabel: 'TransLink GTFS',
+        licenseUrl:
+            'https://developer.translink.ca/ServicesGtfs/GtfsData',
+        attributionText:
+            'Route and arrival data used in this product or service is '
+            'provided by permission of TransLink. TransLink assumes no '
+            'responsibility for the accuracy or currency of the Data used '
+            'in this product or service.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'bc_transit_victoria',
+      agencyName: 'BC Transit Victoria',
+      country: 'Canada',
+      region: 'British Columbia',
+      city: 'Victoria',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'bc_transit_victoria',
+        agencyName: 'BC Transit Victoria',
+        province: 'British Columbia',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'https://bct.tmix.se/Tmix.Cap.TdExport.WebApi/gtfs/?operatorIds=48',
+        openDataPageUrl: 'https://www.bctransit.com/open-data/',
+        openDataPageLabel: 'BC Transit Open Data',
+        licenseUrl: 'https://www.bctransit.com/open-data/terms-of-use',
+        attributionText: 'Contains data from BC Transit Open Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'bc_transit_kelowna',
+      agencyName: 'BC Transit Kelowna',
+      country: 'Canada',
+      region: 'British Columbia',
+      city: 'Kelowna',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'bc_transit_kelowna',
+        agencyName: 'BC Transit Kelowna',
+        province: 'British Columbia',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'https://bct.tmix.se/Tmix.Cap.TdExport.WebApi/gtfs/?operatorIds=47',
+        openDataPageUrl: 'https://www.bctransit.com/open-data/',
+        openDataPageLabel: 'BC Transit Open Data',
+        licenseUrl: 'https://www.bctransit.com/open-data/terms-of-use',
+        attributionText: 'Contains data from BC Transit Open Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'bc_transit_nanaimo',
+      agencyName: 'BC Transit Nanaimo',
+      country: 'Canada',
+      region: 'British Columbia',
+      city: 'Nanaimo',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'bc_transit_nanaimo',
+        agencyName: 'BC Transit Nanaimo',
+        province: 'British Columbia',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'https://bct.tmix.se/Tmix.Cap.TdExport.WebApi/gtfs/?operatorIds=41',
+        openDataPageUrl: 'https://www.bctransit.com/open-data/',
+        openDataPageLabel: 'BC Transit Open Data',
+        licenseUrl: 'https://www.bctransit.com/open-data/terms-of-use',
+        attributionText: 'Contains data from BC Transit Open Data.',
+      ),
+      lines: ['All routes'],
+    ),
+    TransitCatalogAgency(
+      agencyId: 'bc_transit_kamloops',
+      agencyName: 'BC Transit Kamloops',
+      country: 'Canada',
+      region: 'British Columbia',
+      city: 'Kamloops',
+      gtfsFeed: GtfsFeedInfo(
+        feedId: 'bc_transit_kamloops',
+        agencyName: 'BC Transit Kamloops',
+        province: 'British Columbia',
+        vehicleTypes: [TransitVehicleType.bus],
+        downloadUrl:
+            'https://bct.tmix.se/Tmix.Cap.TdExport.WebApi/gtfs/?operatorIds=46',
+        openDataPageUrl: 'https://www.bctransit.com/open-data/',
+        openDataPageLabel: 'BC Transit Open Data',
+        licenseUrl: 'https://www.bctransit.com/open-data/terms-of-use',
+        attributionText: 'Contains data from BC Transit Open Data.',
+      ),
+      lines: ['All routes'],
     ),
     TransitCatalogAgency(
       agencyId: 'mta',
