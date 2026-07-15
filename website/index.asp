@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="DozeAlert wakes you before you reach your destination. Android phone app plus Wear OS companion. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
-  <link rel="icon" type="image/png" href="assets/icon-512.png?v=47">
-  <link rel="stylesheet" href="assets/brand.css?v=47">
+  <link rel="icon" type="image/png" href="assets/icon-512.png?v=48">
+  <link rel="stylesheet" href="assets/brand.css?v=48">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -408,7 +408,7 @@ Response.Expires = -1
         </div>
       </details>
       <p class="meta">
-        Phone <span id="app-version">1.1.0+47</span> &middot; Wear <span id="wear-version">1.1.0+100065</span>
+        Phone <span id="app-version">1.1.0+48</span> &middot; Wear <span id="wear-version">1.1.0+100072</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
@@ -435,7 +435,8 @@ Response.Expires = -1
         <li>Download agency stop lists for offline search (Settings &rarr; Transit)</li>
         <li><strong>Trip history</strong> and missed-trip review in Settings</li>
         <li>Transit wake timing tuned per vehicle type (bus, train, subway, and more)</li>
-        <li><strong>Wear OS companion</strong> &mdash; watch trip status, start/stop, and dismiss alarms from your wrist (phone runs GPS and monitoring)</li>
+        <li><strong>Wear OS companion</strong> &mdash; trip status, start/stop, and dismiss alarms from your wrist (phone runs GPS and monitoring)</li>
+        <li><strong>Watch face complication</strong> &mdash; glance status like RDY, stop count, or OFF without opening the Wear app</li>
         <li>Watch connection indicator shows live link status when the Wear app is installed</li>
         <li>No account required &mdash; trip data stays on your device</li>
       </ul>
@@ -445,22 +446,23 @@ Response.Expires = -1
       <h2>Wear OS companion</h2>
       <p>
         Pair a Wear OS watch with DozeAlert on your phone for at-a-glance trip status
-        on your wrist, start and stop controls, and GET READY wake alerts. Your phone keeps
-        location, permissions, and background monitoring &mdash; the watch is a remote control and
-        display, not a standalone app.
+        on your wrist &mdash; including a <strong>watch face complication</strong> that updates
+        when you start or stop a trip on your phone. Start and stop controls and GET READY
+        wake alerts live in the Wear app. Your phone keeps location, permissions, and
+        background monitoring; the watch is a remote control and glance display.
       </p>
-      <div class="watch-grid" aria-label="Wear OS app screenshots">
+      <div class="watch-grid" aria-label="Wear OS app and complication screenshots">
         <figure class="watch-card">
-          <img class="watch-shot" src="assets/screens/w_shot1.png" width="512" height="512" alt="Wear app idle screen prompting to set up on phone.">
-          <figcaption><strong>Set up on phone</strong>Open DozeAlert on your phone to pick a destination.</figcaption>
+          <img class="watch-shot" src="assets/screens/w_shot7.png" width="512" height="512" alt="Minimal analog watch face with DozeAlert sleepy-pin complication showing RDY.">
+          <figcaption><strong>Complication: ready</strong>Add DozeAlert to your watch face &mdash; see RDY when a destination is set.</figcaption>
         </figure>
         <figure class="watch-card">
-          <img class="watch-shot" src="assets/screens/w_shot2_new.png" width="512" height="512" alt="Wear app ready screen with Phone connected, destination, and Start trip.">
-          <figcaption><strong>Ready when you are</strong>Phone connected, destination and line, then start from watch or phone.</figcaption>
+          <img class="watch-shot" src="assets/screens/w_shot6.png" width="512" height="512" alt="Minimal analog watch face with DozeAlert complication showing 4 stp while monitoring.">
+          <figcaption><strong>Complication: watching</strong>Stops remaining or distance while monitoring, without opening the Wear app.</figcaption>
         </figure>
         <figure class="watch-card">
           <img class="watch-shot" src="assets/screens/w_shot3.png" width="512" height="512" alt="Wear app monitoring trip with stop countdown.">
-          <figcaption><strong>Watching</strong>Stops remaining or distance while you relax.</figcaption>
+          <figcaption><strong>Watching</strong>Open the app for full trip detail and start/stop controls.</figcaption>
         </figure>
         <figure class="watch-card">
           <img class="watch-shot" src="assets/screens/w_shot4.png" width="512" height="512" alt="Wear app GET READY wake alert screen.">
@@ -469,6 +471,8 @@ Response.Expires = -1
       </div>
       <p style="margin-top: 1rem;">
         <a class="text-link" href="screenshots/index.asp#wear">Wear app tour &rarr;</a>
+        &nbsp;&middot;&nbsp;
+        <a class="text-link" href="screenshots/index.asp#wear-complication">Complication &rarr;</a>
       </p>
       <div class="note" style="margin-top: 1rem;">
         <strong>Install order:</strong> Install the <strong>phone APK</strong> first, then the
@@ -621,6 +625,6 @@ Response.Expires = -1
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=47"></script>
+  <script src="assets/brand.js?v=48"></script>
 </body>
 </html>

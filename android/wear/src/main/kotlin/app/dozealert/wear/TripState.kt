@@ -188,6 +188,82 @@ data class TripState(
             else -> "DozeAlert"
         }
 
+    /** Compact glance status for Wear complications (≈7 chars). */
+    enum class ComplicationIconKind {
+        Idle,
+        Ready,
+        Watching,
+        Alarm,
+        Arrived,
+        Missed,
+    }
+
+    val complicationIconKind: ComplicationIconKind
+        get() = when {
+            alarmActive -> ComplicationIconKind.Alarm
+            state == "arrived" -> ComplicationIconKind.Arrived
+            state == "missed" -> ComplicationIconKind.Missed
+            isMonitoring -> ComplicationIconKind.Watching
+            hasDestination -> ComplicationIconKind.Ready
+            else -> ComplicationIconKind.Idle
+        }
+
+    val complicationShortText: String
+        get() = when {
+            alarmActive -> "WAKE"
+            state == "arrived" -> "ARR"
+            state == "missed" -> "MISS"
+            isMonitoring && transitActive && stopsRemaining >= 0 -> when (stopsRemaining) {
+                0 -> "At"
+                1 -> "1 stp"
+                else -> "$stopsRemaining stp"
+            }
+            isMonitoring && distanceReady -> String.format("%.1f km", distanceKm)
+            isMonitoring -> "ON"
+            hasDestination -> "RDY"
+            else -> "OFF"
+        }
+
+    val complicationContentDescription: String
+        get() = when {
+            alarmActive -> "Alarm · ${alarmContextLine}"
+            state == "arrived" -> "You've arrived"
+            state == "missed" -> "Trip missed"
+            isMonitoring && transitActive && stopsRemaining >= 0 -> when (stopsRemaining) {
+                0 -> "Watching · At destination stop"
+                1 -> "Watching · 1 stop to go"
+                else -> "Watching · $stopsRemaining stops to go"
+            }
+            isMonitoring && distanceReady ->
+                String.format("Watching · %.1f km left", distanceKm)
+            isMonitoring -> "Watching your trip"
+            hasDestination -> "Ready · ${destinationName.ifBlank { "Tap Start on phone" }}"
+            else -> "DozeAlert idle"
+        }
+
+    /** Progress for RANGED_VALUE complications (remaining towards zero = closer). */
+    val complicationRangeValue: Float
+        get() = when {
+            alarmActive -> 1f
+            state == "arrived" -> 0f
+            state == "missed" -> 1f
+            isMonitoring && transitActive && stopsRemaining >= 0 ->
+                stopsRemaining.toFloat().coerceAtLeast(0f)
+            isMonitoring -> 1f
+            else -> 0f
+        }
+
+    val complicationRangeMax: Float
+        get() = when {
+            alarmActive || state == "missed" -> 1f
+            state == "arrived" -> 1f
+            isMonitoring && transitActive && stopsRemaining >= 0 -> {
+                maxOf(stopsRemaining, wakeStopCount, 1).toFloat()
+            }
+            isMonitoring -> 1f
+            else -> 1f
+        }
+
     companion object {
         fun fromDataMap(map: com.google.android.gms.wearable.DataMap): TripState {
             return TripState(

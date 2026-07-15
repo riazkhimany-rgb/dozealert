@@ -15,6 +15,7 @@ class AppSettings {
     this.transitModeEnabled = true,
     this.transitModeWake = TransitModeWakeSetting.oneStopBefore,
     this.activityRecognitionEnabled = false,
+    this.openWatchAppWhenTripStarts = true,
     this.alarmSoundMode = AlarmSoundMode.followDevice,
     this.alarmVolume = 1.0,
     this.approachSystemVolume = defaultApproachSystemVolume,
@@ -26,6 +27,7 @@ class AppSettings {
   final bool transitModeEnabled;
   final TransitModeWakeSetting transitModeWake;
   final bool activityRecognitionEnabled;
+  final bool openWatchAppWhenTripStarts;
   final AlarmSoundMode alarmSoundMode;
   final double alarmVolume;
   final double approachSystemVolume;
@@ -40,6 +42,7 @@ class AppSettings {
     bool? transitModeEnabled,
     TransitModeWakeSetting? transitModeWake,
     bool? activityRecognitionEnabled,
+    bool? openWatchAppWhenTripStarts,
     AlarmSoundMode? alarmSoundMode,
     double? alarmVolume,
     double? approachSystemVolume,
@@ -52,6 +55,8 @@ class AppSettings {
       transitModeWake: transitModeWake ?? this.transitModeWake,
       activityRecognitionEnabled:
           activityRecognitionEnabled ?? this.activityRecognitionEnabled,
+      openWatchAppWhenTripStarts:
+          openWatchAppWhenTripStarts ?? this.openWatchAppWhenTripStarts,
       alarmSoundMode: alarmSoundMode ?? this.alarmSoundMode,
       alarmVolume: alarmVolume ?? this.alarmVolume,
       approachSystemVolume: approachSystemVolume ?? this.approachSystemVolume,

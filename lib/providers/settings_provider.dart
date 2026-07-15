@@ -16,6 +16,8 @@ class SettingsProvider extends ChangeNotifier {
       _settingsService.settings.transitModeWake;
   bool get activityRecognitionEnabled =>
       _settingsService.settings.activityRecognitionEnabled;
+  bool get openWatchAppWhenTripStarts =>
+      _settingsService.settings.openWatchAppWhenTripStarts;
   AlarmSoundMode get alarmSoundMode => _settingsService.settings.alarmSoundMode;
   bool get alwaysPlayAlarmSound => _settingsService.settings.alwaysPlayAlarmSound;
   double get alarmVolume => _settingsService.settings.alarmVolume;
@@ -63,6 +65,17 @@ class SettingsProvider extends ChangeNotifier {
 
     await _settingsService.saveSettings(
       _settingsService.settings.copyWith(activityRecognitionEnabled: enabled),
+    );
+    notifyListeners();
+  }
+
+  Future<void> setOpenWatchAppWhenTripStarts(bool enabled) async {
+    if (enabled == openWatchAppWhenTripStarts) {
+      return;
+    }
+
+    await _settingsService.saveSettings(
+      _settingsService.settings.copyWith(openWatchAppWhenTripStarts: enabled),
     );
     notifyListeners();
   }

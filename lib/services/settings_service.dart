@@ -11,6 +11,7 @@ class SettingsService {
   static const _transitModeEnabledKey = 'transit_mode_enabled';
   static const _transitModeWakeKey = 'transit_mode_wake';
   static const activityRecognitionEnabledKey = 'activity_recognition_enabled';
+  static const _openWatchAppWhenTripStartsKey = 'open_watch_app_when_trip_starts';
   static const _alarmSoundModeKey = 'alarm_sound_mode';
   static const _alarmVolumeKey = 'alarm_volume';
   static const _approachSystemVolumeKey = 'approach_system_volume';
@@ -37,6 +38,8 @@ class SettingsService {
     final vibrationIntensity = prefs.getDouble(_vibrationIntensityKey);
     final activityRecognitionEnabled =
         prefs.getBool(activityRecognitionEnabledKey) ?? false;
+    final openWatchAppWhenTripStarts =
+        prefs.getBool(_openWatchAppWhenTripStartsKey) ?? true;
 
     _settings = AppSettings(
       themeMode: themeIndex != null && themeIndex < ThemeMode.values.length
@@ -49,6 +52,7 @@ class SettingsService {
             TransitModeWakeSetting.oneStopBefore.index,
       ),
       activityRecognitionEnabled: activityRecognitionEnabled,
+      openWatchAppWhenTripStarts: openWatchAppWhenTripStarts,
       alarmSoundMode: AlarmSoundModeX.fromIndex(
         alarmSoundModeIndex ?? AlarmSoundMode.followDevice.index,
       ),
@@ -94,6 +98,10 @@ class SettingsService {
     await prefs.setBool(
       activityRecognitionEnabledKey,
       settings.activityRecognitionEnabled,
+    );
+    await prefs.setBool(
+      _openWatchAppWhenTripStartsKey,
+      settings.openWatchAppWhenTripStarts,
     );
     await prefs.setInt(_alarmSoundModeKey, settings.alarmSoundMode.index);
     await prefs.setDouble(_alarmVolumeKey, settings.alarmVolume.clamp(0.0, 1.0));

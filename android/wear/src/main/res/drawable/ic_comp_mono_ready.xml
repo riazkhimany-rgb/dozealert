@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- DozeAlert sleepy pin (mono, tintable) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M256,92c-78,0 -141,63 -141,141c0,55 38,114 91,166c15,15 33,23 50,23s35,-8 50,-23c53,-52 91,-111 91,-166c0,-78 -63,-141 -141,-141zM256,166c-29.8,0 -54,24.2 -54,54s24.2,54 54,54 54,-24.2 54,-54 -24.2,-54 -54,-54z" />
+    <!-- Closed sleepy eyes -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="14"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M228,214c8,8 16,8 24,0" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="14"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M260,214c8,8 16,8 24,0" />
+    <!-- Tiny mouth -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M256,238m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+    <!-- Zzz -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M280,156h36l-30,28h32v12h-40l30,-28h-28z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M318,132h28l-22,20h26v10h-32l22,-20h-22z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M348,112h22l-16,14h20v8h-26l16,-14h-16z" />
+</vector>

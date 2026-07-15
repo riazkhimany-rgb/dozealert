@@ -88,12 +88,29 @@
             android:icon="@drawable/ic_complication"
             android:label="@string/complication_label"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <!-- Legacy action: required for Samsung Galaxy Watch / One UI Watch discovery -->
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <!-- AndroidX action: standard Wear OS / watch face library discovery -->
             <intent-filter>
                 <action android:name="androidx.wear.watchface.complications.action.COMPLICATION_UPDATE_REQUEST" />
             </intent-filter>
+            <!-- SHORT_TEXT only: matches Fit heart/steps round slots (icon + value).
+                 Advertising ICON / SMALL_IMAGE made Samsung bind image-only and hide text. -->
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="SHORT_TEXT" />
             <meta-data
                 android:name="androidx.wear.watchface.complications.SUPPORTED_TYPES"
                 android:value="SHORT_TEXT" />
+            <!-- Push updates via ComplicationDataSourceUpdateRequester; no polling -->
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="0" />
+            <meta-data
+                android:name="androidx.wear.watchface.complications.UPDATE_PERIOD_SECONDS"
+                android:value="0" />
         </service>
     </application>
 </manifest>

@@ -13,11 +13,11 @@ Response.Expires = -1
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="App tour â€” phone and Wear OS: transit stop countdown, map destinations for taxi and rideshare, My Trips, watch controls, and wake alerts.">
+  <meta name="description" content="App tour — phone and Wear OS: transit stop countdown, map destinations, My Trips, watch face complication, watch controls, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=47">
-  <link rel="stylesheet" href="../assets/brand.css?v=47">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=48">
+  <link rel="stylesheet" href="../assets/brand.css?v=48">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -603,7 +603,8 @@ Response.Expires = -1
       <h2>Wear OS companion</h2>
       <p class="section-lead">
         A paired watch shows live trip status, lets you start or stop monitoring, and repeats
-        vibration until you dismiss a wake-up alert. GPS and permissions stay on your phone.
+        vibration until you dismiss a wake-up alert. Add a <strong>watch face complication</strong>
+        for RDY, stop count, or OFF at a glance. GPS and permissions stay on your phone.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
@@ -639,8 +640,9 @@ Response.Expires = -1
           <h3>Watching your trip</h3>
           <p>
             While monitoring, see stops remaining or distance (Transit Mode). Tap
-            <strong>Stop trip</strong> to end early. Add the DozeAlert tile or complication
-            for quicker access from your watch face.
+            <strong>Stop trip</strong> to end early. Prefer the watch face? Use the
+            <a class="text-link" href="#wear-complication">DozeAlert complication</a>
+            for status without opening the app.
           </p>
         </div>
       </div>
@@ -654,6 +656,41 @@ Response.Expires = -1
             When you approach your stop, the watch shows <strong>GET READY</strong> with your
             destination and vibrates until you tap <strong>Dismiss alarm</strong>
             on the watch or phone.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="wear-complication">
+      <h2>Watch face complication</h2>
+      <p class="section-lead">
+        Add DozeAlert to a supported watch face. When you start a trip on your phone, the
+        complication updates on your wrist &mdash; no need to open the Wear app for a quick status check.
+      </p>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot watch-shot" src="../assets/screens/w_shot7.png" width="512" height="512" alt="Minimal analog watch face with DozeAlert sleepy-pin complication showing RDY.">
+        </div>
+        <div class="copy">
+          <h3>Ready on the dial</h3>
+          <p>
+            With a destination set (not yet monitoring), the complication shows the
+            DozeAlert pin and <strong>RDY</strong>. Customize your watch face and pick
+            <strong>DozeAlert</strong> for a SHORT_TEXT slot.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot watch-shot" src="../assets/screens/w_shot6.png" width="512" height="512" alt="Minimal analog watch face with DozeAlert complication showing 4 stp while monitoring.">
+        </div>
+        <div class="copy">
+          <h3>Stops at a glance</h3>
+          <p>
+            While DozeAlert is watching your trip, see stop count
+            (for example <strong>4 stp</strong>) or remaining distance. Status also covers
+            <strong>OFF</strong>, <strong>ON</strong>, <strong>WAKE</strong>, and more
+            as your trip progresses.
           </p>
         </div>
       </div>
@@ -714,6 +751,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=47"></script>
+  <script src="../assets/brand.js?v=48"></script>
 </body>
 </html>

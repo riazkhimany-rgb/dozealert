@@ -14,6 +14,7 @@ import 'settings/location_settings_screen.dart';
 import 'settings/permissions_settings_screen.dart';
 import 'settings/theme_settings_screen.dart';
 import 'settings/transit_settings_screen.dart';
+import 'settings/wear_settings_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -119,6 +120,20 @@ class SettingsScreen extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const LocationSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 32),
+          const SettingsSectionHeader(title: 'Wear'),
+          SettingsNavTile(
+            icon: Icons.watch_outlined,
+            title: 'Wear OS',
+            subtitle: 'Watch companion and trip-start launch',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const WearSettingsScreen(),
                 ),
               );
             },

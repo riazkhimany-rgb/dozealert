@@ -4,7 +4,7 @@
     android:height="24dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <!-- Complication picker / provider icon — DozeAlert sleepy pin -->
+    <!-- DozeAlert sleepy pin — Ready (cyan) -->
     <path
         android:fillColor="#4CC9F0"
         android:pathData="M256,92c-78,0 -141,63 -141,141c0,55 38,114 91,166c15,15 33,23 50,23s35,-8 50,-23c53,-52 91,-111 91,-166c0,-78 -63,-141 -141,-141z" />

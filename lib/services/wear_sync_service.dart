@@ -156,6 +156,11 @@ class WearSyncService {
       return;
     }
 
+    if (!_settingsProvider.openWatchAppWhenTripStarts) {
+      _lastMonitoringState = _monitoringProvider.currentState;
+      return;
+    }
+
     final monitoringState = _monitoringProvider.currentState;
     final shouldLaunch = monitoringState == MonitoringState.monitoring &&
         (force || _lastMonitoringState != MonitoringState.monitoring);
