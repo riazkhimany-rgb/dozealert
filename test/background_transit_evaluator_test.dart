@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dozealert/models/background_transit_pattern.dart';
@@ -54,6 +56,34 @@ void main() {
       expect(result!.onRoute, isTrue);
       expect(result.stopsRemaining, 2);
       expect(result.directionLocked, isTrue);
+    });
+
+    test('persists the fixed wake target and armed state', () {
+      final armedAt = DateTime(2026, 7, 17, 12).millisecondsSinceEpoch;
+      final withWakePlan = BackgroundTransitPattern(
+        routeId: 'route_a',
+        directionLocked: true,
+        travelingForward: true,
+        destinationStopSequence: 3,
+        stabilizedStopSequence: 2,
+        segmentStops: stops,
+        wakeStopCount: 1,
+        wakeStopSequence: 2,
+        wakeToDestinationMeters: 1250,
+        wakeArmedAtMs: armedAt,
+        wakeArmStableFixes: 2,
+      );
+
+      final restored = BackgroundTransitPattern.fromJsonString(
+        jsonEncode(withWakePlan.toJson()),
+      );
+
+      expect(restored, isNotNull);
+      expect(restored!.wakePlan, isNotNull);
+      expect(restored.wakePlan!.wakeStopSequence, 2);
+      expect(restored.wakePlan!.wakeToDestinationMeters, 1250);
+      expect(restored.wakeArmedAtMs, armedAt);
+      expect(restored.wakeArmStableFixes, 2);
     });
   });
 }

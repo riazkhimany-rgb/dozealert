@@ -19,12 +19,15 @@ class TransitModeSettingsScreen extends StatelessWidget {
 
     final wakeTimingGroup = RadioGroup<TransitModeWakeSetting>(
       groupValue: settingsProvider.transitModeWake,
-      onChanged: (value) {
+      onChanged: (value) async {
         if (!transitModeEnabled || value == null) {
           return;
         }
+        await settingsProvider.setTransitModeWake(value);
+        if (!context.mounted) {
+          return;
+        }
         context.read<TransitModeProvider>().refreshFromSettings();
-        settingsProvider.setTransitModeWake(value);
       },
       child: Column(
         children: TransitModeWakeSetting.values
@@ -39,14 +42,15 @@ class TransitModeSettingsScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Transit Mode'),
-      ),
+      appBar: AppBar(title: const Text('Transit Mode')),
       body: ListView(
         children: [
           const SettingsSectionHeader(title: 'Transit Mode'),
           SwitchListTile(
-            secondary: Icon(Icons.directions_transit, color: colorScheme.primary),
+            secondary: Icon(
+              Icons.directions_transit,
+              color: colorScheme.primary,
+            ),
             title: const Text('Transit Mode'),
             subtitle: Text(
               transitModeEnabled
@@ -55,11 +59,12 @@ class TransitModeSettingsScreen extends StatelessWidget {
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             value: transitModeEnabled,
-            onChanged: (enabled) {
-              settingsProvider.setTransitModeEnabled(enabled);
-              if (enabled) {
-                context.read<TransitModeProvider>().refreshFromSettings();
+            onChanged: (enabled) async {
+              await settingsProvider.setTransitModeEnabled(enabled);
+              if (!context.mounted) {
+                return;
               }
+              context.read<TransitModeProvider>().refreshFromSettings();
             },
           ),
           if (transitModeEnabled)
@@ -90,10 +95,10 @@ class TransitModeSettingsScreen extends StatelessWidget {
             child: BrandedMentionText(
               transitModeEnabled
                   ? 'For map-pin destinations or when you are not on a transit route, '
-                      'DozeAlert uses straight-line distance instead of stops. '
-                      'Transit stop destinations wake by stops once you are on the route.'
+                        'DozeAlert uses straight-line distance instead of stops. '
+                        'Transit stop destinations wake by stops once you are on the route.'
                   : 'With Transit Mode off, DozeAlert always wakes you by straight-line '
-                      'distance to your destination.',
+                        'distance to your destination.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
           ),

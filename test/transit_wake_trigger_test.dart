@@ -1,5 +1,6 @@
 import 'package:dozealert/models/transit_stop.dart';
 import 'package:dozealert/models/transit_vehicle_type.dart';
+import 'package:dozealert/models/transit_wake_plan.dart';
 import 'package:dozealert/utils/transit_wake_trigger.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -71,70 +72,80 @@ void main() {
       );
     });
 
-    test('does not wake when stop sequence advanced but still far along route', () {
-      final wakeToDestination = TransitWakeTrigger.alongRouteMetersBetweenStops(
-        segmentStops: segmentStops,
-        fromStop: segmentStops[1],
-        toStop: segmentStops[2],
-        destinationStop: segmentStops[2],
-      );
+    test(
+      'does not wake when stop sequence advanced but still far along route',
+      () {
+        final wakeToDestination =
+            TransitWakeTrigger.alongRouteMetersBetweenStops(
+              segmentStops: segmentStops,
+              fromStop: segmentStops[1],
+              toStop: segmentStops[2],
+              destinationStop: segmentStops[2],
+            );
 
-      expect(
-        TransitWakeTrigger.shouldTrigger(
-          stopsRemaining: 1,
-          wakeStopCount: 1,
-          directionLocked: true,
-          hasEstablishedProgress: true,
-          alongRouteRemainingMeters: (wakeToDestination ?? 0) + 500,
-          offRouteMeters: 15,
-          accuracyMeters: 12,
-          speedMps: 30,
-          segmentStops: segmentStops,
-          currentStop: segmentStops[1],
-          destinationStop: segmentStops[2],
-          vehicleType: TransitVehicleType.train,
-        ),
-        isFalse,
-      );
-    });
+        expect(
+          TransitWakeTrigger.shouldTrigger(
+            stopsRemaining: 1,
+            wakeStopCount: 1,
+            directionLocked: true,
+            hasEstablishedProgress: true,
+            alongRouteRemainingMeters: (wakeToDestination ?? 0) + 500,
+            offRouteMeters: 15,
+            accuracyMeters: 12,
+            speedMps: 30,
+            segmentStops: segmentStops,
+            currentStop: segmentStops[1],
+            destinationStop: segmentStops[2],
+            vehicleType: TransitVehicleType.train,
+          ),
+          isFalse,
+        );
+      },
+    );
 
-    test('does not wake at wake stop count alone when current stop is too early', () {
-      expect(
-        TransitWakeTrigger.shouldTrigger(
-          stopsRemaining: 1,
-          wakeStopCount: 1,
-          directionLocked: true,
-          hasEstablishedProgress: true,
-          alongRouteRemainingMeters: 100,
-          offRouteMeters: 15,
-          accuracyMeters: 12,
-          speedMps: 6,
-          segmentStops: segmentStops,
-          currentStop: segmentStops[0],
-          destinationStop: segmentStops[2],
-        ),
-        isFalse,
-      );
-    });
+    test(
+      'does not wake at wake stop count alone when current stop is too early',
+      () {
+        expect(
+          TransitWakeTrigger.shouldTrigger(
+            stopsRemaining: 1,
+            wakeStopCount: 1,
+            directionLocked: true,
+            hasEstablishedProgress: true,
+            alongRouteRemainingMeters: 100,
+            offRouteMeters: 15,
+            accuracyMeters: 12,
+            speedMps: 6,
+            segmentStops: segmentStops,
+            currentStop: segmentStops[0],
+            destinationStop: segmentStops[2],
+          ),
+          isFalse,
+        );
+      },
+    );
 
-    test('wakes two stops before at the first segment stop when near along route', () {
-      expect(
-        TransitWakeTrigger.shouldTrigger(
-          stopsRemaining: 2,
-          wakeStopCount: 2,
-          directionLocked: true,
-          hasEstablishedProgress: true,
-          alongRouteRemainingMeters: 300,
-          offRouteMeters: 20,
-          accuracyMeters: 12,
-          speedMps: 6,
-          segmentStops: segmentStops,
-          currentStop: segmentStops[0],
-          destinationStop: segmentStops[2],
-        ),
-        isTrue,
-      );
-    });
+    test(
+      'wakes two stops before at the first segment stop when near along route',
+      () {
+        expect(
+          TransitWakeTrigger.shouldTrigger(
+            stopsRemaining: 2,
+            wakeStopCount: 2,
+            directionLocked: true,
+            hasEstablishedProgress: true,
+            alongRouteRemainingMeters: 300,
+            offRouteMeters: 20,
+            accuracyMeters: 12,
+            speedMps: 6,
+            segmentStops: segmentStops,
+            currentStop: segmentStops[0],
+            destinationStop: segmentStops[2],
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('at destination wakes only when at destination along route', () {
       expect(
@@ -190,10 +201,7 @@ void main() {
     });
 
     test('wakes on short segment when at the implicit wake stop', () {
-      final shortSegment = [
-        segmentStops[1],
-        segmentStops[2],
-      ];
+      final shortSegment = [segmentStops[1], segmentStops[2]];
 
       expect(
         TransitWakeTrigger.shouldTrigger(
@@ -211,6 +219,108 @@ void main() {
         ),
         isTrue,
       );
+    });
+  });
+
+  group('TransitWakeTrigger.evaluatePlan', () {
+    final plan = TransitWakePlan(
+      routeId: routeId,
+      patternKey: 'eastbound',
+      wakeStopCount: 1,
+      destinationStopSequence: 3,
+      wakeStopSequence: 2,
+      wakeToDestinationMeters: 1000,
+      segmentStops: segmentStops,
+      travelingForward: true,
+      vehicleType: TransitVehicleType.train,
+    );
+
+    test(
+      'stop progress arms but distance confirmation prevents early wake',
+      () {
+        final decision = TransitWakeTrigger.evaluatePlan(
+          plan: plan,
+          directionLocked: true,
+          hasEstablishedProgress: true,
+          hasTripConcern: false,
+          currentStop: segmentStops[1],
+          alongRouteRemainingMeters: 1500,
+          offRouteMeters: 20,
+          accuracyMeters: 15,
+          gpsStale: false,
+          armedAt: null,
+          armStableFixes: 0,
+        );
+
+        expect(decision.isArmed, isTrue);
+        expect(decision.shouldTrigger, isFalse);
+        expect(
+          decision.reason,
+          TransitWakeDecisionReason.armedWaitingForDistance,
+        );
+      },
+    );
+
+    test('recovers after progress jumps to destination', () {
+      final decision = TransitWakeTrigger.evaluatePlan(
+        plan: plan,
+        directionLocked: true,
+        hasEstablishedProgress: true,
+        hasTripConcern: false,
+        currentStop: segmentStops[2],
+        alongRouteRemainingMeters: 1200,
+        offRouteMeters: 20,
+        accuracyMeters: 15,
+        gpsStale: false,
+        armedAt: null,
+        armStableFixes: 0,
+      );
+
+      expect(decision.shouldTrigger, isTrue);
+      expect(decision.reason, TransitWakeDecisionReason.recoveredAfterStopJump);
+    });
+
+    test('uses stable armed stop after the train GPS grace period', () {
+      final armedAt = DateTime(2026, 7, 17, 12);
+      final decision = TransitWakeTrigger.evaluatePlan(
+        plan: plan,
+        directionLocked: true,
+        hasEstablishedProgress: true,
+        hasTripConcern: false,
+        currentStop: segmentStops[1],
+        alongRouteRemainingMeters: null,
+        offRouteMeters: null,
+        accuracyMeters: 0,
+        gpsStale: true,
+        armedAt: armedAt,
+        armStableFixes: TransitWakeTrigger.minStableArmFixes,
+        now: armedAt.add(const Duration(seconds: 45)),
+      );
+
+      expect(decision.shouldTrigger, isTrue);
+      expect(
+        decision.reason,
+        TransitWakeDecisionReason.confirmedByPoorGpsFallback,
+      );
+    });
+
+    test('trip concern blocks distance and poor-GPS confirmation', () {
+      final decision = TransitWakeTrigger.evaluatePlan(
+        plan: plan,
+        directionLocked: true,
+        hasEstablishedProgress: true,
+        hasTripConcern: true,
+        currentStop: segmentStops[2],
+        alongRouteRemainingMeters: 100,
+        offRouteMeters: 10,
+        accuracyMeters: 10,
+        gpsStale: false,
+        armedAt: DateTime(2026, 7, 17, 12),
+        armStableFixes: TransitWakeTrigger.minStableArmFixes,
+      );
+
+      expect(decision.shouldTrigger, isFalse);
+      expect(decision.reason, TransitWakeDecisionReason.tripConcern);
     });
   });
 }

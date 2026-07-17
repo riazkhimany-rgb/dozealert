@@ -56,8 +56,7 @@ abstract final class TripUxCopy {
 
   static const emptyHeadline = 'Where are you getting off?';
 
-  static const emptySubtitle =
-      'Pick your stop on your route.';
+  static const emptySubtitle = 'Pick your stop on your route.';
 
   static String emptySubtitleForWake(TransitModeWakeSetting wakeSetting) {
     return '$emptySubtitle ${defaultWakeSummary(wakeSetting)}.';
@@ -79,8 +78,7 @@ abstract final class TripUxCopy {
   static const recentStopsTitle = 'Recent stops';
   static const recentDestinationsTitle = 'Recent destinations';
 
-  static const savedStopsSubtitle =
-      "Start a trip to a stop you've saved.";
+  static const savedStopsSubtitle = "Start a trip to a stop you've saved.";
   static const savedDestinationsSubtitle =
       "Start a trip to a destination you've saved.";
   static const recentStopsSubtitle =
@@ -157,6 +155,23 @@ abstract final class TripUxCopy {
     };
   }
 
+  /// Avoid claiming physical arrival when stop bookkeeping has advanced to the
+  /// destination but route geometry still shows meaningful travel remaining.
+  static String transitProgressLabel({
+    required int stopsRemaining,
+    double? alongRouteRemainingMeters,
+  }) {
+    if (stopsRemaining <= 0 &&
+        alongRouteRemainingMeters != null &&
+        alongRouteRemainingMeters > 250) {
+      return 'Approaching destination';
+    }
+    return stopsRemainingLabel(
+      stopsRemaining,
+      style: StopsRemainingStyle.progress,
+    );
+  }
+
   static String stayOnBoardForStopsRemaining(int stopsRemaining) {
     return stayOnBoard;
   }
@@ -198,7 +213,8 @@ abstract final class TripUxCopy {
 
     return switch (wakeSetting) {
       TransitModeWakeSetting.oneStopBefore => 'Wake 1 stop before $destination',
-      TransitModeWakeSetting.twoStopsBefore => 'Wake 2 stops before $destination',
+      TransitModeWakeSetting.twoStopsBefore =>
+        'Wake 2 stops before $destination',
       TransitModeWakeSetting.atDestination => 'Wake at $destination',
     };
   }
@@ -242,8 +258,7 @@ abstract final class TripUxCopy {
 
   static const resumePermissionSetup = 'Resume setup';
 
-  static const permissionsReadyHint =
-      'All set — tap Get started below.';
+  static const permissionsReadyHint = 'All set — tap Get started below.';
 
   static const readyToSleepTitle = 'Ready to sleep?';
 
@@ -290,8 +305,7 @@ abstract final class TripUxCopy {
 
   static const dismissAlarm = 'Dismiss';
 
-  static const alarmContinuesUntilDismiss =
-      'Alarm continues until you dismiss';
+  static const alarmContinuesUntilDismiss = 'Alarm continues until you dismiss';
 
   static const youAreAtPrefix = 'You are at ';
 
@@ -377,8 +391,7 @@ abstract final class TripUxCopy {
 
   static const foregroundServiceRunning = 'Trip service is running.';
 
-  static const startTripFromHomeHint =
-      'Start your trip from Home to enable.';
+  static const startTripFromHomeHint = 'Start your trip from Home to enable.';
 
   static const notificationChannelName = 'Active trips';
 
@@ -411,8 +424,4 @@ abstract final class TripUxCopy {
   }
 }
 
-enum StopsRemainingStyle {
-  progress,
-  notification,
-  alarm,
-}
+enum StopsRemainingStyle { progress, notification, alarm }

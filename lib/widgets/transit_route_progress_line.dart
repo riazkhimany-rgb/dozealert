@@ -6,10 +6,7 @@ import '../utils/trip_ux_copy.dart';
 enum _RouteDotKind { current, upcoming, destination, ellipsis }
 
 class _RouteDot {
-  const _RouteDot({
-    this.stop,
-    required this.kind,
-  });
+  const _RouteDot({this.stop, required this.kind});
 
   final TransitStop? stop;
   final _RouteDotKind kind;
@@ -24,6 +21,7 @@ class TransitRouteProgressLine extends StatelessWidget {
     required this.stopsRemaining,
     this.lineLabel,
     this.nextStopName,
+    this.alongRouteRemainingMeters,
     this.inactiveMessage = TripUxCopy.routeProgressBeforeStart,
   });
 
@@ -32,6 +30,7 @@ class TransitRouteProgressLine extends StatelessWidget {
   final int stopsRemaining;
   final String? lineLabel;
   final String? nextStopName;
+  final double? alongRouteRemainingMeters;
   final String inactiveMessage;
 
   static const _maxDots = 13;
@@ -78,9 +77,9 @@ class TransitRouteProgressLine extends StatelessWidget {
     final dots = _condenseStops(stops);
     final currentName = stops.first.stopName;
     final destinationName = stops.last.stopName;
-    final stopsLabel = TripUxCopy.stopsRemainingLabel(
-      stopsRemaining,
-      style: StopsRemainingStyle.progress,
+    final stopsLabel = TripUxCopy.transitProgressLabel(
+      stopsRemaining: stopsRemaining,
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
     );
 
     return Semantics(
@@ -198,8 +197,8 @@ class TransitRouteProgressLine extends StatelessWidget {
             kind: i == 0
                 ? _RouteDotKind.current
                 : i == stops.length - 1
-                    ? _RouteDotKind.destination
-                    : _RouteDotKind.upcoming,
+                ? _RouteDotKind.destination
+                : _RouteDotKind.upcoming,
           ),
       ];
     }
@@ -212,7 +211,9 @@ class TransitRouteProgressLine extends StatelessWidget {
     final middleStops = stops.sublist(1, stops.length - 1);
     if (middleStops.length <= middleSlots) {
       condensed.addAll(
-        middleStops.map((stop) => _RouteDot(stop: stop, kind: _RouteDotKind.upcoming)),
+        middleStops.map(
+          (stop) => _RouteDot(stop: stop, kind: _RouteDotKind.upcoming),
+        ),
       );
     } else {
       condensed.add(const _RouteDot(kind: _RouteDotKind.ellipsis));
@@ -225,9 +226,7 @@ class TransitRouteProgressLine extends StatelessWidget {
       }
     }
 
-    condensed.add(
-      _RouteDot(stop: stops.last, kind: _RouteDotKind.destination),
-    );
+    condensed.add(_RouteDot(stop: stops.last, kind: _RouteDotKind.destination));
     return condensed;
   }
 
@@ -237,10 +236,7 @@ class TransitRouteProgressLine extends StatelessWidget {
 }
 
 class _RouteDotIcon extends StatelessWidget {
-  const _RouteDotIcon({
-    required this.kind,
-    required this.colorScheme,
-  });
+  const _RouteDotIcon({required this.kind, required this.colorScheme});
 
   final _RouteDotKind kind;
   final ColorScheme colorScheme;
@@ -265,11 +261,7 @@ class _RouteDotIcon extends StatelessWidget {
           ),
         );
       case _RouteDotKind.destination:
-        return Icon(
-          Icons.flag_rounded,
-          size: 18,
-          color: colorScheme.secondary,
-        );
+        return Icon(Icons.flag_rounded, size: 18, color: colorScheme.secondary);
       case _RouteDotKind.ellipsis:
         return Text(
           '…',

@@ -288,6 +288,21 @@ class RouteGeometryService {
     return math.max(0, remaining);
   }
 
+  /// Distance between two stops measured on the same route polyline used for
+  /// live remaining-distance projections.
+  double? distanceBetweenStopsAlongRoute({
+    required RoutePolyline polyline,
+    required TransitStop fromStop,
+    required TransitStop toStop,
+  }) {
+    final fromAlong = _alongMetersForStop(polyline: polyline, stop: fromStop);
+    final toAlong = _alongMetersForStop(polyline: polyline, stop: toStop);
+    if (fromAlong == null || toAlong == null) {
+      return null;
+    }
+    return (toAlong - fromAlong).abs();
+  }
+
   double? _alongMetersForStop({
     required RoutePolyline polyline,
     required TransitStop stop,
@@ -330,7 +345,8 @@ class RouteGeometryService {
     double? stopSnapAlongToleranceMeters,
   }) {
     final snapTolerance =
-        stopSnapAlongToleranceMeters ?? RouteGeometryService.stopSnapAlongToleranceMeters;
+        stopSnapAlongToleranceMeters ??
+        RouteGeometryService.stopSnapAlongToleranceMeters;
     if (projection.offRouteMeters > maxOffRouteMeters) {
       return null;
     }
@@ -421,10 +437,8 @@ class RouteGeometryService {
       }
 
       final atOrBehind = polyline.travelingForward
-          ? along <=
-              projection.alongRouteMeters + stopSnapAlongToleranceMeters
-          : along >=
-              projection.alongRouteMeters - stopSnapAlongToleranceMeters;
+          ? along <= projection.alongRouteMeters + stopSnapAlongToleranceMeters
+          : along >= projection.alongRouteMeters - stopSnapAlongToleranceMeters;
       if (!atOrBehind) {
         continue;
       }
@@ -503,8 +517,7 @@ class RouteGeometryService {
       longitude,
     );
     final angleDiff = _headingDelta(startToPointBearing, startToEndBearing);
-    final alongMeters =
-        startToPoint * math.cos(angleDiff * math.pi / 180.0);
+    final alongMeters = startToPoint * math.cos(angleDiff * math.pi / 180.0);
     final t = _clamp01(alongMeters / segment.lengthMeters);
 
     final projectedLat =

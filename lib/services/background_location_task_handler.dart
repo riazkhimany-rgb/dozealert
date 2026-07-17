@@ -33,6 +33,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   StreamSubscription<Position>? _positionSubscription;
   final BackgroundTransitEvaluator _transitEvaluator =
       BackgroundTransitEvaluator();
+  final MonitoringStorageService _monitoringStorage =
+      MonitoringStorageService();
 
   String _destinationName = 'Destination';
   double? _destinationLatitude;
@@ -49,9 +51,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   double? _transitAlongRouteRemainingMeters;
   double? _transitOffRouteMeters;
   int _transitCurrentStopSequence = -1;
-  int _transitDestinationStopSequence = -1;
   double _lastPositionAccuracy = 0;
-  double? _lastPositionSpeedMps;
   bool? _riderInVehicle;
   bool? _riderOnFoot;
   bool _transitHasTripConcern = false;
@@ -66,12 +66,12 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   String _lineLabel = '';
   int _lastWearSyncAtMs = 0;
   int _lastWearStopsRemaining = -999;
+  int? _lastTransitRouteFixAtMs;
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     final prefs = await SharedPreferences.getInstance();
-    final isActive =
-        prefs.getBool(MonitoringStorageService.activeKey) ?? false;
+    final isActive = prefs.getBool(MonitoringStorageService.activeKey) ?? false;
     if (!isActive) {
       await FlutterForegroundTask.stopService();
       return;
@@ -83,7 +83,12 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
 
   @override
   void onRepeatEvent(DateTime timestamp) {
-    unawaited(_refreshNotification());
+    unawaited(_handleRepeatEvent(timestamp));
+  }
+
+  Future<void> _handleRepeatEvent(DateTime timestamp) async {
+    await _checkPoorGpsTransitWake(timestamp);
+    await _refreshNotification();
   }
 
   @override
@@ -121,17 +126,18 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _transitWakeStopCount = _loadWakeStopCount(prefs);
     _transitDirectionLocked =
         prefs.getBool(MonitoringStorageService.transitDirectionLockedKey) ??
-            false;
+        false;
     _transitHasTripConcern =
         prefs.getBool(MonitoringStorageService.transitHasTripConcernKey) ??
-            false;
+        false;
     _arrivalTriggered =
         prefs.getBool(MonitoringStorageService.arrivalTriggeredKey) ?? false;
-    _monitoringStartedAtMs =
-        prefs.getInt(MonitoringStorageService.monitoringStartedAtKey);
+    _monitoringStartedAtMs = prefs.getInt(
+      MonitoringStorageService.monitoringStartedAtKey,
+    );
     _alarmHeadline =
         prefs.getString(MonitoringStorageService.transitAlarmHeadlineKey) ??
-            TripUxCopy.getReadyHeadline;
+        TripUxCopy.getReadyHeadline;
     _alarmBody =
         prefs.getString(MonitoringStorageService.transitAlarmBodyKey) ?? '';
     _alarmStopName =
@@ -140,26 +146,33 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
         prefs.getString(MonitoringStorageService.transitAlarmSublineKey) ?? '';
     _lineLabel =
         prefs.getString(MonitoringStorageService.transitLineLabelKey) ?? '';
-    _riderInVehicle = prefs.containsKey(
-            MonitoringStorageService.transitRiderInVehicleKey)
+    _riderInVehicle =
+        prefs.containsKey(MonitoringStorageService.transitRiderInVehicleKey)
         ? prefs.getBool(MonitoringStorageService.transitRiderInVehicleKey)
         : null;
-    _riderOnFoot = prefs.containsKey(
-            MonitoringStorageService.transitRiderOnFootKey)
+    _riderOnFoot =
+        prefs.containsKey(MonitoringStorageService.transitRiderOnFootKey)
         ? prefs.getBool(MonitoringStorageService.transitRiderOnFootKey)
         : null;
 
-    final patternRaw =
-        prefs.getString(MonitoringStorageService.transitPatternSnapshotKey);
+    final patternRaw = prefs.getString(
+      MonitoringStorageService.transitPatternSnapshotKey,
+    );
     _transitPattern = BackgroundTransitPattern.fromJsonString(patternRaw);
-    final stabilizedSequence =
-        prefs.getInt(MonitoringStorageService.transitStabilizedStopSequenceKey);
+    final stabilizedSequence = prefs.getInt(
+      MonitoringStorageService.transitStabilizedStopSequenceKey,
+    );
     if (_transitPattern != null &&
         stabilizedSequence != null &&
         stabilizedSequence > 0) {
       _transitPattern = _transitPattern!.copyWith(
         stabilizedStopSequence: stabilizedSequence,
       );
+    }
+    final restoredSequence = _transitPattern?.stabilizedStopSequence ?? -1;
+    if (restoredSequence > 0) {
+      _transitCurrentStopSequence = restoredSequence;
+      _transitHasEstablishedProgress = true;
     }
   }
 
@@ -175,22 +188,23 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       return;
     }
 
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: AndroidSettings(
-        accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 0,
-        intervalDuration: const Duration(seconds: 1),
-        foregroundNotificationConfig: null,
-      ),
-    ).listen(
-      _handlePosition,
-      onError: (_) async {
-        await FlutterForegroundTask.updateService(
-          notificationTitle: 'DozeAlert',
-          notificationText: TripUxCopy.notificationTripPausedNoLocation,
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: AndroidSettings(
+            accuracy: LocationAccuracy.bestForNavigation,
+            distanceFilter: 0,
+            intervalDuration: const Duration(seconds: 1),
+            foregroundNotificationConfig: null,
+          ),
+        ).listen(
+          _handlePosition,
+          onError: (_) async {
+            await FlutterForegroundTask.updateService(
+              notificationTitle: 'DozeAlert',
+              notificationText: TripUxCopy.notificationTripPausedNoLocation,
+            );
+          },
         );
-      },
-    );
   }
 
   Future<void> _handlePosition(Position position) async {
@@ -203,8 +217,6 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     }
 
     _lastPositionAccuracy = position.accuracy;
-    _lastPositionSpeedMps =
-        position.speed >= 0 ? position.speed : _lastPositionSpeedMps;
 
     FlutterForegroundTask.sendDataToMain(<String, Object>{
       'type': 'location',
@@ -302,10 +314,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _transitHasEstablishedProgress = evaluation.hasEstablishedProgress;
     _transitAlongRouteRemainingMeters = evaluation.alongRouteRemainingMeters;
     _transitOffRouteMeters = evaluation.offRouteMeters;
-    _transitCurrentStopSequence =
-        evaluation.currentStop?.stopSequence ?? -1;
-    _transitDestinationStopSequence =
-        evaluation.destinationStop?.stopSequence ?? -1;
+    _transitCurrentStopSequence = evaluation.currentStop?.stopSequence ?? -1;
+    _lastTransitRouteFixAtMs = DateTime.now().millisecondsSinceEpoch;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(MonitoringStorageService.transitOnRouteKey, true);
@@ -322,9 +332,33 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       evaluation.stabilizedStopSequence,
     );
 
-    _transitPattern = pattern.copyWith(
+    var updatedPattern = pattern.copyWith(
       stabilizedStopSequence: evaluation.stabilizedStopSequence,
     );
+    final wakePlan = updatedPattern.wakePlan;
+    final currentStop = evaluation.currentStop;
+    if (wakePlan != null && currentStop != null) {
+      final reached = wakePlan.hasReachedWakeStop(currentStop.stopSequence);
+      if (reached) {
+        updatedPattern = updatedPattern.copyWith(
+          wakeArmedAtMs:
+              updatedPattern.wakeArmedAtMs ??
+              DateTime.now().millisecondsSinceEpoch,
+          wakeArmStableFixes: (updatedPattern.wakeArmStableFixes + 1).clamp(
+            0,
+            TransitWakeTrigger.minStableArmFixes,
+          ),
+        );
+      } else if (updatedPattern.wakeArmedAtMs != null ||
+          updatedPattern.wakeArmStableFixes != 0) {
+        updatedPattern = updatedPattern.copyWith(
+          clearWakeArmedAt: true,
+          wakeArmStableFixes: 0,
+        );
+      }
+    }
+    _transitPattern = updatedPattern;
+    await _monitoringStorage.saveBackgroundTransitPattern(updatedPattern);
 
     _maybePushWearSync(
       distanceKm: distanceKm,
@@ -337,16 +371,16 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     _transitWakeStopCount = _loadWakeStopCount(prefs);
     _transitHasTripConcern =
         prefs.getBool(MonitoringStorageService.transitHasTripConcernKey) ??
-            false;
+        false;
     _transitTripConcernType =
         prefs.getString(MonitoringStorageService.transitTripConcernTypeKey) ??
-            '';
+        '';
     _transitDirectionLocked =
         prefs.getBool(MonitoringStorageService.transitDirectionLockedKey) ??
-            false;
+        false;
     _alarmHeadline =
         prefs.getString(MonitoringStorageService.transitAlarmHeadlineKey) ??
-            TripUxCopy.getReadyHeadline;
+        TripUxCopy.getReadyHeadline;
     _alarmBody =
         prefs.getString(MonitoringStorageService.transitAlarmBodyKey) ?? '';
     _alarmStopName =
@@ -355,26 +389,72 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
         prefs.getString(MonitoringStorageService.transitAlarmSublineKey) ?? '';
     _lineLabel =
         prefs.getString(MonitoringStorageService.transitLineLabelKey) ?? '';
-    _riderInVehicle = prefs.containsKey(
-            MonitoringStorageService.transitRiderInVehicleKey)
+    _riderInVehicle =
+        prefs.containsKey(MonitoringStorageService.transitRiderInVehicleKey)
         ? prefs.getBool(MonitoringStorageService.transitRiderInVehicleKey)
         : null;
-    _riderOnFoot = prefs.containsKey(
-            MonitoringStorageService.transitRiderOnFootKey)
+    _riderOnFoot =
+        prefs.containsKey(MonitoringStorageService.transitRiderOnFootKey)
         ? prefs.getBool(MonitoringStorageService.transitRiderOnFootKey)
         : null;
 
-    final patternRaw =
-        prefs.getString(MonitoringStorageService.transitPatternSnapshotKey);
+    final patternRaw = prefs.getString(
+      MonitoringStorageService.transitPatternSnapshotKey,
+    );
     var pattern = BackgroundTransitPattern.fromJsonString(patternRaw);
-    final stabilizedSequence =
-        prefs.getInt(MonitoringStorageService.transitStabilizedStopSequenceKey);
+    final stabilizedSequence = prefs.getInt(
+      MonitoringStorageService.transitStabilizedStopSequenceKey,
+    );
     if (pattern != null &&
         stabilizedSequence != null &&
         stabilizedSequence > 0) {
       pattern = pattern.copyWith(stabilizedStopSequence: stabilizedSequence);
     }
     _transitPattern = pattern;
+  }
+
+  Future<void> _checkPoorGpsTransitWake(DateTime timestamp) async {
+    if (_arrivalTriggered ||
+        !_transitModeEnabled ||
+        !_transitOnRoute ||
+        !_transitDirectionLocked) {
+      return;
+    }
+    final lastFixAt = _lastTransitRouteFixAtMs;
+    if (lastFixAt != null &&
+        timestamp.millisecondsSinceEpoch - lastFixAt < 15000) {
+      return;
+    }
+
+    await _reloadTransitPatternFromPrefs();
+    final pattern = _transitPattern;
+    final plan = pattern?.wakePlan;
+    if (pattern == null || plan == null) {
+      return;
+    }
+    final currentStop = _stopForSequence(
+      pattern.segmentStops,
+      pattern.stabilizedStopSequence,
+    );
+    final decision = TransitWakeTrigger.evaluatePlan(
+      plan: plan,
+      directionLocked: _transitDirectionLocked,
+      hasEstablishedProgress: pattern.stabilizedStopSequence > 0,
+      hasTripConcern: _transitHasTripConcern,
+      currentStop: currentStop,
+      alongRouteRemainingMeters: null,
+      offRouteMeters: null,
+      accuracyMeters: 0,
+      gpsStale: true,
+      armedAt: pattern.wakeArmedAtMs == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(pattern.wakeArmedAtMs!),
+      armStableFixes: pattern.wakeArmStableFixes,
+      now: timestamp,
+    );
+    if (decision.shouldTrigger) {
+      await _triggerArrival(transitWake: true);
+    }
   }
 
   void _maybePushWearSync({
@@ -413,15 +493,9 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   }
 
   bool _shouldTriggerTransitWake() {
-    if (!_transitDirectionLocked || !_transitHasEstablishedProgress) {
-      return false;
-    }
-    if (_transitStopsRemaining < 0) {
-      return false;
-    }
-
     final pattern = _transitPattern;
-    if (pattern == null || !pattern.isValid) {
+    final plan = pattern?.wakePlan;
+    if (pattern == null || plan == null) {
       return false;
     }
 
@@ -429,27 +503,22 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       pattern.segmentStops,
       _transitCurrentStopSequence,
     );
-    final destinationStop = _stopForSequence(
-      pattern.segmentStops,
-      _transitDestinationStopSequence,
-    );
-
-    return TransitWakeTrigger.shouldTrigger(
-      stopsRemaining: _transitStopsRemaining,
-      wakeStopCount: _transitWakeStopCount,
+    final decision = TransitWakeTrigger.evaluatePlan(
+      plan: plan,
       directionLocked: _transitDirectionLocked,
       hasEstablishedProgress: _transitHasEstablishedProgress,
+      hasTripConcern: _transitHasTripConcern,
+      currentStop: currentStop,
       alongRouteRemainingMeters: _transitAlongRouteRemainingMeters,
       offRouteMeters: _transitOffRouteMeters,
       accuracyMeters: _lastPositionAccuracy,
-      speedMps: _lastPositionSpeedMps,
-      segmentStops: pattern.segmentStops,
-      currentStop: currentStop,
-      destinationStop: destinationStop,
-      vehicleType: pattern.vehicleType,
-      activityInVehicle: !_activityRecognitionEnabled ? null : _riderInVehicle,
-      activityOnFoot: !_activityRecognitionEnabled ? null : _riderOnFoot,
+      gpsStale: false,
+      armedAt: pattern.wakeArmedAtMs == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(pattern.wakeArmedAtMs!),
+      armStableFixes: pattern.wakeArmStableFixes,
     );
+    return decision.shouldTrigger;
   }
 
   TransitStop? _stopForSequence(List<TransitStop> stops, int sequence) {
@@ -492,8 +561,9 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
         prefs.getInt('transit_mode_wake') ??
             TransitModeWakeSetting.oneStopBefore.index,
       );
-      final stopName =
-          _alarmStopName.isNotEmpty ? _alarmStopName : _destinationName;
+      final stopName = _alarmStopName.isNotEmpty
+          ? _alarmStopName
+          : _destinationName;
       final alarmFields = TransitWakeMessage.wearAlarmFieldsForWake(
         stopsRemaining: _transitStopsRemaining,
         wakeSetting: wakeSetting,
@@ -540,12 +610,13 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       });
     }
 
-    final notificationTitle =
-        transitWake && _alarmHeadline.isNotEmpty ? _alarmHeadline : 'DozeAlert';
+    final notificationTitle = transitWake && _alarmHeadline.isNotEmpty
+        ? _alarmHeadline
+        : 'DozeAlert';
     final notificationText = transitWake
         ? (_alarmBody.isNotEmpty
-            ? _alarmBody
-            : 'Stop alert — $_destinationName is coming up.')
+              ? _alarmBody
+              : 'Stop alert — $_destinationName is coming up.')
         : 'Destination reached — $_destinationName is nearby.';
 
     await FlutterForegroundTask.updateService(

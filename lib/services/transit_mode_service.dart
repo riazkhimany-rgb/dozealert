@@ -17,8 +17,8 @@ class TransitModeService {
     this._gtfsService, [
     RouteGeometryService? routeGeometryService,
     TransitTripSession? tripSession,
-  ])  : _routeGeometry = routeGeometryService ?? RouteGeometryService(),
-        _tripSession = tripSession ?? TransitTripSession();
+  ]) : _routeGeometry = routeGeometryService ?? RouteGeometryService(),
+       _tripSession = tripSession ?? TransitTripSession();
 
   final GtfsService _gtfsService;
   final RouteGeometryService _routeGeometry;
@@ -53,7 +53,9 @@ class TransitModeService {
       return TransitModeSnapshot.inactive;
     }
 
-    final detection = _gtfsService.detectAgencyFromDestination(destination.name);
+    final detection = _gtfsService.detectAgencyFromDestination(
+      destination.name,
+    );
     final resolvedRouteId = routeId ?? detection?.route?.routeId;
     if (resolvedRouteId == null) {
       return TransitModeSnapshot.inactive;
@@ -128,7 +130,8 @@ class TransitModeService {
       return TransitModeSnapshot.inactive;
     }
 
-    var destinationStop = _gtfsService.resolveStopAmongStops(
+    var destinationStop =
+        _gtfsService.resolveStopAmongStops(
           destination: destination,
           stops: routeStops,
         ) ??
@@ -201,12 +204,14 @@ class TransitModeService {
       speedMps: speedMps,
     );
 
-    destinationStop = _gtfsService.resolveStopAmongStops(
+    destinationStop =
+        _gtfsService.resolveStopAmongStops(
           destination: destination,
           stops: routeStops,
         ) ??
         destinationStop;
-    currentStop = _gtfsService.resolveStopAmongStops(
+    currentStop =
+        _gtfsService.resolveStopAmongStops(
           destination: Destination(
             name: currentStop.stopName,
             latitude: currentStop.latitude,
@@ -341,13 +346,20 @@ class TransitModeService {
     Destination destination, {
     String? routeId,
   }) {
-    final resolvedRouteId = routeId ??
-        _gtfsService.detectAgencyFromDestination(destination.name)?.route?.routeId ??
-        _gtfsService.detectAgencyFromDestinationAt(
-          destinationName: destination.name,
-          latitude: destination.latitude,
-          longitude: destination.longitude,
-        )?.route?.routeId;
+    final resolvedRouteId =
+        routeId ??
+        _gtfsService
+            .detectAgencyFromDestination(destination.name)
+            ?.route
+            ?.routeId ??
+        _gtfsService
+            .detectAgencyFromDestinationAt(
+              destinationName: destination.name,
+              latitude: destination.latitude,
+              longitude: destination.longitude,
+            )
+            ?.route
+            ?.routeId;
     if (resolvedRouteId == null) {
       return false;
     }
@@ -488,15 +500,55 @@ class TransitModeService {
     double? latitude,
     double? longitude,
     String? lockedPatternKey,
-  }) =>
-      _sortedStops(
-        routeId,
+  }) => _sortedStops(
+    routeId,
+    destinationStop: destinationStop,
+    anchorStop: anchorStop,
+    latitude: latitude,
+    longitude: longitude,
+    lockedPatternKey: lockedPatternKey ?? _tripSession.lockedPatternKey,
+  );
+
+  /// Measures a fixed wake target using the same GTFS shape/polyline as the
+  /// live along-route remaining distance.
+  double? distanceBetweenStopsAlongRoute({
+    required String routeId,
+    required List<TransitStop> segmentStops,
+    required TransitStop fromStop,
+    required TransitStop destinationStop,
+    String? lockedPatternKey,
+  }) {
+    if (segmentStops.isEmpty) {
+      return null;
+    }
+    final patternKey = lockedPatternKey ?? _tripSession.lockedPatternKey;
+    final shapePoints = _gtfsService.shapePointsForPattern(
+      routeId: routeId,
+      patternKey: patternKey,
+    );
+    var polyline = _routeGeometry.buildPolyline(
+      routeStops: segmentStops,
+      destinationStop: destinationStop,
+      shapePoints: shapePoints,
+    );
+    var distance = _routeGeometry.distanceBetweenStopsAlongRoute(
+      polyline: polyline,
+      fromStop: fromStop,
+      toStop: destinationStop,
+    );
+    if (distance == null && shapePoints != null) {
+      polyline = _routeGeometry.buildPolyline(
+        routeStops: segmentStops,
         destinationStop: destinationStop,
-        anchorStop: anchorStop,
-        latitude: latitude,
-        longitude: longitude,
-        lockedPatternKey: lockedPatternKey ?? _tripSession.lockedPatternKey,
       );
+      distance = _routeGeometry.distanceBetweenStopsAlongRoute(
+        polyline: polyline,
+        fromStop: fromStop,
+        toStop: destinationStop,
+      );
+    }
+    return distance;
+  }
 
   List<TransitStop> _stopsUpToDestination({
     required List<TransitStop> routeStops,
@@ -506,17 +558,17 @@ class TransitModeService {
       ..sort((a, b) => a.stopSequence.compareTo(b.stopSequence));
     final travelingForward =
         destinationStop.stopSequence >= sorted.first.stopSequence;
-    final segment = sorted.where((stop) {
-      if (travelingForward) {
-        return stop.stopSequence <= destinationStop.stopSequence;
-      }
-      return stop.stopSequence >= destinationStop.stopSequence;
-    }).toList()
-      ..sort(
-        (a, b) => travelingForward
-            ? a.stopSequence.compareTo(b.stopSequence)
-            : b.stopSequence.compareTo(a.stopSequence),
-      );
+    final segment =
+        sorted.where((stop) {
+          if (travelingForward) {
+            return stop.stopSequence <= destinationStop.stopSequence;
+          }
+          return stop.stopSequence >= destinationStop.stopSequence;
+        }).toList()..sort(
+          (a, b) => travelingForward
+              ? a.stopSequence.compareTo(b.stopSequence)
+              : b.stopSequence.compareTo(a.stopSequence),
+        );
     return segment.length >= 2 ? segment : routeStops;
   }
 
@@ -533,8 +585,9 @@ class TransitModeService {
     List<TransitStop>? patternStops,
     TransitVehicleType? vehicleType,
   }) {
-    final snapTolerance =
-        TransitWakeTuning.stopSnapAlongToleranceMeters(vehicleType);
+    final snapTolerance = TransitWakeTuning.stopSnapAlongToleranceMeters(
+      vehicleType,
+    );
     if (projection != null) {
       if (projection.offRouteMeters <= maxStopProximityMeters) {
         final matched = _routeGeometry.matchCurrentStop(
@@ -862,4 +915,3 @@ class TransitModeService {
     return routeStops;
   }
 }
-

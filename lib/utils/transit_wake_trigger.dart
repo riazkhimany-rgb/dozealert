@@ -2,15 +2,138 @@ import 'dart:math' as math;
 
 import 'package:geolocator/geolocator.dart';
 
+import '../models/transit_wake_plan.dart';
 import '../models/transit_stop.dart';
 import '../models/transit_vehicle_type.dart';
+import '../services/transit_mode_service.dart';
 import 'gps_tracking_confidence.dart';
 import 'rider_motion_rules.dart';
 import 'transit_wake_tuning.dart';
 
+enum TransitWakeDecisionReason {
+  notReady,
+  tripConcern,
+  beforeWakeStop,
+  armedWaitingForDistance,
+  armedWaitingForGpsGrace,
+  confirmedByDistance,
+  recoveredAfterStopJump,
+  confirmedByPoorGpsFallback,
+}
+
+class TransitWakeDecision {
+  const TransitWakeDecision({
+    required this.shouldTrigger,
+    required this.isArmed,
+    required this.reason,
+  });
+
+  final bool shouldTrigger;
+  final bool isArmed;
+  final TransitWakeDecisionReason reason;
+}
+
 /// Shared stop-based wake rules for foreground and background isolates.
 class TransitWakeTrigger {
   const TransitWakeTrigger._();
+
+  static const maxUsableAccuracyMeters = 150.0;
+  static const minStableArmFixes = 2;
+
+  /// Stop-first wake evaluation against a fixed, non-shrinking trip plan.
+  ///
+  /// Stop progress arms the wake; usable along-route distance confirms it.
+  /// When route GPS is unavailable, stable stop evidence may confirm it after
+  /// the vehicle-specific grace period.
+  static TransitWakeDecision evaluatePlan({
+    required TransitWakePlan plan,
+    required bool directionLocked,
+    required bool hasEstablishedProgress,
+    required bool hasTripConcern,
+    required TransitStop? currentStop,
+    required double? alongRouteRemainingMeters,
+    required double? offRouteMeters,
+    required double accuracyMeters,
+    required bool gpsStale,
+    required DateTime? armedAt,
+    required int armStableFixes,
+    DateTime? now,
+  }) {
+    if (!plan.isValid || !directionLocked || !hasEstablishedProgress) {
+      return const TransitWakeDecision(
+        shouldTrigger: false,
+        isArmed: false,
+        reason: TransitWakeDecisionReason.notReady,
+      );
+    }
+    if (hasTripConcern) {
+      return const TransitWakeDecision(
+        shouldTrigger: false,
+        isArmed: false,
+        reason: TransitWakeDecisionReason.tripConcern,
+      );
+    }
+
+    final current = currentStop;
+    final reachedWakeStop =
+        current != null && plan.hasReachedWakeStop(current.stopSequence);
+    final isArmed = armedAt != null || reachedWakeStop;
+    if (!isArmed) {
+      return const TransitWakeDecision(
+        shouldTrigger: false,
+        isArmed: false,
+        reason: TransitWakeDecisionReason.beforeWakeStop,
+      );
+    }
+
+    final hasUsableRouteDistance =
+        !gpsStale &&
+        alongRouteRemainingMeters != null &&
+        accuracyMeters > 0 &&
+        accuracyMeters <= maxUsableAccuracyMeters &&
+        offRouteMeters != null &&
+        offRouteMeters <= TransitModeService.routeStopMatchMeters;
+    if (hasUsableRouteDistance) {
+      final threshold =
+          plan.wakeToDestinationMeters +
+          TransitWakeTuning.approachBufferMeters(plan.vehicleType);
+      if (alongRouteRemainingMeters <= threshold) {
+        final jumpedToDestination =
+            current?.stopSequence == plan.destinationStopSequence &&
+            plan.wakeStopSequence != plan.destinationStopSequence;
+        return TransitWakeDecision(
+          shouldTrigger: true,
+          isArmed: true,
+          reason: jumpedToDestination
+              ? TransitWakeDecisionReason.recoveredAfterStopJump
+              : TransitWakeDecisionReason.confirmedByDistance,
+        );
+      }
+      return const TransitWakeDecision(
+        shouldTrigger: false,
+        isArmed: true,
+        reason: TransitWakeDecisionReason.armedWaitingForDistance,
+      );
+    }
+
+    final effectiveNow = now ?? DateTime.now();
+    final grace = TransitWakeTuning.poorGpsGracePeriod(plan.vehicleType);
+    if (armedAt != null &&
+        armStableFixes >= minStableArmFixes &&
+        effectiveNow.difference(armedAt) >= grace) {
+      return const TransitWakeDecision(
+        shouldTrigger: true,
+        isArmed: true,
+        reason: TransitWakeDecisionReason.confirmedByPoorGpsFallback,
+      );
+    }
+
+    return const TransitWakeDecision(
+      shouldTrigger: false,
+      isArmed: true,
+      reason: TransitWakeDecisionReason.armedWaitingForGpsGrace,
+    );
+  }
 
   static bool shouldTrigger({
     required int stopsRemaining,
@@ -38,9 +161,7 @@ class TransitWakeTrigger {
 
     final current = currentStop;
     final destination = destinationStop;
-    if (current == null ||
-        destination == null ||
-        segmentStops.length < 2) {
+    if (current == null || destination == null || segmentStops.length < 2) {
       return false;
     }
 

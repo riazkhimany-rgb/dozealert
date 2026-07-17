@@ -113,14 +113,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) {
         return;
       }
-      _showcaseView?.startShowCase(
-        [
-          _setDestinationKey,
-          _wakeSettingsKey,
-          _startMonitoringKey,
-        ],
-        delay: const Duration(milliseconds: 300),
-      );
+      _showcaseView?.startShowCase([
+        _setDestinationKey,
+        _wakeSettingsKey,
+        _startMonitoringKey,
+      ], delay: const Duration(milliseconds: 300));
     });
   }
 
@@ -140,7 +137,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<HomeTourStepContent> _tourStepContents(BuildContext context) {
-    final transitModeEnabled = context.read<SettingsProvider>().transitModeEnabled;
+    final transitModeEnabled = context
+        .read<SettingsProvider>()
+        .transitModeEnabled;
     final wakeSetting = context.read<SettingsProvider>().transitModeWake;
     if (transitModeEnabled) {
       return [
@@ -192,10 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
-  HomeTourCard _tourCard(
-    HomeTourStepId id,
-    List<HomeTourStepContent> steps,
-  ) {
+  HomeTourCard _tourCard(HomeTourStepId id, List<HomeTourStepContent> steps) {
     final index = steps.indexWhere((step) => step.id == id);
     final content = index >= 0 ? steps[index] : null;
     return HomeTourCard(
@@ -243,7 +239,10 @@ class _HomeScreenState extends State<HomeScreen> {
       compact: hasDestination,
       tourActive: _homeTourVisible,
       setDestinationKey: _setDestinationKey,
-      setDestinationTourCard: _tourCard(HomeTourStepId.setDestination, tourSteps),
+      setDestinationTourCard: _tourCard(
+        HomeTourStepId.setDestination,
+        tourSteps,
+      ),
     );
     final monitoringCard = _MonitoringCard(
       tourActive: _homeTourVisible,
@@ -255,14 +254,14 @@ class _HomeScreenState extends State<HomeScreen> {
       onStartMonitoring: () => unawaited(_handleStartMonitoring()),
       onStopMonitoring: () => unawaited(_handleStopMonitoring()),
       wakeSettingsTourCard: _tourCard(HomeTourStepId.wakeSettings, tourSteps),
-      startMonitoringTourCard:
-          _tourCard(HomeTourStepId.startMonitoring, tourSteps),
+      startMonitoringTourCard: _tourCard(
+        HomeTourStepId.startMonitoring,
+        tourSteps,
+      ),
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const BrandedAppBarTitle(),
-      ),
+      appBar: AppBar(title: const BrandedAppBarTitle()),
       body: AppGradientBackground(
         child: ListView(
           controller: _scrollController,
@@ -364,7 +363,9 @@ Future<void> _handleStartMonitoringForHome(
       if (context.mounted && !proceed) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Complete the steps above before starting your trip.'),
+            content: Text(
+              'Complete the steps above before starting your trip.',
+            ),
           ),
         );
       }
@@ -394,8 +395,8 @@ Future<void> _handleStartMonitoringForHome(
         context,
         result,
         backgroundMonitorService: backgroundMonitorService,
-        onContinueAfterBatteryPrompt: result ==
-                LocationStartResult.batteryOptimizationRequired
+        onContinueAfterBatteryPrompt:
+            result == LocationStartResult.batteryOptimizationRequired
             ? () => tryStart(resume: true)
             : null,
       );
@@ -473,26 +474,26 @@ class _DestinationCard extends StatelessWidget {
     final radiusMeters = context.select<MonitoringProvider, int>(
       (provider) => provider.radiusMeters,
     );
-    final routeSegmentStops = context.select<TransitModeProvider, List<TransitStop>>(
-      (provider) => provider.routeSegmentStops,
-    );
-    final showConcernBanner = isMonitoring &&
-        snapshot.isActive &&
-        snapshot.hasTripConcern;
-    final showTransitProgress = destination != null &&
-        transitModeEnabled &&
-        gtfsReady;
+    final routeSegmentStops = context
+        .select<TransitModeProvider, List<TransitStop>>(
+          (provider) => provider.routeSegmentStops,
+        );
+    final showConcernBanner =
+        isMonitoring && snapshot.isActive && snapshot.hasTripConcern;
+    final showTransitProgress =
+        destination != null && transitModeEnabled && gtfsReady;
     final pickDestinationLabel = transitModeEnabled
         ? TripUxCopy.pickYourStop
         : TripUxCopy.pickDestination;
     final destinationCardTitle = destination == null
         ? pickDestinationLabel
         : transitModeEnabled
-            ? TripUxCopy.yourStop
-            : TripUxCopy.yourDestination;
-    final transitModeWake = context.select<SettingsProvider, TransitModeWakeSetting>(
-      (provider) => provider.transitModeWake,
-    );
+        ? TripUxCopy.yourStop
+        : TripUxCopy.yourDestination;
+    final transitModeWake = context
+        .select<SettingsProvider, TransitModeWakeSetting>(
+          (provider) => provider.transitModeWake,
+        );
     final clearDestinationLabel = transitModeEnabled
         ? TripUxCopy.clearStop
         : TripUxCopy.clearDestination;
@@ -528,9 +529,9 @@ class _DestinationCard extends StatelessWidget {
               transitModeEnabled
                   ? TripUxCopy.emptyHeadline
                   : TripUxCopy.emptyHeadlineDistance,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
@@ -604,6 +605,7 @@ class _DestinationCard extends StatelessWidget {
               isActive: snapshot.isActive,
               stops: routeSegmentStops,
               stopsRemaining: snapshot.stopsRemaining,
+              alongRouteRemainingMeters: snapshot.alongRouteRemainingMeters,
               lineLabel: compact ? null : selectedLine,
               nextStopName: snapshot.isActive && snapshot.nextStop != null
                   ? GtfsStopNameUtils.stationDisplayName(
@@ -827,10 +829,7 @@ class _WakeSettingControl extends StatelessWidget {
 }
 
 class _StartTripButton extends StatelessWidget {
-  const _StartTripButton({
-    required this.inProgress,
-    required this.onPressed,
-  });
+  const _StartTripButton({required this.inProgress, required this.onPressed});
 
   final bool inProgress;
   final VoidCallback? onPressed;
@@ -922,9 +921,10 @@ class _MonitoringCard extends StatelessWidget {
     final transitModeEnabled = context.select<SettingsProvider, bool>(
       (provider) => provider.transitModeEnabled,
     );
-    final transitWakeSetting = context.select<SettingsProvider, TransitModeWakeSetting>(
-      (provider) => provider.transitModeWake,
-    );
+    final transitWakeSetting = context
+        .select<SettingsProvider, TransitModeWakeSetting>(
+          (provider) => provider.transitModeWake,
+        );
     final compactWakeLabel = transitModeEnabled
         ? _compactWakeSettingLabel(transitWakeSetting)
         : WakeRadiusFormat.wakeByDescription(radiusMeters);
@@ -932,20 +932,20 @@ class _MonitoringCard extends StatelessWidget {
     final distanceSubtitle = distanceStale
         ? '${TripUxCopy.staleDistanceSubtitle} — ${TripUxCopy.gpsSignalWeakBase}'
         : null;
-    final distanceInlineNote =
-        !distanceStale && usingAlongRoute ? 'along route' : null;
-    final canStart = hasDestination &&
+    final distanceInlineNote = !distanceStale && usingAlongRoute
+        ? 'along route'
+        : null;
+    final canStart =
+        hasDestination &&
         (state == MonitoringState.idle || state == MonitoringState.missed);
-    final canStop = state == MonitoringState.monitoring ||
-        state == MonitoringState.arrived;
+    final canStop =
+        state == MonitoringState.monitoring || state == MonitoringState.arrived;
     final isMonitoring = state == MonitoringState.monitoring;
     final tripIconTint = isMonitoring
         ? colorScheme.secondary
         : colorScheme.onSurfaceVariant;
-    final showLockPhoneHint = isMonitoring &&
-        !establishingGps &&
-        !gpsPrewarming &&
-        !gpsSignalLost;
+    final showLockPhoneHint =
+        isMonitoring && !establishingGps && !gpsPrewarming && !gpsSignalLost;
     final monitoringGpsStatus = TripUxCopy.gpsStatusLabel(
       establishingGps: establishingGps,
       gpsPrewarming: gpsPrewarming,
@@ -966,11 +966,7 @@ class _MonitoringCard extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.sensors,
-                    color: tripIconTint,
-                    size: 22,
-                  ),
+                  child: Icon(Icons.sensors, color: tripIconTint, size: 22),
                 ),
               ),
               const SizedBox(width: 12),
@@ -986,23 +982,19 @@ class _MonitoringCard extends StatelessWidget {
                               children: [
                                 Text(
                                   TripUxCopy.watchingTripLine1,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
+                                  style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.25,
-                                  ),
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.25,
+                                      ),
                                 ),
                                 Text(
                                   TripUxCopy.watchingTripLine2,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
+                                  style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.25,
-                                  ),
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.25,
+                                      ),
                                 ),
                               ],
                             )
@@ -1010,13 +1002,11 @@ class _MonitoringCard extends StatelessWidget {
                               'Your trip',
                               maxLines: 2,
                               softWrap: true,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                height: 1.25,
-                              ),
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.25,
+                                  ),
                             ),
                     ),
                     const SizedBox(width: 8),
@@ -1121,7 +1111,9 @@ class _MonitoringCard extends StatelessWidget {
                       )
                     : const Icon(Icons.stop_rounded, size: 20),
                 label: Text(
-                  stopInProgress ? TripUxCopy.stoppingTrip : TripUxCopy.stopTrip,
+                  stopInProgress
+                      ? TripUxCopy.stoppingTrip
+                      : TripUxCopy.stopTrip,
                 ),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),

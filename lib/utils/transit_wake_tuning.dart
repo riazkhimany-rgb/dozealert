@@ -17,6 +17,19 @@ class TransitWakeTuning {
     };
   }
 
+  /// How long a stop-confirmed wake waits for usable route GPS before falling
+  /// back to stable stop progress. Underground modes intentionally wait less.
+  static Duration poorGpsGracePeriod(TransitVehicleType? vehicleType) {
+    return switch (vehicleType) {
+      TransitVehicleType.subway => const Duration(seconds: 20),
+      TransitVehicleType.lightRail => const Duration(seconds: 30),
+      TransitVehicleType.streetcar => const Duration(seconds: 30),
+      TransitVehicleType.bus => const Duration(seconds: 30),
+      TransitVehicleType.train => const Duration(seconds: 45),
+      null => const Duration(seconds: 30),
+    };
+  }
+
   /// Max along-route lead when snapping GPS to a stop ahead on the polyline.
   static double stopSnapAlongToleranceMeters(TransitVehicleType? vehicleType) {
     return switch (vehicleType) {
