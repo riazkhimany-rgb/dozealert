@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="App tour — phone and Wear OS: transit stop countdown, map destinations, My Trips, watch face complication, watch controls, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=51">
-  <link rel="stylesheet" href="../assets/brand.css?v=51">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=52">
+  <link rel="stylesheet" href="../assets/brand.css?v=52">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -401,8 +401,8 @@ Response.Expires = -1
         <div class="copy">
           <h3>Home</h3>
           <p>
-            <strong>Pick your stop</strong> opens the route picker. <strong>Select from My Trips</strong>
-            jumps to saved stops and favorite lines. Your current transit and line show at the
+            <strong>Pick your stop</strong> opens the route picker. <strong>Quick picks</strong>
+            opens recent and saved stops. Your current transit and line show at the
             bottom of the card. A paired watch shows <strong>Watch connected</strong> when synced.
           </p>
         </div>
@@ -751,6 +751,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=51"></script>
+  <script src="../assets/brand.js?v=52"></script>
 </body>
 </html>

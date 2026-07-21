@@ -67,24 +67,6 @@ class TripsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(
-              Icons.history,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            title: const Text(TripUxCopy.pastTripsTitle),
-            subtitle: const Text(TripUxCopy.pastTripsSettingsSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ActivitySettingsScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
           if (stats.hasData) ...[
             _TripStatsTeaser(stats: stats),
             const SizedBox(height: 16),

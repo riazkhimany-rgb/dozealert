@@ -24,19 +24,20 @@ import '../utils/gtfs_readiness.dart';
 import '../utils/transit_wake_message.dart';
 import '../utils/trip_ux_copy.dart';
 import '../utils/wake_radius_format.dart';
+import '../screens/map_picker_screen.dart';
 import '../widgets/app_gradient_background.dart';
 import '../widgets/arrival_dialog.dart';
 import '../widgets/branded_app_bar_title.dart';
-import '../widgets/destination_picker_sheet.dart';
-import '../widgets/favorite_destination_chips.dart';
 import '../widgets/home_setup_status_card.dart';
 import '../widgets/home_card.dart';
 import '../widgets/home_tour.dart';
 import '../widgets/metric_row.dart';
 import '../widgets/monitoring_distance_progress.dart';
+import '../widgets/quick_picks_sheet.dart';
 import '../widgets/transit_route_progress_line.dart';
 import '../widgets/trip_ready_sheet.dart';
 import '../widgets/trip_concern_banner.dart';
+import '../widgets/trip_stop_picker_sheet.dart';
 import '../widgets/transit_agency_line_picker_sheet.dart';
 import '../widgets/watch_connection_indicator.dart';
 import '../widgets/wake_alert_sheet.dart';
@@ -632,7 +633,12 @@ class _DestinationCard extends StatelessWidget {
                           key: setDestinationKey,
                           container: setDestinationTourCard,
                           child: FilledButton.icon(
-                            onPressed: () => DestinationPickerSheet.show(context),
+                            onPressed: () => unawaited(
+                              _openPrimaryDestinationPicker(
+                                context,
+                                transitModeEnabled: transitModeEnabled,
+                              ),
+                            ),
                             icon: Icon(
                               transitModeEnabled
                                   ? Icons.add_location_alt_outlined
@@ -642,7 +648,12 @@ class _DestinationCard extends StatelessWidget {
                           ),
                         )
                       : FilledButton.icon(
-                          onPressed: () => DestinationPickerSheet.show(context),
+                          onPressed: () => unawaited(
+                            _openPrimaryDestinationPicker(
+                              context,
+                              transitModeEnabled: transitModeEnabled,
+                            ),
+                          ),
                           icon: Icon(
                             transitModeEnabled
                                 ? Icons.add_location_alt_outlined
@@ -652,29 +663,48 @@ class _DestinationCard extends StatelessWidget {
                         ),
                 ),
               ),
-              const SizedBox(height: 12),
-              const FavoriteDestinationChips(),
-              if (transitModeEnabled && selectedLine.isNotEmpty) ...[
+              if (transitModeEnabled) ...[
                 const SizedBox(height: 12),
                 Center(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        selectedLine,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                          height: 1.4,
-                        ),
-                      ),
-                      TextButton(
+                      _DestinationActionButton(
+                        label: TripUxCopy.changeLine,
+                        icon: Icons.directions_transit_outlined,
                         onPressed: () => unawaited(
                           TransitAgencyLinePickerSheet.show(context),
                         ),
-                        child: const Text(TripUxCopy.changeLine),
+                      ),
+                      if (selectedLine.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          selectedLine,
+                          textAlign: TextAlign.center,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      _DestinationActionButton(
+                        label: TripUxCopy.quickPicksTitle,
+                        icon: Icons.bookmarks_outlined,
+                        onPressed: () => QuickPicksSheet.show(context),
                       ),
                     ],
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: _DestinationActionButton(
+                    label: TripUxCopy.quickPicksTitle,
+                    icon: Icons.bookmarks_outlined,
+                    onPressed: () => QuickPicksSheet.show(context),
                   ),
                 ),
               ],
@@ -695,8 +725,12 @@ class _DestinationCard extends StatelessWidget {
                           icon: transitModeEnabled
                               ? Icons.edit_location_alt_outlined
                               : Icons.map_outlined,
-                          onPressed: () =>
-                              DestinationPickerSheet.show(context),
+                          onPressed: () => unawaited(
+                            _openPrimaryDestinationPicker(
+                              context,
+                              transitModeEnabled: transitModeEnabled,
+                            ),
+                          ),
                         ),
                         if (transitModeEnabled)
                           _DestinationActionButton(
@@ -705,11 +739,23 @@ class _DestinationCard extends StatelessWidget {
                             onPressed: () => unawaited(
                               TransitAgencyLinePickerSheet.show(context),
                             ),
+                          )
+                        else
+                          _DestinationActionButton(
+                            label: TripUxCopy.quickPicksTitle,
+                            icon: Icons.bookmarks_outlined,
+                            onPressed: () => QuickPicksSheet.show(context),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    const FavoriteDestinationChips(),
+                    if (transitModeEnabled) ...[
+                      const SizedBox(height: 12),
+                      _DestinationActionButton(
+                        label: TripUxCopy.quickPicksTitle,
+                        icon: Icons.bookmarks_outlined,
+                        onPressed: () => QuickPicksSheet.show(context),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -719,6 +765,22 @@ class _DestinationCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _openPrimaryDestinationPicker(
+  BuildContext context, {
+  required bool transitModeEnabled,
+}) async {
+  if (transitModeEnabled) {
+    await TripStopPickerSheet.show(context);
+    return;
+  }
+
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => const MapPickerScreen(),
+    ),
+  );
 }
 
 String _compactWakeSettingLabel(TransitModeWakeSetting setting) {
@@ -774,7 +836,7 @@ class _WakeSettingControl extends StatelessWidget {
     final buttonIcon = transitModeEnabled
         ? Icons.notifications_active_outlined
         : Icons.straighten_outlined;
-    final secondLine = transitModeEnabled ? 'wake stops' : 'alert distance';
+    final secondLine = transitModeEnabled ? 'alert stops' : 'alert distance';
     final labelStyle = Theme.of(context).textTheme.labelMedium;
 
     return Column(

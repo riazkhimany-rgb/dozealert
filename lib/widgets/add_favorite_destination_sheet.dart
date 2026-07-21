@@ -20,7 +20,7 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
     required this.hostContext,
   });
 
-  /// Context below this sheet (e.g. the Favorites tab) for providers and snackbars.
+  /// Context below this sheet (e.g. the My Trips tab) for providers and snackbars.
   final BuildContext hostContext;
 
   static Future<void> show(BuildContext context) {

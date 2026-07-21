@@ -10,9 +10,15 @@
 #
 #   .\tools\release.ps1 -Target aab                # Google Play bundle
 #   .\tools\release.ps1 -Target both               # APK + AAB
-#   .\tools\release.ps1 -SkipClean                 # Faster rebuild
+#   .\tools\release.ps1 -SkipClean                 # Faster rebuild (recommended on Windows)
+#   .\tools\release.ps1 -FatApk                    # Universal APK (all ABIs; slower)
 #   .\tools\release.ps1 -CommitMessage "Release 1.0.1" -Push
 #   .\tools\release.ps1 -CreateGitHubRelease       # After build, upload APK to GitHub Releases
+#
+# Speed notes:
+#   - flutter clean forces a full native rebuild; prefer -SkipClean for day-to-day releases
+#   - Website APK defaults to arm64 only (minSdk 26); use -FatApk for a universal APK
+#   - -Target both builds the AAB first, then the APK so Gradle/Flutter caches are warm
 #
 # Prerequisites:
 #   - Flutter SDK on PATH
@@ -28,6 +34,8 @@ param(
     [switch]$SkipClean,
     [switch]$SkipTests,
     [switch]$SkipBranding,
+    # Universal (all-ABI) website APK. Default is arm64-only — much faster and smaller.
+    [switch]$FatApk,
     [switch]$Push,
     [string]$CommitMessage,
     [switch]$CreateGitHubRelease,
@@ -225,18 +233,28 @@ try {
         Invoke-Step 'flutter test' { flutter test }
     }
 
-    if ($Target -eq 'apk' -or $Target -eq 'both') {
-        Invoke-Step 'flutter build apk --release' { flutter build apk --release }
-        if (-not $DryRun) {
-            Copy-ApkToWebsite -Version $version
-        }
-    }
-
+    # AAB first when both: warms Gradle/Flutter caches before the website APK.
     if ($Target -eq 'aab' -or $Target -eq 'both') {
         Invoke-Step 'flutter build appbundle --release' { flutter build appbundle --release }
         $bundle = 'build/app/outputs/bundle/release/app-release.aab'
         if (-not $DryRun -and (Test-Path $bundle)) {
             Write-Host "  AAB: $bundle" -ForegroundColor Green
+        }
+    }
+
+    if ($Target -eq 'apk' -or $Target -eq 'both') {
+        $apkArgs = @('build', 'apk', '--release')
+        if (-not $FatApk) {
+            $apkArgs += @('--target-platform', 'android-arm64')
+            Write-Host "  APK ABI: android-arm64 (pass -FatApk for universal)" -ForegroundColor DarkGray
+        } else {
+            Write-Host "  APK ABI: all (universal fat APK)" -ForegroundColor DarkGray
+        }
+        Invoke-Step ("flutter " + ($apkArgs -join ' ')) {
+            & flutter @apkArgs
+        }
+        if (-not $DryRun) {
+            Copy-ApkToWebsite -Version $version
         }
     }
 

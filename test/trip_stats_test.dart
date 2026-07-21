@@ -130,7 +130,7 @@ void main() {
           topDestinations: [],
         ),
       ),
-      '12 trips · 5-trip streak',
+      '12 trips · 3 hr slept',
     );
   });
 

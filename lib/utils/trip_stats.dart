@@ -211,12 +211,6 @@ abstract final class TripStatsFormat {
     final trips = stats.completedCount == 1
         ? '1 trip'
         : '${stats.completedCount} trips';
-    if (stats.currentStreak > 0) {
-      final streak = stats.currentStreak == 1
-          ? '1-trip streak'
-          : '${stats.currentStreak}-trip streak';
-      return '$trips · $streak';
-    }
     if (stats.timeSlept > Duration.zero) {
       return '$trips · ${duration(stats.timeSlept)} slept';
     }

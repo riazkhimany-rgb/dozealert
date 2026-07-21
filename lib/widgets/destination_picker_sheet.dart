@@ -15,19 +15,28 @@ import 'favorite_stops_picker_sheet.dart';
 import 'recent_destinations_picker_sheet.dart';
 import 'trip_stop_picker_sheet.dart';
 
-/// Canonical Home entry for choosing a destination (stop or place).
+/// Canonical entry for choosing a destination (stop or place).
 class DestinationPickerSheet extends StatelessWidget {
-  const DestinationPickerSheet({super.key});
+  const DestinationPickerSheet({super.key, required this.hostContext});
+
+  /// Context below this sheet for navigation after the sheet closes.
+  final BuildContext hostContext;
 
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetContext) {
-        return const DestinationPickerSheet();
-      },
+      builder: (_) => DestinationPickerSheet(hostContext: context),
     );
+  }
+
+  void _closeThen(VoidCallback action) {
+    Navigator.of(hostContext).pop();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!hostContext.mounted) return;
+      action();
+    });
   }
 
   @override
@@ -46,6 +55,7 @@ class DestinationPickerSheet extends StatelessWidget {
     final needsStopData = transitMode &&
         !canPickStop &&
         TransitCatalog.hasCatalogLines(agency);
+    final savedRecentSubtitle = '$savedCount saved · $recentCount recent';
 
     return AccessibleSheetBody(
       child: Column(
@@ -69,20 +79,28 @@ class DestinationPickerSheet extends StatelessWidget {
           ),
           if (needsStopData) ...[
             const SizedBox(height: 16),
-            _StopDataPromptCard(agencyName: agency),
+            _StopDataPromptCard(
+              agencyName: agency,
+              onDownload: () => _closeThen(() {
+                Navigator.of(hostContext).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const TransitDataScreen(),
+                  ),
+                );
+              }),
+            ),
             const SizedBox(height: 8),
             _PickerOption(
               icon: Icons.map_outlined,
               title: 'Use map instead',
               subtitle: 'Wake by alert distance (no stop list needed)',
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
+              onTap: () => _closeThen(() {
+                Navigator.of(hostContext).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const MapPickerScreen(),
                   ),
                 );
-              },
+              }),
             ),
           ],
           const SizedBox(height: 16),
@@ -92,14 +110,13 @@ class DestinationPickerSheet extends StatelessWidget {
               title: 'Search on map',
               subtitle: 'Drop a pin or search with Google Places',
               emphasized: true,
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
+              onTap: () => _closeThen(() {
+                Navigator.of(hostContext).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const MapPickerScreen(),
                   ),
                 );
-              },
+              }),
             ),
           if (canPickStop && transitMode)
             _PickerOption(
@@ -107,23 +124,19 @@ class DestinationPickerSheet extends StatelessWidget {
               title: 'Find a stop',
               subtitle: TransitUserCopy.pickStopSubtitle,
               emphasized: true,
-              onTap: () {
-                Navigator.of(context).pop();
-                TripStopPickerSheet.show(context);
-              },
+              onTap: () => _closeThen(() {
+                TripStopPickerSheet.show(hostContext);
+              }),
             ),
           if (hasSavedOrRecent)
             _PickerOption(
               icon: Icons.bookmarks_outlined,
               title: TripUxCopy.savedAndRecentTitle,
-              subtitle: transitMode
-                  ? '$savedCount saved · $recentCount recent'
-                  : '$savedCount saved · $recentCount recent',
+              subtitle: savedRecentSubtitle,
               emphasized: !transitMode || !canPickStop,
-              onTap: () {
-                Navigator.of(context).pop();
-                _SavedAndRecentPickerSheet.show(context);
-              },
+              onTap: () => _closeThen(() {
+                _SavedAndRecentPickerSheet.show(hostContext);
+              }),
             ),
         ],
       ),
@@ -132,15 +145,25 @@ class DestinationPickerSheet extends StatelessWidget {
 }
 
 class _SavedAndRecentPickerSheet extends StatelessWidget {
-  const _SavedAndRecentPickerSheet();
+  const _SavedAndRecentPickerSheet({required this.hostContext});
+
+  final BuildContext hostContext;
 
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => const _SavedAndRecentPickerSheet(),
+      builder: (_) => _SavedAndRecentPickerSheet(hostContext: context),
     );
+  }
+
+  void _closeThen(VoidCallback action) {
+    Navigator.of(hostContext).pop();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!hostContext.mounted) return;
+      action();
+    });
   }
 
   @override
@@ -168,10 +191,9 @@ class _SavedAndRecentPickerSheet extends StatelessWidget {
                   ? TripUxCopy.savedStopsTitle
                   : TripUxCopy.savedDestinationsTitle,
               subtitle: '${favorites.length} saved',
-              onTap: () {
-                Navigator.of(context).pop();
-                FavoriteStopsPickerSheet.show(context);
-              },
+              onTap: () => _closeThen(() {
+                FavoriteStopsPickerSheet.show(hostContext);
+              }),
             ),
           if (recents.isNotEmpty)
             _PickerOption(
@@ -180,10 +202,9 @@ class _SavedAndRecentPickerSheet extends StatelessWidget {
                   ? TripUxCopy.recentStopsTitle
                   : TripUxCopy.recentDestinationsTitle,
               subtitle: '${recents.length} recent',
-              onTap: () {
-                Navigator.of(context).pop();
-                RecentDestinationsPickerSheet.show(context);
-              },
+              onTap: () => _closeThen(() {
+                RecentDestinationsPickerSheet.show(hostContext);
+              }),
             ),
         ],
       ),
@@ -192,9 +213,13 @@ class _SavedAndRecentPickerSheet extends StatelessWidget {
 }
 
 class _StopDataPromptCard extends StatelessWidget {
-  const _StopDataPromptCard({required this.agencyName});
+  const _StopDataPromptCard({
+    required this.agencyName,
+    required this.onDownload,
+  });
 
   final String agencyName;
+  final VoidCallback onDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -226,14 +251,7 @@ class _StopDataPromptCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const TransitDataScreen(),
-                ),
-              );
-            },
+            onPressed: onDownload,
             child: const Text('Download stops'),
           ),
         ],

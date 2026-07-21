@@ -19,13 +19,7 @@ abstract final class TripUxCopy {
 
   static const changeLine = 'Change line';
 
-  static const selectFromMyTrips = 'Select from My Trips';
-
   static const savedAndRecentTitle = 'Saved & recent';
-
-  static const quickPicksStopsLabel = 'Quick picks';
-
-  static const quickPicksDestinationsLabel = 'Quick picks';
 
   static const wakeAlertTitle = 'Wake alert';
 
@@ -37,7 +31,16 @@ abstract final class TripUxCopy {
 
   static const clearDestination = 'Clear destination';
 
-  static const changeWakeStops = 'Change wake stops';
+  static const changeWakeStops = 'Change alert stops';
+
+  static const quickPicksTitle = 'Quick picks';
+
+  static const noQuickPicksStopsYet =
+      'No recent or saved stops yet. Pick a stop to start building this list.';
+
+  static const noQuickPicksDestinationsYet =
+      'No recent or saved destinations yet. Set a destination to start building this list.';
+
 
   static const startTrip = 'Start';
 
@@ -134,10 +137,6 @@ abstract final class TripUxCopy {
   static const onboardingModeDistanceTitle = 'Taxi, rideshare, or map';
   static const onboardingModeDistanceSubtitle =
       'Wake by distance to a pin or place on the map.';
-
-  static const moreOptions = 'More options';
-
-  static const pickRoute = 'Pick your route';
 
   static const findingLocation = 'Finding your location…';
 

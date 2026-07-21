@@ -121,10 +121,12 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 | Flag | Purpose |
 | --- | --- |
-| `-Target apk` | Website APK (default) |
+| `-Target apk` | Website APK (default; arm64-only for speed) |
 | `-Target aab` | Google Play `.aab` |
-| `-Target both` | APK + AAB |
-| `-SkipClean` | Skip `flutter clean` (faster rebuild) |
+| `-Target both` | AAB then APK (reuses warm Gradle caches) |
+| `-FatApk` | Universal APK (all ABIs; slower / larger) |
+| `-SkipClean` | Skip `flutter clean` (much faster; recommended on Windows) |
+| `-SkipBranding` | Skip icon/splash regeneration when assets are unchanged |
 | `-SkipTests` | Skip `flutter test` |
 | `-CommitMessage "..."` | Stage safe files, commit (never `key.properties` / `.env`) |
 | `-Push` | Push current branch to `origin` |
