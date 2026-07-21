@@ -344,10 +344,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
           wakeArmedAtMs:
               updatedPattern.wakeArmedAtMs ??
               DateTime.now().millisecondsSinceEpoch,
-          wakeArmStableFixes: (updatedPattern.wakeArmStableFixes + 1).clamp(
-            0,
-            TransitWakeTrigger.minStableArmFixes,
-          ),
+          wakeArmStableFixes: updatedPattern.wakeArmStableFixes + 1,
         );
       } else if (updatedPattern.wakeArmedAtMs != null ||
           updatedPattern.wakeArmStableFixes != 0) {

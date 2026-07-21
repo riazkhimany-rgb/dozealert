@@ -4,7 +4,7 @@ Whether you're travelling by train, bus, car, or rideshare, DozeAlert monitors y
 
 HOW IT WORKS
 • Pick a transit stop or drop a pin on the map
-• Start monitoring — DozeAlert tracks your trip in the background
+• Start your trip — DozeAlert watches in the background
 • Get a loud alarm and vibration when you're approaching your stop
 
 FEATURES
@@ -13,9 +13,10 @@ FEATURES
 • Background monitoring with a persistent trip notification
 • Adjustable wake distance so you arrive on time
 • Map destination picker and place search
-• Saved favorites and past trip stats
+• My Trips: saved stops, favorite lines, and past trip stats
 • First-time setup guide with travel mode choice
 • Agency stop lists where supported across Canada and the US
+• Wear OS companion: trip status, start/stop, and alarm dismiss on a paired watch (tile and complication)
 • Battery-conscious design for daily commutes and long trips
 
 PERMISSIONS

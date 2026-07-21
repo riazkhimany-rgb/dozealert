@@ -35,10 +35,9 @@ class PlaceSearchService {
   static const searchPlaceholder = 'Search destination';
 
   static const exampleSearches = <String>[
-    'Bronte GO',
-    'Milton GO',
-    'Pearson Airport',
-    'CN Tower',
+    'hotel near me',
+    'airport',
+    'train station',
   ];
 
   bool get isConfigured => _apiKey.isNotEmpty;

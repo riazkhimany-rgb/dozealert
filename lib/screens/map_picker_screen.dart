@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
@@ -11,7 +12,6 @@ import '../providers/destination_history_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/settings_provider.dart';
-import '../providers/transit_provider.dart';
 import '../services/location_service.dart';
 import '../services/place_search_service.dart';
 import '../utils/map_defaults.dart';
@@ -27,6 +27,8 @@ class MapPickerScreen extends StatefulWidget {
 
 class _MapPickerScreenState extends State<MapPickerScreen> {
   static const _markerId = MarkerId('selected_destination');
+  /// Soft bias only — Places still returns matches worldwide.
+  static const _searchBiasRadiusMeters = 50000;
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -35,6 +37,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   GoogleMapController? _mapController;
   LatLng? _selectedPosition;
+  /// Prefer results near the device / map viewport; never hard-filters country.
+  LatLng _searchBias = const LatLng(
+    MapDefaults.torontoLatitude,
+    MapDefaults.torontoLongitude,
+  );
   CameraPosition _initialCameraPosition = const CameraPosition(
     target: LatLng(
       MapDefaults.torontoLatitude,
@@ -54,6 +61,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       Marker(
         markerId: _markerId,
         position: position,
+        consumeTapEvents: true,
+        onTap: _focusDestinationName,
       ),
     };
   }
@@ -90,35 +99,68 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final target = LatLng(location.latitude, location.longitude);
     setState(() {
       _centeredOnUser = true;
+      _searchBias = target;
       _initialCameraPosition = CameraPosition(target: target, zoom: 14);
     });
     await _mapController?.animateCamera(CameraUpdate.newLatLngZoom(target, 14));
-  }
-
-  List<String> _placeCountries() {
-    final country = context.read<TransitProvider>().preferences.country;
-    return switch (country) {
-      'United States' => const ['us'],
-      'Canada' => const ['ca'],
-      _ => const ['ca', 'us'],
-    };
   }
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
   }
 
-  void _onMapTap(LatLng position) {
-    setState(() => _selectedPosition = position);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  void _onCameraIdle() {
+    unawaited(_refreshSearchBiasFromCamera());
+  }
+
+  Future<void> _refreshSearchBiasFromCamera() async {
+    final controller = _mapController;
+    if (controller == null) {
+      return;
+    }
+
+    final bounds = await controller.getVisibleRegion();
+    if (!mounted) {
+      return;
+    }
+
+    final center = LatLng(
+      (bounds.northeast.latitude + bounds.southwest.latitude) / 2,
+      (bounds.northeast.longitude + bounds.southwest.longitude) / 2,
+    );
+    if ((center.latitude - _searchBias.latitude).abs() < 0.0001 &&
+        (center.longitude - _searchBias.longitude).abs() < 0.0001) {
+      return;
+    }
+
+    setState(() => _searchBias = center);
+  }
+
+  /// Google Map platform views often keep focus after a tap, so requestFocus
+  /// alone does not open the soft keyboard — also force the IME to show.
+  void _focusDestinationName() {
+    _searchFocusNode.unfocus();
+    if (_nameController.text == MapDefaults.customDestinationName) {
+      _nameController.clear();
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      // Let the map gesture settle before stealing focus from the platform view.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       if (!mounted) {
         return;
       }
       _nameFocusNode.requestFocus();
-      if (_nameController.text == MapDefaults.customDestinationName) {
-        _nameController.clear();
-      }
+      await SystemChannels.textInput.invokeMethod<void>('TextInput.show');
     });
+  }
+
+  void _onMapTap(LatLng position) {
+    setState(() => _selectedPosition = position);
+    _focusDestinationName();
   }
 
   void _selectSearchResult(PlaceSearchResult result) {
@@ -127,15 +169,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       _nameController.text = result.name;
     });
 
-    _searchFocusNode.unfocus();
     _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(result.latLng, 15),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _nameFocusNode.requestFocus();
-      }
-    });
+    _focusDestinationName();
   }
 
   Future<void> _saveDestination({bool addToMyTrips = false}) async {
@@ -228,7 +265,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           focusNode: _searchFocusNode,
                           googleAPIKey: placeSearchService.apiKey,
                           debounceTime: 400,
-                          countries: _placeCountries(),
+                          // No country hard-filter: bias near the map/device
+                          // so local hits rank first, but any country is allowed.
+                          countries: null,
+                          latitude: _searchBias.latitude,
+                          longitude: _searchBias.longitude,
+                          radius: _searchBiasRadiusMeters,
                           isLatLngRequired: true,
                           isCrossBtnShown: true,
                           containerHorizontalPadding: 0,
@@ -303,29 +345,26 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 markers: _markers,
                 onMapCreated: _onMapCreated,
                 onTap: _onMapTap,
+                onCameraIdle: _onCameraIdle,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: !keyboardOpen,
                 zoomControlsEnabled: false,
                 mapToolbarEnabled: false,
               ),
             ),
-            AnimatedPadding(
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeOut,
-              padding: EdgeInsets.only(bottom: keyboardInset),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: HomeCard(
-                  child: _DestinationPanel(
-                    nameController: _nameController,
-                    nameFocusNode: _nameFocusNode,
-                    selectedPosition: selectedPosition,
-                    keyboardOpen: keyboardOpen,
-                    onSave: () => unawaited(_saveDestination()),
-                    onSaveToMyTrips: () =>
-                        unawaited(_saveDestination(addToMyTrips: true)),
-                    onCancel: () => Navigator.of(context).pop(),
-                  ),
+            // Scaffold already resizes for the IME; avoid double bottom inset.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: HomeCard(
+                child: _DestinationPanel(
+                  nameController: _nameController,
+                  nameFocusNode: _nameFocusNode,
+                  selectedPosition: selectedPosition,
+                  keyboardOpen: keyboardOpen,
+                  onSave: () => unawaited(_saveDestination()),
+                  onSaveToMyTrips: () =>
+                      unawaited(_saveDestination(addToMyTrips: true)),
+                  onCancel: () => Navigator.of(context).pop(),
                 ),
               ),
             ),
@@ -387,7 +426,12 @@ class _DestinationPanel extends StatelessWidget {
               vertical: keyboardOpen ? 10 : 12,
             ),
           ),
+          keyboardType: TextInputType.text,
           textInputAction: TextInputAction.done,
+          onTap: () {
+            // Map platform view can leave the field focused without an IME.
+            SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+          },
         ),
         if (!keyboardOpen) ...[
           const SizedBox(height: 16),
