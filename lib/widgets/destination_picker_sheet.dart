@@ -250,9 +250,10 @@ class _StopDataPromptCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          FilledButton(
+          FilledButton.icon(
             onPressed: onDownload,
-            child: const Text('Download stops'),
+            icon: const Icon(Icons.cloud_download_outlined),
+            label: const Text('Download stops'),
           ),
         ],
       ),

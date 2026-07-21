@@ -233,7 +233,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     );
   }
 
-  Future<void> _saveDestination({bool addToMyTrips = false}) async {
+  Future<void> _saveDestination() async {
     final position = _selectedPosition;
     if (position == null) {
       if (!mounted) {
@@ -261,24 +261,46 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       return;
     }
 
-    if (addToMyTrips) {
-      final includeTransit =
-          context.read<SettingsProvider>().transitModeEnabled;
-      await context.read<DestinationHistoryProvider>().addFavoriteItem(
-        context.read<GtfsProvider>().buildFavoriteDestination(
-          destination,
-          includeTransit: includeTransit,
-        ),
-      );
+    Navigator.of(context).pop();
+  }
+
+  Future<void> _bookmarkToMyTrips() async {
+    final position = _selectedPosition;
+    if (position == null) {
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Saved ${destination.name} to My Trips')),
+        const SnackBar(
+          content: Text(
+            'Select a place from search results or tap the map to drop a pin.',
+          ),
+        ),
       );
+      return;
     }
 
-    Navigator.of(context).pop();
+    final name = _nameController.text.trim();
+    final destination = PlaceSearchResult(
+      name: name.isEmpty ? MapDefaults.customDestinationName : name,
+      latitude: position.latitude,
+      longitude: position.longitude,
+    ).toDestination();
+
+    final includeTransit =
+        context.read<SettingsProvider>().transitModeEnabled;
+    await context.read<DestinationHistoryProvider>().addFavoriteItem(
+      context.read<GtfsProvider>().buildFavoriteDestination(
+        destination,
+        includeTransit: includeTransit,
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Saved ${destination.name} to My Trips')),
+    );
   }
 
   @override
@@ -434,8 +456,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   selectedPosition: selectedPosition,
                   onEditName: () => unawaited(_editDestinationName()),
                   onSave: () => unawaited(_saveDestination()),
-                  onSaveToMyTrips: () =>
-                      unawaited(_saveDestination(addToMyTrips: true)),
+                  onSaveToMyTrips: () => unawaited(_bookmarkToMyTrips()),
                   onCancel: () => Navigator.of(context).pop(),
                 ),
               ),
@@ -503,13 +524,15 @@ class _DestinationNameDialogState extends State<_DestinationNameDialog> {
         onSubmitted: (_) => _submit(),
       ),
       actions: [
-        TextButton(
+        TextButton.icon(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          icon: const Icon(Icons.close, size: 18),
+          label: const Text('Cancel'),
         ),
-        FilledButton(
+        FilledButton.icon(
           onPressed: _submit,
-          child: const Text('Save'),
+          icon: const Icon(Icons.check, size: 18),
+          label: const Text('Save'),
         ),
       ],
     );
@@ -604,15 +627,16 @@ class _DestinationPanel extends StatelessWidget {
           width: double.infinity,
           child: TextButton.icon(
             onPressed: onSaveToMyTrips,
-            icon: const Icon(Icons.favorite_border_outlined, size: 18),
+            icon: const Icon(Icons.bookmarks_outlined, size: 18),
             label: const Text(TripUxCopy.saveToMyTrips),
           ),
         ),
         SizedBox(
           width: double.infinity,
-          child: TextButton(
+          child: TextButton.icon(
             onPressed: onCancel,
-            child: const Text('Cancel'),
+            icon: const Icon(Icons.close, size: 18),
+            label: const Text('Cancel'),
           ),
         ),
       ],

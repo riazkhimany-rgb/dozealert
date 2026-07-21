@@ -3,6 +3,6 @@ Version 1.1.0
 • Transit and distance travel modes
 • Stop-by-stop progress in Transit Mode
 • Background trip monitoring with wake alarms
-• Saved stops, destinations, and favorite lines
+• Saved stops, destinations, and saved lines
 • Past trips and missed-stop history
 • Wear OS companion support

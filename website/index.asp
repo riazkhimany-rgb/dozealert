@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="DozeAlert wakes you before you reach your destination. Android phone app plus Wear OS companion. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
-  <link rel="icon" type="image/png" href="assets/icon-512.png?v=52">
-  <link rel="stylesheet" href="assets/brand.css?v=52">
+  <link rel="icon" type="image/png" href="assets/icon-512.png?v=53">
+  <link rel="stylesheet" href="assets/brand.css?v=53">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -408,7 +408,7 @@ Response.Expires = -1
         </div>
       </details>
       <p class="meta">
-        Phone <span id="app-version">1.1.0+52</span> &middot; Wear <span id="wear-version">1.1.0+100076</span>
+        Phone <span id="app-version">1.1.0+53</span> &middot; Wear <span id="wear-version">1.1.0+100077</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
@@ -427,10 +427,10 @@ Response.Expires = -1
         <li>Trip-first Home: pick your stop or map destination, set wake timing, tap Start</li>
         <li>Transit Mode with stop countdown for supported public transit agencies</li>
         <li>Distance-only wake-ups when Transit Mode is off &mdash; taxi, Uber, Lyft, and more</li>
-        <li>Pick a stop on your route, search the map, or jump to saved stops and favorite lines</li>
+        <li>Pick a stop on your route, search the map, or jump to saved stops and saved lines</li>
         <li>Three-step onboarding: welcome, pick transit (multi-agency), guided permissions</li>
         <li>Three-step Home tour plus &ldquo;Ready to sleep?&rdquo; before monitoring begins</li>
-        <li><strong>My Trips</strong> tab for saved stops, favorite lines, and recents</li>
+        <li><strong>My Trips</strong> tab for saved stops, saved lines, and recents</li>
         <li>Background monitoring with voice, vibration, and full-screen wake alerts</li>
         <li>Download agency stop lists for offline search (Settings &rarr; Transit)</li>
         <li><strong>Trip history</strong> and missed-trip review in Settings</li>
@@ -625,6 +625,6 @@ Response.Expires = -1
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=52"></script>
+  <script src="assets/brand.js?v=53"></script>
 </body>
 </html>

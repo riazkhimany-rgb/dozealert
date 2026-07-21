@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="DozeAlert Privacy Policy &mdash; how we handle location, on-device storage, and third-party services.">
   <meta name="theme-color" content="#0D1B2A">
   <title>Privacy Policy &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=52">
-  <link rel="stylesheet" href="../assets/brand.css?v=52">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=53">
+  <link rel="stylesheet" href="../assets/brand.css?v=53">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -196,7 +196,7 @@ Response.Expires = -1
 
       <h3>3. Destinations and trip data you choose</h3>
       <p>
-        Destination names, coordinates, wake radius, favorites, recent destinations,
+        Destination names, coordinates, alert distance, saved destinations, recent destinations,
         trip history (destination, times, alarm events), and monitoring settings.
         Stored on your device only.
       </p>
@@ -366,6 +366,6 @@ Response.Expires = -1
       <p><a href="../index.asp">dozealert.app</a> &middot; <a href="../feedback/index.asp">Feedback</a> &middot; <a href="../transit-licenses/index.asp">Transit Data Licenses</a> &middot; &copy; DozeAlert &middot; App version synced with release build</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=52"></script>
+  <script src="../assets/brand.js?v=53"></script>
 </body>
 </html>

@@ -55,7 +55,7 @@ class FavoriteTransitLinesSection extends StatelessWidget {
           const SizedBox(height: 12),
           if (favorites.isEmpty)
             Text(
-              'No favorite lines saved yet.',
+              'No saved lines yet.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -76,7 +76,7 @@ class FavoriteTransitLinesSection extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Remove favorite line',
+                      tooltip: 'Remove saved line',
                       onPressed: () async {
                         await context
                             .read<FavoriteTransitLineProvider>()

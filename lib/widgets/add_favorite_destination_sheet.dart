@@ -54,7 +54,7 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            transitModeEnabled ? 'Add favorite stop' : 'Add saved destination',
+            transitModeEnabled ? 'Add saved stop' : 'Add saved destination',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),

@@ -16,7 +16,7 @@ DozeAlert wakes travelers before they reach their destination.
 
 - Location alarms for transit, taxi, rideshare, and map pins
 - Background monitoring while your phone is locked
-- Saved stops, destinations, and favorite lines
+- Saved stops, destinations, and saved lines
 - Stop-by-stop progress in Transit Mode
 - Adjustable wake distance
 - Missed-stop detection

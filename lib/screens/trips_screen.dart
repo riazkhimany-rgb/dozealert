@@ -21,9 +21,9 @@ import '../utils/location_format.dart';
 import '../utils/trip_stats.dart';
 import '../utils/trip_ux_copy.dart';
 import '../widgets/add_favorite_destination_sheet.dart';
-import '../widgets/destination_picker_sheet.dart';
 import '../widgets/favorite_transit_lines_section.dart';
 import '../widgets/trip_ready_sheet.dart';
+import '../widgets/trip_stop_picker_sheet.dart';
 import '../widgets/empty_state_message.dart';
 import '../widgets/home_card.dart';
 
@@ -77,7 +77,10 @@ class TripsScreen extends StatelessWidget {
                 showLogo: true,
                 message: emptyMessage,
                 actionLabel: emptyActionLabel,
-                onAction: () => DestinationPickerSheet.show(context),
+                actionIcon: transitModeEnabled
+                    ? Icons.add_location_alt_outlined
+                    : Icons.map_outlined,
+                onAction: () => unawaited(TripStopPickerSheet.show(context)),
               ),
             )
           else ...[

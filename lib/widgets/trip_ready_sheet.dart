@@ -15,8 +15,8 @@ import '../utils/transit_wake_message.dart';
 import '../utils/trip_readiness.dart';
 import '../utils/trip_ux_copy.dart';
 import '../widgets/branded_app_name.dart';
-import '../widgets/destination_picker_sheet.dart';
 import '../widgets/onboarding_permissions_page.dart';
+import '../widgets/trip_stop_picker_sheet.dart';
 
 /// Pre-start checklist — blocks Start until essentials are done, then
 /// encourages first-time users with a friendly confirmation.
@@ -151,7 +151,7 @@ class _TripReadyChecklist extends StatelessWidget {
 
     switch (issue) {
       case TripReadinessIssue.destination:
-        await DestinationPickerSheet.show(context);
+        await TripStopPickerSheet.show(context);
       case TripReadinessIssue.permissions:
         await Navigator.of(context).push<void>(
           MaterialPageRoute<void>(
@@ -214,9 +214,20 @@ class _TripReadyChecklist extends StatelessWidget {
                   title: Text(item.label),
                   trailing: item.complete
                       ? null
-                      : FilledButton.tonal(
+                      : FilledButton.tonalIcon(
                           onPressed: () => _fixIssue(context, item.issue),
-                          child: Text(item.actionLabel),
+                          icon: Icon(
+                            switch (item.issue) {
+                              TripReadinessIssue.destination =>
+                                Icons.add_location_alt_outlined,
+                              TripReadinessIssue.permissions =>
+                                Icons.admin_panel_settings_outlined,
+                              TripReadinessIssue.stopData =>
+                                Icons.cloud_download_outlined,
+                            },
+                            size: 18,
+                          ),
+                          label: Text(item.actionLabel),
                         ),
                 ),
               ),

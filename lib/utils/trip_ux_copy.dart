@@ -27,9 +27,7 @@ abstract final class TripUxCopy {
 
   static const setupBeforeStartTitle = 'Before you start';
 
-  static const clearStop = 'Clear stop';
-
-  static const clearDestination = 'Clear destination';
+  static const clear = 'Clear';
 
   static const changeWakeStops = 'Change alert stops';
 

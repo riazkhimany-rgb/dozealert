@@ -487,9 +487,7 @@ class _DestinationCard extends StatelessWidget {
         .select<SettingsProvider, TransitModeWakeSetting>(
           (provider) => provider.transitModeWake,
         );
-    final clearDestinationLabel = transitModeEnabled
-        ? TripUxCopy.clearStop
-        : TripUxCopy.clearDestination;
+    final clearDestinationLabel = TripUxCopy.clear;
     final changeDestinationLabel = transitModeEnabled
         ? TripUxCopy.changeStop
         : TripUxCopy.changeDestination;
@@ -670,6 +668,12 @@ class _DestinationCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _DestinationActionButton(
+                        label: TripUxCopy.quickPicksTitle,
+                        icon: Icons.bookmarks_outlined,
+                        onPressed: () => QuickPicksSheet.show(context),
+                      ),
+                      const SizedBox(height: 12),
+                      _DestinationActionButton(
                         label: TripUxCopy.changeLine,
                         icon: Icons.directions_transit_outlined,
                         onPressed: () => unawaited(
@@ -689,12 +693,6 @@ class _DestinationCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 12),
-                      _DestinationActionButton(
-                        label: TripUxCopy.quickPicksTitle,
-                        icon: Icons.bookmarks_outlined,
-                        onPressed: () => QuickPicksSheet.show(context),
-                      ),
                     ],
                   ),
                 ),

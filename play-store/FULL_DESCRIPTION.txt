@@ -13,7 +13,7 @@ FEATURES
 • Background monitoring with a persistent trip notification
 • Adjustable wake distance so you arrive on time
 • Map destination picker and place search
-• My Trips: saved stops, favorite lines, and past trip stats
+• My Trips: saved stops, saved lines, and past trip stats
 • First-time setup guide with travel mode choice
 • Agency stop lists where supported across Canada and the US
 • Wear OS companion: trip status, start/stop, and alarm dismiss on a paired watch (tile and complication)

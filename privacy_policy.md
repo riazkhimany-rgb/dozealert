@@ -51,7 +51,7 @@ This Privacy Policy describes how DozeAlert (“the app”, “we”, “us”) 
 
 ### 3. Destination and trip information you choose
 
-**What:** Destination names, coordinates, wake radius, favorites, recent destinations, trip history entries (destination label, start/end times, whether an alarm fired), and monitoring settings.
+**What:** Destination names, coordinates, alert distance, saved destinations, recent destinations, trip history entries (destination label, start/end times, whether an alarm fired), and monitoring settings.
 
 **Why:** To save your preferences and show trip history inside the app.
 
@@ -130,7 +130,7 @@ We do **not** use your information for targeted advertising, credit decisions, o
 ## Data Retention and Deletion
 
 - **On-device data** (destinations, history, settings, cached GTFS) remains until you remove it or uninstall the app.
-- **Clear destination** from the Home screen removes your active destination.
+- **Clear** from the Home screen removes your active destination.
 - **Clear app storage** (Android Settings → Apps → DozeAlert → Storage → Clear storage) deletes local app data.
 - **Uninstall** removes app data from your device.
 - **Support emails** are kept only as long as needed to handle your request.

@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="App tour — phone and Wear OS: transit stop countdown, map destinations, My Trips, watch face complication, watch controls, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=52">
-  <link rel="stylesheet" href="../assets/brand.css?v=52">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=53">
+  <link rel="stylesheet" href="../assets/brand.css?v=53">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -460,7 +460,7 @@ Response.Expires = -1
           <p>
             With Transit Mode on, Home shows stops remaining, your next stop, and distance
             along the route. Wake timing uses stops when you are on your line, and falls back
-            to your wake radius when GPS is the better signal. A wrong-direction banner gives
+            to your alert distance when GPS is the better signal. A wrong-direction banner gives
             a heads-up if your line may not match your trip.
           </p>
         </div>
@@ -530,12 +530,12 @@ Response.Expires = -1
     <section class="card">
       <h2>My Trips</h2>
       <p class="section-lead">
-        Saved stops and favorite lines stay one tap away on the My Trips tab (heart icon).
+        Saved stops and saved lines stay one tap away on the My Trips tab.
         Recent stops appear automatically for fast restarts.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot20.jpg" width="280" height="606" alt="My Trips tab with saved stops, favorite lines, and recent stops.">
+          <img class="shot" src="../assets/screens/shot20.jpg" width="280" height="606" alt="My Trips tab with saved stops, saved lines, and recent stops.">
         </div>
         <div class="copy">
           <h3>Saved stops &amp; lines</h3>
@@ -545,7 +545,7 @@ Response.Expires = -1
           </p>
           <ul>
             <li>Saved stops with transit badges</li>
-            <li>Favorite lines for quick switching during transfers</li>
+            <li>Saved lines for quick switching during transfers</li>
             <li>Recent stops for one-tap restarts</li>
           </ul>
         </div>
@@ -751,6 +751,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=52"></script>
+  <script src="../assets/brand.js?v=53"></script>
 </body>
 </html>

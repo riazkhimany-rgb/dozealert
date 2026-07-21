@@ -84,8 +84,6 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(height: 32),
-          const SettingsSectionHeader(title: TripUxCopy.wakeAlertTitle),
           SettingsNavTile(
             icon: Icons.notifications_active_outlined,
             title: TripUxCopy.wakeAlertTitle,
@@ -103,7 +101,7 @@ class SettingsScreen extends StatelessWidget {
           SettingsNavTile(
             icon: Icons.directions_transit_outlined,
             title: 'Transit setup',
-            subtitle: 'Agencies, stop lists, and favorite lines',
+            subtitle: 'Agencies, stop lists, and saved lines',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

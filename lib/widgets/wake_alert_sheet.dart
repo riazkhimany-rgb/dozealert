@@ -124,9 +124,10 @@ class WakeAlertSheet extends StatelessWidget {
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton(
+            child: TextButton.icon(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Done'),
+              icon: const Icon(Icons.check, size: 18),
+              label: const Text('Done'),
             ),
           ),
         ],

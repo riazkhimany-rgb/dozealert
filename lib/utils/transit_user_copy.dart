@@ -118,12 +118,12 @@ abstract final class TransitUserCopy {
   static const saveTransitLinePairsHint =
       'Save transit and line pairs for quick switching on Home.';
 
-  static const favoriteLinesSectionTitle = 'Favorite lines';
+  static const favoriteLinesSectionTitle = 'Saved lines';
 
   static const allRoutesSectionTitle = 'All routes';
 
   static const favoriteLinesQuickSwitchHint =
-      'Switch transit and line pairs quickly on Home.';
+      'Switch transit and line pairs quickly from My Trips.';
 
   static String downloadStopListsForRoutes(String transitName) =>
       'Download stop lists in Settings → Transit & line to load routes '

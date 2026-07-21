@@ -17,8 +17,8 @@ import '../utils/gtfs_readiness.dart';
 import '../utils/transit_user_copy.dart';
 import '../utils/trip_readiness.dart';
 import '../utils/trip_ux_copy.dart';
-import 'destination_picker_sheet.dart';
 import 'home_card.dart';
+import 'trip_stop_picker_sheet.dart';
 
 /// Single Home status card for permissions / stop-data readiness and GTFS updates.
 class HomeSetupStatusCard extends StatefulWidget {
@@ -169,9 +169,20 @@ class _HomeSetupStatusCardState extends State<HomeSetupStatusCard>
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
-                      TextButton(
+                      TextButton.icon(
                         onPressed: () => unawaited(_handleAction(item)),
-                        child: Text(item.actionLabel),
+                        icon: Icon(
+                          switch (item.issue) {
+                            TripReadinessIssue.destination =>
+                              Icons.add_location_alt_outlined,
+                            TripReadinessIssue.permissions =>
+                              Icons.admin_panel_settings_outlined,
+                            TripReadinessIssue.stopData =>
+                              Icons.cloud_download_outlined,
+                          },
+                          size: 18,
+                        ),
+                        label: Text(item.actionLabel),
                       ),
                     ],
                   ),
@@ -195,7 +206,7 @@ class _HomeSetupStatusCardState extends State<HomeSetupStatusCard>
                   ),
                 ),
                 const SizedBox(height: 8),
-                FilledButton.tonal(
+                FilledButton.tonalIcon(
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -203,7 +214,8 @@ class _HomeSetupStatusCardState extends State<HomeSetupStatusCard>
                       ),
                     );
                   },
-                  child: Text(
+                  icon: const Icon(Icons.cloud_download_outlined),
+                  label: Text(
                     canDownloadInApp ? 'Download stops' : 'Get stop list',
                   ),
                 ),
@@ -218,7 +230,7 @@ class _HomeSetupStatusCardState extends State<HomeSetupStatusCard>
   Future<void> _handleAction(TripReadinessItem item) async {
     switch (item.issue) {
       case TripReadinessIssue.destination:
-        await DestinationPickerSheet.show(context);
+        await TripStopPickerSheet.show(context);
       case TripReadinessIssue.permissions:
         await Navigator.of(context).push(
           MaterialPageRoute<void>(

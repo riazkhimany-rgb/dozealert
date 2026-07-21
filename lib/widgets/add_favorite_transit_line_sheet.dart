@@ -124,7 +124,7 @@ class _AddFavoriteTransitLineSheetState extends State<AddFavoriteTransitLineShee
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Add favorite line',
+            'Add saved line',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),

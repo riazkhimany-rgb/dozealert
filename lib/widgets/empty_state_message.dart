@@ -7,12 +7,14 @@ class EmptyStateMessage extends StatelessWidget {
     super.key,
     required this.message,
     this.actionLabel,
+    this.actionIcon,
     this.onAction,
     this.showLogo = false,
   });
 
   final String message;
   final String? actionLabel;
+  final IconData? actionIcon;
   final VoidCallback? onAction;
   final bool showLogo;
 
@@ -41,9 +43,10 @@ class EmptyStateMessage extends StatelessWidget {
           ),
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: 12),
-            FilledButton.tonal(
+            FilledButton.tonalIcon(
               onPressed: onAction,
-              child: Text(actionLabel!),
+              icon: Icon(actionIcon ?? Icons.add_location_alt_outlined),
+              label: Text(actionLabel!),
             ),
           ],
         ],

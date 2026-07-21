@@ -123,27 +123,29 @@ class HomeTourCard extends StatelessWidget {
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    TextButton(
+                    TextButton.icon(
                       onPressed: onSkip,
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.white.withValues(alpha: 0.7),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         minimumSize: const Size(0, 40),
                       ),
-                      child: const Text('Skip'),
+                      icon: const Icon(Icons.close, size: 18),
+                      label: const Text('Skip'),
                     ),
                     const Spacer(),
                     if (onBack != null)
-                      TextButton(
+                      TextButton.icon(
                         onPressed: onBack,
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.white,
                           minimumSize: const Size(0, 40),
                         ),
-                        child: const Text('Back'),
+                        icon: const Icon(Icons.arrow_back, size: 18),
+                        label: const Text('Back'),
                       ),
                     const SizedBox(width: 8),
-                    FilledButton(
+                    FilledButton.icon(
                       onPressed: onNext,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppBranding.cyanAccent,
@@ -151,7 +153,11 @@ class HomeTourCard extends StatelessWidget {
                         minimumSize: const Size(0, 40),
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                       ),
-                      child: Text(
+                      icon: Icon(
+                        _isLast ? Icons.check : Icons.arrow_forward,
+                        size: 18,
+                      ),
+                      label: Text(
                         _isLast ? 'Done' : 'Next',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
