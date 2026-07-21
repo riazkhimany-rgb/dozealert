@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/destination.dart';
 import '../providers/destination_history_provider.dart';
+import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
 
 class RecentDestinationsPickerSheet extends StatelessWidget {
@@ -123,7 +124,9 @@ class RecentDestinationsPickerSheet extends StatelessWidget {
     BuildContext context,
     Destination destination,
   ) async {
-    await context.read<MonitoringProvider>().setDestination(destination);
+    await context.read<GtfsProvider>().selectDestinationWithTransit(
+      destination,
+    );
     if (!context.mounted) {
       return;
     }

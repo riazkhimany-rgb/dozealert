@@ -8,7 +8,6 @@ import '../../utils/transit_user_copy.dart';
 import 'favorite_lines_settings_screen.dart';
 import '../transit_data_screen.dart';
 import 'preferred_agencies_screen.dart';
-import 'transit_mode_settings_screen.dart';
 
 class TransitSettingsScreen extends StatefulWidget {
   const TransitSettingsScreen({super.key});
@@ -99,19 +98,6 @@ class _TransitSettingsScreenState extends State<TransitSettingsScreen> {
       ),
       body: ListView(
         children: [
-          SettingsNavTile(
-            icon: Icons.directions_transit,
-            title: 'Transit Mode',
-            subtitle: 'Transit Mode toggle, wake timing, and alert distance',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const TransitModeSettingsScreen(),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 32),
           const SettingsSectionHeader(title: TransitUserCopy.transitAndLine),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),

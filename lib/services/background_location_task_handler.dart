@@ -305,6 +305,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
 
     if (!evaluation.onRoute) {
       _transitOnRoute = false;
+      await _monitoringStorage.setTransitOnRouteActive(false);
       return;
     }
 

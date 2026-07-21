@@ -70,6 +70,7 @@ class PreferencesService {
               name: map['name'] as String,
               latitude: (map['latitude'] as num).toDouble(),
               longitude: (map['longitude'] as num).toDouble(),
+              stationKey: map['stationKey'] as String?,
             );
           })
           .toList(growable: false);
@@ -87,6 +88,7 @@ class PreferencesService {
               'name': station.name,
               'latitude': station.latitude,
               'longitude': station.longitude,
+              if (station.stationKey != null) 'stationKey': station.stationKey,
             },
           )
           .toList(growable: false),

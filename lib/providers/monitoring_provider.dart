@@ -95,7 +95,7 @@ class MonitoringProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void startMonitoring() {
+  Future<void> startMonitoring() async {
     if (_selectedDestination == null) {
       return;
     }
@@ -105,7 +105,9 @@ class MonitoringProvider extends ChangeNotifier {
     }
 
     _currentState = MonitoringState.monitoring;
-    unawaited(_persistSession(isActive: true));
+    // Persist before the foreground service starts — onStart stops itself if
+    // the active flag is not written yet.
+    await _persistSession(isActive: true);
     notifyListeners();
   }
 

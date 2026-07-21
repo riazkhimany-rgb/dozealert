@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
@@ -33,7 +32,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  final FocusNode _nameFocusNode = FocusNode();
 
   GoogleMapController? _mapController;
   LatLng? _selectedPosition;
@@ -50,6 +48,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     zoom: MapDefaults.initialZoom,
   );
   bool _centeredOnUser = false;
+  /// While true, the Google Map is not in the tree so a name dialog can own the IME.
+  bool _editingName = false;
+  /// Same workaround while the Places search field has focus.
+  bool _searchFocused = false;
+
+  bool get _mapSuspended => _editingName || _searchFocused;
 
   Set<Marker> get _markers {
     final position = _selectedPosition;
@@ -62,7 +66,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         markerId: _markerId,
         position: position,
         consumeTapEvents: true,
-        onTap: _focusDestinationName,
+        onTap: () => unawaited(_editDestinationName()),
       ),
     };
   }
@@ -70,6 +74,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   @override
   void initState() {
     super.initState();
+    _searchFocusNode.addListener(_onSearchFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_centerOnUserLocation());
     });
@@ -77,12 +82,31 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   @override
   void dispose() {
+    _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
     _nameController.dispose();
     _searchFocusNode.dispose();
-    _nameFocusNode.dispose();
     _mapController?.dispose();
     super.dispose();
+  }
+
+  void _onSearchFocusChanged() {
+    final focused = _searchFocusNode.hasFocus;
+    if (focused == _searchFocused) {
+      return;
+    }
+
+    setState(() {
+      _searchFocused = focused;
+      if (focused) {
+        _mapController = null;
+      } else {
+        final selected = _selectedPosition;
+        if (selected != null) {
+          _initialCameraPosition = CameraPosition(target: selected, zoom: 15);
+        }
+      }
+    });
   }
 
   Future<void> _centerOnUserLocation() async {
@@ -115,7 +139,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   Future<void> _refreshSearchBiasFromCamera() async {
     final controller = _mapController;
-    if (controller == null) {
+    if (controller == null || _mapSuspended) {
       return;
     }
 
@@ -136,31 +160,65 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     setState(() => _searchBias = center);
   }
 
-  /// Google Map platform views often keep focus after a tap, so requestFocus
-  /// alone does not open the soft keyboard — also force the IME to show.
-  void _focusDestinationName() {
-    _searchFocusNode.unfocus();
-    if (_nameController.text == MapDefaults.customDestinationName) {
-      _nameController.clear();
+  /// Rename via dialog (not an inline TextField). Google Map platform views on
+  /// Android routinely block the soft keyboard for sibling Flutter text fields.
+  Future<void> _editDestinationName({bool promptIfEmptyOnly = false}) async {
+    if (_editingName) {
+      return;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) {
-        return;
+    final current = _nameController.text.trim();
+    final isPlaceholder = current.isEmpty ||
+        current == MapDefaults.customDestinationName;
+    if (promptIfEmptyOnly && !isPlaceholder) {
+      return;
+    }
+
+    _searchFocusNode.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    setState(() {
+      _editingName = true;
+      _mapController = null;
+    });
+    // Drop the platform view before the dialog opens so Android can show the IME.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    if (!mounted) {
+      return;
+    }
+
+    final updated = await showDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return _DestinationNameDialog(
+          initialName: isPlaceholder ? '' : current,
+        );
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    final selected = _selectedPosition;
+    setState(() {
+      _editingName = false;
+      if (selected != null) {
+        _initialCameraPosition = CameraPosition(target: selected, zoom: 15);
       }
-      // Let the map gesture settle before stealing focus from the platform view.
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      if (!mounted) {
-        return;
+      if (updated != null) {
+        final trimmed = updated.trim();
+        _nameController.text = trimmed.isEmpty
+            ? MapDefaults.customDestinationName
+            : trimmed;
       }
-      _nameFocusNode.requestFocus();
-      await SystemChannels.textInput.invokeMethod<void>('TextInput.show');
     });
   }
 
   void _onMapTap(LatLng position) {
     setState(() => _selectedPosition = position);
-    _focusDestinationName();
+    unawaited(_editDestinationName(promptIfEmptyOnly: true));
   }
 
   void _selectSearchResult(PlaceSearchResult result) {
@@ -169,10 +227,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       _nameController.text = result.name;
     });
 
+    _searchFocusNode.unfocus();
     _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(result.latLng, 15),
     );
-    _focusDestinationName();
   }
 
   Future<void> _saveDestination({bool addToMyTrips = false}) async {
@@ -228,8 +286,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final placeSearchService = context.read<PlaceSearchService>();
     final selectedPosition = _selectedPosition;
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    final keyboardOpen = keyboardInset > 0;
+    final displayName = _nameController.text.trim().isEmpty
+        ? MapDefaults.customDestinationName
+        : _nameController.text.trim();
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -324,7 +383,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             color: colorScheme.outlineVariant,
                           ),
                         ),
-                      if (placeSearchService.isConfigured && !keyboardOpen) ...[
+                      if (placeSearchService.isConfigured) ...[
                         const SizedBox(height: 8),
                         Text(
                           placeSearchService.searchHelperText,
@@ -340,27 +399,40 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               ),
             ),
             Expanded(
-              child: GoogleMap(
-                initialCameraPosition: _initialCameraPosition,
-                markers: _markers,
-                onMapCreated: _onMapCreated,
-                onTap: _onMapTap,
-                onCameraIdle: _onCameraIdle,
-                myLocationEnabled: true,
-                myLocationButtonEnabled: !keyboardOpen,
-                zoomControlsEnabled: false,
-                mapToolbarEnabled: false,
-              ),
+              // Remove the map while renaming/searching — Android MapView blocks the IME.
+              child: _mapSuspended
+                  ? ColoredBox(
+                      color: colorScheme.surfaceContainerHighest,
+                      child: Center(
+                        child: Text(
+                          _editingName
+                              ? 'Naming destination…'
+                              : 'Search results appear above',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    )
+                  : GoogleMap(
+                      initialCameraPosition: _initialCameraPosition,
+                      markers: _markers,
+                      onMapCreated: _onMapCreated,
+                      onTap: _onMapTap,
+                      onCameraIdle: _onCameraIdle,
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: true,
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                    ),
             ),
-            // Scaffold already resizes for the IME; avoid double bottom inset.
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: HomeCard(
                 child: _DestinationPanel(
-                  nameController: _nameController,
-                  nameFocusNode: _nameFocusNode,
+                  displayName: displayName,
                   selectedPosition: selectedPosition,
-                  keyboardOpen: keyboardOpen,
+                  onEditName: () => unawaited(_editDestinationName()),
                   onSave: () => unawaited(_saveDestination()),
                   onSaveToMyTrips: () =>
                       unawaited(_saveDestination(addToMyTrips: true)),
@@ -375,21 +447,88 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   }
 }
 
+class _DestinationNameDialog extends StatefulWidget {
+  const _DestinationNameDialog({required this.initialName});
+
+  final String initialName;
+
+  @override
+  State<_DestinationNameDialog> createState() => _DestinationNameDialogState();
+}
+
+class _DestinationNameDialogState extends State<_DestinationNameDialog> {
+  late final TextEditingController _controller;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+    _controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _controller.text.length,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.of(context).pop(_controller.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Destination name'),
+      content: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: MapDefaults.customDestinationName,
+          border: OutlineInputBorder(),
+        ),
+        textInputAction: TextInputAction.done,
+        textCapitalization: TextCapitalization.words,
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
 class _DestinationPanel extends StatelessWidget {
   const _DestinationPanel({
-    required this.nameController,
-    required this.nameFocusNode,
+    required this.displayName,
     required this.selectedPosition,
-    required this.keyboardOpen,
+    required this.onEditName,
     required this.onSave,
     required this.onSaveToMyTrips,
     required this.onCancel,
   });
 
-  final TextEditingController nameController;
-  final FocusNode nameFocusNode;
+  final String displayName;
   final LatLng? selectedPosition;
-  final bool keyboardOpen;
+  final VoidCallback onEditName;
   final VoidCallback onSave;
   final VoidCallback onSaveToMyTrips;
   final VoidCallback onCancel;
@@ -402,158 +541,78 @@ class _DestinationPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (!keyboardOpen) ...[
-          Text(
-            'Destination Name',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-        TextField(
-          controller: nameController,
-          focusNode: nameFocusNode,
-          decoration: InputDecoration(
-            labelText: keyboardOpen ? 'Destination name' : null,
-            hintText: MapDefaults.customDestinationName,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            isDense: keyboardOpen,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: keyboardOpen ? 10 : 12,
-            ),
-          ),
-          keyboardType: TextInputType.text,
-          textInputAction: TextInputAction.done,
-          onTap: () {
-            // Map platform view can leave the field focused without an IME.
-            SystemChannels.textInput.invokeMethod<void>('TextInput.show');
-          },
-        ),
-        if (!keyboardOpen) ...[
-          const SizedBox(height: 16),
-          _CoordinateRow(
-            label: 'Latitude',
-            value: selectedPosition != null
-                ? selectedPosition!.latitude.toStringAsFixed(4)
-                : '—',
-          ),
-          const SizedBox(height: 8),
-          _CoordinateRow(
-            label: 'Longitude',
-            value: selectedPosition != null
-                ? selectedPosition!.longitude.toStringAsFixed(4)
-                : '—',
-          ),
-          const SizedBox(height: 12),
-          Text(
-            selectedPosition == null
-                ? 'Pick a search result or tap the map to place a pin first.'
-                : 'Tap the map to fine-tune the marker position.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: FilledButton.icon(
-              onPressed: onSave,
-              icon: const Icon(Icons.check_rounded),
-              label: const Text(TripUxCopy.setDestination),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton.icon(
-              onPressed: onSaveToMyTrips,
-              icon: const Icon(Icons.favorite_border_outlined),
-              label: const Text(TripUxCopy.saveToMyTrips),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton(
-              onPressed: onCancel,
-              child: const Text('Cancel'),
-            ),
-          ),
-        ] else ...[
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton(
-                  onPressed: onSave,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 40),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                  child: const Text(TripUxCopy.setDestination),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onSaveToMyTrips,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 40),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                  child: const Text(TripUxCopy.saveToMyTrips),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            height: 40,
-            child: TextButton(
-              onPressed: onCancel,
-              child: const Text('Cancel'),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _CoordinateRow extends StatelessWidget {
-  const _CoordinateRow({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
         Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          'Destination Name',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Material(
+          color: colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: colorScheme.outline),
+          ),
+          child: InkWell(
+            onTap: onEditName,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      displayName,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.edit_outlined,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          selectedPosition == null
+              ? 'Pick a search result or tap the map to place a pin first.'
+              : 'Tap the name to edit. Tap the map to fine-tune the pin.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
         ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w500,
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: FilledButton.icon(
+            onPressed: onSave,
+            icon: const Icon(Icons.check_rounded),
+            label: const Text(TripUxCopy.setDestination),
+          ),
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: double.infinity,
+          child: TextButton.icon(
+            onPressed: onSaveToMyTrips,
+            icon: const Icon(Icons.favorite_border_outlined, size: 18),
+            label: const Text(TripUxCopy.saveToMyTrips),
+          ),
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: TextButton(
+            onPressed: onCancel,
+            child: const Text('Cancel'),
           ),
         ),
       ],

@@ -11,7 +11,7 @@ import '../../services/app_permissions_service.dart';
 import '../../services/background_monitor_service.dart';
 import '../../utils/trip_ux_copy.dart';
 import '../../widgets/settings_section_tile.dart';
-import 'transit_mode_settings_screen.dart';
+import 'permissions_settings_screen.dart';
 
 class LocationSettingsScreen extends StatelessWidget {
   const LocationSettingsScreen({super.key});
@@ -37,15 +37,15 @@ class LocationSettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          const SettingsSectionHeader(title: 'Wake distance'),
+          const SettingsSectionHeader(title: 'Permissions'),
           SettingsNavTile(
-            icon: Icons.social_distance_outlined,
-            title: 'Wake distance & Transit Mode',
-            subtitle: 'Managed in Transit → Transit Mode',
+            icon: Icons.admin_panel_settings_outlined,
+            title: 'Location and notifications',
+            subtitle: 'Fix GPS, notifications, and battery access',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const TransitModeSettingsScreen(),
+                  builder: (_) => const PermissionsSettingsScreen(),
                 ),
               );
             },

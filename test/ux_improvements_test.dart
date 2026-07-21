@@ -118,7 +118,7 @@ void main() {
         longitude: -79.3806,
       ),
     );
-    provider.startMonitoring();
+    await provider.startMonitoring();
     provider.markMissed();
 
     expect(provider.currentState, MonitoringState.missed);

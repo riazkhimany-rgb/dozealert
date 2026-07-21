@@ -247,7 +247,7 @@ abstract final class TransitWakeMessage {
       currentStopName: displayName,
       detailMessage: _alarmDismissFooter,
       ttsPhrase: ttsPhrase,
-      wearSubline: 'Within wake radius',
+      wearSubline: 'Within alert distance',
     );
   }
 

@@ -70,8 +70,8 @@ class FavoriteTransitLinesSection extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      tooltip: 'Switch to this line',
+                      icon: const Icon(Icons.arrow_forward_rounded),
+                      tooltip: 'Choose stop on this line',
                       onPressed: () => unawaited(_switchLine(context, item)),
                     ),
                     IconButton(

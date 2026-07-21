@@ -163,7 +163,7 @@ void main() {
       expect(copy.uiHeadline, TripUxCopy.getReadyHeadline);
       expect(copy.headline, 'Union Station is your stop');
       expect(copy.detailMessage, TripUxCopy.alarmContinuesUntilDismiss);
-      expect(copy.wearSubline, 'Within wake radius');
+      expect(copy.wearSubline, 'Within alert distance');
     });
   });
 }

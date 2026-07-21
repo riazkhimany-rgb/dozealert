@@ -227,6 +227,22 @@ class BackgroundMonitorService {
     }
   }
 
+  /// Ask a running background task to reload prefs (Transit Mode, wake timing, etc.).
+  Future<void> refreshSessionIfRunning() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
+    try {
+      if (await FlutterForegroundTask.isRunningService) {
+        FlutterForegroundTask.sendDataToTask('refresh_session');
+      }
+    } catch (error, stackTrace) {
+      AppLog.d('BackgroundMonitorService: refresh failed: $error');
+      AppLog.d('$stackTrace');
+    }
+  }
+
   Future<void> updateNotification({
     required String destinationName,
     required double distanceKm,

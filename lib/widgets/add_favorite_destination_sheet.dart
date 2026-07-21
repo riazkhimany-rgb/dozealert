@@ -9,6 +9,7 @@ import '../providers/destination_history_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/settings_provider.dart';
+import '../screens/map_picker_screen.dart';
 import '../utils/transit_user_copy.dart';
 import 'stop_picker_sheet.dart';
 import 'accessible_scroll_body.dart';
@@ -36,6 +37,9 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final transitModeEnabled = context.select<SettingsProvider, bool>(
+      (provider) => provider.transitModeEnabled,
+    );
     final currentDestination = context.select<MonitoringProvider, Destination?>(
       (provider) => provider.selectedDestination,
     );
@@ -50,14 +54,16 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Add favorite stop',
+            transitModeEnabled ? 'Add favorite stop' : 'Add saved destination',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Save a stop for quick access when setting your destination.',
+            transitModeEnabled
+                ? 'Save a stop for quick access when setting your destination.'
+                : 'Save a place for quick access when setting your destination.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -72,21 +78,38 @@ class AddFavoriteDestinationSheet extends StatelessWidget {
                 _addDestination(hostContext, currentDestination),
               ),
             ),
-          _AddOption(
-            icon: Icons.route_outlined,
-            title: 'Pick stop',
-            subtitle: TransitUserCopy.searchStopsOnRoute,
-            onTap: () {
-              unawaited(
-                StopPickerSheet.show(
-                  context,
-                  onStopSelected: (stop) async {
-                    await _addFromStop(hostContext, stop);
-                  },
-                ),
-              );
-            },
-          ),
+          if (transitModeEnabled)
+            _AddOption(
+              icon: Icons.route_outlined,
+              title: 'Pick stop',
+              subtitle: TransitUserCopy.searchStopsOnRoute,
+              onTap: () {
+                unawaited(
+                  StopPickerSheet.show(
+                    context,
+                    onStopSelected: (stop) async {
+                      await _addFromStop(hostContext, stop);
+                    },
+                  ),
+                );
+              },
+            )
+          else
+            _AddOption(
+              icon: Icons.map_outlined,
+              title: 'Search on map',
+              subtitle: 'Drop a pin or search with Google Places',
+              onTap: () {
+                Navigator.of(context).pop();
+                unawaited(
+                  Navigator.of(hostContext).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const MapPickerScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
           if (recents.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(

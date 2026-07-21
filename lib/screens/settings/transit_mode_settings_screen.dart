@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../models/transit_mode_wake_setting.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/transit_mode_provider.dart';
+import '../../services/background_monitor_service.dart';
+import '../../utils/trip_ux_copy.dart';
 import '../../widgets/branded_app_name.dart';
 import '../../widgets/settings_section_tile.dart';
 import '../../widgets/wake_radius_dropdown.dart';
@@ -28,6 +30,7 @@ class TransitModeSettingsScreen extends StatelessWidget {
           return;
         }
         context.read<TransitModeProvider>().refreshFromSettings();
+        await context.read<BackgroundMonitorService>().refreshSessionIfRunning();
       },
       child: Column(
         children: TransitModeWakeSetting.values
@@ -42,20 +45,20 @@ class TransitModeSettingsScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Transit Mode')),
+      appBar: AppBar(title: const Text(TripUxCopy.wakeAlertTitle)),
       body: ListView(
         children: [
-          const SettingsSectionHeader(title: 'Transit Mode'),
+          const SettingsSectionHeader(title: TripUxCopy.wakeAlertTitle),
           SwitchListTile(
             secondary: Icon(
               Icons.directions_transit,
               color: colorScheme.primary,
             ),
-            title: const Text('Transit Mode'),
+            title: const Text('Wake by stops'),
             subtitle: Text(
               transitModeEnabled
-                  ? 'Wake by stops when you are on your transit route.'
-                  : 'Off — wake by distance only using the alert distance below.',
+                  ? 'On — wake by stops when you are on your transit route.'
+                  : 'Off — wake by alert distance only.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             value: transitModeEnabled,
@@ -65,13 +68,16 @@ class TransitModeSettingsScreen extends StatelessWidget {
                 return;
               }
               context.read<TransitModeProvider>().refreshFromSettings();
+              await context
+                  .read<BackgroundMonitorService>()
+                  .refreshSessionIfRunning();
             },
           ),
           if (transitModeEnabled)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
-                'Choose how many stops before your station the alarm should sound.',
+                'Choose how many stops before your destination the alarm should sound.',
                 style: TextStyle(color: colorScheme.onSurfaceVariant),
               ),
             ),
@@ -97,7 +103,7 @@ class TransitModeSettingsScreen extends StatelessWidget {
                   ? 'For map-pin destinations or when you are not on a transit route, '
                         'DozeAlert uses straight-line distance instead of stops. '
                         'Transit stop destinations wake by stops once you are on the route.'
-                  : 'With Transit Mode off, DozeAlert always wakes you by straight-line '
+                  : 'With wake by stops off, DozeAlert always wakes you by straight-line '
                         'distance to your destination.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),

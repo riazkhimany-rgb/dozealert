@@ -21,6 +21,18 @@ abstract final class TripUxCopy {
 
   static const selectFromMyTrips = 'Select from My Trips';
 
+  static const savedAndRecentTitle = 'Saved & recent';
+
+  static const quickPicksStopsLabel = 'Quick picks';
+
+  static const quickPicksDestinationsLabel = 'Quick picks';
+
+  static const wakeAlertTitle = 'Wake alert';
+
+  static const alertDistanceLabel = 'Alert distance';
+
+  static const setupBeforeStartTitle = 'Before you start';
+
   static const clearStop = 'Clear stop';
 
   static const clearDestination = 'Clear destination';
@@ -35,7 +47,7 @@ abstract final class TripUxCopy {
 
   static const stoppingTrip = 'Stopping…';
 
-  static const changeWakeDistance = 'Change wake distance';
+  static const changeWakeDistance = 'Change alert distance';
 
   static const watchingTripLine1 = 'Watching';
   static const watchingTripLine2 = 'your trip';

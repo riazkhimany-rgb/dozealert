@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../data/transit_catalog.dart';
 import '../providers/destination_history_provider.dart';
-import '../providers/favorite_transit_line_provider.dart';
 import '../providers/gtfs_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/transit_provider.dart';
@@ -12,11 +11,11 @@ import '../screens/transit_data_screen.dart';
 import '../utils/transit_user_copy.dart';
 import '../utils/trip_ux_copy.dart';
 import 'accessible_scroll_body.dart';
-import 'favorite_lines_picker_sheet.dart';
 import 'favorite_stops_picker_sheet.dart';
 import 'recent_destinations_picker_sheet.dart';
 import 'trip_stop_picker_sheet.dart';
 
+/// Canonical Home entry for choosing a destination (stop or place).
 class DestinationPickerSheet extends StatelessWidget {
   const DestinationPickerSheet({super.key});
 
@@ -40,12 +39,10 @@ class DestinationPickerSheet extends StatelessWidget {
     final canPickStop = gtfsProvider.canShowStopPicker();
     final transitMode = settings.transitModeEnabled;
     final agency = transitProvider.preferences.transitSystem;
-    final favoriteStopCount =
-        context.watch<DestinationHistoryProvider>().favorites.length;
-    final favoriteLineCount =
-        context.watch<FavoriteTransitLineProvider>().favorites.length;
-    final recentCount =
-        context.watch<DestinationHistoryProvider>().recents.length;
+    final history = context.watch<DestinationHistoryProvider>();
+    final savedCount = history.favorites.length;
+    final recentCount = history.recents.length;
+    final hasSavedOrRecent = savedCount > 0 || recentCount > 0;
     final needsStopData = transitMode &&
         !canPickStop &&
         TransitCatalog.hasCatalogLines(agency);
@@ -64,8 +61,8 @@ class DestinationPickerSheet extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             transitMode
-                ? 'Search for the station where you want to get off.'
-                : 'Drop a pin or search with Google Places.',
+                ? 'Find the stop where you want to get off.'
+                : 'Search on the map or drop a pin.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -73,6 +70,20 @@ class DestinationPickerSheet extends StatelessWidget {
           if (needsStopData) ...[
             const SizedBox(height: 16),
             _StopDataPromptCard(agencyName: agency),
+            const SizedBox(height: 8),
+            _PickerOption(
+              icon: Icons.map_outlined,
+              title: 'Use map instead',
+              subtitle: 'Wake by alert distance (no stop list needed)',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const MapPickerScreen(),
+                  ),
+                );
+              },
+            ),
           ],
           const SizedBox(height: 16),
           if (!transitMode)
@@ -93,7 +104,7 @@ class DestinationPickerSheet extends StatelessWidget {
           if (canPickStop && transitMode)
             _PickerOption(
               icon: Icons.route_outlined,
-              title: TripUxCopy.pickYourStop,
+              title: 'Find a stop',
               subtitle: TransitUserCopy.pickStopSubtitle,
               emphasized: true,
               onTap: () {
@@ -101,107 +112,79 @@ class DestinationPickerSheet extends StatelessWidget {
                 TripStopPickerSheet.show(context);
               },
             ),
-          if (!canPickStop && transitMode)
+          if (hasSavedOrRecent)
             _PickerOption(
-              icon: Icons.route_outlined,
-              title: TripUxCopy.pickYourStop,
-              subtitle: TransitUserCopy.stopListNeededFor(agency),
-              emphasized: true,
+              icon: Icons.bookmarks_outlined,
+              title: TripUxCopy.savedAndRecentTitle,
+              subtitle: transitMode
+                  ? '$savedCount saved · $recentCount recent'
+                  : '$savedCount saved · $recentCount recent',
+              emphasized: !transitMode || !canPickStop,
               onTap: () {
                 Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const TransitDataScreen(),
-                  ),
-                );
+                _SavedAndRecentPickerSheet.show(context);
               },
             ),
-          Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: Text(
-                TripUxCopy.moreOptions,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              children: [
-                if (transitMode) ...[
-                  _PickerOption(
-                    icon: Icons.star_outline,
-                    title: TripUxCopy.savedStopsTitle,
-                    subtitle: favoriteStopCount == 0
-                        ? TripUxCopy.noSavedStopsYet
-                        : '$favoriteStopCount saved stop${favoriteStopCount == 1 ? '' : 's'}',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      FavoriteStopsPickerSheet.show(context);
-                    },
-                  ),
-                  _PickerOption(
-                    icon: Icons.history,
-                    title: TripUxCopy.recentStopsTitle,
-                    subtitle: recentCount == 0
-                        ? TripUxCopy.noRecentStopsYet
-                        : '$recentCount recent stop${recentCount == 1 ? '' : 's'}',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      RecentDestinationsPickerSheet.show(context);
-                    },
-                  ),
-                  _PickerOption(
-                    icon: Icons.swap_horiz,
-                    title: 'Switch route',
-                    subtitle: favoriteLineCount == 0
-                        ? 'No saved routes yet'
-                        : '$favoriteLineCount saved route${favoriteLineCount == 1 ? '' : 's'}',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      FavoriteLinesPickerSheet.show(context);
-                    },
-                  ),
-                ] else ...[
-                  _PickerOption(
-                    icon: Icons.star_outline,
-                    title: TripUxCopy.savedDestinationsTitle,
-                    subtitle: favoriteStopCount == 0
-                        ? TripUxCopy.noSavedDestinationsYet
-                        : '$favoriteStopCount saved destination${favoriteStopCount == 1 ? '' : 's'}',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      FavoriteStopsPickerSheet.show(context);
-                    },
-                  ),
-                  _PickerOption(
-                    icon: Icons.history,
-                    title: TripUxCopy.recentDestinationsTitle,
-                    subtitle: recentCount == 0
-                        ? TripUxCopy.noRecentDestinationsYet
-                        : '$recentCount recent destination${recentCount == 1 ? '' : 's'}',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      RecentDestinationsPickerSheet.show(context);
-                    },
-                  ),
-                ],
-                if (transitMode && !canPickStop)
-                  _PickerOption(
-                    icon: Icons.map_outlined,
-                    title: 'Search on map',
-                    subtitle: TransitUserCopy.mapPinSubtitleFallback,
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const MapPickerScreen(),
-                        ),
-                      );
-                    },
-                  ),
-              ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SavedAndRecentPickerSheet extends StatelessWidget {
+  const _SavedAndRecentPickerSheet();
+
+  static Future<void> show(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => const _SavedAndRecentPickerSheet(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final transitMode = context.watch<SettingsProvider>().transitModeEnabled;
+    final favorites = context.watch<DestinationHistoryProvider>().favorites;
+    final recents = context.watch<DestinationHistoryProvider>().recents;
+
+    return AccessibleSheetBody(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            TripUxCopy.savedAndRecentTitle,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
           ),
+          const SizedBox(height: 16),
+          if (favorites.isNotEmpty)
+            _PickerOption(
+              icon: Icons.star_outline,
+              title: transitMode
+                  ? TripUxCopy.savedStopsTitle
+                  : TripUxCopy.savedDestinationsTitle,
+              subtitle: '${favorites.length} saved',
+              onTap: () {
+                Navigator.of(context).pop();
+                FavoriteStopsPickerSheet.show(context);
+              },
+            ),
+          if (recents.isNotEmpty)
+            _PickerOption(
+              icon: Icons.history,
+              title: transitMode
+                  ? TripUxCopy.recentStopsTitle
+                  : TripUxCopy.recentDestinationsTitle,
+              subtitle: '${recents.length} recent',
+              onTap: () {
+                Navigator.of(context).pop();
+                RecentDestinationsPickerSheet.show(context);
+              },
+            ),
         ],
       ),
     );

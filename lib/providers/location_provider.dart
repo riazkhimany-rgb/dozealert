@@ -245,7 +245,7 @@ class LocationProvider extends ChangeNotifier {
       _awaitingFreshLocation = false;
     }
 
-    _monitoringProvider.startMonitoring();
+    await _monitoringProvider.startMonitoring();
 
     if (_startTrackingWasCancelled(startGeneration)) {
       await _rollbackFailedStart();

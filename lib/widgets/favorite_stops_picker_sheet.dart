@@ -53,7 +53,7 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
           child: Text(
-            'Favorite destinations',
+            'Saved destinations',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -74,7 +74,7 @@ class FavoriteStopsPickerSheet extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Text(
-                      'No favorite destinations yet. Add them from the Favorites tab.',
+                      'No saved destinations yet. Add them from My Trips.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
