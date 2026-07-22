@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/gtfs_feed_provider.dart';
 import '../../services/transit_catalog_store.dart';
+import '../../widgets/branded_app_name.dart';
 import '../../widgets/settings_section_tile.dart';
 import '../../utils/transit_user_copy.dart';
 import 'favorite_lines_settings_screen.dart';
@@ -72,7 +73,7 @@ class _TransitSettingsScreenState extends State<TransitSettingsScreen> {
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('App update needed'),
-          content: Text(
+          content: BrandedMentionText(
             'A newer transit list (v${result.catalogVersion}) is available, '
             'but it needs DozeAlert ${result.minAppVersion} or later. '
             'Update the app from the Play Store to get the latest agencies.',

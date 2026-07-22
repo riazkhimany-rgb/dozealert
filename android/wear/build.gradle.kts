@@ -23,7 +23,7 @@ val phoneVersionCode =
 val phoneVersionName =
     localProperties.getProperty("flutter.versionName") ?: "1.0.0"
 // Increment when shipping a wear-only update without bumping the phone versionCode.
-val wearVersionExtra = 24
+val wearVersionExtra = 25
 
 android {
     namespace = "app.dozealert.wear"

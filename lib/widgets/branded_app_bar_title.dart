@@ -21,7 +21,6 @@ class BrandedAppBarTitle extends StatelessWidget {
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
           ),
-          dozeColor: theme.colorScheme.onSurface,
         ),
       ],
     );

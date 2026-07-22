@@ -124,20 +124,6 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Location'),
-          SettingsNavTile(
-            icon: Icons.my_location_outlined,
-            title: 'Location',
-            subtitle: 'Accuracy, battery, and background trip status',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const LocationSettingsScreen(),
-                ),
-              );
-            },
-          ),
           if (context.watch<WearStatusProvider>().appInstalled) ...[
             const Divider(height: 32),
             const SettingsSectionHeader(title: 'Wear'),
@@ -165,6 +151,20 @@ class SettingsScreen extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const ActivitySettingsScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 32),
+          const SettingsSectionHeader(title: 'Location'),
+          SettingsNavTile(
+            icon: Icons.my_location_outlined,
+            title: 'Location',
+            subtitle: 'Accuracy, battery, and background trip status',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const LocationSettingsScreen(),
                 ),
               );
             },

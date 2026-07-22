@@ -110,7 +110,7 @@ class OurStoryScreen extends StatelessWidget {
               children: [
                 ...BrandedAppName.spans(
                   style: boldStyle ?? bodyStyle!,
-                  dozeColor: colorScheme.onSurface,
+                  dozeColor: AppBranding.resolveDozeColor(context),
                 ),
                 TextSpan(
                   text: ' is a passion project',
@@ -144,7 +144,6 @@ class OurStoryScreen extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
-            dozeColor: colorScheme.onSurfaceVariant,
           ),
           ],
         ),

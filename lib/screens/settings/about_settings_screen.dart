@@ -130,7 +130,6 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
             title: BrandedAppName(
               prefix: 'Share ',
               style: Theme.of(context).textTheme.titleMedium,
-              dozeColor: colorScheme.onSurface,
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../utils/app_branding.dart';
 
-/// Wordmark: **Doze** in [dozeColor], **Alert** in brand cyan.
+/// Wordmark: **Doze** in brand midnight (or white on dark), **Alert** in cyan.
 class BrandedAppName extends StatelessWidget {
   const BrandedAppName({
     super.key,
@@ -12,6 +12,7 @@ class BrandedAppName extends StatelessWidget {
     this.prefix,
     this.suffix,
     this.textAlign,
+    this.onDarkBackground = false,
   });
 
   final TextStyle? style;
@@ -21,28 +22,31 @@ class BrandedAppName extends StatelessWidget {
   final String? suffix;
   final TextAlign? textAlign;
 
+  /// When true (or dark theme), **Doze** uses white so it stays readable on
+  /// midnight / branded backgrounds.
+  final bool onDarkBackground;
+
   static List<TextSpan> spans({
     required TextStyle style,
-    Color? dozeColor,
+    required Color dozeColor,
     Color? alertColor,
     String prefix = '',
     String suffix = '',
   }) {
     final boldStyle = style.copyWith(fontWeight: FontWeight.w700);
     final resolvedAlertColor = alertColor ?? AppBranding.cyanAccent;
+    // Prefix/suffix stay at the surrounding weight/color — only DozeAlert is bold.
+    final surroundingStyle = style.copyWith(inherit: false);
     return [
       if (prefix.isNotEmpty)
         TextSpan(
           text: prefix,
-          style: boldStyle.copyWith(
-            color: dozeColor ?? style.color,
-            inherit: false,
-          ),
+          style: surroundingStyle,
         ),
       TextSpan(
         text: 'Doze',
         style: boldStyle.copyWith(
-          color: dozeColor ?? style.color,
+          color: dozeColor,
           inherit: false,
         ),
       ),
@@ -56,25 +60,23 @@ class BrandedAppName extends StatelessWidget {
       if (suffix.isNotEmpty)
         TextSpan(
           text: suffix,
-          style: boldStyle.copyWith(
-            color: dozeColor ?? style.color,
-            inherit: false,
-          ),
+          style: surroundingStyle,
         ),
     ];
   }
 
-  /// Wordmark label for [FilledButton] — white/cyan on dark buttons, white/cyan
-  /// on light (midnight) buttons so "Alert" never matches the button fill.
+  /// Wordmark on [FilledButton]: white **Doze**; **Alert** contrasts with fill.
   static BrandedAppName forFilledButton(
     BuildContext context, {
     String prefix = '',
     String suffix = '',
   }) {
     final theme = Theme.of(context);
-    final dozeColor = theme.colorScheme.brightness == Brightness.dark
-        ? AppBranding.white
-        : theme.colorScheme.onPrimary;
+    final onCyanFill = theme.brightness == Brightness.dark;
+    final dozeColor = AppBranding.white;
+    final alertColor = AppBranding.resolveAlertColor(
+      onCyanBackground: onCyanFill,
+    );
     final labelStyle = theme.textTheme.labelLarge?.copyWith(
       fontWeight: FontWeight.w600,
       color: dozeColor,
@@ -85,7 +87,8 @@ class BrandedAppName extends StatelessWidget {
       suffix: suffix,
       style: labelStyle,
       dozeColor: dozeColor,
-      alertColor: AppBranding.cyanAccent,
+      alertColor: alertColor,
+      onDarkBackground: true,
     );
   }
 
@@ -98,14 +101,20 @@ class BrandedAppName extends StatelessWidget {
           letterSpacing: -0.3,
         ) ??
         const TextStyle(fontWeight: FontWeight.w700);
+    final resolvedDoze = dozeColor ??
+        AppBranding.resolveDozeColor(
+          context,
+          onDarkBackground: onDarkBackground,
+        );
+    final resolvedAlert = alertColor ?? AppBranding.cyanAccent;
 
     return Text.rich(
       TextSpan(
         style: resolvedStyle,
         children: spans(
           style: resolvedStyle,
-          dozeColor: dozeColor,
-          alertColor: alertColor,
+          dozeColor: resolvedDoze,
+          alertColor: resolvedAlert,
           prefix: prefix ?? '',
           suffix: suffix ?? '',
         ),
@@ -124,6 +133,7 @@ class BrandedMentionText extends StatelessWidget {
     this.textAlign,
     this.dozeColor,
     this.alertColor,
+    this.onDarkBackground = false,
   });
 
   final String text;
@@ -131,13 +141,14 @@ class BrandedMentionText extends StatelessWidget {
   final TextAlign? textAlign;
   final Color? dozeColor;
   final Color? alertColor;
+  final bool onDarkBackground;
 
   static const _token = 'DozeAlert';
 
   static List<TextSpan> buildSpans({
     required String text,
     required TextStyle style,
-    Color? dozeColor,
+    required Color dozeColor,
     Color? alertColor,
   }) {
     final spans = <TextSpan>[];
@@ -172,13 +183,19 @@ class BrandedMentionText extends StatelessWidget {
       return Text(text, textAlign: textAlign);
     }
 
+    final resolvedDoze = dozeColor ??
+        AppBranding.resolveDozeColor(
+          context,
+          onDarkBackground: onDarkBackground,
+        );
+
     return Text.rich(
       TextSpan(
         style: resolvedStyle,
         children: buildSpans(
           text: text,
           style: resolvedStyle,
-          dozeColor: dozeColor,
+          dozeColor: resolvedDoze,
           alertColor: alertColor,
         ),
       ),
@@ -195,12 +212,14 @@ class BrandedMentionLink extends StatelessWidget {
     this.style,
     this.textAlign,
     this.onTap,
+    this.onDarkBackground = false,
   });
 
   final String text;
   final TextStyle? style;
   final TextAlign? textAlign;
   final VoidCallback? onTap;
+  final bool onDarkBackground;
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +227,7 @@ class BrandedMentionLink extends StatelessWidget {
       text,
       style: style,
       textAlign: textAlign,
+      onDarkBackground: onDarkBackground,
     );
   }
 }

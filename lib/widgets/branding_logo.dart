@@ -93,9 +93,6 @@ class BrandingHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final titleColor = onDarkBackground
-        ? AppBranding.white
-        : theme.colorScheme.onSurface;
     final taglineColor = onDarkBackground
         ? AppBranding.cyanAccent
         : theme.colorScheme.secondary;
@@ -110,7 +107,7 @@ class BrandingHero extends StatelessWidget {
         SizedBox(height: logoHeight * 0.22),
         BrandedAppName(
           textAlign: TextAlign.center,
-          dozeColor: titleColor,
+          onDarkBackground: onDarkBackground,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
             letterSpacing: -0.02,

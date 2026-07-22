@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/settings_provider.dart';
 import '../../providers/wear_status_provider.dart';
+import '../../widgets/branded_app_name.dart';
 import '../../widgets/settings_section_tile.dart';
 
 class WearSettingsScreen extends StatelessWidget {
@@ -37,7 +38,7 @@ class WearSettingsScreen extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.watch_outlined, color: colorScheme.primary),
             title: const Text('Watch connection'),
-            subtitle: Text(
+            subtitle: BrandedMentionText(
               connectionSubtitle,
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
@@ -45,10 +46,10 @@ class WearSettingsScreen extends StatelessWidget {
           SwitchListTile(
             secondary: Icon(Icons.open_in_new, color: colorScheme.primary),
             title: const Text('Open watch app when trip starts'),
-            subtitle: Text(
-              'When on, starting monitoring on the phone also opens DozeAlert on '
+            subtitle: BrandedMentionText(
+              'When on, starting a trip on the phone also opens DozeAlert on '
               'your watch. Turn off to keep the watch face visible and rely on '
-              'the complication for status.',
+              'the complication or the DozeAlert trip tile for status.',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             value: settings.openWatchAppWhenTripStarts,

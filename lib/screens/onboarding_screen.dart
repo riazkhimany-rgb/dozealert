@@ -112,7 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Leave setup?'),
-          content: const Text(
+          content: BrandedMentionText(
             'DozeAlert needs permissions before it can watch your trip '
             'while you sleep.\n\n'
             'You can finish setup from Settings → Permissions anytime.',
@@ -597,7 +597,6 @@ class _IntroPage extends StatelessWidget {
                       color: colorScheme.onSurfaceVariant,
                       height: 1.5,
                     ),
-                    dozeColor: colorScheme.onSurfaceVariant,
                   )
                 else
                   Text(

@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../providers/location_provider.dart';
 import '../services/background_monitor_service.dart';
 import '../utils/trip_ux_copy.dart';
+import '../widgets/branded_app_name.dart';
 
 abstract final class LocationPermissionDialogs {
   static Future<void> showDenied(BuildContext context) {
@@ -13,7 +14,7 @@ abstract final class LocationPermissionDialogs {
         return AlertDialog(
           icon: const Icon(Icons.location_off_outlined),
           title: const Text('Location permission required'),
-          content: const Text(
+          content: BrandedMentionText(
             'DozeAlert needs location access while you use the app to '
             'watch your progress toward your stop.',
           ),
@@ -35,7 +36,7 @@ abstract final class LocationPermissionDialogs {
         return AlertDialog(
           icon: const Icon(Icons.location_searching),
           title: const Text('Background location required'),
-          content: const Text(
+          content: BrandedMentionText(
             'DozeAlert needs background location access to keep watching '
             'your trip when the screen is off or the app is minimized.',
           ),
@@ -66,7 +67,7 @@ abstract final class LocationPermissionDialogs {
         return AlertDialog(
           icon: const Icon(Icons.settings_outlined),
           title: const Text('Location permission blocked'),
-          content: const Text(
+          content: BrandedMentionText(
             'Location access was permanently denied. Open Settings to '
             'enable location permission for DozeAlert.',
           ),
@@ -97,7 +98,7 @@ abstract final class LocationPermissionDialogs {
         return AlertDialog(
           icon: const Icon(Icons.battery_alert_outlined),
           title: const Text('Battery optimization detected'),
-          content: const Text(
+          content: BrandedMentionText(
             'Allow DozeAlert to run without battery restrictions for '
             'reliable alarms.',
           ),
@@ -123,7 +124,7 @@ abstract final class LocationPermissionDialogs {
         return AlertDialog(
           icon: const Icon(Icons.error_outline),
           title: const Text(TripUxCopy.tripCouldNotStartTitle),
-          content: const Text(TripUxCopy.tripCouldNotStartBody),
+          content: BrandedMentionText(TripUxCopy.tripCouldNotStartBody),
           actions: [
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(),

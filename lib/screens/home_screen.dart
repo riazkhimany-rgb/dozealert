@@ -667,18 +667,25 @@ class _DestinationCard extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _DestinationActionButton(
-                        label: TripUxCopy.quickPicksTitle,
-                        icon: Icons.bookmarks_outlined,
-                        onPressed: () => QuickPicksSheet.show(context),
-                      ),
-                      const SizedBox(height: 12),
-                      _DestinationActionButton(
-                        label: TripUxCopy.changeLine,
-                        icon: Icons.directions_transit_outlined,
-                        onPressed: () => unawaited(
-                          TransitAgencyLinePickerSheet.show(context),
-                        ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _DestinationActionButton(
+                            label: TripUxCopy.quickPicksTitle,
+                            icon: Icons.bookmarks_outlined,
+                            onPressed: () => QuickPicksSheet.show(context),
+                          ),
+                          _DestinationActionButton(
+                            label: TripUxCopy.changeLine,
+                            icon: Icons.directions_transit_outlined,
+                            onPressed: () => unawaited(
+                              TransitAgencyLinePickerSheet.show(context),
+                            ),
+                          ),
+                        ],
                       ),
                       if (selectedLine.isNotEmpty) ...[
                         const SizedBox(height: 8),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_permissions_service.dart';
 import '../utils/trip_ux_copy.dart';
+import 'branded_app_name.dart';
 
 /// Blocks the auto permission flow until the user acknowledges what to tap
 /// on the next system screen.
@@ -26,7 +27,7 @@ Future<bool> showPermissionStepConfirmDialog(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              BrandedMentionText(
                 data.body,
                 style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
                   height: 1.45,

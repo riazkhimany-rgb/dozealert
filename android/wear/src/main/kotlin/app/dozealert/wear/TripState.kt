@@ -95,11 +95,7 @@ data class TripState(
                 }
             }
 
-            return if (destinationName.isNotBlank()) {
-                "Within wake radius"
-            } else {
-                "Within wake radius"
-            }
+            return "Within alert distance"
         }
 
     val tripConcernDetail: String

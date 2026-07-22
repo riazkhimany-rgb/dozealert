@@ -32,6 +32,26 @@ abstract final class AppBranding {
   static const Color cyanAccent = Color(0xFF4CC9F0);
   static const Color white = Color(0xFFFFFFFF);
 
+  /// **Doze** wordmark color: midnight on light surfaces, white on dark /
+  /// branded (midnight/cyan) backgrounds so it stays readable.
+  static Color resolveDozeColor(
+    BuildContext context, {
+    bool onDarkBackground = false,
+  }) {
+    if (onDarkBackground) {
+      return white;
+    }
+    if (Theme.of(context).brightness == Brightness.dark) {
+      return white;
+    }
+    return midnightBlue;
+  }
+
+  /// **Alert** wordmark color: cyan, or midnight when the fill is already cyan.
+  static Color resolveAlertColor({bool onCyanBackground = false}) {
+    return onCyanBackground ? midnightBlue : cyanAccent;
+  }
+
   static const String splashLogoAsset = 'assets/branding/splash_logo.png';
 
   /// Master artwork used only by [tool/generate_branding_assets.ps1].

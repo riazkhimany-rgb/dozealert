@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../utils/app_branding.dart';
+import 'branded_app_name.dart';
 import 'branding_logo.dart';
 
 /// Identifiers for each Home screen guided-tour step.
@@ -111,8 +112,9 @@ class HomeTourCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                BrandedMentionText(
                   body,
+                  onDarkBackground: true,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     height: 1.5,
                     color: Colors.white.withValues(alpha: 0.92),

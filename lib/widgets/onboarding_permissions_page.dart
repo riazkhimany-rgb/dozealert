@@ -9,6 +9,7 @@ import '../providers/settings_provider.dart';
 import '../services/app_permissions_service.dart';
 import '../utils/permission_setup_steps.dart';
 import '../utils/trip_ux_copy.dart';
+import 'branded_app_name.dart';
 import 'permission_step_confirm_dialog.dart';
 
 class OnboardingPermissionsPage extends StatefulWidget {
@@ -316,7 +317,7 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           color: colorScheme.primary,
         ),
         const SizedBox(height: 20),
-        Text(
+        BrandedMentionText(
           TripUxCopy.permissionsHeadline,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -324,7 +325,7 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           ),
         ),
         const SizedBox(height: 12),
-        Text(
+        BrandedMentionText(
           Platform.isAndroid
               ? TripUxCopy.permissionsIntroAndroid
               : TripUxCopy.permissionsIntroIos,
@@ -791,7 +792,7 @@ class _PermissionTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
+            BrandedMentionText(
               detail,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
