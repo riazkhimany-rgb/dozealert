@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../services/app_permissions_service.dart';
@@ -96,25 +98,36 @@ class _StepDialogCopy {
 }
 
 _StepDialogCopy? _copyForStep(PermissionSetupStep step) {
+  final isIos = Platform.isIOS;
   return switch (step) {
-    PermissionSetupStep.locationWhenInUse => const _StepDialogCopy(
+    PermissionSetupStep.locationWhenInUse => _StepDialogCopy(
         icon: Icons.location_on_outlined,
         title: TripUxCopy.permissionReasonLocation,
-        body: TripUxCopy.permissionDialogLocationBody,
-        highlight: TripUxCopy.permissionDialogLocationHighlight,
+        body: isIos
+            ? TripUxCopy.permissionDialogLocationBodyIos
+            : TripUxCopy.permissionDialogLocationBody,
+        highlight: isIos
+            ? TripUxCopy.permissionDialogLocationHighlightIos
+            : TripUxCopy.permissionDialogLocationHighlight,
         actionLabel: 'Continue',
       ),
-    PermissionSetupStep.backgroundLocation => const _StepDialogCopy(
+    PermissionSetupStep.backgroundLocation => _StepDialogCopy(
         icon: Icons.my_location,
         title: TripUxCopy.permissionReasonBackground,
-        body: TripUxCopy.permissionDialogBackgroundBody,
-        highlight: TripUxCopy.permissionDialogBackgroundHighlight,
+        body: isIos
+            ? TripUxCopy.permissionDialogBackgroundBodyIos
+            : TripUxCopy.permissionDialogBackgroundBody,
+        highlight: isIos
+            ? TripUxCopy.permissionDialogBackgroundHighlightIos
+            : TripUxCopy.permissionDialogBackgroundHighlight,
         actionLabel: 'Continue',
       ),
-    PermissionSetupStep.notifications => const _StepDialogCopy(
+    PermissionSetupStep.notifications => _StepDialogCopy(
         icon: Icons.notifications_outlined,
         title: TripUxCopy.permissionReasonNotifications,
-        body: TripUxCopy.permissionDialogNotificationsBody,
+        body: isIos
+            ? TripUxCopy.permissionDialogNotificationsBodyIos
+            : TripUxCopy.permissionDialogNotificationsBody,
         highlight: TripUxCopy.permissionDialogNotificationsHighlight,
         actionLabel: 'Continue',
       ),

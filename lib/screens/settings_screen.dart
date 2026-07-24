@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -124,7 +126,8 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          if (context.watch<WearStatusProvider>().appInstalled) ...[
+          if (Platform.isAndroid &&
+              context.watch<WearStatusProvider>().appInstalled) ...[
             const Divider(height: 32),
             const SettingsSectionHeader(title: 'Wear'),
             SettingsNavTile(

@@ -261,7 +261,8 @@ abstract final class TripUxCopy {
 
   static const permissionsIntroIos =
       'So we can track your ride and wake you before your stop. '
-      'Tap the button below to grant location access.';
+      'Tap the button below — we\'ll walk you through location '
+      '(While Using, then Always) and notifications.';
 
   static const enableAndContinue = 'Enable & continue';
 
@@ -340,19 +341,39 @@ abstract final class TripUxCopy {
       'Android asks for location in two steps. This is step 1 — '
       'so DozeAlert can see your position while the app is open.';
 
+  static const permissionDialogLocationBodyIos =
+      'iOS asks for location in two steps. This is step 1 — '
+      'so DozeAlert can see your position while the app is open.';
+
   static const permissionDialogLocationHighlight = 'Tap "While using the app"';
+
+  static const permissionDialogLocationHighlightIos =
+      'Tap "Allow While Using the App"';
 
   static const permissionDialogBackgroundBody =
       'DozeAlert needs background location so your trip keeps running '
       'when you lock your phone or switch apps.\n\n'
       'The next screen may be an Android dialog or app settings.';
 
+  static const permissionDialogBackgroundBodyIos =
+      'DozeAlert needs Always location so your trip keeps running '
+      'when you lock your phone or switch apps.\n\n'
+      'If iOS only offers While Using, choose that first, then change '
+      'Location to Always in Settings.';
+
   static const permissionDialogBackgroundHighlight =
       'Choose "Allow all the time"';
+
+  static const permissionDialogBackgroundHighlightIos =
+      'Choose "Allow Always" (or set Always in Settings)';
 
   static const permissionDialogNotificationsBody =
       'DozeAlert shows a small ongoing notification while watching '
       'your trip, and uses alerts to wake you before your stop.';
+
+  static const permissionDialogNotificationsBodyIos =
+      'DozeAlert uses notifications to wake you before your stop, '
+      'even when the app is in the background.';
 
   static const permissionDialogNotificationsHighlight = 'Tap "Allow"';
 

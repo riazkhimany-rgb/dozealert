@@ -1,14 +1,14 @@
 # DozeAlert Privacy Policy
 
 **Effective date:** June 18, 2026  
-**Last updated:** July 12, 2026
+**Last updated:** July 22, 2026
 
 **App:** DozeAlert (`app.dozealert`)  
 **Developer:** Riaz (Creator of DozeAlert)  
 **Contact:** [support@dozealert.app](mailto:support@dozealert.app)  
 **Website:** [https://dozealert.app](https://dozealert.app)
 
-This Privacy Policy describes how DozeAlert (“the app”, “we”, “us”) handles information when you use our Android application. DozeAlert helps you wake up before you reach a selected destination using location-based alerts.
+This Privacy Policy describes how DozeAlert (“the app”, “we”, “us”) handles information when you use our Android or iOS application. DozeAlert helps you wake up before you reach a selected destination using location-based alerts.
 
 ---
 
@@ -83,7 +83,7 @@ DozeAlert does **not** operate backend servers that collect your personal profil
 | **Public GTFS / open data hosts** | When you download transit feeds | Standard download requests (URL, IP address, device network information). No account is created by DozeAlert. |
 | **dozealert.app (GTFS mirror)** | When you download a mirrored transit feed in the app | Standard download requests for the mirrored GTFS file. No account is created. |
 | **dozealert.app (transit catalog)** | Periodically (about once per day) when the app checks for catalog updates | A small JSON manifest listing supported transit agencies, download URLs, and license metadata. No account is created. GTFS schedule files are **not** downloaded automatically. |
-| **Your chosen share target** | When you tap Share in the app | Only what you explicitly share through Android’s system share sheet (for example a message or link you send). |
+| **Your chosen share target** | When you tap Share in the app | Only what you explicitly share through the system share sheet (for example a message or link you send). |
 
 We do **not** use analytics, advertising, or crash-reporting SDKs in the production app.
 
@@ -95,7 +95,7 @@ If you email [support@dozealert.app](mailto:support@dozealert.app) or use the [w
 
 ## Android Permissions
 
-The app may request these permissions. Each is used only for the stated purpose:
+The app may request these permissions on Android. Each is used only for the stated purpose:
 
 | Permission | Purpose |
 |------------|---------|
@@ -110,6 +110,23 @@ The app may request these permissions. Each is used only for the stated purpose:
 | **Ignore battery optimizations** (optional) | Improve monitoring reliability on some devices if you approve it. |
 
 You can change or revoke permissions in Android Settings at any time. Revoking location or notification access may stop monitoring or alerts from working.
+
+---
+
+## iOS Permissions
+
+The app may request these permissions on iPhone. Each is used only for the stated purpose:
+
+| Permission | Purpose |
+|------------|---------|
+| **Location (While Using the App)** | First step for map and monitoring features. |
+| **Location (Always)** | Continue trip monitoring when the screen is locked or another app is open. |
+| **Notifications** | Arrival and wake alerts. |
+| **Internet** | Map search, GTFS downloads, and HTTPS requests to third-party data sources. |
+
+Physical activity recognition and Wear OS companion features are Android-only and are not used on iOS.
+
+You can change or revoke permissions in iOS Settings → DozeAlert at any time. Revoking location or notification access may stop monitoring or alerts from working.
 
 ---
 
@@ -131,7 +148,7 @@ We do **not** use your information for targeted advertising, credit decisions, o
 
 - **On-device data** (destinations, history, settings, cached GTFS) remains until you remove it or uninstall the app.
 - **Clear** from the Home screen removes your active destination.
-- **Clear app storage** (Android Settings → Apps → DozeAlert → Storage → Clear storage) deletes local app data.
+- **Clear app storage** (Android Settings → Apps → DozeAlert → Storage → Clear storage, or iOS Settings → General → iPhone Storage → DozeAlert → Delete App / Offload) deletes local app data.
 - **Uninstall** removes app data from your device.
 - **Support emails** are kept only as long as needed to handle your request.
 
@@ -157,7 +174,7 @@ DozeAlert is not directed at children under 13 (or the minimum age required in y
 
 DozeAlert is developed in Canada. If you use the app outside Canada, your information may be processed on your device and by third-party services (such as Google) under their own policies and applicable laws.
 
-If you are in the European Economic Area, United Kingdom, or similar regions, you may have rights to access, correct, or delete personal data we hold about you (primarily via device controls and contacting us). We rely on **contract necessity** and **legitimate interests** to provide the app you requested, and on **consent** where Android prompts you for permissions.
+If you are in the European Economic Area, United Kingdom, or similar regions, you may have rights to access, correct, or delete personal data we hold about you (primarily via device controls and contacting us). We rely on **contract necessity** and **legitimate interests** to provide the app you requested, and on **consent** where the OS prompts you for permissions.
 
 ---
 

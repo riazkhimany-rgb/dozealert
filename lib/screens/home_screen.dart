@@ -1015,7 +1015,7 @@ class _MonitoringCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
@@ -1030,7 +1030,7 @@ class _MonitoringCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: isMonitoring

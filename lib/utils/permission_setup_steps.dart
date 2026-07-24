@@ -19,6 +19,23 @@ class PermissionReasonSummary {
 List<PermissionReasonSummary> permissionReasonSummaries({
   bool includeActivityRecognition = true,
 }) {
+  if (Platform.isIOS) {
+    return const [
+      PermissionReasonSummary(
+        label: 'Location',
+        reason: TripUxCopy.permissionReasonLocation,
+      ),
+      PermissionReasonSummary(
+        label: 'Always',
+        reason: TripUxCopy.permissionReasonBackground,
+      ),
+      PermissionReasonSummary(
+        label: 'Notifications',
+        reason: TripUxCopy.permissionReasonNotifications,
+      ),
+    ];
+  }
+
   if (!Platform.isAndroid) {
     return const [
       PermissionReasonSummary(
@@ -147,7 +164,9 @@ List<PermissionSetupItem> permissionSetupItems({
     ),
     PermissionSetupItem(
       id: 'location_when_in_use',
-      title: Platform.isAndroid ? 'Location (step 1)' : 'Location',
+      title: Platform.isAndroid || Platform.isIOS
+          ? 'Location (step 1)'
+          : 'Location',
       reason: 'Know which stop you\'re passing',
       subtitle: Platform.isAndroid
           ? 'Allow while using the app'
@@ -155,16 +174,16 @@ List<PermissionSetupItem> permissionSetupItems({
       isComplete: (snapshot) => snapshot.locationWhenInUseGranted,
       setupStep: PermissionSetupStep.locationWhenInUse,
     ),
-    if (Platform.isAndroid)
+    if (Platform.isAndroid || Platform.isIOS)
       PermissionSetupItem(
         id: 'background_location',
         title: 'Location (step 2)',
         reason: 'Keep watching while your screen is off',
-        subtitle: 'Allow all the time',
+        subtitle: Platform.isIOS ? 'Allow Always' : 'Allow all the time',
         isComplete: (snapshot) => snapshot.backgroundLocationGranted,
         setupStep: PermissionSetupStep.backgroundLocation,
       ),
-    if (Platform.isAndroid)
+    if (Platform.isAndroid || Platform.isIOS)
       PermissionSetupItem(
         id: 'notifications',
         title: 'Notifications',
@@ -241,7 +260,7 @@ int completedRequiredSetupStepCount(
 }
 
 bool needsBackgroundLocationRecovery(AppPermissionSnapshot snapshot) {
-  return Platform.isAndroid &&
+  return (Platform.isAndroid || Platform.isIOS) &&
       snapshot.locationWhenInUseGranted &&
       !snapshot.backgroundLocationGranted;
 }

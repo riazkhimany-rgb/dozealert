@@ -45,6 +45,32 @@ class WakeAlertSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: Icon(
+              Icons.directions_transit,
+              color: colorScheme.primary,
+            ),
+            title: const Text('Wake by stops'),
+            subtitle: Text(
+              transitModeEnabled
+                  ? 'On — wake by stops when you are on your transit route.'
+                  : 'Off — wake by alert distance only.',
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+            value: transitModeEnabled,
+            onChanged: (enabled) async {
+              await settings.setTransitModeEnabled(enabled);
+              if (!context.mounted) {
+                return;
+              }
+              context.read<TransitModeProvider>().refreshFromSettings();
+              await context
+                  .read<BackgroundMonitorService>()
+                  .refreshSessionIfRunning();
+            },
+          ),
+          const SizedBox(height: 8),
           Text(
             transitModeEnabled
                 ? 'Choose how many stops before your destination to wake.'

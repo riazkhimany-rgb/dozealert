@@ -226,6 +226,19 @@ class LocationProvider extends ChangeNotifier {
       }
     }
 
+    if (Platform.isIOS) {
+      final backgroundPermission =
+          await _locationService.requestBackgroundPermission();
+      switch (backgroundPermission) {
+        case LocationPermissionStatus.granted:
+          break;
+        case LocationPermissionStatus.denied:
+          return LocationStartResult.backgroundPermissionDenied;
+        case LocationPermissionStatus.permanentlyDenied:
+          return LocationStartResult.backgroundPermissionDenied;
+      }
+    }
+
     final serviceEnabled = await _locationService.isLocationServiceEnabled();
     if (!serviceEnabled) {
       return LocationStartResult.locationServiceDisabled;

@@ -27,7 +27,7 @@ class AppPermissionsService {
 
   Future<AppPermissionSnapshot> snapshot() async {
     final locationWhenInUseGranted = await ph.Permission.locationWhenInUse.isGranted;
-    final backgroundLocationGranted = Platform.isAndroid
+    final backgroundLocationGranted = Platform.isAndroid || Platform.isIOS
         ? await ph.Permission.locationAlways.isGranted
         : locationWhenInUseGranted;
     final notificationsGranted = Platform.isAndroid
@@ -59,7 +59,7 @@ class AppPermissionsService {
   }
 
   Future<void> requestBackgroundLocation() async {
-    if (!Platform.isAndroid) {
+    if (!Platform.isAndroid && !Platform.isIOS) {
       return;
     }
 
@@ -159,7 +159,8 @@ class AppPermissionsService {
       }
     }
 
-    if (Platform.isAndroid && !snapshot.backgroundLocationGranted) {
+    if ((Platform.isAndroid || Platform.isIOS) &&
+        !snapshot.backgroundLocationGranted) {
       if (!await proceed(PermissionSetupStep.backgroundLocation)) {
         return snapshot;
       }
@@ -180,7 +181,8 @@ class AppPermissionsService {
       }
     }
 
-    if (Platform.isAndroid && !snapshot.notificationsGranted) {
+    if ((Platform.isAndroid || Platform.isIOS) &&
+        !snapshot.notificationsGranted) {
       if (!await proceed(PermissionSetupStep.notifications)) {
         return snapshot;
       }

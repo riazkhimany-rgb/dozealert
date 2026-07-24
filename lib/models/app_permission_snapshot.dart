@@ -30,6 +30,10 @@ class AppPermissionSnapshot {
           batteryUnrestricted;
     }
 
+    if (Platform.isIOS) {
+      return backgroundLocationGranted && notificationsGranted;
+    }
+
     return true;
   }
 
@@ -46,13 +50,19 @@ class AppPermissionSnapshot {
       missing.add(
         Platform.isAndroid
             ? 'Location — allow while using the app (first step)'
-            : 'Location — allow while using the app',
+            : Platform.isIOS
+                ? 'Location — Allow While Using the App (first step)'
+                : 'Location — allow while using the app',
       );
     }
-    if (Platform.isAndroid && !backgroundLocationGranted) {
-      missing.add('Background location — keep watching while screen is off');
+    if ((Platform.isAndroid || Platform.isIOS) && !backgroundLocationGranted) {
+      missing.add(
+        Platform.isIOS
+            ? 'Location Always — keep watching while screen is locked'
+            : 'Background location — keep watching while screen is off',
+      );
     }
-    if (Platform.isAndroid && !notificationsGranted) {
+    if ((Platform.isAndroid || Platform.isIOS) && !notificationsGranted) {
       missing.add('Notifications — wake you with sound and vibration');
     }
     if (Platform.isAndroid &&

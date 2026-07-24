@@ -55,15 +55,21 @@ dart run flutter_native_splash:create
 flutter run
 ```
 
-### Google Maps API key (Android)
+### Google Maps API key
 
-Add to `android/local.properties`:
+Use the same `GOOGLE_MAPS_API_KEY` for Android and iOS (repo-root `.env`, also usable via `android/local.properties`).
 
 ```properties
 GOOGLE_MAPS_API_KEY=your_key_here
 ```
 
-Set `GMSApiKey` in `ios/Runner/Info.plist` for iOS.
+For iOS, sync into the Xcode runner (does not change Android):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/sync_ios_maps_key.ps1
+```
+
+See [docs/IOS_SETUP.md](docs/IOS_SETUP.md) for iOS project setup, bundle ID, and Mac build steps.
 
 ## Google Play (Internal Testing)
 

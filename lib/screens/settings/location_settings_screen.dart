@@ -67,31 +67,33 @@ class LocationSettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Battery Optimization'),
-          ListTile(
-            leading: Icon(Icons.battery_saver_outlined, color: colorScheme.primary),
-            title: const Text('Battery optimization'),
-            subtitle: Text(
-              'You may be prompted to disable battery restrictions when '
-              'starting a trip.',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
+          if (Platform.isAndroid) ...[
+            const Divider(height: 32),
+            const SettingsSectionHeader(title: 'Battery Optimization'),
+            ListTile(
+              leading: Icon(Icons.battery_saver_outlined, color: colorScheme.primary),
+              title: const Text('Battery optimization'),
+              subtitle: Text(
+                'You may be prompted to disable battery restrictions when '
+                'starting a trip.',
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
+              ),
             ),
-          ),
-          const Divider(height: 32),
-          const SettingsSectionHeader(title: 'Background trip'),
-          SwitchListTile(
-            secondary: Icon(Icons.sensors, color: colorScheme.primary),
-            title: const Text(TripUxCopy.backgroundTripActive),
-            subtitle: Text(
-              diagnostics.backgroundMonitoringEnabled
-                  ? TripUxCopy.foregroundServiceRunning
-                  : TripUxCopy.startTripFromHomeHint,
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            const Divider(height: 32),
+            const SettingsSectionHeader(title: 'Background trip'),
+            SwitchListTile(
+              secondary: Icon(Icons.sensors, color: colorScheme.primary),
+              title: const Text(TripUxCopy.backgroundTripActive),
+              subtitle: Text(
+                diagnostics.backgroundMonitoringEnabled
+                    ? TripUxCopy.foregroundServiceRunning
+                    : TripUxCopy.startTripFromHomeHint,
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
+              ),
+              value: diagnostics.backgroundMonitoringEnabled,
+              onChanged: null,
             ),
-            value: diagnostics.backgroundMonitoringEnabled,
-            onChanged: null,
-          ),
+          ],
         ],
       ),
     );

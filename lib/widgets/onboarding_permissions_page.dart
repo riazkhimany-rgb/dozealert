@@ -369,12 +369,16 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
               Expanded(
                 child: Text(
                   _activeStep == PermissionSetupStep.backgroundLocation
-                      ? 'Choose Allow all the time on the next screen…'
+                      ? (Platform.isIOS
+                          ? 'Choose Allow Always on the next screen…'
+                          : 'Choose Allow all the time on the next screen…')
                       : _activeStep == PermissionSetupStep.activityRecognition
                           ? 'Allow physical activity on the next screen…'
                           : _activeStep == PermissionSetupStep.batteryOptimization
                               ? 'Allow battery exemption on the next screen…'
-                              : 'Follow the Android prompts…',
+                              : Platform.isIOS
+                                  ? 'Follow the iOS prompts…'
+                                  : 'Follow the Android prompts…',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -392,11 +396,14 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           _StepCallout(
             icon: Icons.warning_amber_rounded,
             title: 'Fix background location',
-            body:
-                'Location step 1 is granted, but step 2 is still missing. '
-                'Open app settings, then Permissions → Location → '
-                'Allow all the time.\n\n'
-                'Do not leave it on "Only while using the app".',
+            body: Platform.isIOS
+                ? 'Location step 1 is granted, but Always access is still '
+                    'missing. Open Settings → DozeAlert → Location → Always.\n\n'
+                    'Do not leave it on "While Using the App" only.'
+                : 'Location step 1 is granted, but step 2 is still missing. '
+                    'Open app settings, then Permissions → Location → '
+                    'Allow all the time.\n\n'
+                    'Do not leave it on "Only while using the app".',
             color: colorScheme.errorContainer,
             foreground: colorScheme.onErrorContainer,
             actionLabel: 'Open app settings',
@@ -494,7 +501,9 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
       ),
       _PermissionTile(
         complete: snapshot.locationWhenInUseGranted,
-        title: Platform.isAndroid ? 'Location (step 1)' : 'Location',
+        title: Platform.isAndroid || Platform.isIOS
+            ? 'Location (step 1)'
+            : 'Location',
         requiredSetting: Platform.isAndroid
             ? 'Allow only while using the app'
             : 'Allow While Using the App',
@@ -506,25 +515,31 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
         actionLabel: 'Request location access',
         onAction: () => unawaited(_runStepAction('location_when_in_use')),
       ),
-      if (Platform.isAndroid)
+      if (Platform.isAndroid || Platform.isIOS)
         _PermissionTile(
           complete: snapshot.backgroundLocationGranted,
           title: 'Location (step 2)',
-          requiredSetting: 'Allow all the time',
-          detail: 'Keep watching while your screen is off. Choose '
-              '"Allow all the time" — not "Only while using the app".',
+          requiredSetting:
+              Platform.isIOS ? 'Allow Always' : 'Allow all the time',
+          detail: Platform.isIOS
+              ? 'Keep watching while your screen is locked. Choose '
+                  '"Allow Always" — or set Always in Settings after While Using.'
+              : 'Keep watching while your screen is off. Choose '
+                  '"Allow all the time" — not "Only while using the app".',
           actionLabel: 'Request background location',
           onAction: () => unawaited(_runStepAction('background_location')),
           secondaryActionLabel: 'Open app settings',
           onSecondaryAction: () => unawaited(_openAppSettingsForBackground()),
         ),
-      if (Platform.isAndroid)
+      if (Platform.isAndroid || Platform.isIOS)
         _PermissionTile(
           complete: snapshot.notificationsGranted,
           title: 'Notifications',
           requiredSetting: 'Allowed',
-          detail: 'Wake you with sound and vibration. Shows a small ongoing '
-              'notification while DozeAlert watches your trip.',
+          detail: Platform.isIOS
+              ? 'Wake you with sound and vibration before your stop.'
+              : 'Wake you with sound and vibration. Shows a small ongoing '
+                  'notification while DozeAlert watches your trip.',
           actionLabel: 'Allow notifications',
           onAction: () => unawaited(_runStepAction('notifications')),
         ),

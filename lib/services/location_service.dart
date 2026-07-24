@@ -57,6 +57,33 @@ class LocationService {
   }
 
   Future<LocationPermissionStatus> requestBackgroundPermission() async {
+    if (Platform.isIOS) {
+      final whenInUseStatus = await Permission.locationWhenInUse.status;
+      if (!whenInUseStatus.isGranted) {
+        final requested = await Permission.locationWhenInUse.request();
+        if (!requested.isGranted) {
+          return requested.isPermanentlyDenied
+              ? LocationPermissionStatus.permanentlyDenied
+              : LocationPermissionStatus.denied;
+        }
+      }
+
+      final alwaysStatus = await Permission.locationAlways.status;
+      if (alwaysStatus.isGranted) {
+        return LocationPermissionStatus.granted;
+      }
+
+      final requestedAlways = await Permission.locationAlways.request();
+      if (requestedAlways.isGranted) {
+        return LocationPermissionStatus.granted;
+      }
+      if (requestedAlways.isPermanentlyDenied) {
+        return LocationPermissionStatus.permanentlyDenied;
+      }
+
+      return LocationPermissionStatus.denied;
+    }
+
     if (!Platform.isAndroid) {
       return LocationPermissionStatus.granted;
     }
