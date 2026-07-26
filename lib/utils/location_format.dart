@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../providers/location_provider.dart';
 import '../services/background_monitor_service.dart';
+import '../utils/app_settings_launcher.dart';
 import '../utils/trip_ux_copy.dart';
 import '../widgets/branded_app_name.dart';
 
@@ -53,7 +53,7 @@ abstract final class LocationPermissionDialogs {
             ),
             FilledButton(
               onPressed: () async {
-                await openAppSettings();
+                await openDozeAlertAppSettings();
                 if (dialogContext.mounted) {
                   Navigator.of(dialogContext).pop();
                 }
@@ -66,8 +66,8 @@ abstract final class LocationPermissionDialogs {
     );
   }
 
-  /// Opens DozeAlert's own Settings page (not a generic Apps list).
-  /// Apple does not allow apps to set Always location programmatically.
+  /// Opens Settings and shows clear Search → DozeAlert → Location → Always
+  /// steps. Newer iOS often lands on the root Settings / Apps list.
   static Future<void> _showIosAlwaysSettingsGuide(BuildContext context) {
     return showDialog<void>(
       context: context,
@@ -110,7 +110,7 @@ abstract final class LocationPermissionDialogs {
             ),
             FilledButton.icon(
               onPressed: () async {
-                await openAppSettings();
+                await openDozeAlertAppSettings();
                 if (dialogContext.mounted) {
                   Navigator.of(dialogContext).pop();
                 }
@@ -133,8 +133,8 @@ abstract final class LocationPermissionDialogs {
           title: const Text('Location permission blocked'),
           content: BrandedMentionText(
             Platform.isIOS
-                ? 'Location was turned off for DozeAlert. Tap Open Settings '
-                    '(opens DozeAlert directly), then Location → Always.'
+                ? 'Location was turned off for DozeAlert. Tap Open Settings, '
+                    'search DozeAlert, then Location → Always.'
                 : 'Location access was permanently denied. Open Settings to '
                     'enable location permission for DozeAlert.',
           ),
@@ -145,7 +145,7 @@ abstract final class LocationPermissionDialogs {
             ),
             FilledButton(
               onPressed: () async {
-                await openAppSettings();
+                await openDozeAlertAppSettings();
                 if (dialogContext.mounted) {
                   Navigator.of(dialogContext).pop();
                 }

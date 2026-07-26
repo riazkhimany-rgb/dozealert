@@ -531,8 +531,8 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           requiredSetting:
               Platform.isIOS ? 'Allow Always' : 'Allow all the time',
           detail: Platform.isIOS
-              ? 'Keep watching while your screen is locked. Tap the button — '
-                  'we open DozeAlert Settings; then choose Location → Always.'
+              ? 'Keep watching while your screen is locked. Tap Open Settings, '
+                  'search DozeAlert, then Location → Always.'
               : 'Keep watching while your screen is off. Choose '
                   '"Allow all the time" — not "Only while using the app".',
           actionLabel: Platform.isIOS

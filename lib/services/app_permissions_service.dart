@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 
 import '../models/app_permission_snapshot.dart';
+import '../utils/app_settings_launcher.dart';
 import 'background_monitor_service.dart';
 import 'location_service.dart';
 
@@ -100,7 +101,7 @@ class AppPermissionsService {
   }
 
   Future<void> openAppSettingsPage() async {
-    await ph.openAppSettings();
+    await openDozeAlertAppSettings();
   }
 
   Future<void> openBatterySettings() async {
