@@ -51,7 +51,17 @@ class AlarmService {
     try {
       const androidSettings =
           AndroidInitializationSettings('@drawable/ic_stat_dozealert');
-      const iosSettings = DarwinInitializationSettings();
+      // Defer the iOS permission prompt until trip start / onboarding.
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+        defaultPresentAlert: true,
+        defaultPresentBadge: true,
+        defaultPresentSound: true,
+        defaultPresentBanner: true,
+        defaultPresentList: true,
+      );
       const settings = InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
@@ -92,6 +102,37 @@ class AlarmService {
     } catch (error, stackTrace) {
       AppLog.d('AlarmService: initialize failed: $error');
       AppLog.d('$stackTrace');
+    }
+  }
+
+  /// Requests iOS alert/sound/badge permission (no-op on other platforms).
+  ///
+  /// Does not block trip start if denied — TTS/audio may still work while
+  /// foregrounded. Silent Mode still limits notification sounds without
+  /// Critical Alerts (not requested).
+  Future<bool> ensureNotificationPermission() async {
+    if (!Platform.isIOS) {
+      return true;
+    }
+
+    if (!_initialized) {
+      await initialize();
+    }
+
+    try {
+      final iosPlugin = _notifications
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      final granted = await iosPlugin?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      return granted ?? false;
+    } catch (error, stackTrace) {
+      AppLog.d('AlarmService: iOS notification permission failed: $error');
+      AppLog.d('$stackTrace');
+      return false;
     }
   }
 
@@ -222,10 +263,16 @@ class AlarmService {
       final iosDetails = DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
-        presentSound: useForcedSound,
-        interruptionLevel: useForcedSound
-            ? InterruptionLevel.timeSensitive
-            : InterruptionLevel.active,
+        presentBanner: true,
+        presentList: true,
+        // Always attach a system sound on iOS so locked/background wakes
+        // still make noise even if the Flutter audio session is delayed.
+        presentSound: true,
+        sound: 'default',
+        // timeSensitive breaks through Focus better than active; Critical
+        // Alerts need a special Apple entitlement (deferred).
+        interruptionLevel: InterruptionLevel.timeSensitive,
+        threadIdentifier: 'dozealert-arrival',
       );
 
       final details = NotificationDetails(
@@ -262,6 +309,8 @@ class AlarmService {
           IosTextToSpeechAudioCategoryOptions.duckOthers,
           IosTextToSpeechAudioCategoryOptions
               .interruptSpokenAudioAndMixWithOthers,
+          // Helps keep speaking if the screen locks mid-alert.
+          IosTextToSpeechAudioCategoryOptions.allowBluetooth,
         ],
       );
     }
@@ -388,10 +437,11 @@ class AlarmService {
             audioFocus: AndroidAudioFocus.gain,
           ),
           iOS: AudioContextIOS(
+            // playback ignores the Ring/Silent switch (ambient would not).
             category: AVAudioSessionCategory.playback,
             options: {
               AVAudioSessionOptions.duckOthers,
-              AVAudioSessionOptions.mixWithOthers,
+              AVAudioSessionOptions.defaultToSpeaker,
             },
           ),
         ),

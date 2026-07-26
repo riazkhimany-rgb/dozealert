@@ -237,6 +237,9 @@ class LocationProvider extends ChangeNotifier {
         case LocationPermissionStatus.permanentlyDenied:
           return LocationStartResult.backgroundPermissionDenied;
       }
+
+      // Wake alerts rely on notification + background audio on iOS.
+      await _alarmService.ensureNotificationPermission();
     }
 
     final serviceEnabled = await _locationService.isLocationServiceEnabled();
