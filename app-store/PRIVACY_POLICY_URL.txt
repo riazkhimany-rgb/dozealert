@@ -1,0 +1,4 @@
+https://dozealert.app/privacy
+
+Source of truth: privacy_policy.md (bundled in the app and published at the URL above).
+App Privacy questionnaire guide: app-store/APP_PRIVACY_NUTRITION_LABELS.md

@@ -26,6 +26,8 @@
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
 		<key>GMSApiKey</key>
 		<string>$(GOOGLE_MAPS_API_KEY)</string>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -34,6 +36,12 @@
 		<string>DozeAlert needs continuous location access so it can watch your trip and wake you before your stop while the screen is locked or another app is open.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>DozeAlert uses your location to monitor progress toward your destination and show your position on the map.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>DozeAlert may use the camera only if you choose to capture or attach a file while importing transit data. Trip monitoring does not use the camera.</string>
+		<key>NSMotionUsageDescription</key>
+		<string>DozeAlert can use motion activity to tell when you are riding versus waiting, which helps transit stop detection. You can leave this off; trip monitoring still works with location.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>DozeAlert may access your photo library when you choose a file to import transit stop data (GTFS zip).</string>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>

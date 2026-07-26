@@ -1,0 +1,53 @@
+# TestFlight and App Store submit checklist
+
+Use with [docs/IOS_SETUP.md](../docs/IOS_SETUP.md) Phase 4. Bundle ID: `app.dozealert`. Version comes from `pubspec.yaml` (e.g. `1.1.0+55` → version `1.1.0`, build `55`).
+
+## Before you start
+
+- [ ] Apple Developer Program membership active  
+- [ ] App record created in App Store Connect (bundle ID `app.dozealert`)  
+- [ ] Google Cloud: Maps SDK for iOS enabled; key restricted with iOS bundle ID `app.dozealert`  
+- [ ] RentAMac: repo pulled; `.env` and `ios/Flutter/Secrets.xcconfig` present  
+- [ ] Listing copy ready in this folder (`DESCRIPTION.txt`, `SUBTITLE.txt`, etc.)  
+- [ ] App Privacy answers ready in `APP_PRIVACY_NUTRITION_LABELS.md`  
+
+## Build and upload (RentAMac)
+
+- [ ] `flutter pub get`  
+- [ ] `cd ios && pod install && cd ..`  
+- [ ] Open `ios/Runner.xcworkspace` in Xcode (not the `.xcodeproj`)  
+- [ ] Signing & Capabilities → Team selected → Automatic signing  
+- [ ] Product → Destination → **Any iOS Device (arm64)** (or a connected iPhone)  
+- [ ] Product → **Archive**  
+- [ ] Organizer → Distribute App → App Store Connect → Upload  
+- [ ] Wait until the build appears under TestFlight (processing can take several minutes)  
+
+Alternative: `flutter build ipa` then upload the IPA via Transporter or Xcode Organizer.
+
+## App Store Connect metadata
+
+- [ ] Privacy Policy URL: `https://dozealert.app/privacy`  
+- [ ] App Privacy questionnaire completed from `APP_PRIVACY_NUTRITION_LABELS.md`  
+- [ ] Name: DozeAlert; Subtitle from `SUBTITLE.txt`  
+- [ ] Description / Keywords / What’s New pasted from this folder  
+- [ ] Category: Travel; Age: 4+; No ads; No sign-in required  
+- [ ] Screenshots uploaded (see `SCREENSHOTS.md`)  
+- [ ] Support URL / marketing URL if you have them (support: support@dozealert.app)  
+
+## TestFlight
+
+- [ ] **Internal testing:** add yourself / team; install via TestFlight; run the alarm matrix in `docs/IOS_SETUP.md`  
+- [ ] **External testing (optional):** create a group, submit build for Beta App Review if required  
+- [ ] Fix crashes / Always-location / alarm issues before production submit  
+
+## Submit for App Review
+
+- [ ] Select the processed build on the iOS version page  
+- [ ] Answer export compliance (should be auto-cleared via Info.plist `ITSAppUsesNonExemptEncryption = false`)  
+- [ ] Note for Review (optional): “No login. Grant Location → Always and Notifications to test trip monitoring. Use a short map-pin trip to verify the wake alarm.”  
+- [ ] Submit for Review  
+
+## After approval
+
+- [ ] Release manually or automatically per your Connect setting  
+- [ ] Smoke-test the live App Store build on a physical iPhone  

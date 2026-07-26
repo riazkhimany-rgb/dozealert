@@ -1,0 +1,9 @@
+Version 1.1.0
+
+• Clearer Download vs Update for transit stop lists; routes follow stop order along the line
+• Multi-mode agencies — subway, streetcar, and bus routes from downloaded GTFS
+• Smarter transit monitoring — missed-stop detection and background wake alarms
+• Faster startup — feed upgrades run in the background instead of blocking splash
+• Favorites and trip setup — unified line selection and vehicle-type filters
+
+Sleep peacefully. Arrive confidently.
