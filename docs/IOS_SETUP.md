@@ -50,6 +50,13 @@ Signing, certificates, and provisioning are configured in Xcode / App Store Conn
 
 **Still needs you on a Mac + Apple account:** create the App Store Connect app, sign/archive/upload, screenshots, TestFlight, and App Review. Real lock-screen proof needs a physical iPhone.
 
+### Locked-phone alarms (iOS)
+
+- Approach alerts post the local notification **first** (system sound), then start the looping `alarm.mp3` tone (always on iOS, so locked wakes are not TTS-only).
+- Unlocking with an active alert restarts tone / TTS / vibration (`reinforceAlarmIfActive`).
+- Monitoring uses `ActivityType.otherNavigation` so transit trips are less likely to pause GPS than car-only navigation mode.
+- Stale stop counts on the lock screen are expected while Flutter is suspended; Core Location should still wake the app for updates. If distance freezes for many minutes while locked, confirm **Location → Always** and the blue status-bar location indicator during the trip.
+
 ## Phase 4 — TestFlight / App Store (RentAMac)
 
 Store listing copy, privacy questionnaire answers, and checklists live in [`app-store/`](../app-store/). Do not rewrite Play Store docs for iOS.

@@ -298,8 +298,9 @@ class LocationService {
       return AppleSettings(
         accuracy: accuracy,
         distanceFilter: distanceFilter,
+        // otherNavigation fits transit/rideshare better than automotive-only.
         activityType: useNavigation
-            ? ActivityType.automotiveNavigation
+            ? ActivityType.otherNavigation
             : ActivityType.other,
         // Continuous trip monitoring while locked / backgrounded (not FGS).
         allowBackgroundLocationUpdates: isMonitoring,

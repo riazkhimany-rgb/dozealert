@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/location_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../services/alarm_service.dart';
 import '../utils/trip_ux_copy.dart';
 import '../widgets/gtfs_feed_upgrade_listener.dart';
 import 'home_screen.dart';
@@ -61,6 +64,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       context.read<LocationProvider>().syncBackgroundState();
+      // iOS often mutes Flutter TTS/vibration while locked; re-fire outputs.
+      unawaited(context.read<AlarmService>().reinforceAlarmIfActive());
     }
   }
 

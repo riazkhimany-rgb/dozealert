@@ -157,25 +157,65 @@ class AlarmService {
     _activeTtsPhrase = ttsPhrase ?? _approachPhrase;
 
     final forceSound = _settingsService.settings.alwaysPlayAlarmSound;
+    // iOS background/locked: TTS and vibration often fail; always start the
+    // looping alarm asset so UIBackgroundModes audio can keep the wake audible.
+    final playForcedTone = forceSound || Platform.isIOS;
     final volume = _settingsService.settings.alarmVolume;
     final approachSystemVolume =
         _settingsService.settings.approachSystemVolume;
 
-    await _volumeService.applyApproachAlertVolume(
-      targetVolume: approachSystemVolume,
-    );
-    await _startApproachSpeechLoop(volume: volume);
-    await _startVibration();
-
-    if (forceSound) {
-      await _startForcedAlarmSound(volume: volume);
-    }
-
+    // Notification first — works while suspended if Core Location woke us.
     await showArrivalNotification(
       title: title,
       body: body,
-      forceSound: forceSound,
+      forceSound: playForcedTone,
     );
+
+    await _volumeService.applyApproachAlertVolume(
+      targetVolume: approachSystemVolume,
+    );
+
+    if (playForcedTone) {
+      await _startForcedAlarmSound(volume: volume);
+    }
+
+    await _startVibration();
+    await _startApproachSpeechLoop(volume: volume);
+  }
+
+  /// Restarts tone / TTS / vibration after the app returns to the foreground.
+  ///
+  /// iOS often suppresses Flutter audio while locked; unlocking with an active
+  /// alarm must re-engage outputs or the wake screen stays silent.
+  Future<void> reinforceAlarmIfActive() async {
+    if (!_alarmActive) {
+      return;
+    }
+
+    final forceSound = _settingsService.settings.alwaysPlayAlarmSound;
+    final playForcedTone = forceSound || Platform.isIOS;
+    final volume = _settingsService.settings.alarmVolume;
+    final approachSystemVolume =
+        _settingsService.settings.approachSystemVolume;
+
+    AppLog.d('AlarmService: reinforcing active alarm outputs');
+
+    await showArrivalNotification(
+      title: 'Approaching Destination',
+      body: _activeTtsPhrase,
+      forceSound: playForcedTone,
+    );
+    await _volumeService.applyApproachAlertVolume(
+      targetVolume: approachSystemVolume,
+    );
+
+    if (playForcedTone) {
+      await _startForcedAlarmSound(volume: volume);
+    }
+
+    await _stopVibration();
+    await _startVibration();
+    await _startApproachSpeechLoop(volume: volume);
   }
 
   Future<void> stopAlarm() async {
@@ -438,8 +478,10 @@ class AlarmService {
           ),
           iOS: AudioContextIOS(
             // playback ignores the Ring/Silent switch (ambient would not).
+            // Combined with Info.plist UIBackgroundModes=audio so a locked
+            // iPhone can keep the looping tone alive after a location wake.
             category: AVAudioSessionCategory.playback,
-            options: {
+            options: const {
               AVAudioSessionOptions.duckOthers,
               AVAudioSessionOptions.defaultToSpeaker,
             },
