@@ -374,12 +374,14 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
 
   Future<void> _runDownload(GtfsFeedProvider feedProvider, String feedId) async {
     setState(() => _actionInFlight = true);
+    final gtfsProvider = context.read<GtfsProvider>();
     try {
       await feedProvider.downloadFeed(feedId);
       if (!mounted) {
         return;
       }
-      await context.read<GtfsProvider>().notifyDataUpdated();
+      await gtfsProvider.ensureSelectedFeedLoaded();
+      await gtfsProvider.notifyDataUpdated();
       if (!mounted) {
         return;
       }
@@ -414,12 +416,14 @@ class _PreferredAgencyGtfsCardState extends State<_PreferredAgencyGtfsCard> {
 
   Future<void> _runUpdate(GtfsFeedProvider feedProvider, String feedId) async {
     setState(() => _actionInFlight = true);
+    final gtfsProvider = context.read<GtfsProvider>();
     try {
       await feedProvider.updateFeed(feedId);
       if (!mounted) {
         return;
       }
-      await context.read<GtfsProvider>().notifyDataUpdated();
+      await gtfsProvider.ensureSelectedFeedLoaded();
+      await gtfsProvider.notifyDataUpdated();
       if (!mounted) {
         return;
       }

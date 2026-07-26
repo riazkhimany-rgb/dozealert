@@ -39,7 +39,9 @@ abstract final class GtfsFeedDownloadHandler {
       if (!context.mounted) {
         return false;
       }
-      await context.read<GtfsProvider>().notifyDataUpdated();
+      final gtfsProvider = context.read<GtfsProvider>();
+      await gtfsProvider.ensureSelectedFeedLoaded();
+      await gtfsProvider.notifyDataUpdated();
       if (!context.mounted) {
         return false;
       }

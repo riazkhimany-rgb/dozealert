@@ -48,7 +48,9 @@ class GtfsFeedProvider extends ChangeNotifier {
   final GtfsCacheStore _cacheStore;
   final GtfsService _gtfsService;
 
-  Future<void> Function()? onFeedsChanged;
+  /// Called after cache contents change. Optional [changedFeedId] is the feed
+  /// that was just written (so non-selected preloads still get loaded).
+  Future<void> Function([String? changedFeedId])? onFeedsChanged;
 
   bool _initialized = false;
   bool _isUpgradingStaleFeeds = false;
@@ -96,7 +98,7 @@ class GtfsFeedProvider extends ChangeNotifier {
         .map((seed) => _mergeSeedWithCache(seed, cachedInfos))
         .toList(growable: false);
     notifyListeners();
-    await onFeedsChanged?.call();
+    await onFeedsChanged?.call(null);
   }
 
   /// Feeds whose cached stop data predates the current parse schema.
@@ -422,7 +424,7 @@ class GtfsFeedProvider extends ChangeNotifier {
       await _mergeCachedFeedFromDisk(feedId);
 
       await _refreshFeedList();
-      await _notifyFeedsChanged();
+      await _notifyFeedsChanged(feedId);
     } catch (error) {
       _errors[feedId] = error.toString();
       _updateFeedStatus(feedId, GtfsFeedStatus.error, errorMessage: '$error');
@@ -451,12 +453,12 @@ class GtfsFeedProvider extends ChangeNotifier {
     await _gtfsService.reinitialize(cachedFeeds: cachedFeeds);
   }
 
-  Future<void> _notifyFeedsChanged() async {
+  Future<void> _notifyFeedsChanged([String? changedFeedId]) async {
     final callback = onFeedsChanged;
     if (callback == null) {
       return;
     }
-    await callback();
+    await callback(changedFeedId);
   }
 
   GtfsFeedInfo _mergeSeedWithCache(

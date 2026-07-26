@@ -132,16 +132,26 @@ class GtfsProvider extends ChangeNotifier {
       return;
     }
 
-    if (_loadedFeedIds.isEmpty) {
+    final selectedFeedId = _feedIdForTransitSystem(
+      _transitProvider.preferences.transitSystem,
+    );
+    final feedIds = Set<String>.from(_loadedFeedIds);
+    if (selectedFeedId != null) {
+      feedIds.add(selectedFeedId);
+    }
+    if (feedIds.isEmpty) {
       return;
     }
 
-    await _loadFeedIds(Set<String>.from(_loadedFeedIds), forceReload: true);
+    await _loadFeedIds(feedIds, forceReload: true);
     await _syncDefaultLineIfNeeded();
     notifyListeners();
   }
 
-  Future<void> onFeedDataChanged() async {
+  /// Reloads in-memory GTFS after a cache write. When [changedFeedId] is set
+  /// (e.g. a background preload finished), that feed is included even if it is
+  /// not the currently selected agency.
+  Future<void> onFeedDataChanged([String? changedFeedId]) async {
     if (!_seedInitialized) {
       return;
     }
@@ -152,6 +162,9 @@ class GtfsProvider extends ChangeNotifier {
     final feedIds = Set<String>.from(_loadedFeedIds);
     if (selectedFeedId != null) {
       feedIds.add(selectedFeedId);
+    }
+    if (changedFeedId != null) {
+      feedIds.add(changedFeedId);
     }
     if (feedIds.isEmpty) {
       return;
@@ -909,7 +922,11 @@ class GtfsProvider extends ChangeNotifier {
   }
 
   void _handleTransitPreferencesChanged() {
-    unawaited(_syncDefaultLineIfNeeded().then((_) => notifyListeners()));
+    unawaited(() async {
+      await ensureSelectedFeedLoaded();
+      await _syncDefaultLineIfNeeded();
+      notifyListeners();
+    }());
   }
 
   void _handleDestinationChanged() {

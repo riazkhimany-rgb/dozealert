@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../data/default_gtfs_feeds.dart';
 import '../data/transit_catalog.dart';
 import '../models/favorite_transit_line.dart';
 import '../providers/favorite_transit_line_provider.dart';
@@ -154,9 +155,16 @@ class TransitAgencyChoicePage extends StatelessWidget {
     await transitProvider.savePreferences();
 
     for (final agency in selectedAgencies) {
+      final feedId =
+          DefaultGtfsFeeds.byAgencyName(agency)?.feedId;
       gtfsFeedProvider.preloadForTransitSystemIfNeeded(
         agency,
-        onComplete: gtfsProvider.notifyDataUpdated,
+        onComplete: () async {
+          if (feedId != null) {
+            await gtfsProvider.loadFeedById(feedId);
+          }
+          await gtfsProvider.notifyDataUpdated();
+        },
       );
 
       await favoriteLines.add(

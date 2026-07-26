@@ -76,12 +76,14 @@ class _TransitDataScreenState extends State<TransitDataScreen> {
     Future<void> Function() action,
   ) async {
     setState(() => _busyFeedId = feedId);
+    final gtfsProvider = context.read<GtfsProvider>();
     try {
       await action();
       if (!mounted) {
         return;
       }
-      await context.read<GtfsProvider>().notifyDataUpdated();
+      await gtfsProvider.ensureSelectedFeedLoaded();
+      await gtfsProvider.notifyDataUpdated();
       if (!mounted) {
         return;
       }

@@ -42,6 +42,9 @@ abstract final class TransitLineSwitch {
       defaultLine: favorite.lineName,
     );
 
+    // Cached feeds for non-primary agencies are not kept in memory; load the
+    // newly selected agency before checking stop readiness.
+    await gtfsProvider.ensureSelectedFeedLoaded();
     await gtfsProvider.syncTransitModeRouteForSelectedLine();
 
     if (GtfsReadiness.hasStopDataForLine(
@@ -60,15 +63,24 @@ abstract final class TransitLineSwitch {
 
     final feed = gtfsFeedProvider.feedById(feedSeed.feedId);
     if (feed?.status == GtfsFeedStatus.downloaded) {
+      // Metadata said downloaded but stops still missing — force reload.
       await gtfsProvider.refreshFromCache();
-      transitModeProvider.refreshFromSettings();
-      return TransitLineSwitchResult.switched;
+      await gtfsProvider.syncTransitModeRouteForSelectedLine();
+      if (GtfsReadiness.hasStopDataForLine(
+        gtfsProvider,
+        transitSystem: favorite.transitSystem,
+        lineName: favorite.lineName,
+      )) {
+        transitModeProvider.refreshFromSettings();
+        return TransitLineSwitchResult.switched;
+      }
+      return TransitLineSwitchResult.failed;
     }
 
     gtfsFeedProvider.preloadFeedIfNeeded(
       feedSeed.feedId,
       onComplete: () async {
-        await gtfsProvider.refreshFromCache();
+        await gtfsProvider.ensureSelectedFeedLoaded();
         await gtfsProvider.syncTransitModeRouteForSelectedLine();
         transitModeProvider.refreshFromSettings();
       },
