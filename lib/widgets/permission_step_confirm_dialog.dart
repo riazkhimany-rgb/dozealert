@@ -113,14 +113,16 @@ _StepDialogCopy? _copyForStep(PermissionSetupStep step) {
       ),
     PermissionSetupStep.backgroundLocation => _StepDialogCopy(
         icon: Icons.my_location,
-        title: TripUxCopy.permissionReasonBackground,
+        title: isIos
+            ? TripUxCopy.iosAlwaysSettingsTitle
+            : TripUxCopy.permissionReasonBackground,
         body: isIos
             ? TripUxCopy.permissionDialogBackgroundBodyIos
             : TripUxCopy.permissionDialogBackgroundBody,
         highlight: isIos
             ? TripUxCopy.permissionDialogBackgroundHighlightIos
             : TripUxCopy.permissionDialogBackgroundHighlight,
-        actionLabel: 'Continue',
+        actionLabel: isIos ? 'Continue' : 'Continue',
       ),
     PermissionSetupStep.notifications => _StepDialogCopy(
         icon: Icons.notifications_outlined,

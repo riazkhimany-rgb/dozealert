@@ -293,12 +293,24 @@ class LocationService {
       );
     }
 
-    return AppleSettings(
+    if (Platform.isIOS) {
+      final isMonitoring = mode == LocationTrackingMode.monitoring;
+      return AppleSettings(
+        accuracy: accuracy,
+        distanceFilter: distanceFilter,
+        activityType: useNavigation
+            ? ActivityType.automotiveNavigation
+            : ActivityType.other,
+        // Continuous trip monitoring while locked / backgrounded (not FGS).
+        allowBackgroundLocationUpdates: isMonitoring,
+        showBackgroundLocationIndicator: isMonitoring,
+        pauseLocationUpdatesAutomatically: false,
+      );
+    }
+
+    return LocationSettings(
       accuracy: accuracy,
       distanceFilter: distanceFilter,
-      activityType: useNavigation
-          ? ActivityType.automotiveNavigation
-          : ActivityType.other,
     );
   }
 

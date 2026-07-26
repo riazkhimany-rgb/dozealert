@@ -356,16 +356,35 @@ abstract final class TripUxCopy {
       'The next screen may be an Android dialog or app settings.';
 
   static const permissionDialogBackgroundBodyIos =
-      'DozeAlert needs Always location so your trip keeps running '
-      'when you lock your phone or switch apps.\n\n'
-      'If iOS only offers While Using, choose that first, then change '
-      'Location to Always in Settings.';
+      'Apple requires Always location in Settings (apps cannot turn '
+      'this on for you).\n\n'
+      'Tap Continue — we open DozeAlert\'s Settings page for you. '
+      'Then tap Location → Always. You do not need to search for the app.';
 
   static const permissionDialogBackgroundHighlight =
       'Choose "Allow all the time"';
 
   static const permissionDialogBackgroundHighlightIos =
-      'Choose "Allow Always" (or set Always in Settings)';
+      '1. Tap Location\n2. Tap Always\n3. Return to DozeAlert';
+
+  static const iosAlwaysSettingsTitle = 'Turn on Always location';
+
+  static const iosAlwaysSettingsBody =
+      'Apple does not let apps enable Always location by themselves.\n\n'
+      'Tap Open Settings — that goes straight to DozeAlert (no searching). '
+      'Then do these two taps:';
+
+  static const iosAlwaysSettingsStep1 = 'Tap Location';
+
+  static const iosAlwaysSettingsStep2 = 'Tap Always';
+
+  static const iosAlwaysSettingsOpenButton = 'Open Settings';
+
+  static const iosAlwaysRecoveryBody =
+      'While Using is on, but Always is still off — needed so we can '
+      'watch your trip while you sleep.\n\n'
+      'Tap Open Settings (opens DozeAlert directly), then '
+      'Location → Always.';
 
   static const permissionDialogNotificationsBody =
       'DozeAlert shows a small ongoing notification while watching '

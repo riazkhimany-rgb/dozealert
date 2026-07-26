@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../models/app_permission_snapshot.dart';
 import '../providers/settings_provider.dart';
 import '../services/app_permissions_service.dart';
+import '../utils/location_format.dart';
 import '../utils/permission_setup_steps.dart';
 import '../utils/trip_ux_copy.dart';
 import 'branded_app_name.dart';
@@ -254,6 +255,12 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
   }
 
   Future<void> _openAppSettingsForBackground() async {
+    if (Platform.isIOS) {
+      await LocationPermissionDialogs.showBackgroundDenied(context);
+      await _refresh();
+      return;
+    }
+
     final proceed = await showPermissionStepConfirmDialog(
       context,
       PermissionSetupStep.backgroundLocation,
@@ -395,18 +402,20 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           const SizedBox(height: 16),
           _StepCallout(
             icon: Icons.warning_amber_rounded,
-            title: 'Fix background location',
+            title: Platform.isIOS
+                ? TripUxCopy.iosAlwaysSettingsTitle
+                : 'Fix background location',
             body: Platform.isIOS
-                ? 'Location step 1 is granted, but Always access is still '
-                    'missing. Open Settings → DozeAlert → Location → Always.\n\n'
-                    'Do not leave it on "While Using the App" only.'
+                ? TripUxCopy.iosAlwaysRecoveryBody
                 : 'Location step 1 is granted, but step 2 is still missing. '
                     'Open app settings, then Permissions → Location → '
                     'Allow all the time.\n\n'
                     'Do not leave it on "Only while using the app".',
             color: colorScheme.errorContainer,
             foreground: colorScheme.onErrorContainer,
-            actionLabel: 'Open app settings',
+            actionLabel: Platform.isIOS
+                ? TripUxCopy.iosAlwaysSettingsOpenButton
+                : 'Open app settings',
             onAction: () => unawaited(_openAppSettingsForBackground()),
           ),
         ],
@@ -522,14 +531,22 @@ class OnboardingPermissionsPageState extends State<OnboardingPermissionsPage>
           requiredSetting:
               Platform.isIOS ? 'Allow Always' : 'Allow all the time',
           detail: Platform.isIOS
-              ? 'Keep watching while your screen is locked. Choose '
-                  '"Allow Always" — or set Always in Settings after While Using.'
+              ? 'Keep watching while your screen is locked. Tap the button — '
+                  'we open DozeAlert Settings; then choose Location → Always.'
               : 'Keep watching while your screen is off. Choose '
                   '"Allow all the time" — not "Only while using the app".',
-          actionLabel: 'Request background location',
-          onAction: () => unawaited(_runStepAction('background_location')),
-          secondaryActionLabel: 'Open app settings',
-          onSecondaryAction: () => unawaited(_openAppSettingsForBackground()),
+          actionLabel: Platform.isIOS
+              ? TripUxCopy.iosAlwaysSettingsOpenButton
+              : 'Request background location',
+          onAction: () => unawaited(
+            Platform.isIOS
+                ? _openAppSettingsForBackground()
+                : _runStepAction('background_location'),
+          ),
+          secondaryActionLabel: Platform.isIOS ? null : 'Open app settings',
+          onSecondaryAction: Platform.isIOS
+              ? null
+              : () => unawaited(_openAppSettingsForBackground()),
         ),
       if (Platform.isAndroid || Platform.isIOS)
         _PermissionTile(

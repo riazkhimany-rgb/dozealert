@@ -282,6 +282,8 @@ class LocationProvider extends ChangeNotifier {
           return LocationStartResult.foregroundServiceFailure;
       }
     } else {
+      // iOS: no FGS — Always permission + Geolocator AppleSettings background
+      // stream (see LocationService._streamSettings).
       _usingBackgroundService = false;
     }
 
@@ -299,6 +301,7 @@ class LocationProvider extends ChangeNotifier {
       final useBackgroundGpsStream =
           Platform.isAndroid && _usingBackgroundService;
       if (!useBackgroundGpsStream) {
+        // Android FGS owns GPS when running; iOS always uses this stream.
         await _locationService.startTracking(
           highAccuracy: true,
           mode: LocationTrackingMode.monitoring,

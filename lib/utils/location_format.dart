@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -30,6 +32,10 @@ abstract final class LocationPermissionDialogs {
   }
 
   static Future<void> showBackgroundDenied(BuildContext context) {
+    if (Platform.isIOS) {
+      return _showIosAlwaysSettingsGuide(context);
+    }
+
     return showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -60,6 +66,64 @@ abstract final class LocationPermissionDialogs {
     );
   }
 
+  /// Opens DozeAlert's own Settings page (not a generic Apps list).
+  /// Apple does not allow apps to set Always location programmatically.
+  static Future<void> _showIosAlwaysSettingsGuide(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+          icon: const Icon(Icons.my_location),
+          title: const Text(TripUxCopy.iosAlwaysSettingsTitle),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                BrandedMentionText(
+                  TripUxCopy.iosAlwaysSettingsBody,
+                  style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _IosAlwaysStepRow(
+                  number: '1',
+                  label: TripUxCopy.iosAlwaysSettingsStep1,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(height: 8),
+                _IosAlwaysStepRow(
+                  number: '2',
+                  label: TripUxCopy.iosAlwaysSettingsStep2,
+                  colorScheme: colorScheme,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Not now'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                await openAppSettings();
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
+              icon: const Icon(Icons.settings_outlined),
+              label: const Text(TripUxCopy.iosAlwaysSettingsOpenButton),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   static Future<void> showPermanentlyDenied(BuildContext context) {
     return showDialog<void>(
       context: context,
@@ -68,8 +132,11 @@ abstract final class LocationPermissionDialogs {
           icon: const Icon(Icons.settings_outlined),
           title: const Text('Location permission blocked'),
           content: BrandedMentionText(
-            'Location access was permanently denied. Open Settings to '
-            'enable location permission for DozeAlert.',
+            Platform.isIOS
+                ? 'Location was turned off for DozeAlert. Tap Open Settings '
+                    '(opens DozeAlert directly), then Location → Always.'
+                : 'Location access was permanently denied. Open Settings to '
+                    'enable location permission for DozeAlert.',
           ),
           actions: [
             TextButton(
@@ -83,7 +150,7 @@ abstract final class LocationPermissionDialogs {
                   Navigator.of(dialogContext).pop();
                 }
               },
-              child: const Text('Open Settings'),
+              child: const Text(TripUxCopy.iosAlwaysSettingsOpenButton),
             ),
           ],
         );
@@ -133,6 +200,57 @@ abstract final class LocationPermissionDialogs {
           ],
         );
       },
+    );
+  }
+}
+
+class _IosAlwaysStepRow extends StatelessWidget {
+  const _IosAlwaysStepRow({
+    required this.number,
+    required this.label,
+    required this.colorScheme,
+  });
+
+  final String number;
+  final String label;
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              child: Text(
+                number,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
