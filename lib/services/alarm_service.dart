@@ -6,25 +6,37 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:vibration/vibration.dart';
 
+import '../services/ios_locked_reliability_service.dart';
 import '../services/settings_service.dart';
 import '../utils/transit_wake_message.dart';
 import '../models/app_settings.dart';
 import '../services/system_volume_service.dart';
 import '../utils/app_log.dart';
+import '../utils/trip_ux_copy.dart';
 
 class AlarmService {
-  AlarmService(this._settingsService, [SystemVolumeService? volumeService])
-      : _volumeService = volumeService ?? SystemVolumeService();
+  AlarmService(
+    this._settingsService, [
+    SystemVolumeService? volumeService,
+    IosLockedReliabilityService? iosReliability,
+  ])  : _volumeService = volumeService ?? SystemVolumeService(),
+        _iosReliability = iosReliability ?? IosLockedReliabilityService();
 
   final SettingsService _settingsService;
   final SystemVolumeService _volumeService;
+  final IosLockedReliabilityService _iosReliability;
 
   static const _arrivalNotificationId = 1001;
+  static const _tripHeartbeatNotificationId = 1002;
+  static const _preAlertNotificationId = 1003;
   static const _alarmAssetPath = 'sounds/alarm.mp3';
+  /// Bundled in ios/Runner (Copy Bundle Resources) for UNNotificationSound.
+  static const _iosNotificationSound = 'alarm_notification.wav';
   static const _defaultChannelId = 'arrival_alerts';
   static const _forcedAlarmChannelId = 'arrival_alerts_forced';
   static const _approachPhrase = AlarmTtsCopy.defaultApproaching;
   static const _pauseBetweenTtsRepeats = Duration(milliseconds: 1500);
+  static const _heartbeatMinInterval = Duration(seconds: 45);
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -38,6 +50,11 @@ class AlarmService {
   int _ttsLoopGeneration = 0;
   DateTime? _lastAlarmTriggeredAt;
   DateTime? _lastAlarmDismissedAt;
+  DateTime? _lastHeartbeatAt;
+  String? _lastHeartbeatDetail;
+  Timer? _backgroundTaskEndTimer;
+
+  IosLockedReliabilityService get iosReliability => _iosReliability;
 
   bool get alarmActive => _alarmActive;
   DateTime? get lastAlarmTriggeredAt => _lastAlarmTriggeredAt;
@@ -164,6 +181,11 @@ class AlarmService {
     final approachSystemVolume =
         _settingsService.settings.approachSystemVolume;
 
+    if (Platform.isIOS) {
+      await _iosReliability.beginBackgroundTask(name: 'dozealert.alarm');
+      _scheduleBackgroundTaskEnd();
+    }
+
     // Notification first — works while suspended if Core Location woke us.
     await showArrivalNotification(
       title: title,
@@ -181,6 +203,15 @@ class AlarmService {
 
     await _startVibration();
     await _startApproachSpeechLoop(volume: volume);
+  }
+
+  void _scheduleBackgroundTaskEnd() {
+    _backgroundTaskEndTimer?.cancel();
+    // Keep the wake long enough to start looping audio; system may still
+    // reclaim sooner. Cleared early in [stopAlarm].
+    _backgroundTaskEndTimer = Timer(const Duration(seconds: 28), () {
+      unawaited(_iosReliability.endBackgroundTask());
+    });
   }
 
   /// Restarts tone / TTS / vibration after the app returns to the foreground.
@@ -232,7 +263,113 @@ class AlarmService {
     await _audioPlayer.stop();
     await _stopVibration();
     await _notifications.cancel(_arrivalNotificationId);
+    await _notifications.cancel(_preAlertNotificationId);
     await _volumeService.restoreSavedVolume();
+    _backgroundTaskEndTimer?.cancel();
+    _backgroundTaskEndTimer = null;
+    await _iosReliability.endBackgroundTask();
+  }
+
+  /// Quiet replaceable “watching trip” notification (iOS locked observability).
+  Future<void> updateTripHeartbeatNotification({
+    required String destinationName,
+    required String statusDetail,
+    bool force = false,
+  }) async {
+    if (!Platform.isIOS) {
+      return;
+    }
+
+    final now = DateTime.now();
+    if (!force &&
+        _lastHeartbeatDetail == statusDetail &&
+        _lastHeartbeatAt != null &&
+        now.difference(_lastHeartbeatAt!) < _heartbeatMinInterval) {
+      return;
+    }
+
+    _lastHeartbeatAt = now;
+    _lastHeartbeatDetail = statusDetail;
+
+    try {
+      if (!_initialized) {
+        await initialize();
+      }
+
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: false,
+        presentBanner: true,
+        presentList: true,
+        presentSound: false,
+        interruptionLevel: InterruptionLevel.passive,
+        threadIdentifier: 'dozealert-trip',
+      );
+
+      await _notifications.show(
+        _tripHeartbeatNotificationId,
+        'DozeAlert',
+        TripUxCopy.notificationTripStatus(
+          destinationName: destinationName,
+          statusDetail: statusDetail,
+        ),
+        const NotificationDetails(iOS: iosDetails),
+      );
+    } catch (error, stackTrace) {
+      AppLog.d('AlarmService: heartbeat notification failed: $error');
+      AppLog.d('$stackTrace');
+    }
+  }
+
+  Future<void> clearTripHeartbeatNotification() async {
+    if (!Platform.isIOS) {
+      return;
+    }
+    _lastHeartbeatAt = null;
+    _lastHeartbeatDetail = null;
+    try {
+      await _notifications.cancel(_tripHeartbeatNotificationId);
+    } catch (error, stackTrace) {
+      AppLog.d('AlarmService: clear heartbeat failed: $error');
+      AppLog.d('$stackTrace');
+    }
+  }
+
+  /// One-shot “getting close” alert before the main wake (iOS locked backup).
+  Future<void> showPreAlertNotification({
+    required String title,
+    required String body,
+  }) async {
+    if (!Platform.isIOS) {
+      return;
+    }
+
+    try {
+      if (!_initialized) {
+        await initialize();
+      }
+
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentBanner: true,
+        presentList: true,
+        presentSound: true,
+        sound: _iosNotificationSound,
+        interruptionLevel: InterruptionLevel.timeSensitive,
+        threadIdentifier: 'dozealert-prealert',
+      );
+
+      await _notifications.show(
+        _preAlertNotificationId,
+        title,
+        body,
+        const NotificationDetails(iOS: iosDetails),
+      );
+    } catch (error, stackTrace) {
+      AppLog.d('AlarmService: pre-alert notification failed: $error');
+      AppLog.d('$stackTrace');
+    }
   }
 
   /// Updates TTS, tone, and temporary system volume while an alert is playing.
@@ -305,10 +442,10 @@ class AlarmService {
         presentBadge: true,
         presentBanner: true,
         presentList: true,
-        // Always attach a system sound on iOS so locked/background wakes
-        // still make noise even if the Flutter audio session is delayed.
+        // Custom bundled tone so locked wakes stay audible when Flutter
+        // audio cannot start; falls back if the file is missing.
         presentSound: true,
-        sound: 'default',
+        sound: _iosNotificationSound,
         // timeSensitive breaks through Focus better than active; Critical
         // Alerts need a special Apple entitlement (deferred).
         interruptionLevel: InterruptionLevel.timeSensitive,
@@ -536,6 +673,8 @@ class AlarmService {
 
   Future<void> dispose() async {
     await stopAlarm();
+    await clearTripHeartbeatNotification();
+    await _iosReliability.dispose();
     await _audioPlayer.dispose();
   }
 }

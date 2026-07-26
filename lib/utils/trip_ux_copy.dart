@@ -138,6 +138,11 @@ abstract final class TripUxCopy {
 
   static const findingLocation = 'Finding your location…';
 
+  static const gettingCloseTitle = 'Getting close';
+
+  static String gettingCloseBody(String destinationName) =>
+      'Approaching $destinationName — stay ready.';
+
   /// Shared phrasing for stop counts across Home, notifications, and alarms.
   static String stopsRemainingLabel(
     int stopsRemaining, {

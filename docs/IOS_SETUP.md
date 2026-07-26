@@ -46,7 +46,7 @@ Signing, certificates, and provisioning are configured in Xcode / App Store Conn
 
 ## What Phase 1–4 do / do not do
 
-**Done in repo:** identity, Info.plist, Maps key plumbing, iOS Always + notification permission flows, Wear/activity UI hidden on iOS, background GPS via Geolocator `AppleSettings`, iOS alarm notification/audio hardening, App Store listing package under [`app-store/`](../app-store/), export compliance key in Info.plist.
+**Done in repo:** identity, Info.plist, Maps key plumbing, iOS Always + notification permission flows, Wear/activity UI hidden on iOS, background GPS via Geolocator `AppleSettings`, iOS locked-reliability stack (heartbeat notification, geofence backup, custom notification sound, pre-alert, `beginBackgroundTask`, audio session arming), App Store listing package under [`app-store/`](../app-store/), export compliance key in Info.plist.
 
 **Still needs you on a Mac + Apple account:** create the App Store Connect app, sign/archive/upload, screenshots, TestFlight, and App Review. Real lock-screen proof needs a physical iPhone.
 
@@ -152,18 +152,29 @@ Export compliance should be satisfied by `ITSAppUsesNonExemptEncryption = false`
 ## Alarm reliability notes (iOS)
 
 - Trip start requests notification permission (alert + sound + badge).
-- Arrival notifications use **time-sensitive** interruption (not Critical Alerts).
-- Alarm/TTS use `playback` audio session (ignores the Ring/Silent switch for app audio).
-- **Silent Mode / Focus limits:** notification *sounds* may still be muted by Focus or user settings; Critical Alerts (Apple entitlement) are deferred unless testing shows they are required.
-- `UIBackgroundModes` includes `audio` so speech/alarm can continue when locked.
+- Arrival / pre-alert notifications use **time-sensitive** interruption and a bundled custom sound (`alarm_notification.wav`). Critical Alerts are **not** enabled (Apple entitlement + review); escalate only if locked Focus/Silent still mutes wakes after this stack.
+- Alarm/TTS use `playback` audio session (ignores the Ring/Silent switch for app audio). Trip start also arms the audio session once.
+- While monitoring: a quiet **trip heartbeat** notification updates distance/stops (throttled) so locked GPS wakes are observable.
+- **Geofence backup:** approach + destination `CLCircularRegion`s arm on trip start and clear on stop; region entry can fire pre-alert / main wake if the continuous stream was deferred.
+- Alarm start wraps a short native `beginBackgroundTask` so looping audio can begin after a location wake.
+- Unlock / resume still calls `reinforceAlarmIfActive()` so a silent lock-screen wake can recover outputs.
+- `UIBackgroundModes` includes `location` + `audio`.
 
-### Manual test matrix (physical iPhone preferred)
+### Locked-phone test matrix (physical iPhone 12 preferred)
 
-1. Trip running, app foreground — trigger approach alarm  
-2. Trip running, app backgrounded 2+ minutes — alarm still fires  
-3. Screen locked — alarm/TTS still audible  
-4. Ring/Silent switch on Silent — app audio should still play; note notification sound behavior  
-5. Low Power Mode — monitoring + alarm still work  
+After installing a build that includes the locked-reliability stack:
+
+1. Always location + notifications granted; Focus Off; Silent switch Off  
+2. Same with Silent switch On (looping tone should still play via `playback`)  
+3. Locked 10+ minutes before approach — notification tone and/or looping alarm without unlocking  
+4. Transit wake-by-stops and map-pin distance  
+5. Confirm geofence alone can wake if continuous GPS updates look stale on unlock  
+6. Unlock mid-alarm still reinforces tone / TTS / vibration  
+7. Low Power Mode — monitoring + alarm still work  
+
+**Acceptable:** Home stop/distance labels look briefly stale until unlock, if the **wake itself** was audible.
+
+**Escalation:** If Focus still mutes notification sound after the above passes, apply for Apple **Critical Alerts** entitlement and retest.
 
 ## Android safety
 

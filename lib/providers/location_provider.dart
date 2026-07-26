@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +8,9 @@ import 'package:geolocator/geolocator.dart';
 
 import '../models/arrival_context.dart';
 import '../models/current_location.dart';
+import '../models/destination.dart';
 import '../models/monitoring_state.dart';
+import '../models/transit_mode_wake_setting.dart';
 import '../providers/monitoring_provider.dart';
 import '../providers/transit_mode_provider.dart';
 import '../providers/trip_history_provider.dart';
@@ -15,6 +18,7 @@ import '../models/location_tracking_mode.dart';
 import '../services/activity_recognition_service.dart';
 import '../services/alarm_service.dart';
 import '../services/background_monitor_service.dart';
+import '../services/ios_locked_reliability_service.dart';
 import '../services/location_service.dart';
 import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
@@ -22,6 +26,7 @@ import '../services/trip_history_service.dart';
 import '../utils/app_log.dart';
 import '../utils/gps_quality.dart';
 import '../utils/transit_wake_message.dart';
+import '../utils/trip_ux_copy.dart';
 
 enum LocationStartResult {
   success,
@@ -78,6 +83,11 @@ class LocationProvider extends ChangeNotifier {
         _activityRecognitionService.onFootActivityStream.listen(
       (_) => unawaited(_syncRiderMotionState()),
     );
+    if (Platform.isIOS) {
+      _iosRegionSubscription = _alarmService.iosReliability.regionEntered.listen(
+        (regionId) => unawaited(_handleIosGeofenceEntry(regionId)),
+      );
+    }
   }
 
   static const _prewarmIdleTimeout = Duration(minutes: 8);
@@ -98,6 +108,8 @@ class LocationProvider extends ChangeNotifier {
 
   final GpsQualityGate _gpsQualityGate = const GpsQualityGate();
   final GpsPositionSmoother _gpsSmoother = GpsPositionSmoother();
+  StreamSubscription<String>? _iosRegionSubscription;
+  bool _iosPreAlertShown = false;
 
   StreamSubscription<CurrentLocation>? _locationSubscription;
   StreamSubscription<CurrentLocation>? _backgroundLocationSubscription;
@@ -297,6 +309,7 @@ class LocationProvider extends ChangeNotifier {
 
     _transitModeProvider.resetApproachAlarm();
     _closestApproachMeters = double.infinity;
+    _iosPreAlertShown = false;
     _trackingEnabled = true;
 
     try {
@@ -326,6 +339,16 @@ class LocationProvider extends ChangeNotifier {
     if (_startTrackingWasCancelled(startGeneration)) {
       await _rollbackFailedStart();
       return LocationStartResult.cancelled;
+    }
+
+    if (Platform.isIOS) {
+      await _alarmService.iosReliability.armAudioSession();
+      await _armIosGeofences(destination);
+      await _alarmService.updateTripHeartbeatNotification(
+        destinationName: destination.name,
+        statusDetail: TripUxCopy.findingLocation,
+        force: true,
+      );
     }
 
     await _tripHistoryService.startTrip(destination.name);
@@ -382,8 +405,10 @@ class LocationProvider extends ChangeNotifier {
 
     _arrivalDialogVisible = false;
     _transitModeProvider.resetApproachAlarm();
+    _iosPreAlertShown = false;
     await _activityRecognitionService.stopListening();
     await _locationService.stopTracking();
+    await _disarmIosTripAids();
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
     _usingBackgroundService = false;
@@ -410,6 +435,7 @@ class LocationProvider extends ChangeNotifier {
   }
 
   Future<void> _rollbackFailedStart() async {
+    await _disarmIosTripAids();
     await _backgroundMonitorService.stopMonitoring();
     _usingBackgroundService = false;
     _monitoringProvider.stopMonitoring();
@@ -431,6 +457,7 @@ class LocationProvider extends ChangeNotifier {
     _monitoringProvider.resetToIdle();
     await _activityRecognitionService.stopListening();
     await _locationService.stopTracking();
+    await _disarmIosTripAids();
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
     _usingBackgroundService = false;
@@ -587,6 +614,11 @@ class LocationProvider extends ChangeNotifier {
         destinationName: destination.name,
         distanceKm: _distanceRemainingKm,
       );
+    }
+
+    if (Platform.isIOS && destination != null && _trackingEnabled) {
+      await _updateIosTripHeartbeat(destination.name);
+      await _maybeShowIosPreAlert(destination.name);
     }
 
     await _checkArrival();
@@ -942,6 +974,7 @@ class LocationProvider extends ChangeNotifier {
     await _alarmService.stopAlarm();
     await _activityRecognitionService.stopListening();
     await _locationService.stopTracking();
+    await _disarmIosTripAids();
     await _backgroundMonitorService.stopMonitoring();
     _trackingEnabled = false;
     _usingBackgroundService = false;
@@ -1009,6 +1042,173 @@ class LocationProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _armIosGeofences(Destination destination) async {
+    final wakeMeters = _monitoringProvider.radiusMeters.toDouble();
+    final approachMeters = math.max(wakeMeters * 1.5, 250.0);
+    final destinationMeters = math.max(wakeMeters, 150.0);
+    await _alarmService.iosReliability.startGeofences(
+      latitude: destination.latitude,
+      longitude: destination.longitude,
+      approachRadiusMeters: approachMeters,
+      destinationRadiusMeters: destinationMeters,
+    );
+  }
+
+  Future<void> _disarmIosTripAids() async {
+    if (!Platform.isIOS) {
+      return;
+    }
+    _iosPreAlertShown = false;
+    await _alarmService.iosReliability.stopGeofences();
+    await _alarmService.clearTripHeartbeatNotification();
+  }
+
+  Future<void> _updateIosTripHeartbeat(String destinationName) async {
+    final statusDetail = _heartbeatStatusDetail();
+    await _alarmService.updateTripHeartbeatNotification(
+      destinationName: destinationName,
+      statusDetail: statusDetail,
+    );
+  }
+
+  String _heartbeatStatusDetail() {
+    if (_settingsService.settings.transitModeEnabled &&
+        _transitModeProvider.isActive) {
+      final stops = _transitModeProvider.displaySnapshot.stopsRemaining;
+      if (stops >= 0) {
+        return TripUxCopy.notificationStopsRemaining(stops);
+      }
+    }
+    if (distanceIsReady) {
+      return TripUxCopy.notificationKmRemaining(_distanceRemainingKm);
+    }
+    return TripUxCopy.findingLocation;
+  }
+
+  Future<void> _maybeShowIosPreAlert(String destinationName) async {
+    if (_iosPreAlertShown || _alarmService.alarmActive) {
+      return;
+    }
+    if (_monitoringProvider.currentState != MonitoringState.monitoring) {
+      return;
+    }
+
+    final shouldPreAlert = _shouldShowIosPreAlert();
+    if (!shouldPreAlert) {
+      return;
+    }
+
+    _iosPreAlertShown = true;
+    await _alarmService.showPreAlertNotification(
+      title: TripUxCopy.gettingCloseTitle,
+      body: TripUxCopy.gettingCloseBody(destinationName),
+    );
+  }
+
+  bool _shouldShowIosPreAlert() {
+    if (_settingsService.settings.transitModeEnabled &&
+        _transitModeProvider.isActive) {
+      final wakeCount =
+          _settingsService.settings.transitModeWake.wakeStopCount;
+      final stops = _transitModeProvider.snapshot.stopsRemaining;
+      // One stop before the configured wake threshold.
+      return stops == wakeCount + 1;
+    }
+
+    final threshold = _settingsService.settings.testModeEnabled
+        ? _testModeArrivalThresholdMeters
+        : _monitoringProvider.radiusMeters.toDouble();
+    // Entering the outer approach band (2× wake radius).
+    return distanceIsReady &&
+        _distanceRemainingMeters <= threshold * 2 &&
+        _distanceRemainingMeters > threshold;
+  }
+
+  Future<void> _handleIosGeofenceEntry(String regionId) async {
+    if (!Platform.isIOS || !_trackingEnabled) {
+      return;
+    }
+    if (_alarmService.alarmActive) {
+      return;
+    }
+    if (_monitoringProvider.currentState != MonitoringState.monitoring) {
+      return;
+    }
+    if (await _monitoringStorage.isArrivalTriggered()) {
+      return;
+    }
+
+    AppLog.d('LocationProvider: iOS geofence entered $regionId');
+
+    // Approach ring: pre-alert only if the main wake has not fired yet.
+    if (regionId == IosLockedReliabilityService.approachRegionId) {
+      final destinationName =
+          _monitoringProvider.selectedDestination?.name ?? 'Destination';
+      if (!_iosPreAlertShown) {
+        _iosPreAlertShown = true;
+        await _alarmService.showPreAlertNotification(
+          title: TripUxCopy.gettingCloseTitle,
+          body: TripUxCopy.gettingCloseBody(destinationName),
+        );
+      }
+      // If continuous GPS is stale, also fire the main wake from the
+      // approach ring when already inside wake distance.
+      if (distanceIsReady &&
+          _distanceRemainingMeters <=
+              _monitoringProvider.radiusMeters.toDouble()) {
+        await _triggerIosGeofenceWake();
+      }
+      return;
+    }
+
+    if (regionId == IosLockedReliabilityService.destinationRegionId) {
+      await _triggerIosGeofenceWake();
+    }
+  }
+
+  Future<void> _triggerIosGeofenceWake() async {
+    if (_alarmService.alarmActive) {
+      return;
+    }
+    if (await _monitoringStorage.isArrivalTriggered()) {
+      return;
+    }
+
+    await _monitoringStorage.setArrivalTriggered(true);
+    final destinationName =
+        _monitoringProvider.selectedDestination?.name ?? 'Destination';
+
+    if (_settingsService.settings.transitModeEnabled &&
+        (_transitModeProvider.isActive ||
+            _transitModeProvider.isTransitTrackableDestination)) {
+      final copy = _transitModeProvider.approachAlarmCopy;
+      await _alarmService.playApproachAlarm(
+        title: copy.headline,
+        body: copy.detailMessage,
+        ttsPhrase: copy.ttsPhrase,
+      );
+      await _tripHistoryService.recordAlarmTriggered();
+      _transitModeProvider.markApproachAlarmTriggered();
+      _setArrivalContext(usedTransitMode: true, copy: copy);
+    } else {
+      final copy = TransitWakeMessage.forDistanceAlarm(
+        destinationName: destinationName,
+        transitFallback: _settingsService.settings.transitModeEnabled,
+      );
+      await _alarmService.playApproachAlarm(
+        title: copy.headline,
+        body: copy.detailMessage,
+        ttsPhrase: copy.ttsPhrase,
+      );
+      await _tripHistoryService.recordAlarmTriggered();
+      _setArrivalContext(usedTransitMode: false, copy: copy);
+    }
+
+    _monitoringProvider.markArrived();
+    _arrivalDialogVisible = true;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _prewarmIdleTimer?.cancel();
@@ -1017,6 +1217,7 @@ class LocationProvider extends ChangeNotifier {
     _arrivalSubscription?.cancel();
     _activitySubscription?.cancel();
     _onFootActivitySubscription?.cancel();
+    _iosRegionSubscription?.cancel();
     _monitoringProvider.removeListener(_onMonitoringChanged);
     super.dispose();
   }
