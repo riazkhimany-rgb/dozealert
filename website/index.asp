@@ -13,11 +13,11 @@ Response.Expires = -1
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="DozeAlert wakes you before you reach your destination. Android phone app plus Wear OS companion. Sleep peacefully. Arrive confidently.">
+  <meta name="description" content="DozeAlert wakes you before you reach your destination. Available on Android and as an iOS TestFlight beta. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
-  <link rel="icon" type="image/png" href="assets/icon-512.png?v=55">
-  <link rel="stylesheet" href="assets/brand.css?v=55">
+  <link rel="icon" type="image/png" href="assets/icon-512.png?v=56">
+  <link rel="stylesheet" href="assets/brand.css?v=56">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -408,8 +408,49 @@ Response.Expires = -1
         </div>
       </details>
       <p class="meta">
-        Phone <span id="app-version">1.1.0+55</span> &middot; Wear <span id="wear-version">1.1.0+100080</span>
+        Phone <span id="app-version">1.1.0+56</span> &middot; Wear <span id="wear-version">1.1.0+100080</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
+      </p>
+    </section>
+
+    <section class="card download-block" id="ios">
+      <h2 style="margin-bottom: 0.75rem;">Try DozeAlert on iPhone</h2>
+      <p class="meta" style="margin-top: 0; margin-bottom: 1.25rem;">
+        DozeAlert is in <strong>public TestFlight beta</strong> for iPhone.
+        Install Apple&rsquo;s free TestFlight app, then join with the link below &mdash;
+        no App Store listing required while we prepare the public release.
+      </p>
+      <div class="download-grid">
+        <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a7 7 0 0 0-7 7c0 2.6 1.4 4.9 3.5 6.1L7 21h10l-1.5-5.9A7 7 0 0 0 12 2zm0 2a5 5 0 1 1 0 10A5 5 0 0 1 12 4z"/>
+          </svg>
+          Join iOS beta on TestFlight
+        </a>
+        <a class="download-btn download-btn-secondary" href="screenshots/index.asp#ios">
+          iPhone app tour
+        </a>
+      </div>
+      <p class="meta" style="margin-top: 1rem; text-align: left;">
+        <strong>How it works:</strong> On your iPhone, open the invite link (or tap the
+        button above). Install <strong>TestFlight</strong> from the App Store if you
+        don&rsquo;t have it, accept the DozeAlert beta, then install the app. You&rsquo;ll
+        get updates through TestFlight as we ship new builds.
+      </p>
+      <ol class="steps" style="text-align: left; margin-top: 1.25rem;">
+        <li>Open <a href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">the TestFlight invite</a> on your iPhone.</li>
+        <li>Install TestFlight if prompted, then accept DozeAlert.</li>
+        <li>Grant <strong>Location &rarr; Always</strong> and Notifications when you start a trip.</li>
+        <li>Pick a stop or map pin, tap Start, and try locking the screen.</li>
+      </ol>
+      <div class="note">
+        <strong>Feedback welcome:</strong> Use TestFlight&rsquo;s screenshot feedback,
+        or email <a href="mailto:support@dozealert.app">support@dozealert.app</a>.
+        Phone-only for now &mdash; no Apple Watch companion yet.
+      </div>
+      <p class="meta" style="margin-top: 1rem;">
+        iOS beta &middot; iPhone &middot; Bundle ID <code>app.dozealert</code>
+        &middot; <a class="text-link" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">testflight.apple.com/join/QhMZbJvR</a>
       </p>
     </section>
 
@@ -421,7 +462,9 @@ Response.Expires = -1
         DozeAlert monitors your trip and wakes you before you miss where you need to get off.
       </p>
       <p style="margin-top: 0.75rem;">
-        <a class="text-link" href="screenshots/index.asp">Take the app tour &rarr;</a>
+        <a class="text-link" href="screenshots/index.asp">Android app tour &rarr;</a>
+        &nbsp;&middot;&nbsp;
+        <a class="text-link" href="screenshots/index.asp#ios">iPhone app tour &rarr;</a>
       </p>
       <ul>
         <li>Trip-first Home: pick your stop or map destination, set wake timing, tap Start</li>
@@ -568,16 +611,19 @@ Response.Expires = -1
       <h2>Requirements</h2>
       <ul>
         <li>Android 8.0 (Oreo) or later on phone</li>
+        <li>iPhone with iOS 16+ for the TestFlight beta</li>
         <li>Wear OS 3+ on watch for the companion APK (paired with the phone app)</li>
         <li>GPS / location services enabled</li>
         <li>Internet for map search and optional transit stop list downloads</li>
-        <li>Background location and notifications for trip monitoring (Android)</li>
+        <li>Background location and notifications for trip monitoring</li>
       </ul>
     </section>
 
     <footer>
       <p class="footer-links">
         <a href="screenshots/index.asp">App tour</a>
+        <span aria-hidden="true"> &middot; </span>
+        <a href="#ios">iOS TestFlight</a>
         <span aria-hidden="true"> &middot; </span>
         <a href="privacy/index.asp">Privacy Policy</a>
         <span aria-hidden="true"> &middot; </span>
@@ -625,6 +671,6 @@ Response.Expires = -1
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=55"></script>
+  <script src="assets/brand.js?v=56"></script>
 </body>
 </html>

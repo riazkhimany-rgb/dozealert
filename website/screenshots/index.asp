@@ -13,11 +13,11 @@ Response.Expires = -1
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="App tour — phone and Wear OS: transit stop countdown, map destinations, My Trips, watch face complication, watch controls, and wake alerts.">
+  <meta name="description" content="App tour — iPhone TestFlight beta, Android phone, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=55">
-  <link rel="stylesheet" href="../assets/brand.css?v=55">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=56">
+  <link rel="stylesheet" href="../assets/brand.css?v=56">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -101,6 +101,30 @@ Response.Expires = -1
       font-size: 1rem;
       max-width: 40rem;
       margin: 0 auto;
+    }
+
+    .tour-jump {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin: 1.25rem 0 0;
+    }
+
+    .tour-jump a {
+      background: rgba(76, 201, 240, 0.12);
+      color: var(--cyan);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(76, 201, 240, 0.25);
+      text-decoration: none;
+    }
+
+    .tour-jump a:hover {
+      background: rgba(76, 201, 240, 0.22);
+      color: var(--white);
     }
 
     .card {
@@ -298,11 +322,120 @@ Response.Expires = -1
         DozeAlert is a commute alarm for riders who want to rest without missing where
         they need to get off. Use Transit Mode on supported agencies with stop-by-stop
         progress, or turn it off and wake by distance for taxi, Uber, and other rides.
+        Available on <strong>Android</strong> and as an <strong>iPhone TestFlight beta</strong>.
         No account required &mdash; trip data stays on your device.
       </p>
+      <nav class="tour-jump" aria-label="Tour sections">
+        <a href="#ios">iPhone</a>
+        <a href="#android">Android</a>
+        <a href="#wear">Wear OS</a>
+        <a href="#wear-complication">Complication</a>
+      </nav>
     </header>
 
-    <section class="card">
+    <section class="card" id="ios">
+      <h2>iPhone (TestFlight beta)</h2>
+      <p class="section-lead">
+        The same trip-first experience on iOS &mdash; pick a transit stop or map pin,
+        start monitoring, and wake before you arrive. Join the public TestFlight beta
+        while we prepare the App Store release.
+      </p>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot hero-shot" src="../assets/screens/ios/01-home-pick-stop.jpg" width="390" height="844" alt="DozeAlert iPhone Home with Pick your stop and wake timing.">
+        </div>
+        <div class="copy">
+          <h3>Pick your stop on Home</h3>
+          <p>
+            Choose where you get off, confirm your line, set how many stops early to wake,
+            then tap Start. Lock your phone &mdash; DozeAlert keeps watching in the background.
+          </p>
+          <div class="pill-row">
+            <span class="pill">iPhone</span>
+            <span class="pill">TestFlight</span>
+            <span class="pill">No account</span>
+          </div>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/ios/02-pick-stop-stations.jpg" width="280" height="606" alt="iPhone station picker for GO Transit Lakeshore West.">
+        </div>
+        <div class="copy">
+          <h3>Station lists on your route</h3>
+          <p>
+            Browse or filter stations for the line you selected. Switch agencies or lines
+            anytime with Change line.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/ios/03-monitoring-transit.jpg" width="280" height="606" alt="iPhone watching a transit trip with distance remaining.">
+        </div>
+        <div class="copy">
+          <h3>Watching your trip</h3>
+          <p>
+            See your stop, remaining distance, and wake timing while DozeAlert monitors.
+            You can lock the phone and keep riding.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/ios/04-wake-alert-settings.jpg" width="280" height="606" alt="iPhone wake alert sheet with wake by stops options.">
+        </div>
+        <div class="copy">
+          <h3>Wake by stops</h3>
+          <p>
+            Choose at destination, 1 stop before, or 2 stops before &mdash; tuned for how
+            early you want to get ready.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/ios/05-map-destination.jpg" width="280" height="606" alt="iPhone map picker setting Yorkdale Shopping Centre as destination.">
+        </div>
+        <div class="copy">
+          <h3>Map pin destinations</h3>
+          <p>
+            Not on transit? Search the map, drop a pin, and wake by distance for taxi,
+            rideshare, or walking trips.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/ios/06-monitoring-map-pin.jpg" width="280" height="606" alt="iPhone watching a map-pin trip with kilometers remaining.">
+        </div>
+        <div class="copy">
+          <h3>Distance wake-ups</h3>
+          <p>
+            When Transit Mode isn&rsquo;t in play, DozeAlert tracks GPS distance to your pin
+            and alerts you as you approach.
+          </p>
+        </div>
+      </div>
+      <div class="cta-block" style="padding: 1.5rem 0 0; text-align: center;">
+        <p style="color: #cbd5e1; margin-bottom: 1rem; font-size: 0.95rem;">
+          Join the public iOS beta &mdash; install via Apple TestFlight on your iPhone.
+        </p>
+        <div class="download-grid">
+          <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">
+            Join iOS beta on TestFlight
+          </a>
+          <a class="download-btn download-btn-secondary" href="../index.asp#ios">
+            How to join (on home)
+          </a>
+        </div>
+        <p style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--muted);">
+          Phone-only for now &mdash; no Apple Watch companion yet.
+        </p>
+      </div>
+    </section>
+
+    <section class="card" id="android">
       <h2>Your commute alarm</h2>
       <p class="section-lead">
         A focused Home screen keeps your stop, wake timing, and Start button in one place.
@@ -719,11 +852,14 @@ Response.Expires = -1
     <section class="card cta-block">
       <h2 style="margin-bottom: 0.75rem;">Ready to try it?</h2>
       <p style="color: #cbd5e1; margin-bottom: 1.25rem; font-size: 0.95rem;">
-        Join the Google Play closed test and set your first destination in under a minute.
-        The Wear companion installs automatically to a paired watch.
+        Join the iPhone TestFlight beta or the Google Play closed test and set your first
+        destination in under a minute.
       </p>
       <div class="download-grid">
-        <a class="download-btn" href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">
+        <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">
+          Join iOS beta on TestFlight
+        </a>
+        <a class="download-btn download-btn-secondary" href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">
           Join on Android (Play Store)
         </a>
         <a class="download-btn download-btn-secondary" href="../downloads/dozealert-latest.apk" download="dozealert.apk">
@@ -742,6 +878,8 @@ Response.Expires = -1
       <p>
         <a href="../index.asp">Home</a>
         <span aria-hidden="true"> &middot; </span>
+        <a href="../index.asp#ios">iOS TestFlight</a>
+        <span aria-hidden="true"> &middot; </span>
         <a href="../privacy/index.asp">Privacy Policy</a>
         <span aria-hidden="true"> &middot; </span>
         <a href="../feedback/index.asp">Feedback</a>
@@ -751,6 +889,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=55"></script>
+  <script src="../assets/brand.js?v=56"></script>
 </body>
 </html>
