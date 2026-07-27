@@ -13,11 +13,11 @@ Response.Expires = -1
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="App tour — iPhone TestFlight beta, Android phone, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
+  <meta name="description" content="App tour � iPhone TestFlight beta, Android phone, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=61">
-  <link rel="stylesheet" href="../assets/brand.css?v=61">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=62">
+  <link rel="stylesheet" href="../assets/brand.css?v=62">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -889,6 +889,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=61"></script>
+  <script src="../assets/brand.js?v=62"></script>
 </body>
 </html>
