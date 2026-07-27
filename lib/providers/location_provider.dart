@@ -22,6 +22,7 @@ import '../services/ios_locked_reliability_service.dart';
 import '../services/location_service.dart';
 import '../services/monitoring_storage_service.dart';
 import '../services/settings_service.dart';
+import '../services/trip_diagnostics_log.dart';
 import '../services/trip_history_service.dart';
 import '../utils/app_log.dart';
 import '../utils/gps_quality.dart';
@@ -95,6 +96,15 @@ class LocationProvider extends ChangeNotifier {
 
   static const _testModeArrivalThresholdMeters = 5000.0;
 
+  /// How often the native wake copy is refreshed for a locked-phone geofence.
+  static const _nativeTripInfoInterval = Duration(seconds: 30);
+
+  /// How long stop counting may sit frozen before the distance wake takes over.
+  static const _stopTrackingStaleAfter = Duration(seconds: 90);
+
+  /// Only gaps this long are worth a diagnostics entry.
+  static const _fixGapLogThreshold = Duration(seconds: 30);
+
   final LocationService _locationService;
   final ActivityRecognitionService _activityRecognitionService;
   final MonitoringProvider _monitoringProvider;
@@ -110,6 +120,11 @@ class LocationProvider extends ChangeNotifier {
   final GpsPositionSmoother _gpsSmoother = GpsPositionSmoother();
   StreamSubscription<String>? _iosRegionSubscription;
   bool _iosPreAlertShown = false;
+  DateTime? _lastNativeTripInfoAt;
+  DateTime? _lastAcceptedFixAt;
+  Duration _lastFixGap = Duration.zero;
+  int? _lastStopsRemaining;
+  DateTime? _lastStopCountChangeAt;
 
   StreamSubscription<CurrentLocation>? _locationSubscription;
   StreamSubscription<CurrentLocation>? _backgroundLocationSubscription;
@@ -188,6 +203,7 @@ class LocationProvider extends ChangeNotifier {
 
   Future<void> syncBackgroundState() async {
     await _backgroundMonitorService.syncServiceState();
+    await _adoptNativeWakeIfFired();
     notifyListeners();
   }
 
@@ -341,9 +357,23 @@ class LocationProvider extends ChangeNotifier {
       return LocationStartResult.cancelled;
     }
 
+    unawaited(
+      TripDiagnosticsLog.record('trip.start', {
+        'destination': destination.name,
+        'transitMode': _settingsService.settings.transitModeEnabled,
+        'radiusMeters': _monitoringProvider.radiusMeters,
+        'backgroundService': _usingBackgroundService,
+      }),
+    );
+
     if (Platform.isIOS) {
-      await _alarmService.iosReliability.armAudioSession();
+      // Keep-alive first: everything below depends on the process surviving
+      // the screen lock.
+      await _alarmService.iosReliability.startKeepAlive();
+      // Geofences before trip info: an immediate "already inside" callback then
+      // finds no active trip and cannot wake the rider at the platform.
       await _armIosGeofences(destination);
+      await _refreshIosNativeTripInfo(destination.name, force: true);
       await _alarmService.updateTripHeartbeatNotification(
         destinationName: destination.name,
         statusDetail: TripUxCopy.findingLocation,
@@ -406,6 +436,7 @@ class LocationProvider extends ChangeNotifier {
     _arrivalDialogVisible = false;
     _transitModeProvider.resetApproachAlarm();
     _iosPreAlertShown = false;
+    unawaited(TripDiagnosticsLog.record('trip.stop'));
     await _activityRecognitionService.stopListening();
     await _locationService.stopTracking();
     await _disarmIosTripAids();
@@ -447,6 +478,7 @@ class LocationProvider extends ChangeNotifier {
       startGeneration != _startTrackingGeneration;
 
   Future<void> dismissArrival() async {
+    unawaited(TripDiagnosticsLog.record('alarm.dismissed'));
     await _alarmService.stopAlarm();
     await _tripHistoryService.recordAlarmDismissed();
     await _tripHistoryProvider?.refresh();
@@ -481,6 +513,10 @@ class LocationProvider extends ChangeNotifier {
     _gpsSmoother.reset();
     _awaitingFreshLocation = awaitingFresh;
     _gpsPrewarming = false;
+    _lastAcceptedFixAt = null;
+    _lastFixGap = Duration.zero;
+    _lastStopsRemaining = null;
+    _lastStopCountChangeAt = null;
     if (!awaitingFresh) {
       _lastPrewarmLocation = null;
       _monitoringStartedAt = null;
@@ -607,6 +643,7 @@ class LocationProvider extends ChangeNotifier {
       fixTimestamp: smoothed.timestamp,
     );
     updateDistance();
+    _trackFixFreshness();
 
     final destination = _monitoringProvider.selectedDestination;
     if (destination != null && _usingBackgroundService) {
@@ -617,6 +654,8 @@ class LocationProvider extends ChangeNotifier {
     }
 
     if (Platform.isIOS && destination != null && _trackingEnabled) {
+      await _adoptNativeWakeIfFired();
+      await _refreshIosNativeTripInfo(destination.name);
       await _updateIosTripHeartbeat(destination.name);
       await _maybeShowIosPreAlert(destination.name);
     }
@@ -849,9 +888,17 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
+    final thresholdMeters = _settingsService.settings.testModeEnabled
+        ? _testModeArrivalThresholdMeters
+        : _monitoringProvider.radiusMeters.toDouble();
+
     if (_settingsService.settings.transitModeEnabled) {
       if (_transitModeProvider.shouldTriggerApproachAlarm) {
         await _monitoringStorage.setArrivalTriggered(true);
+        await TripDiagnosticsLog.record('wake.fired', {
+          'source': 'stops',
+          'stopsRemaining': _transitModeProvider.snapshot.stopsRemaining,
+        });
         final copy = _transitModeProvider.approachAlarmCopy;
         await _alarmService.playApproachAlarm(
           title: copy.headline,
@@ -870,27 +917,38 @@ class LocationProvider extends ChangeNotifier {
         return;
       }
 
-      if (_transitModeProvider.isActive) {
-        return;
-      }
-
-      if (_transitModeProvider.isTransitTrackableDestination) {
-        // GTFS stop destination — wait for route lock; no straight-line wake.
-        return;
+      if (_transitModeProvider.isActive ||
+          _transitModeProvider.isTransitTrackableDestination) {
+        // Normally we wait for the stop counter (or route lock) rather than
+        // firing a straight-line wake. Weak GPS can freeze that counter, so
+        // fall through to the distance wake once it has clearly gone stale and
+        // we are already inside the wake radius.
+        if (!_stopTrackingIsStale() || !_insideDistanceWake(thresholdMeters)) {
+          return;
+        }
+        AppLog.d(
+          'LocationProvider: stop tracking stale — using distance wake',
+        );
+        await TripDiagnosticsLog.record('stops.stale-fallback', {
+          'lastFixGapS': _lastFixGap.inSeconds,
+          'stopsRemaining': _lastStopsRemaining,
+          'distanceM': _distanceRemainingMeters.round(),
+        });
       }
 
       // Distance fallback for map-pin destinations when not on a transit route.
     }
-
-    final thresholdMeters = _settingsService.settings.testModeEnabled
-        ? _testModeArrivalThresholdMeters
-        : _monitoringProvider.radiusMeters.toDouble();
 
     if (_distanceRemainingMeters > thresholdMeters) {
       return;
     }
 
     await _monitoringStorage.setArrivalTriggered(true);
+    await TripDiagnosticsLog.record('wake.fired', {
+      'source': 'distance',
+      'distanceM': _distanceRemainingMeters.round(),
+      'thresholdM': thresholdMeters.round(),
+    });
     final destinationName =
         _monitoringProvider.selectedDestination?.name ?? 'Destination';
     final copy = TransitWakeMessage.forDistanceAlarm(
@@ -911,6 +969,65 @@ class LocationProvider extends ChangeNotifier {
     _arrivalDialogVisible = true;
     notifyListeners();
   }
+
+  void _trackFixFreshness() {
+    final now = DateTime.now();
+    final previousFix = _lastAcceptedFixAt;
+    _lastFixGap =
+        previousFix == null ? Duration.zero : now.difference(previousFix);
+    _lastAcceptedFixAt = now;
+
+    if (_trackingEnabled && _lastFixGap >= _fixGapLogThreshold) {
+      unawaited(
+        TripDiagnosticsLog.record('gps.gap', {
+          'seconds': _lastFixGap.inSeconds,
+          'accuracy': _currentLocation?.accuracy.round(),
+        }),
+      );
+    }
+
+    final stops = _transitModeProvider.isActive
+        ? _transitModeProvider.snapshot.stopsRemaining
+        : null;
+    if (stops != _lastStopsRemaining || _lastStopCountChangeAt == null) {
+      if (_trackingEnabled && stops != _lastStopsRemaining) {
+        unawaited(
+          TripDiagnosticsLog.record('stops.change', {
+            'from': _lastStopsRemaining,
+            'to': stops,
+            'distanceM': _distanceRemainingMeters.round(),
+          }),
+        );
+      }
+      _lastStopsRemaining = stops;
+      _lastStopCountChangeAt = now;
+    }
+  }
+
+  /// True when stop tracking cannot be trusted: either fixes stopped arriving,
+  /// or we still have no usable stop count long after the trip began.
+  ///
+  /// A known count that simply has not changed does *not* count as stale — a
+  /// bus dwelling in traffic must not trigger an early wake.
+  bool _stopTrackingIsStale() {
+    if (_lastFixGap >= _stopTrackingStaleAfter) {
+      return true;
+    }
+
+    final stops = _lastStopsRemaining;
+    if (stops != null && stops >= 0) {
+      return false;
+    }
+
+    final lastChange = _lastStopCountChangeAt;
+    return lastChange != null &&
+        DateTime.now().difference(lastChange) >= _stopTrackingStaleAfter;
+  }
+
+  bool _insideDistanceWake(double thresholdMeters) =>
+      distanceIsReady &&
+      !_distanceIsStale &&
+      _distanceRemainingMeters <= thresholdMeters;
 
   void _setArrivalContext({
     required bool usedTransitMode,
@@ -1059,8 +1176,66 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
     _iosPreAlertShown = false;
-    await _alarmService.iosReliability.stopGeofences();
+    _lastNativeTripInfoAt = null;
+    final reliability = _alarmService.iosReliability;
+    await reliability.stopGeofences();
+    await reliability.clearTripInfo();
+    await reliability.stopNativeAlarm();
+    await reliability.stopKeepAlive();
     await _alarmService.clearTripHeartbeatNotification();
+  }
+
+  /// Mirrors the current wake copy into native storage so a geofence entry can
+  /// raise the alarm without waking the Dart isolate.
+  Future<void> _refreshIosNativeTripInfo(
+    String destinationName, {
+    bool force = false,
+  }) async {
+    if (!Platform.isIOS) {
+      return;
+    }
+
+    final now = DateTime.now();
+    final last = _lastNativeTripInfoAt;
+    if (!force && last != null && now.difference(last) < _nativeTripInfoInterval) {
+      return;
+    }
+    _lastNativeTripInfoAt = now;
+
+    final copy = _currentWakeCopy(destinationName);
+    await _alarmService.iosReliability.setTripInfo(
+      destinationName: destinationName,
+      alarmTitle: copy.headline,
+      alarmBody: copy.detailMessage,
+      criticalAlerts: _alarmService.criticalAlertsGranted,
+      resetWake: force,
+    );
+  }
+
+  WakeAlertCopy _currentWakeCopy(String destinationName) {
+    if (_settingsService.settings.transitModeEnabled &&
+        (_transitModeProvider.isActive ||
+            _transitModeProvider.isTransitTrackableDestination)) {
+      return _transitModeProvider.approachAlarmCopy;
+    }
+    return TransitWakeMessage.forDistanceAlarm(
+      destinationName: destinationName,
+      transitFallback: _settingsService.settings.transitModeEnabled,
+    );
+  }
+
+  /// Adopts a wake that native code already fired while Dart was suspended.
+  Future<void> _adoptNativeWakeIfFired() async {
+    if (!Platform.isIOS || !_trackingEnabled) {
+      return;
+    }
+    if (!await _alarmService.iosReliability.consumeNativeWake()) {
+      return;
+    }
+
+    AppLog.d('LocationProvider: adopting native iOS wake');
+    await TripDiagnosticsLog.record('wake.native.adopted');
+    await _triggerIosGeofenceWake(nativeAlreadyFired: true);
   }
 
   Future<void> _updateIosTripHeartbeat(String destinationName) async {
@@ -1099,6 +1274,9 @@ class LocationProvider extends ChangeNotifier {
     }
 
     _iosPreAlertShown = true;
+    await TripDiagnosticsLog.record('prealert.shown', {
+      'distanceM': distanceIsReady ? _distanceRemainingMeters.round() : null,
+    });
     await _alarmService.showPreAlertNotification(
       title: TripUxCopy.gettingCloseTitle,
       body: TripUxCopy.gettingCloseBody(destinationName),
@@ -1139,6 +1317,12 @@ class LocationProvider extends ChangeNotifier {
     }
 
     AppLog.d('LocationProvider: iOS geofence entered $regionId');
+    unawaited(
+      TripDiagnosticsLog.record('geofence.enter', {
+        'region': regionId,
+        'distanceM': distanceIsReady ? _distanceRemainingMeters.round() : null,
+      }),
+    );
 
     // Approach ring: pre-alert only if the main wake has not fired yet.
     if (regionId == IosLockedReliabilityService.approachRegionId) {
@@ -1166,17 +1350,23 @@ class LocationProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _triggerIosGeofenceWake() async {
-    if (_alarmService.alarmActive) {
-      return;
-    }
-    if (await _monitoringStorage.isArrivalTriggered()) {
+  Future<void> _triggerIosGeofenceWake({bool nativeAlreadyFired = false}) async {
+    if (_alarmService.alarmActive ||
+        await _monitoringStorage.isArrivalTriggered()) {
+      if (nativeAlreadyFired) {
+        // Dart already handled this arrival; silence the duplicate native tone.
+        await _alarmService.iosReliability.stopNativeAlarm();
+      }
       return;
     }
 
     await _monitoringStorage.setArrivalTriggered(true);
     final destinationName =
         _monitoringProvider.selectedDestination?.name ?? 'Destination';
+    await TripDiagnosticsLog.record('wake.fired', {
+      'source': nativeAlreadyFired ? 'native-geofence' : 'dart-geofence',
+      'distanceM': distanceIsReady ? _distanceRemainingMeters.round() : null,
+    });
 
     if (_settingsService.settings.transitModeEnabled &&
         (_transitModeProvider.isActive ||

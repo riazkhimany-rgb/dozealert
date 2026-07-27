@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	Critical Alerts require an approved Apple entitlement request.
+	Do NOT set CODE_SIGN_ENTITLEMENTS to this file until the request is granted —
+	signing fails because the provisioning profile will not contain the key.
+	See docs/IOS_SETUP.md for the enable steps.
+	-->
+	<key>com.apple.developer.usernotifications.critical-alerts</key>
+	<true/>
+</dict>
+</plist>

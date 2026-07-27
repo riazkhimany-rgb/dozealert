@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/settings_section_tile.dart';
 import '../developer_dashboard_screen.dart';
+import 'trip_diagnostics_log_screen.dart';
 
 class DeveloperToolsScreen extends StatelessWidget {
   const DeveloperToolsScreen({super.key});
@@ -23,6 +24,19 @@ class DeveloperToolsScreen extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const DeveloperDashboardScreen(),
+                ),
+              );
+            },
+          ),
+          const SettingsSectionHeader(title: 'Trip Log'),
+          SettingsNavTile(
+            icon: Icons.receipt_long_outlined,
+            title: 'Locked-trip log',
+            subtitle: 'GPS gaps, stop changes, geofences, wake events',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TripDiagnosticsLogScreen(),
                 ),
               );
             },

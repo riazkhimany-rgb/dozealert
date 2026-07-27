@@ -209,7 +209,7 @@ class AlarmSettingsScreen extends StatelessWidget {
               'Optional looped tone when override is enabled',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
-            trailing: const Text('alarm.mp3'),
+            trailing: const Text('alarm.wav'),
           ),
           const Divider(height: 32),
           const SettingsSectionHeader(title: 'Vibration'),

@@ -46,16 +46,18 @@ Signing, certificates, and provisioning are configured in Xcode / App Store Conn
 
 ## What Phase 1–4 do / do not do
 
-**Done in repo:** identity, Info.plist, Maps key plumbing, iOS Always + notification permission flows, Wear/activity UI hidden on iOS, background GPS via Geolocator `AppleSettings`, iOS locked-reliability stack (heartbeat notification, geofence backup, custom notification sound, pre-alert, `beginBackgroundTask`, audio session arming), App Store listing package under [`app-store/`](../app-store/), export compliance key in Info.plist.
+**Done in repo:** identity, Info.plist, Maps key plumbing, iOS Always + notification permission flows, Wear/activity UI hidden on iOS, background GPS via Geolocator `AppleSettings`, iOS locked-reliability stack (real looping alarm tone, trip keep-alive audio session, native geofence wake, heartbeat notification, custom notification sound, pre-alert, stale-stop fallback, persisted trip log), App Store listing package under [`app-store/`](../app-store/), export compliance key in Info.plist.
 
 **Still needs you on a Mac + Apple account:** create the App Store Connect app, sign/archive/upload, screenshots, TestFlight, and App Review. Real lock-screen proof needs a physical iPhone.
 
 ### Locked-phone alarms (iOS)
 
-- Approach alerts post the local notification **first** (system sound), then start the looping `alarm.mp3` tone (always on iOS, so locked wakes are not TTS-only).
+- Approach alerts post the local notification **first**, then start the looping `alarm.wav` tone (always on iOS, so locked wakes are not TTS-only).
 - Unlocking with an active alert restarts tone / TTS / vibration (`reinforceAlarmIfActive`).
 - Monitoring uses `ActivityType.otherNavigation` so transit trips are less likely to pause GPS than car-only navigation mode.
-- Stale stop counts on the lock screen are expected while Flutter is suspended; Core Location should still wake the app for updates. If distance freezes for many minutes while locked, confirm **Location → Always** and the blue status-bar location indicator during the trip.
+- A trip keep-alive audio session now keeps the process resident, so stop counts should stay current while locked. If distance still freezes for many minutes, confirm **Location → Always** and the blue status-bar location indicator during the trip.
+
+See [Alarm reliability notes](#alarm-reliability-notes-ios) for the full stack and the retest matrix.
 
 ## Phase 4 — TestFlight / App Store (RentAMac)
 
@@ -151,30 +153,53 @@ Export compliance should be satisfied by `ITSAppUsesNonExemptEncryption = false`
 
 ## Alarm reliability notes (iOS)
 
-- Trip start requests notification permission (alert + sound + badge).
-- Arrival / pre-alert notifications use **time-sensitive** interruption and a bundled custom sound (`alarm_notification.wav`). Critical Alerts are **not** enabled (Apple entitlement + review); escalate only if locked Focus/Silent still mutes wakes after this stack.
-- Alarm/TTS use `playback` audio session (ignores the Ring/Silent switch for app audio). Trip start also arms the audio session once.
-- While monitoring: a quiet **trip heartbeat** notification updates distance/stops (throttled) so locked GPS wakes are observable.
-- **Geofence backup:** approach + destination `CLCircularRegion`s arm on trip start and clear on stop; region entry can fire pre-alert / main wake if the continuous stream was deferred.
-- Alarm start wraps a short native `beginBackgroundTask` so looping audio can begin after a location wake.
-- Unlock / resume still calls `reinforceAlarmIfActive()` so a silent lock-screen wake can recover outputs.
+### What the build-58 field test proved
+
+Three independent faults, all now fixed:
+
+1. **The Ring/Silent switch mutes every notification sound.** No amount of interruption-level tuning changes that; only the app's own `playback`-category audio (or the Critical Alerts entitlement) survives the switch. The custom `alarm_notification.wav` was correct but irrelevant while locked and silenced.
+2. **There was no alarm tone.** `assets/sounds/alarm.mp3` and `android/app/src/main/res/raw/alarm.mp3` were both 4-byte stubs, so the "always loop the tone on iOS" path had always been a no-op. Rounds where the phone stayed unlocked only sounded because `flutter_tts` uses `playback`.
+3. **The app was suspended while locked.** Stop counts froze, the wake fired only on unlock, and the geofence backup could not help because `invokeMethod("onRegionEntered")` needs a live Dart isolate.
+
+Two smaller bugs found alongside: `defaultToSpeaker` and `allowBluetooth` are `playAndRecord`-only options, and passing them with the `playback` category makes the whole session configuration throw — so the alarm session and the TTS session were both failing to configure.
+
+### Current stack
+
+- **Real audio.** `assets/sounds/alarm.wav` is a 4 s loop-safe two-tone alarm (44.1 kHz mono PCM), mirrored to `android/app/src/main/res/raw/alarm.wav` and `ios/Runner/alarm_notification.wav` for the notification sound.
+- **Trip keep-alive.** `ios/Runner/keepalive.wav` loops near-silently through a `playback` session for the whole trip (`startKeepAlive` / `stopKeepAlive`). This keeps the process resident so stop counts refresh while locked, and keeps the audio route hot so the alarm starts instantly and loudly. It stops the moment the trip ends.
+- **Native wake.** Trip start writes destination and wake copy to `UserDefaults`; on `didEnterRegion` for the destination ring, `AppDelegate` posts the notification and starts the looping tone **in Swift**, with no Dart round trip. Dart adopts the wake on its next run (`consumeNativeWake`) and hands the tone over only once its own loop is playing, so there is no gap and no double audio.
+- **Geofence backup.** Approach + destination `CLCircularRegion`s arm on trip start and clear on stop.
+- **Stale-stop fallback.** If stop counting freezes for 90 s (no fixes, or the route matcher cannot advance) while straight-line distance is already inside the wake radius, the distance wake fires anyway. Covers weak GPS on a hotspot with no SIM.
+- **Critical Alerts.** Requested at permission time with a fallback to a standard request; arrival notifications use `InterruptionLevel.critical` with a critical sound only when the entitlement is actually granted, otherwise `timeSensitive`. See below — the entitlement is not wired into signing yet.
+- **Trip heartbeat.** A quiet, throttled notification shows distance/stops so locked GPS wakes stay observable.
+- **Trip log.** Settings → Developer → **Locked-trip log** persists GPS gaps, stop-count changes, geofence entries, pre-alerts, wake source, and whether the tone actually started. Copy it out after a field test instead of relying on recollection.
+- Alarm start wraps a short native `beginBackgroundTask`; unlock/resume still calls `reinforceAlarmIfActive()`.
 - `UIBackgroundModes` includes `location` + `audio`.
 
-### Locked-phone test matrix (physical iPhone 12 preferred)
+### Enabling Critical Alerts (after Apple approval)
 
-After installing a build that includes the locked-reliability stack:
+`ios/Runner/Runner.entitlements` exists but is **deliberately not referenced by any build configuration** — signing fails if the provisioning profile lacks the key.
 
-1. Always location + notifications granted; Focus Off; Silent switch Off  
-2. Same with Silent switch On (looping tone should still play via `playback`)  
-3. Locked 10+ minutes before approach — notification tone and/or looping alarm without unlocking  
-4. Transit wake-by-stops and map-pin distance  
-5. Confirm geofence alone can wake if continuous GPS updates look stale on unlock  
-6. Unlock mid-alarm still reinforces tone / TTS / vibration  
-7. Low Power Mode — monitoring + alarm still work  
+1. Submit the request at <https://developer.apple.com/contact/request/notifications-critical-alerts-entitlement/>
+2. Once granted, regenerate the provisioning profile, then in Xcode set the Runner target's **Code Signing Entitlements** to `Runner/Runner.entitlements` (or add `CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;` to each Runner build configuration)
+3. No Dart change is needed: `AlarmService.refreshCriticalAlertStatus()` detects the grant at runtime and escalates the interruption level automatically
 
-**Acceptable:** Home stop/distance labels look briefly stale until unlock, if the **wake itself** was audible.
+Separately, **Time Sensitive Notifications** is a free capability (no Apple approval) that is not enabled yet. Without it iOS quietly downgrades our `timeSensitive` notifications to `active`, so they cannot break through Focus. Enable it in Xcode under Signing & Capabilities when you next touch signing — it will create/extend the entitlements file, so do it at the same time as the Critical Alerts wiring to avoid a signing round trip.
 
-**Escalation:** If Focus still mutes notification sound after the above passes, apply for Apple **Critical Alerts** entitlement and retest.
+### Locked-phone retest matrix (physical iPhone 12)
+
+Run the same route as the failing test, then read the trip log.
+
+1. **Silent switch ON, locked 10+ minutes** — the looping tone must play through the switch. This is the headline case.
+2. **Silent switch ON, locked, wake-by-stops** — the stop count must still be current when you unlock.
+3. **Hotspot off mid-trip** — GPS-only wake still fires (geofence or stale-stop fallback).
+4. **Unlock mid-alarm** — outputs reinforce, single tone (not two), dismiss works.
+5. **Low Power Mode** — monitoring and alarm still work.
+6. Open **Developer → Locked-trip log** and check for `gps.gap` entries, whether `wake.fired` shows `source=native-geofence` or `source=stops`, and that `alarm.tone.playing` appears (not `alarm.tone.failed`).
+
+**Acceptable:** Home labels look briefly stale until unlock, provided the wake itself was audible.
+
+**Known trade-off:** the keep-alive track means measurable battery drain during a trip, and App Review occasionally challenges keep-alive audio. DozeAlert is genuinely an alarm app, `UIBackgroundModes` already declares `audio`, and playback stops when the trip ends.
 
 ## Android safety
 

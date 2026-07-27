@@ -11,6 +11,7 @@ import '../services/settings_service.dart';
 import '../utils/transit_wake_message.dart';
 import '../models/app_settings.dart';
 import '../services/system_volume_service.dart';
+import '../services/trip_diagnostics_log.dart';
 import '../utils/app_log.dart';
 import '../utils/trip_ux_copy.dart';
 
@@ -29,11 +30,14 @@ class AlarmService {
   static const _arrivalNotificationId = 1001;
   static const _tripHeartbeatNotificationId = 1002;
   static const _preAlertNotificationId = 1003;
-  static const _alarmAssetPath = 'sounds/alarm.mp3';
+  static const _alarmAssetPath = 'sounds/alarm.wav';
   /// Bundled in ios/Runner (Copy Bundle Resources) for UNNotificationSound.
   static const _iosNotificationSound = 'alarm_notification.wav';
   static const _defaultChannelId = 'arrival_alerts';
-  static const _forcedAlarmChannelId = 'arrival_alerts_forced';
+  /// Bumped when the bundled alarm sound changes: Android channels are
+  /// immutable, so an existing install would keep the old (stub) sound URI.
+  static const _forcedAlarmChannelId = 'arrival_alerts_forced_v2';
+  static const _legacyForcedAlarmChannelId = 'arrival_alerts_forced';
   static const _approachPhrase = AlarmTtsCopy.defaultApproaching;
   static const _pauseBetweenTtsRepeats = Duration(milliseconds: 1500);
   static const _heartbeatMinInterval = Duration(seconds: 45);
@@ -45,6 +49,7 @@ class AlarmService {
 
   bool _initialized = false;
   bool _alarmActive = false;
+  bool _criticalAlertsGranted = false;
   bool _ttsConfigured = false;
   String _activeTtsPhrase = _approachPhrase;
   int _ttsLoopGeneration = 0;
@@ -57,6 +62,11 @@ class AlarmService {
   IosLockedReliabilityService get iosReliability => _iosReliability;
 
   bool get alarmActive => _alarmActive;
+
+  /// True when Apple has granted the Critical Alerts entitlement *and* the user
+  /// allowed it, which is the only way a notification sounds through the
+  /// Ring/Silent switch.
+  bool get criticalAlertsGranted => _criticalAlertsGranted;
   DateTime? get lastAlarmTriggeredAt => _lastAlarmTriggeredAt;
   DateTime? get lastAlarmDismissedAt => _lastAlarmDismissedAt;
 
@@ -109,6 +119,9 @@ class AlarmService {
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
 
+      await androidPlugin?.deleteNotificationChannel(
+        _legacyForcedAlarmChannelId,
+      );
       await androidPlugin?.createNotificationChannel(defaultChannel);
       await androidPlugin?.createNotificationChannel(forcedAlarmChannel);
 
@@ -124,9 +137,9 @@ class AlarmService {
 
   /// Requests iOS alert/sound/badge permission (no-op on other platforms).
   ///
-  /// Does not block trip start if denied — TTS/audio may still work while
-  /// foregrounded. Silent Mode still limits notification sounds without
-  /// Critical Alerts (not requested).
+  /// Critical Alerts are requested first; the request fails outright until
+  /// Apple grants the entitlement, so we fall back to a standard request and
+  /// rely on the app's own playback-category audio for silent-switch wakes.
   Future<bool> ensureNotificationPermission() async {
     if (!Platform.isIOS) {
       return true;
@@ -136,20 +149,59 @@ class AlarmService {
       await initialize();
     }
 
-    try {
-      final iosPlugin = _notifications
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>();
-      final granted = await iosPlugin?.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      return granted ?? false;
-    } catch (error, stackTrace) {
-      AppLog.d('AlarmService: iOS notification permission failed: $error');
-      AppLog.d('$stackTrace');
+    final iosPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>();
+    if (iosPlugin == null) {
       return false;
+    }
+
+    var granted = false;
+    try {
+      granted = await iosPlugin.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+            critical: true,
+          ) ??
+          false;
+    } catch (error) {
+      AppLog.d('AlarmService: critical alert request rejected: $error');
+    }
+
+    if (!granted) {
+      try {
+        granted = await iosPlugin.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            ) ??
+            false;
+      } catch (error, stackTrace) {
+        AppLog.d('AlarmService: iOS notification permission failed: $error');
+        AppLog.d('$stackTrace');
+        return false;
+      }
+    }
+
+    await refreshCriticalAlertStatus();
+    return granted;
+  }
+
+  Future<void> refreshCriticalAlertStatus() async {
+    if (!Platform.isIOS) {
+      return;
+    }
+    try {
+      final options = await _notifications
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.checkPermissions();
+      _criticalAlertsGranted = options?.isCriticalEnabled ?? false;
+      AppLog.d('AlarmService: critical alerts granted=$_criticalAlertsGranted');
+    } catch (error) {
+      AppLog.d('AlarmService: critical alert status check failed: $error');
+      _criticalAlertsGranted = false;
     }
   }
 
@@ -180,6 +232,11 @@ class AlarmService {
     final volume = _settingsService.settings.alarmVolume;
     final approachSystemVolume =
         _settingsService.settings.approachSystemVolume;
+
+    await TripDiagnosticsLog.record('alarm.start', {
+      'forcedTone': playForcedTone,
+      'criticalAlerts': _criticalAlertsGranted,
+    });
 
     if (Platform.isIOS) {
       await _iosReliability.beginBackgroundTask(name: 'dozealert.alarm');
@@ -264,6 +321,7 @@ class AlarmService {
     await _stopVibration();
     await _notifications.cancel(_arrivalNotificationId);
     await _notifications.cancel(_preAlertNotificationId);
+    await _iosReliability.stopNativeAlarm();
     await _volumeService.restoreSavedVolume();
     _backgroundTaskEndTimer?.cancel();
     _backgroundTaskEndTimer = null;
@@ -446,9 +504,12 @@ class AlarmService {
         // audio cannot start; falls back if the file is missing.
         presentSound: true,
         sound: _iosNotificationSound,
-        // timeSensitive breaks through Focus better than active; Critical
-        // Alerts need a special Apple entitlement (deferred).
-        interruptionLevel: InterruptionLevel.timeSensitive,
+        // Critical survives the Ring/Silent switch and Focus, but only with
+        // Apple's entitlement; timeSensitive is the fallback everywhere else.
+        interruptionLevel: _criticalAlertsGranted
+            ? InterruptionLevel.critical
+            : InterruptionLevel.timeSensitive,
+        criticalSoundVolume: _criticalAlertsGranted ? 1.0 : null,
         threadIdentifier: 'dozealert-arrival',
       );
 
@@ -479,15 +540,14 @@ class AlarmService {
     }
 
     if (Platform.isIOS) {
+      // Only playback-compatible options here: defaultToSpeaker and
+      // allowBluetooth are playAndRecord-only and make the category call throw.
       await _tts.setIosAudioCategory(
         IosTextToSpeechAudioCategory.playback,
         [
-          IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
           IosTextToSpeechAudioCategoryOptions.duckOthers,
           IosTextToSpeechAudioCategoryOptions
               .interruptSpokenAudioAndMixWithOthers,
-          // Helps keep speaking if the screen locks mid-alert.
-          IosTextToSpeechAudioCategoryOptions.allowBluetooth,
         ],
       );
     }
@@ -617,20 +677,26 @@ class AlarmService {
             // playback ignores the Ring/Silent switch (ambient would not).
             // Combined with Info.plist UIBackgroundModes=audio so a locked
             // iPhone can keep the looping tone alive after a location wake.
+            // defaultToSpeaker is playAndRecord-only — passing it here makes
+            // the whole session configuration throw and the tone stay silent.
             category: AVAudioSessionCategory.playback,
-            options: const {
-              AVAudioSessionOptions.duckOthers,
-              AVAudioSessionOptions.defaultToSpeaker,
-            },
+            options: const {AVAudioSessionOptions.duckOthers},
           ),
         ),
       );
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.setVolume(volume);
       await _audioPlayer.play(AssetSource(_alarmAssetPath));
+      // Hand off only once our own loop is running, so a native wake started
+      // while Dart was suspended never leaves a gap of silence.
+      await _iosReliability.stopNativeAlarm();
+      await TripDiagnosticsLog.record('alarm.tone.playing', {
+        'volume': volume.toStringAsFixed(2),
+      });
     } catch (error, stackTrace) {
       AppLog.d('AlarmService: failed to play forced alarm sound: $error');
       AppLog.d('$stackTrace');
+      await TripDiagnosticsLog.record('alarm.tone.failed', {'error': '$error'});
     }
   }
 

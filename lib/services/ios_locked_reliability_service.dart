@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 
 import '../utils/app_log.dart';
 
-/// Native iOS helpers for locked-phone wake reliability (geofence, BG task, audio).
+/// Native iOS helpers for locked-phone wake reliability.
 ///
-/// No-op on non-iOS platforms.
+/// Covers the three things Flutter cannot do on its own once the screen locks:
+/// keeping the process alive, monitoring geofences, and firing the wake from
+/// native code when the Dart isolate is suspended. No-op on other platforms.
 class IosLockedReliabilityService {
   IosLockedReliabilityService() {
     if (Platform.isIOS) {
@@ -38,39 +40,65 @@ class IosLockedReliabilityService {
     );
   }
 
-  Future<void> armAudioSession() async {
+  Future<void> _invoke(String method, [Map<String, dynamic>? arguments]) async {
     if (!Platform.isIOS) {
       return;
     }
     try {
-      await _channel.invokeMethod<void>('armAudioSession');
+      await _channel.invokeMethod<void>(method, arguments);
     } catch (error, stackTrace) {
-      AppLog.d('IosLockedReliability: armAudioSession failed: $error');
+      AppLog.d('IosLockedReliability: $method failed: $error');
       AppLog.d('$stackTrace');
     }
   }
 
-  Future<void> beginBackgroundTask({String name = 'dozealert.alarm'}) async {
-    if (!Platform.isIOS) {
-      return;
-    }
-    try {
-      await _channel.invokeMethod<void>('beginBackgroundTask', {'name': name});
-    } catch (error, stackTrace) {
-      AppLog.d('IosLockedReliability: beginBackgroundTask failed: $error');
-      AppLog.d('$stackTrace');
-    }
+  Future<void> armAudioSession() => _invoke('armAudioSession');
+
+  /// Starts the near-silent loop that keeps the app resident during a trip.
+  Future<void> startKeepAlive() => _invoke('startKeepAlive');
+
+  Future<void> stopKeepAlive() => _invoke('stopKeepAlive');
+
+  Future<void> beginBackgroundTask({String name = 'dozealert.alarm'}) =>
+      _invoke('beginBackgroundTask', {'name': name});
+
+  Future<void> endBackgroundTask() => _invoke('endBackgroundTask');
+
+  Future<void> stopNativeAlarm() => _invoke('stopNativeAlarm');
+
+  /// Gives native code everything it needs to raise the wake without Dart.
+  ///
+  /// Pass [resetWake] only when a new trip starts; a periodic copy refresh must
+  /// not clear a native wake that Dart has yet to adopt.
+  Future<void> setTripInfo({
+    required String destinationName,
+    required String alarmTitle,
+    required String alarmBody,
+    required bool criticalAlerts,
+    bool resetWake = false,
+  }) {
+    return _invoke('setTripInfo', {
+      'destinationName': destinationName,
+      'alarmTitle': alarmTitle,
+      'alarmBody': alarmBody,
+      'criticalAlerts': criticalAlerts,
+      'resetWake': resetWake,
+    });
   }
 
-  Future<void> endBackgroundTask() async {
+  Future<void> clearTripInfo() => _invoke('clearTripInfo');
+
+  /// True once if native code already fired the wake while Dart was suspended.
+  Future<bool> consumeNativeWake() async {
     if (!Platform.isIOS) {
-      return;
+      return false;
     }
     try {
-      await _channel.invokeMethod<void>('endBackgroundTask');
+      return await _channel.invokeMethod<bool>('consumeNativeWake') ?? false;
     } catch (error, stackTrace) {
-      AppLog.d('IosLockedReliability: endBackgroundTask failed: $error');
+      AppLog.d('IosLockedReliability: consumeNativeWake failed: $error');
       AppLog.d('$stackTrace');
+      return false;
     }
   }
 
@@ -80,38 +108,21 @@ class IosLockedReliabilityService {
     required double longitude,
     required double approachRadiusMeters,
     required double destinationRadiusMeters,
-  }) async {
-    if (!Platform.isIOS) {
-      return;
-    }
-    try {
-      await _channel.invokeMethod<void>('startGeofences', {
-        'latitude': latitude,
-        'longitude': longitude,
-        'approachRadiusMeters': approachRadiusMeters.clamp(100.0, 100000.0),
-        'destinationRadiusMeters':
-            destinationRadiusMeters.clamp(100.0, 100000.0),
-      });
-    } catch (error, stackTrace) {
-      AppLog.d('IosLockedReliability: startGeofences failed: $error');
-      AppLog.d('$stackTrace');
-    }
+  }) {
+    return _invoke('startGeofences', {
+      'latitude': latitude,
+      'longitude': longitude,
+      'approachRadiusMeters': approachRadiusMeters.clamp(100.0, 100000.0),
+      'destinationRadiusMeters': destinationRadiusMeters.clamp(100.0, 100000.0),
+    });
   }
 
-  Future<void> stopGeofences() async {
-    if (!Platform.isIOS) {
-      return;
-    }
-    try {
-      await _channel.invokeMethod<void>('stopGeofences');
-    } catch (error, stackTrace) {
-      AppLog.d('IosLockedReliability: stopGeofences failed: $error');
-      AppLog.d('$stackTrace');
-    }
-  }
+  Future<void> stopGeofences() => _invoke('stopGeofences');
 
   Future<void> dispose() async {
     await stopGeofences();
+    await stopKeepAlive();
+    await clearTripInfo();
     await endBackgroundTask();
     await _regionEnteredController.close();
   }
