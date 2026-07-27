@@ -70,12 +70,16 @@ class IosLockedReliabilityService {
   ///
   /// Pass [resetWake] only when a new trip starts; a periodic copy refresh must
   /// not clear a native wake that Dart has yet to adopt.
+  ///
+  /// [nativeWakeEnabled] should be false for wake-by-stops trips so a large
+  /// distance geofence cannot start the tone one or two stops early.
   Future<void> setTripInfo({
     required String destinationName,
     required String alarmTitle,
     required String alarmBody,
     required bool criticalAlerts,
     bool resetWake = false,
+    bool nativeWakeEnabled = true,
   }) {
     return _invoke('setTripInfo', {
       'destinationName': destinationName,
@@ -83,6 +87,7 @@ class IosLockedReliabilityService {
       'alarmBody': alarmBody,
       'criticalAlerts': criticalAlerts,
       'resetWake': resetWake,
+      'nativeWakeEnabled': nativeWakeEnabled,
     });
   }
 

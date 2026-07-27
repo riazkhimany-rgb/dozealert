@@ -25,6 +25,9 @@ import UserNotifications
   private let alarmBodyKey = "dozealert.alarmBody"
   private let criticalAlertsKey = "dozealert.criticalAlerts"
   private let nativeWakeFiredKey = "dozealert.nativeWakeFired"
+  /// When false, geofence entry still notifies Dart but does not start the
+  /// native tone — used for wake-by-stops so a large radius cannot fire early.
+  private let nativeWakeEnabledKey = "dozealert.nativeWakeEnabled"
 
   private let nativeWakeNotificationId = "dozealert.native.wake"
   private let alarmSoundFile = "alarm_notification.wav"
@@ -233,6 +236,7 @@ import UserNotifications
     defaults.set(args?["alarmTitle"] as? String ?? "Time to get off", forKey: alarmTitleKey)
     defaults.set(args?["alarmBody"] as? String ?? "You are arriving.", forKey: alarmBodyKey)
     defaults.set(args?["criticalAlerts"] as? Bool ?? false, forKey: criticalAlertsKey)
+    defaults.set(args?["nativeWakeEnabled"] as? Bool ?? true, forKey: nativeWakeEnabledKey)
   }
 
   private func clearTripInfo() {
@@ -315,7 +319,8 @@ import UserNotifications
 
     let defaults = UserDefaults.standard
     guard defaults.bool(forKey: tripActiveKey),
-          !defaults.bool(forKey: nativeWakeFiredKey)
+          !defaults.bool(forKey: nativeWakeFiredKey),
+          defaults.bool(forKey: nativeWakeEnabledKey)
     else {
       return
     }

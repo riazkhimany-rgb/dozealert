@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/transit_mode_wake_setting.dart';
+import '../../providers/location_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/transit_mode_provider.dart';
 import '../../services/background_monitor_service.dart';
@@ -30,7 +31,10 @@ class TransitModeSettingsScreen extends StatelessWidget {
           return;
         }
         context.read<TransitModeProvider>().refreshFromSettings();
-        await context.read<BackgroundMonitorService>().refreshSessionIfRunning();
+        final location = context.read<LocationProvider>();
+        final background = context.read<BackgroundMonitorService>();
+        await location.onWakeSettingsChanged();
+        await background.refreshSessionIfRunning();
       },
       child: Column(
         children: TransitModeWakeSetting.values
@@ -68,9 +72,10 @@ class TransitModeSettingsScreen extends StatelessWidget {
                 return;
               }
               context.read<TransitModeProvider>().refreshFromSettings();
-              await context
-                  .read<BackgroundMonitorService>()
-                  .refreshSessionIfRunning();
+              final location = context.read<LocationProvider>();
+              final background = context.read<BackgroundMonitorService>();
+              await location.onWakeSettingsChanged();
+              await background.refreshSessionIfRunning();
             },
           ),
           if (transitModeEnabled)

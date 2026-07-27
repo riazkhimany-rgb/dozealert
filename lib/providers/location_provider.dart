@@ -880,7 +880,11 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
-    if (_currentLocation == null) {
+    // Stop-based wakes can be evaluated from the transit snapshot alone (e.g.
+    // after an iOS geofence nudge). Distance wakes still need a fix.
+    if (_currentLocation == null &&
+        !(_settingsService.settings.transitModeEnabled &&
+            _transitModeProvider.shouldTriggerApproachAlarm)) {
       return;
     }
 
@@ -937,6 +941,10 @@ class LocationProvider extends ChangeNotifier {
       }
 
       // Distance fallback for map-pin destinations when not on a transit route.
+    }
+
+    if (_currentLocation == null) {
+      return;
     }
 
     if (_distanceRemainingMeters > thresholdMeters) {
@@ -1203,13 +1211,36 @@ class LocationProvider extends ChangeNotifier {
     _lastNativeTripInfoAt = now;
 
     final copy = _currentWakeCopy(destinationName);
+    final transitStopsWake = _settingsService.settings.transitModeEnabled &&
+        (_transitModeProvider.isActive ||
+            _transitModeProvider.isTransitTrackableDestination);
     await _alarmService.iosReliability.setTripInfo(
       destinationName: destinationName,
       alarmTitle: copy.headline,
       alarmBody: copy.detailMessage,
       criticalAlerts: _alarmService.criticalAlertsGranted,
       resetWake: force,
+      // Distance geofences are a backup for map-pin trips. For wake-by-stops,
+      // only Dart (with keep-alive) may start the alarm — otherwise a 1 km
+      // radius fires the tone one or two stops early with stale copy.
+      nativeWakeEnabled: !transitStopsWake,
     );
+  }
+
+  /// Call after the rider changes wake-by-stops / alert distance mid-trip.
+  Future<void> onWakeSettingsChanged() async {
+    if (!Platform.isIOS || !_trackingEnabled) {
+      return;
+    }
+    final destination = _monitoringProvider.selectedDestination;
+    if (destination == null) {
+      return;
+    }
+    await _refreshIosNativeTripInfo(destination.name, force: true);
+    await TripDiagnosticsLog.record('settings.wake.changed', {
+      'wakeStops': _settingsService.settings.transitModeWake.wakeStopCount,
+      'transitMode': _settingsService.settings.transitModeEnabled,
+    });
   }
 
   WakeAlertCopy _currentWakeCopy(String destinationName) {
@@ -1225,11 +1256,26 @@ class LocationProvider extends ChangeNotifier {
   }
 
   /// Adopts a wake that native code already fired while Dart was suspended.
+  ///
+  /// Wake-by-stops trips never arm native auto-wake; if a stale flag remains,
+  /// silence it and evaluate through the same [_checkArrival] path Android uses.
   Future<void> _adoptNativeWakeIfFired() async {
     if (!Platform.isIOS || !_trackingEnabled) {
       return;
     }
     if (!await _alarmService.iosReliability.consumeNativeWake()) {
+      return;
+    }
+
+    if (_usingTransitStopsWake()) {
+      AppLog.d(
+        'LocationProvider: ignoring native iOS wake — using shared stop trigger',
+      );
+      await _alarmService.iosReliability.stopNativeAlarm();
+      await TripDiagnosticsLog.record('wake.native.ignored', {
+        'reason': 'transit-stops',
+      });
+      await _checkArrival();
       return;
     }
 
@@ -1324,7 +1370,9 @@ class LocationProvider extends ChangeNotifier {
       }),
     );
 
-    // Approach ring: pre-alert only if the main wake has not fired yet.
+    final transitStops = _usingTransitStopsWake();
+
+    // Approach ring: optional pre-alert. Wake-by-stops never fires from radius.
     if (regionId == IosLockedReliabilityService.approachRegionId) {
       final destinationName =
           _monitoringProvider.selectedDestination?.name ?? 'Destination';
@@ -1335,9 +1383,9 @@ class LocationProvider extends ChangeNotifier {
           body: TripUxCopy.gettingCloseBody(destinationName),
         );
       }
-      // If continuous GPS is stale, also fire the main wake from the
-      // approach ring when already inside wake distance.
-      if (distanceIsReady &&
+      if (transitStops) {
+        await _checkArrival();
+      } else if (distanceIsReady &&
           _distanceRemainingMeters <=
               _monitoringProvider.radiusMeters.toDouble()) {
         await _triggerIosGeofenceWake();
@@ -1346,11 +1394,32 @@ class LocationProvider extends ChangeNotifier {
     }
 
     if (regionId == IosLockedReliabilityService.destinationRegionId) {
+      if (transitStops) {
+        // Same decision path as Android: shared stop trigger via _checkArrival.
+        // Geofence only nudges the isolate awake.
+        await TripDiagnosticsLog.record('geofence.nudge', {
+          'reason': 'transit-stops-check-arrival',
+        });
+        await _checkArrival();
+        return;
+      }
       await _triggerIosGeofenceWake();
     }
   }
 
+  bool _usingTransitStopsWake() =>
+      _settingsService.settings.transitModeEnabled &&
+      (_transitModeProvider.isActive ||
+          _transitModeProvider.isTransitTrackableDestination);
+
+  /// Distance-mode / map-pin wake from an iOS geofence. Not used for wake-by-stops.
   Future<void> _triggerIosGeofenceWake({bool nativeAlreadyFired = false}) async {
+    if (_usingTransitStopsWake()) {
+      await _alarmService.iosReliability.stopNativeAlarm();
+      await _checkArrival();
+      return;
+    }
+
     if (_alarmService.alarmActive ||
         await _monitoringStorage.isArrivalTriggered()) {
       if (nativeAlreadyFired) {

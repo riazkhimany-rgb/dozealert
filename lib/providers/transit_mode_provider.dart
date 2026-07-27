@@ -8,6 +8,7 @@ import '../models/monitoring_state.dart';
 import '../models/transit_mode_snapshot.dart';
 import '../models/transit_mode_wake_setting.dart';
 import '../models/transit_stop.dart';
+import '../models/transit_vehicle_type.dart';
 import '../models/transit_wake_plan.dart';
 import '../utils/transit_wake_tuning.dart';
 import '../models/trip_pattern_concern.dart';
@@ -194,9 +195,19 @@ class TransitModeProvider extends ChangeNotifier {
   WakeAlertCopy get approachAlarmCopy => approachAlarmCopyWith();
 
   WakeAlertCopy approachAlarmCopyWith({int? stopsRemainingOverride}) {
+    // Prefer the locked plan's wake count so alarm copy cannot drift from the
+    // stop that will actually trigger (e.g. after a mid-trip settings change).
+    final planWakeCount = _wakePlan?.wakeStopCount;
+    final wakeSetting = planWakeCount == null
+        ? _settingsService.settings.transitModeWake
+        : switch (planWakeCount) {
+            0 => TransitModeWakeSetting.atDestination,
+            2 => TransitModeWakeSetting.twoStopsBefore,
+            _ => TransitModeWakeSetting.oneStopBefore,
+          };
     return TransitWakeMessage.forTransitAlarm(
       snapshot: _snapshot,
-      wakeSetting: _settingsService.settings.transitModeWake,
+      wakeSetting: wakeSetting,
       segmentStops: _wakePlan?.segmentStops ?? routeSegmentStops,
       fallbackDestinationName: _monitoringProvider.selectedDestination?.name,
       stopsRemainingOverride: stopsRemainingOverride,
@@ -301,19 +312,34 @@ class TransitModeProvider extends ChangeNotifier {
   }
 
   void _ensureWakePlan(TransitModeSnapshot snapshot) {
-    final route = snapshot.route;
-    final destination = snapshot.destinationStop;
-    if (!snapshot.isActive ||
-        !snapshot.directionLocked ||
-        route == null ||
-        destination == null) {
-      return;
-    }
-
-    final patternKey = _transitModeService.tripSession.lockedPatternKey;
     final wakeStopCount =
         _settingsService.settings.transitModeWake.wakeStopCount;
     final existing = _wakePlan;
+
+    // Settings can change while GPS briefly reports inactive. Still rebuild the
+    // locked plan so "At destination" actually moves the wake stop.
+    if (!snapshot.isActive ||
+        !snapshot.directionLocked ||
+        snapshot.route == null ||
+        snapshot.destinationStop == null) {
+      if (existing != null &&
+          existing.isValid &&
+          existing.wakeStopCount != wakeStopCount) {
+        _rebuildWakePlan(
+          existing: existing,
+          wakeStopCount: wakeStopCount,
+          routeId: existing.routeId,
+          destination: existing.destinationStop!,
+          patternKey: existing.patternKey,
+          vehicleType: existing.vehicleType,
+        );
+      }
+      return;
+    }
+
+    final route = snapshot.route!;
+    final destination = snapshot.destinationStop!;
+    final patternKey = _transitModeService.tripSession.lockedPatternKey;
     final sameTrip =
         existing?.matchesTrip(
           routeId: route.routeId,
@@ -328,6 +354,32 @@ class TransitModeProvider extends ChangeNotifier {
     final fixedSegment = sameTrip
         ? existing!.segmentStops
         : List<TransitStop>.unmodifiable(_routeSegmentStopsFor(snapshot));
+    if (fixedSegment.isEmpty) {
+      return;
+    }
+
+    _rebuildWakePlan(
+      existing: sameTrip ? existing : null,
+      wakeStopCount: wakeStopCount,
+      routeId: route.routeId,
+      destination: destination,
+      patternKey: patternKey,
+      vehicleType: snapshot.vehicleType ?? route.vehicleType,
+      segmentStops: fixedSegment,
+    );
+  }
+
+  void _rebuildWakePlan({
+    required int wakeStopCount,
+    required String routeId,
+    required TransitStop destination,
+    required String? patternKey,
+    TransitVehicleType? vehicleType,
+    TransitWakePlan? existing,
+    List<TransitStop>? segmentStops,
+  }) {
+    final fixedSegment =
+        segmentStops ?? existing?.segmentStops ?? const <TransitStop>[];
     final wakeStop = TransitWakePlan.selectWakeStop(
       segmentStops: fixedSegment,
       wakeStopCount: wakeStopCount,
@@ -338,7 +390,7 @@ class TransitModeProvider extends ChangeNotifier {
 
     final wakeToDestinationMeters = _transitModeService
         .distanceBetweenStopsAlongRoute(
-          routeId: route.routeId,
+          routeId: routeId,
           segmentStops: fixedSegment,
           fromStop: wakeStop,
           destinationStop: destination,
@@ -351,7 +403,7 @@ class TransitModeProvider extends ChangeNotifier {
     final travelingForward =
         destination.stopSequence >= fixedSegment.first.stopSequence;
     final nextPlan = TransitWakePlan(
-      routeId: route.routeId,
+      routeId: routeId,
       patternKey: patternKey,
       wakeStopCount: wakeStopCount,
       destinationStopSequence: destination.stopSequence,
@@ -359,7 +411,7 @@ class TransitModeProvider extends ChangeNotifier {
       wakeToDestinationMeters: wakeToDestinationMeters,
       segmentStops: fixedSegment,
       travelingForward: travelingForward,
-      vehicleType: snapshot.vehicleType ?? route.vehicleType,
+      vehicleType: vehicleType,
     );
     if (_wakePlan?.wakeStopSequence != nextPlan.wakeStopSequence) {
       _wakeArmedAt = null;
@@ -464,7 +516,19 @@ class TransitModeProvider extends ChangeNotifier {
 
     if (_monitoringProvider.selectedDestination != null) {
       _approachAlarmTriggered = false;
-      _ensureWakePlan(_snapshot);
+      // Prefer the last active snapshot when GPS is briefly stale so a wake
+      // setting change (e.g. Destination) still updates the locked plan.
+      final planSource = _snapshot.isActive
+          ? _snapshot
+          : (_lastActiveSnapshot ?? _snapshot);
+      _ensureWakePlan(planSource);
+      if (_snapshot.isActive || _lastActiveSnapshot != null) {
+        unawaited(
+          _persistTransitBackgroundSnapshot(
+            _snapshot.isActive ? _snapshot : _lastActiveSnapshot!,
+          ),
+        );
+      }
       notifyListeners();
     }
   }
