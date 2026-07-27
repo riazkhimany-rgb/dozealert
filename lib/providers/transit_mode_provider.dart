@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -250,14 +252,25 @@ class TransitModeProvider extends ChangeNotifier {
       accuracyMeters: accuracyMeters,
       fixTimestamp: fixTimestamp,
     );
+
+    // iOS only: a bad projection / cached fix can claim "at destination" while
+    // the rider is still far away as the crow flies. Android's FGS filter makes
+    // this rare — leave that path alone.
+    final progressSnapshot = _rejectImplausibleIosArrival(
+      rawSnapshot,
+      latitude: latitude,
+      longitude: longitude,
+      accuracyMeters: accuracyMeters,
+    );
+
     if (directionInferenceOnly) {
-      if (rawSnapshot.route?.routeId != null) {
-        _activeRouteId = rawSnapshot.route!.routeId;
+      if (progressSnapshot.route?.routeId != null) {
+        _activeRouteId = progressSnapshot.route!.routeId;
       }
-      if (rawSnapshot.isActive || rawSnapshot.directionConfirming) {
-        final nextSnapshot = rawSnapshot.isActive
-            ? _stabilizeSnapshot(rawSnapshot)
-            : rawSnapshot;
+      if (progressSnapshot.isActive || progressSnapshot.directionConfirming) {
+        final nextSnapshot = progressSnapshot.isActive
+            ? _stabilizeSnapshot(progressSnapshot)
+            : progressSnapshot;
         if (nextSnapshot.isActive) {
           _ensureWakePlan(nextSnapshot);
           _lastActiveSnapshot = nextSnapshot;
@@ -271,7 +284,7 @@ class TransitModeProvider extends ChangeNotifier {
     }
 
     final nextSnapshot = _flagMovingAway(
-      _stabilizeSnapshot(rawSnapshot),
+      _stabilizeSnapshot(progressSnapshot),
       latitude: latitude,
       longitude: longitude,
     );
@@ -621,6 +634,50 @@ class TransitModeProvider extends ChangeNotifier {
       return snapshot.copyWith(tripConcern: TripPatternConcern.wrongDirection);
     }
     return snapshot;
+  }
+
+  /// Drops an iOS "0 stops remaining" match when GPS is clearly nowhere near
+  /// the destination stop. Shared hop math is unchanged on Android.
+  TransitModeSnapshot _rejectImplausibleIosArrival(
+    TransitModeSnapshot snapshot, {
+    required double? latitude,
+    required double? longitude,
+    double? accuracyMeters,
+  }) {
+    if (!Platform.isIOS ||
+        !snapshot.isActive ||
+        snapshot.stopsRemaining > 0 ||
+        snapshot.destinationStop == null ||
+        latitude == null ||
+        longitude == null) {
+      return snapshot;
+    }
+
+    // Once progress is established, the stop tracker may step back on its own.
+    if (_stopProgressTracker.hasEstablishedProgress) {
+      return snapshot;
+    }
+
+    final destination = snapshot.destinationStop!;
+    final distanceMeters = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      destination.latitude,
+      destination.longitude,
+    );
+    final accuracy = (accuracyMeters != null && accuracyMeters > 0)
+        ? accuracyMeters
+        : _lastAccuracyMeters;
+    final credibleRadius = math.max(
+      350.0,
+      (accuracy > 0 ? accuracy : 50.0) * 4,
+    );
+    if (distanceMeters <= credibleRadius) {
+      return snapshot;
+    }
+
+    // Do not publish a false arrival; wait for a credible on-route fix.
+    return TransitModeSnapshot.inactive;
   }
 
   TransitModeSnapshot _stabilizeSnapshot(TransitModeSnapshot rawSnapshot) {

@@ -394,9 +394,14 @@ class LocationProvider extends ChangeNotifier {
       await _onLocationUpdate(prewarmFix, allowStale: true);
     }
 
-    final lastKnown = await _locationService.fetchLastKnownLocation();
-    if (lastKnown != null) {
-      await _onLocationUpdate(lastKnown, allowStale: true);
+    // iOS: never seed transit progress from Core Location lastKnown — it often
+    // sits near the destination the rider just picked, which shows
+    // "At destination stop" while Android (FGS-filtered live GPS) is correct.
+    if (!Platform.isIOS) {
+      final lastKnown = await _locationService.fetchLastKnownLocation();
+      if (lastKnown != null) {
+        await _onLocationUpdate(lastKnown, allowStale: true);
+      }
     }
 
     await refreshLocation();
@@ -590,6 +595,17 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
+    // iOS Core Location: negative horizontalAccuracy means the fix is invalid.
+    // Geolocator can surface that as accuracy < 0; never treat it as "perfect".
+    if (Platform.isIOS && location.accuracy < 0) {
+      return;
+    }
+
+    // iOS: cached/stale fixes may only seed direction — never lock stop progress
+    // (otherwise a lastKnown near the destination zeros stops-remaining).
+    final iosStaleProgressGuard =
+        Platform.isIOS && allowStale && _isStaleLocation(location);
+
     final routeActive = _transitModeProvider.isActive;
     final bootstrapPhase = _awaitingFreshLocation ||
         (_settingsService.settings.transitModeEnabled &&
@@ -597,10 +613,11 @@ class LocationProvider extends ChangeNotifier {
             !routeActive);
     final allowDegraded = _settingsService.settings.transitModeEnabled &&
         (bootstrapPhase || routeActive);
-    final positionOk = _gpsQualityGate.accept(
-      location,
-      allowDegraded: allowDegraded,
-    );
+    final positionOk = !iosStaleProgressGuard &&
+        _gpsQualityGate.accept(
+          location,
+          allowDegraded: allowDegraded,
+        );
     final inferenceOk = bootstrapPhase
         ? _gpsQualityGate.acceptForBootstrap(location)
         : _gpsQualityGate.acceptForDirectionInference(location);
@@ -1113,6 +1130,11 @@ class LocationProvider extends ChangeNotifier {
       final location = await _locationService.fetchCurrentLocation();
       if (location != null) {
         await _onLocationUpdate(location);
+        return;
+      }
+
+      // Android only: lastKnown fallback. On iOS it falsely reports arrival.
+      if (Platform.isIOS) {
         return;
       }
 

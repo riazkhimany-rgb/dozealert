@@ -218,9 +218,15 @@ class LocationService {
     _mode = mode;
     _navigationPriority = navigationPriority;
 
-    final lastKnown = await fetchLastKnownLocation();
-    if (lastKnown != null) {
-      _emitLocation(lastKnown);
+    // Android can use a recent lastKnown to paint UI immediately; the FGS path
+    // still filters poor fixes before transit progress locks. On iOS, Core
+    // Location's lastKnown is often a cached fix near a recently opened map
+    // pin / prior visit — emitting it here falsely zeros stops-remaining.
+    if (!Platform.isIOS) {
+      final lastKnown = await fetchLastKnownLocation();
+      if (lastKnown != null) {
+        _emitLocation(lastKnown);
+      }
     }
 
     await _emitCurrentLocation(navigationPriority: navigationPriority);
