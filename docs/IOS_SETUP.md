@@ -119,7 +119,22 @@ flutter build ipa
 
 Then upload the IPA with **Transporter** or Xcode Organizer.
 
-Version/build come from `pubspec.yaml` (`1.1.0+55` → marketing version `1.1.0`, build `55`). If Connect already has that build number, bump the `+` number in `pubspec.yaml` and rebuild.
+Version/build come from `pubspec.yaml` (`1.1.0+62` → marketing version `1.1.0`, build `62`). If Connect already has that build number, bump with `.\tools\bump-version.ps1` on Windows (or edit `pubspec.yaml` and run `.\tools\sync-website-versions.ps1`), commit, pull on the Mac, then regenerate (below).
+
+**After every `git pull` on the Mac, before Archive:** `ios/Flutter/Generated.xcconfig` is gitignored. Xcode keeps the previous `FLUTTER_BUILD_NUMBER` until Flutter rewrites it:
+
+```bash
+./tools/ios-refresh-build-number.sh
+# Must print FLUTTER_BUILD_NUMBER matching pubspec.yaml — only then Archive
+```
+
+Or manually:
+
+```bash
+flutter pub get
+flutter build ios --config-only --release --build-name=1.1.0 --build-number=62   # match pubspec
+grep FLUTTER_BUILD ios/Flutter/Generated.xcconfig
+```
 
 ### 6. Listing and App Privacy
 

@@ -1,5 +1,6 @@
 # Sync website cache-bust query params and version JSON from pubspec.yaml build number.
 # Run after bumping version in pubspec.yaml (e.g. before deploy or release build).
+# Prefer: .\tools\bump-version.ps1 (bumps pubspec then calls this).
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -15,14 +16,30 @@ if ($versionLine -match 'version:\s*([\d.]+)\+(\d+)') {
 
 $versionLabel = "$versionName+$versionCode"
 $websiteRoot = Join-Path $projectRoot 'website'
+$utf8Bom = New-Object System.Text.UTF8Encoding $true
 
-@{
+function Write-Utf8BomFile {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Content,
+        [switch]$EnsureTrailingNewline
+    )
+    $text = $Content
+    if ($EnsureTrailingNewline -and -not $text.EndsWith("`n")) {
+        $text += "`n"
+    }
+    [System.IO.File]::WriteAllText($Path, $text, $utf8Bom)
+}
+
+$appVersionJson = (@{
     version = $versionName
     build   = [int]$versionCode
     label   = $versionLabel
-} | ConvertTo-Json -Compress | Set-Content (Join-Path $websiteRoot 'app-version.json') -Encoding utf8
+} | ConvertTo-Json -Compress)
+Write-Utf8BomFile (Join-Path $websiteRoot 'app-version.json') $appVersionJson -EnsureTrailingNewline
 
-$wearExtra = 18
+# Must match android/wear/build.gradle.kts wearVersionExtra (default 25).
+$wearExtra = 25
 $wearGradle = Join-Path $projectRoot 'android/wear/build.gradle.kts'
 if (Test-Path $wearGradle) {
     $wearText = Get-Content $wearGradle -Raw
@@ -31,15 +48,22 @@ if (Test-Path $wearGradle) {
     }
 }
 $wearBuild = 100000 + [int]$versionCode + $wearExtra
-@{
+$wearVersionJson = (@{
     version    = $versionName
     build      = $wearBuild
     phoneBuild = [int]$versionCode
     label      = "$versionName+$wearBuild"
-} | ConvertTo-Json -Compress | Set-Content (Join-Path $websiteRoot 'wear-version.json') -Encoding utf8
+} | ConvertTo-Json -Compress)
+Write-Utf8BomFile (Join-Path $websiteRoot 'wear-version.json') $wearVersionJson -EnsureTrailingNewline
 
 Get-ChildItem -Path $websiteRoot -Filter 'index.asp' -Recurse -File | ForEach-Object {
-    $html = Get-Content $_.FullName -Raw
+    $html = [System.IO.File]::ReadAllText($_.FullName)
+    # Preserve leading BOM if present.
+    $hadBom = $html.Length -gt 0 -and [int][char]$html[0] -eq 0xFEFF
+    if ($hadBom) {
+        $html = $html.Substring(1)
+    }
+
     $html = [regex]::Replace($html, 'brand\.css\?v=\d+', "brand.css?v=$versionCode")
     $html = [regex]::Replace($html, 'brand\.js\?v=\d+', "brand.js?v=$versionCode")
     $html = [regex]::Replace(
@@ -59,7 +83,11 @@ Get-ChildItem -Path $websiteRoot -Filter 'index.asp' -Recurse -File | ForEach-Ob
             "`${1}$versionName+$wearBuild`${2}"
         )
     }
-    Set-Content -Path $_.FullName -Value $html -Encoding utf8 -NoNewline
+
+    if ($hadBom) {
+        $html = ([char]0xFEFF) + $html
+    }
+    Write-Utf8BomFile $_.FullName $html
 }
 
 Write-Host "Website synced to $versionLabel (asset cache bust ?v=$versionCode; wear $versionName+$wearBuild)" -ForegroundColor Green

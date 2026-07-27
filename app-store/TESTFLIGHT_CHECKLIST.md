@@ -1,6 +1,6 @@
 # TestFlight and App Store submit checklist
 
-Use with [docs/IOS_SETUP.md](../docs/IOS_SETUP.md) Phase 4. Bundle ID: `app.dozealert`. Version comes from `pubspec.yaml` (e.g. `1.1.0+55` → version `1.1.0`, build `55`).
+Use with [docs/IOS_SETUP.md](../docs/IOS_SETUP.md) Phase 4. Bundle ID: `app.dozealert`. Version comes from `pubspec.yaml` (e.g. `1.1.0+62` → version `1.1.0`, build `62`). Bump on Windows with `.\tools\bump-version.ps1` in the **same commit** as the shippable fix.
 
 ## Before you start
 
@@ -13,7 +13,10 @@ Use with [docs/IOS_SETUP.md](../docs/IOS_SETUP.md) Phase 4. Bundle ID: `app.doze
 
 ## Build and upload (RentAMac)
 
-- [ ] `flutter pub get`  
+- [ ] `git pull` on `feature/simplified-trip-ux` (or the release branch)  
+- [ ] Confirm `grep '^version:' pubspec.yaml` shows the build you intend to upload  
+- [ ] **Required:** `./tools/ios-refresh-build-number.sh` (or `flutter build ios --config-only …`) so `ios/Flutter/Generated.xcconfig` matches pubspec — Xcode will otherwise Archive the **previous** build number  
+- [ ] `grep FLUTTER_BUILD ios/Flutter/Generated.xcconfig` shows the new number  
 - [ ] `cd ios && pod install && cd ..`  
 - [ ] Open `ios/Runner.xcworkspace` in Xcode (not the `.xcodeproj`)  
 - [ ] Signing & Capabilities → Team selected → Automatic signing  

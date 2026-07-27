@@ -1,0 +1,42 @@
+---
+description: Always bump pubspec build number in the same commit when shipping TestFlight/Play/phone builds
+alwaysApply: true
+---
+
+# Version bumps (DozeAlert)
+
+## Why this exists
+
+`ios/Flutter/Generated.xcconfig` is **gitignored**. Xcode Archive reads `FLUTTER_BUILD_NUMBER` from that local file, not live from `pubspec.yaml`. Separately bumping version in a follow-up commit (or forgetting to bump) makes Mac `git pull` / Archive look stuck on the previous build (e.g. still +61).
+
+## Required behavior
+
+When the user asks to **commit and push** (or release / TestFlight / archive / ship) work meant for a phone build:
+
+1. **Bump in the same commit as the fix** — never push a shippable fix at the old `+N` and ask about bumping later.
+2. Use the script (from repo root):
+
+```powershell
+.\tools\bump-version.ps1
+```
+
+That updates `pubspec.yaml` and runs `tools/sync-website-versions.ps1` (website JSON + ASP cache-bust).
+
+3. Include in the commit: `pubspec.yaml`, `website/app-version.json`, `website/wear-version.json`, and any `website/**/index.asp` touched by the sync.
+4. Tell the user the new label (e.g. `1.1.0+63`) and remind Mac:
+
+```bash
+git pull
+./tools/ios-refresh-build-number.sh
+# grep must show the new FLUTTER_BUILD_NUMBER before Archive
+```
+
+## When NOT to bump
+
+- Pure docs / rules / tooling with no app binary change, unless the user asks.
+- WIP commits the user explicitly says not to ship yet.
+
+## Do not
+
+- Hand-edit website version strings without running the sync script (BOM / wear build drift).
+- Assume `git pull` alone updates Xcode's build number.
