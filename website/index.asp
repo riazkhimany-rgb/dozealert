@@ -13,11 +13,11 @@ Response.Expires = -1
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="DozeAlert wakes you before you reach your destination. Available on Android and as an iOS TestFlight beta. Sleep peacefully. Arrive confidently.">
+  <meta name="description" content="DozeAlert wakes you before you reach your destination. Android, iPhone TestFlight, Wear OS, and Apple Watch companion. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
-  <link rel="icon" type="image/png" href="assets/icon-512.png?v=68">
-  <link rel="stylesheet" href="assets/brand.css?v=68">
+  <link rel="icon" type="image/png" href="assets/icon-512.png?v=69">
+  <link rel="stylesheet" href="assets/brand.css?v=69">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -408,7 +408,7 @@ Response.Expires = -1
         </div>
       </details>
       <p class="meta">
-        Phone <span id="app-version">1.1.0+68</span> &middot; Wear <span id="wear-version">1.1.0+100093</span>
+        Phone <span id="app-version">1.1.0+69</span> &middot; Wear <span id="wear-version">1.1.0+100094</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
@@ -416,7 +416,8 @@ Response.Expires = -1
     <section class="card download-block" id="ios">
       <h2 style="margin-bottom: 0.75rem;">Try DozeAlert on iPhone</h2>
       <p class="meta" style="margin-top: 0; margin-bottom: 1.25rem;">
-        DozeAlert is in <strong>public TestFlight beta</strong> for iPhone.
+        DozeAlert is in <strong>public TestFlight beta</strong> for iPhone, with an
+        <strong>Apple Watch companion</strong> included in the same build.
         Install Apple&rsquo;s free TestFlight app, then join with the link below &mdash;
         no App Store listing required while we prepare the public release.
       </p>
@@ -442,14 +443,17 @@ Response.Expires = -1
         <li>Install TestFlight if prompted, then accept DozeAlert.</li>
         <li>Grant <strong>Location &rarr; Always</strong> and Notifications when you start a trip.</li>
         <li>Pick a stop or map pin, tap Start, and try locking the screen.</li>
+        <li>Optional: install the Watch app from the iPhone <strong>Watch</strong> app &rarr; My Watch &rarr; DozeAlert.</li>
       </ol>
       <div class="note">
         <strong>Feedback welcome:</strong> Use TestFlight&rsquo;s screenshot feedback,
         or email <a href="mailto:support@dozealert.app">support@dozealert.app</a>.
-        Phone-only for now &mdash; no Apple Watch companion yet.
+        See the <a class="text-link" href="#apple-watch">Apple Watch companion</a> section
+        for install and testing tips.
       </div>
       <p class="meta" style="margin-top: 1rem;">
-        iOS beta &middot; iPhone &middot; Bundle ID <code>app.dozealert</code>
+        iOS beta &middot; iPhone + Apple Watch &middot; Bundle ID <code>app.dozealert</code>
+        &middot; Phone build <span id="ios-app-version">1.1.0+68</span>
         &middot; <a class="text-link" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">testflight.apple.com/join/QhMZbJvR</a>
       </p>
     </section>
@@ -465,6 +469,10 @@ Response.Expires = -1
         <a class="text-link" href="screenshots/index.asp">Android app tour &rarr;</a>
         &nbsp;&middot;&nbsp;
         <a class="text-link" href="screenshots/index.asp#ios">iPhone app tour &rarr;</a>
+        &nbsp;&middot;&nbsp;
+        <a class="text-link" href="screenshots/index.asp#apple-watch">Apple Watch &rarr;</a>
+        &nbsp;&middot;&nbsp;
+        <a class="text-link" href="screenshots/index.asp#wear">Wear OS &rarr;</a>
       </p>
       <ul>
         <li>Trip-first Home: pick your stop or map destination, set wake timing, tap Start</li>
@@ -479,8 +487,9 @@ Response.Expires = -1
         <li><strong>Trip history</strong> and missed-trip review in Settings</li>
         <li>Transit wake timing tuned per vehicle type (bus, train, subway, and more)</li>
         <li><strong>Wear OS companion</strong> &mdash; trip status, start/stop, and dismiss alarms from your wrist (phone runs GPS and monitoring)</li>
-        <li><strong>Watch face complication</strong> &mdash; glance status like RDY, stop count, or OFF without opening the Wear app</li>
-        <li>Watch connection indicator shows live link status when the Wear app is installed</li>
+        <li><strong>Apple Watch companion</strong> &mdash; same wrist remote on iPhone TestFlight: start/stop, dismiss, and glance status (phone runs GPS)</li>
+        <li><strong>Watch face complication</strong> &mdash; glance status like RDY, stop count, or OFF without opening the watch app (Wear OS and Apple Watch)</li>
+        <li>Watch connection indicator shows live link status when the companion watch app is installed</li>
         <li>No account required &mdash; trip data stays on your device</li>
       </ul>
     </section>
@@ -522,6 +531,41 @@ Response.Expires = -1
         <strong>Wear OS APK</strong> on your paired watch (same Google account, Bluetooth connected).
         Sideload via ADB or a file manager on the watch. Google Play closed testing uses separate
         phone and Wear tracks.
+      </div>
+    </section>
+
+    <section class="card" id="apple-watch">
+      <h2>Apple Watch companion</h2>
+      <p>
+        The iPhone TestFlight build includes an <strong>Apple Watch</strong> companion &mdash;
+        the same product model as Wear OS. Your iPhone keeps GPS, transit data, and wake logic;
+        the Watch is a <strong>remote + glance surface</strong>: trip status, Start / Stop,
+        dismiss alarm, Open on phone, optional face complication, and haptic wake alerts.
+      </p>
+      <ul style="margin-top: 0.75rem;">
+        <li>Start or stop monitoring from your wrist</li>
+        <li>See stops remaining or distance while the phone monitors in the background</li>
+        <li>Dismiss GET READY on Watch or iPhone</li>
+        <li>Optional complication for RDY / stop count / WAKE at a glance</li>
+        <li>Settings on iPhone &rarr; <strong>Apple Watch</strong> for connection status and
+          &ldquo;Open watch app when trip starts&rdquo;</li>
+      </ul>
+      <ol class="steps" style="margin-top: 1.25rem;">
+        <li>Install or update DozeAlert from <a href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">TestFlight</a> on your iPhone.</li>
+        <li>Open the iPhone <strong>Watch</strong> app &rarr; <strong>My Watch</strong>.</li>
+        <li>Find <strong>DozeAlert</strong> under Available Apps and tap <strong>Install</strong>.</li>
+        <li>Optional: edit a watch face and add the DozeAlert complication.</li>
+        <li>Start a trip on phone or Watch, lock the phone, and confirm status + wake on your wrist.</li>
+      </ol>
+      <p style="margin-top: 1rem;">
+        <a class="text-link" href="screenshots/index.asp#apple-watch">Apple Watch in the app tour &rarr;</a>
+        &nbsp;&middot;&nbsp;
+        <a class="text-link" href="#ios">iOS TestFlight install &rarr;</a>
+      </p>
+      <div class="note" style="margin-top: 1rem;">
+        <strong>Requirements:</strong> Paired Apple Watch on <strong>watchOS 10+</strong>,
+        same iPhone that has the TestFlight build. No separate Watch App Store listing &mdash;
+        the companion ships inside the iPhone app.
       </div>
     </section>
 
@@ -612,7 +656,8 @@ Response.Expires = -1
       <ul>
         <li>Android 8.0 (Oreo) or later on phone</li>
         <li>iPhone with iOS 16+ for the TestFlight beta</li>
-        <li>Wear OS 3+ on watch for the companion APK (paired with the phone app)</li>
+        <li>Apple Watch on watchOS 10+ for the iPhone companion (optional)</li>
+        <li>Wear OS 3+ on watch for the Android companion APK (paired with the phone app)</li>
         <li>GPS / location services enabled</li>
         <li>Internet for map search and optional transit stop list downloads</li>
         <li>Background location and notifications for trip monitoring</li>
@@ -654,6 +699,10 @@ Response.Expires = -1
         if (versionEl) {
           versionEl.textContent = label;
         }
+        const iosVersionEl = document.getElementById('ios-app-version');
+        if (iosVersionEl) {
+          iosVersionEl.textContent = label;
+        }
       })
       .catch(() => {});
 
@@ -671,6 +720,6 @@ Response.Expires = -1
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=68"></script>
+  <script src="assets/brand.js?v=69"></script>
 </body>
 </html>

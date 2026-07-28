@@ -13,11 +13,11 @@ Response.Expires = -1
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="App tour � iPhone TestFlight beta, Android phone, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
+  <meta name="description" content="App tour — iPhone TestFlight beta with Apple Watch, Android phone, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=68">
-  <link rel="stylesheet" href="../assets/brand.css?v=68">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=69">
+  <link rel="stylesheet" href="../assets/brand.css?v=69">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -322,11 +322,13 @@ Response.Expires = -1
         DozeAlert is a commute alarm for riders who want to rest without missing where
         they need to get off. Use Transit Mode on supported agencies with stop-by-stop
         progress, or turn it off and wake by distance for taxi, Uber, and other rides.
-        Available on <strong>Android</strong> and as an <strong>iPhone TestFlight beta</strong>.
+        Available on <strong>Android</strong> (with Wear OS) and as an
+        <strong>iPhone TestFlight beta</strong> (with Apple Watch companion).
         No account required &mdash; trip data stays on your device.
       </p>
       <nav class="tour-jump" aria-label="Tour sections">
         <a href="#ios">iPhone</a>
+        <a href="#apple-watch">Apple Watch</a>
         <a href="#android">Android</a>
         <a href="#wear">Wear OS</a>
         <a href="#wear-complication">Complication</a>
@@ -337,8 +339,8 @@ Response.Expires = -1
       <h2>iPhone (TestFlight beta)</h2>
       <p class="section-lead">
         The same trip-first experience on iOS &mdash; pick a transit stop or map pin,
-        start monitoring, and wake before you arrive. Join the public TestFlight beta
-        while we prepare the App Store release.
+        start monitoring, and wake before you arrive. Join the public TestFlight beta;
+        the build also includes the <a class="text-link" href="#apple-watch">Apple Watch companion</a>.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
@@ -430,8 +432,65 @@ Response.Expires = -1
           </a>
         </div>
         <p style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--muted);">
-          Phone-only for now &mdash; no Apple Watch companion yet.
+          Includes Apple Watch companion &mdash; install from the iPhone Watch app after TestFlight.
+          <a class="text-link" href="#apple-watch">See Apple Watch tour</a>.
         </p>
+      </div>
+    </section>
+
+    <section class="card" id="apple-watch">
+      <h2>Apple Watch companion</h2>
+      <p class="section-lead">
+        Phone-owned GPS and wake logic, wrist remote for status and controls &mdash;
+        the same companion model as Wear OS. Ships inside the iPhone TestFlight build
+        (watchOS 10+). No separate Watch App Store app to download.
+      </p>
+      <div class="showcase two-col">
+        <div class="copy" style="grid-column: 1 / -1;">
+          <h3>What you can do on your wrist</h3>
+          <ul style="margin: 0.5rem 0 0; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.55;">
+            <li><strong>Ready / Watching</strong> &mdash; destination, stops remaining or km left</li>
+            <li><strong>Start trip</strong> / <strong>Stop trip</strong> from the Watch remote</li>
+            <li><strong>GET READY</strong> full-screen alarm with repeating haptics; dismiss on Watch or iPhone</li>
+            <li><strong>Open on phone</strong> to jump back to the iPhone app</li>
+            <li><strong>Complication</strong> &mdash; RDY, N stp, WAKE, OFF on supported watch faces</li>
+            <li>iPhone <strong>Settings &rarr; Apple Watch</strong> for connection status and
+              &ldquo;Open watch app when trip starts&rdquo;</li>
+          </ul>
+        </div>
+      </div>
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
+        <div class="copy" style="grid-column: 1 / -1;">
+          <h3>How to install</h3>
+          <ol style="margin: 0.5rem 0 0; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.55;">
+            <li>Update DozeAlert from TestFlight on the paired iPhone.</li>
+            <li>Open the iPhone <strong>Watch</strong> app &rarr; <strong>My Watch</strong>.</li>
+            <li>Under Available Apps, tap <strong>Install</strong> next to DozeAlert.</li>
+            <li>Optional: add the DozeAlert complication to a face.</li>
+            <li>Start a short trip; lock the phone and confirm the Watch still updates; test dismiss on wake.</li>
+          </ol>
+          <div class="pill-row" style="margin-top: 1rem;">
+            <span class="pill">watchOS 10+</span>
+            <span class="pill">TestFlight</span>
+            <span class="pill">Companion remote</span>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: 1.25rem; color: #94a3b8; font-size: 0.9rem;">
+        Visual tour of the same wrist flows (ready, watching, GET READY, complication)
+        is also covered in the <a class="text-link" href="#wear">Wear OS</a> and
+        <a class="text-link" href="#wear-complication">complication</a> sections &mdash;
+        Apple Watch mirrors that companion experience on iPhone.
+      </p>
+      <div class="cta-block" style="padding: 1.5rem 0 0; text-align: center;">
+        <div class="download-grid">
+          <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">
+            Join iOS beta on TestFlight
+          </a>
+          <a class="download-btn download-btn-secondary" href="../index.asp#apple-watch">
+            Apple Watch on home
+          </a>
+        </div>
       </div>
     </section>
 
@@ -799,6 +858,7 @@ Response.Expires = -1
       <p class="section-lead">
         Add DozeAlert to a supported watch face. When you start a trip on your phone, the
         complication updates on your wrist &mdash; no need to open the Wear app for a quick status check.
+        Apple Watch complications use the same short labels (RDY, N stp, WAKE, OFF).
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
@@ -852,8 +912,8 @@ Response.Expires = -1
     <section class="card cta-block">
       <h2 style="margin-bottom: 0.75rem;">Ready to try it?</h2>
       <p style="color: #cbd5e1; margin-bottom: 1.25rem; font-size: 0.95rem;">
-        Join the iPhone TestFlight beta or the Google Play closed test and set your first
-        destination in under a minute.
+        Join the iPhone TestFlight beta (Apple Watch included) or the Google Play closed test
+        and set your first destination in under a minute.
       </p>
       <div class="download-grid">
         <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">
@@ -889,6 +949,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=68"></script>
+  <script src="../assets/brand.js?v=69"></script>
 </body>
 </html>
