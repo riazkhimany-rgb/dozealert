@@ -213,8 +213,30 @@ Response.Expires = -1
     .watch-card strong {
       display: block;
       color: var(--white);
-      font-size: 0.875rem;
       margin-bottom: 0.15rem;
+    }
+
+    .apple-watch-shot {
+      width: 120px;
+      height: auto;
+      max-width: 120px;
+      aspect-ratio: 416 / 496;
+      object-fit: cover;
+      object-position: center top;
+      margin: 0 auto 0.5rem;
+      border-radius: 1.35rem;
+      border: 2px solid rgba(76, 201, 240, 0.2);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      display: block;
+      flex-shrink: 0;
+      background: #000;
+    }
+
+    @media (min-width: 600px) {
+      .apple-watch-shot {
+        width: 140px;
+        max-width: 140px;
+      }
     }
 
     .meta {
@@ -542,7 +564,25 @@ Response.Expires = -1
         the Watch is a <strong>remote + glance surface</strong>: trip status, Start / Stop,
         dismiss alarm, Open on phone, optional face complication, and haptic wake alerts.
       </p>
-      <ul style="margin-top: 0.75rem;">
+      <div class="watch-grid" aria-label="Apple Watch companion screenshots" style="margin-top: 1.25rem;">
+        <figure class="watch-card">
+          <img class="apple-watch-shot" src="assets/screens/watch/02-ready-start-trip.png?v=71" width="416" height="496" alt="Apple Watch Ready screen for Bronte GO with Start trip button.">
+          <figcaption><strong>Ready</strong>Destination set &mdash; start monitoring from your wrist.</figcaption>
+        </figure>
+        <figure class="watch-card">
+          <img class="apple-watch-shot" src="assets/screens/watch/03-watching.png?v=71" width="416" height="496" alt="Apple Watch Watching screen with distance remaining and Stop trip.">
+          <figcaption><strong>Watching</strong>Live trip status while the iPhone monitors in the background.</figcaption>
+        </figure>
+        <figure class="watch-card">
+          <img class="apple-watch-shot" src="assets/screens/watch/01-idle-set-up-on-phone.png?v=71" width="416" height="496" alt="Apple Watch Idle screen prompting set up on phone.">
+          <figcaption><strong>Idle</strong>No destination yet &mdash; open the phone to pick your stop.</figcaption>
+        </figure>
+        <figure class="watch-card">
+          <img class="apple-watch-shot" src="assets/screens/ios/07-home-watch-connected.jpg?v=71" width="390" height="844" alt="iPhone Home showing Watch connected with Pick your stop." style="aspect-ratio: 390 / 844; border-radius: 1.1rem; width: 110px; max-width: 110px;">
+          <figcaption><strong>Phone link</strong>iPhone Home shows Watch connected when the companion is installed.</figcaption>
+        </figure>
+      </div>
+      <ul style="margin-top: 1.25rem;">
         <li>Start or stop monitoring from your wrist</li>
         <li>See stops remaining or distance while the phone monitors in the background</li>
         <li>Dismiss GET READY on Watch or iPhone</li>

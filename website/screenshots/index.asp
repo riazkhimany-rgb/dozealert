@@ -202,6 +202,21 @@ Response.Expires = -1
         0 0 0 1px rgba(76, 201, 240, 0.08);
     }
 
+    .shot.apple-watch-shot {
+      width: 180px;
+      height: auto;
+      max-width: 180px;
+      aspect-ratio: 416 / 496;
+      object-fit: cover;
+      object-position: center top;
+      border-radius: 1.75rem;
+      border: 2px solid rgba(76, 201, 240, 0.2);
+      background: #000;
+      box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(76, 201, 240, 0.08);
+    }
+
     .download-grid {
       display: flex;
       flex-direction: column;
@@ -446,16 +461,60 @@ Response.Expires = -1
         (watchOS 10+). No separate Watch App Store app to download.
       </p>
       <div class="showcase two-col">
-        <div class="copy" style="grid-column: 1 / -1;">
-          <h3>What you can do on your wrist</h3>
+        <div class="shot-wrap">
+          <img class="shot apple-watch-shot" src="../assets/screens/watch/02-ready-start-trip.png?v=71" width="416" height="496" alt="Apple Watch Ready screen for Bronte GO with Start trip.">
+        </div>
+        <div class="copy">
+          <h3>Ready on your wrist</h3>
+          <p>
+            After you pick a stop on iPhone, the Watch shows destination and line.
+            Tap <strong>Start trip</strong> from the Watch or the phone.
+          </p>
+          <div class="pill-row">
+            <span class="pill">watchOS 10+</span>
+            <span class="pill">TestFlight</span>
+            <span class="pill">Companion remote</span>
+          </div>
+        </div>
+      </div>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot apple-watch-shot" src="../assets/screens/watch/03-watching.png?v=71" width="416" height="496" alt="Apple Watch Watching screen with distance remaining and Stop trip.">
+        </div>
+        <div class="copy">
+          <h3>Watching while you rest</h3>
+          <p>
+            Status updates on the Watch while the iPhone keeps GPS and transit logic
+            in the background. Stop the trip from either device.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot apple-watch-shot" src="../assets/screens/watch/01-idle-set-up-on-phone.png?v=71" width="416" height="496" alt="Apple Watch Idle screen prompting set up on phone.">
+        </div>
+        <div class="copy">
+          <h3>Idle until you pick a stop</h3>
+          <p>
+            With no destination yet, the Watch points you back to the phone.
+            <strong>Open on phone</strong> jumps to the iPhone app.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col">
+        <div class="shot-wrap">
+          <img class="shot" src="../assets/screens/ios/07-home-watch-connected.jpg?v=71" width="280" height="606" alt="iPhone Home with Watch connected status.">
+        </div>
+        <div class="copy">
+          <h3>Phone shows the link</h3>
+          <p>
+            On iPhone Home, <strong>Watch connected</strong> confirms the companion is
+            installed and talking to DozeAlert. Manage options under Settings &rarr; Apple Watch.
+          </p>
           <ul style="margin: 0.5rem 0 0; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.55;">
-            <li><strong>Ready / Watching</strong> &mdash; destination, stops remaining or km left</li>
-            <li><strong>Start trip</strong> / <strong>Stop trip</strong> from the Watch remote</li>
-            <li><strong>GET READY</strong> full-screen alarm with repeating haptics; dismiss on Watch or iPhone</li>
-            <li><strong>Open on phone</strong> to jump back to the iPhone app</li>
-            <li><strong>Complication</strong> &mdash; RDY, N stp, WAKE, OFF on supported watch faces</li>
-            <li>iPhone <strong>Settings &rarr; Apple Watch</strong> for connection status and
-              &ldquo;Open watch app when trip starts&rdquo;</li>
+            <li><strong>GET READY</strong> full-screen alarm with repeating haptics</li>
+            <li><strong>Complication</strong> &mdash; RDY, N stp, WAKE, OFF on supported faces</li>
+            <li>Optional &ldquo;Open watch app when trip starts&rdquo;</li>
           </ul>
         </div>
       </div>
@@ -469,19 +528,8 @@ Response.Expires = -1
             <li>Optional: add the DozeAlert complication to a face.</li>
             <li>Start a short trip; lock the phone and confirm the Watch still updates; test dismiss on wake.</li>
           </ol>
-          <div class="pill-row" style="margin-top: 1rem;">
-            <span class="pill">watchOS 10+</span>
-            <span class="pill">TestFlight</span>
-            <span class="pill">Companion remote</span>
-          </div>
         </div>
       </div>
-      <p style="margin-top: 1.25rem; color: #94a3b8; font-size: 0.9rem;">
-        Visual tour of the same wrist flows (ready, watching, GET READY, complication)
-        is also covered in the <a class="text-link" href="#wear">Wear OS</a> and
-        <a class="text-link" href="#wear-complication">complication</a> sections &mdash;
-        Apple Watch mirrors that companion experience on iPhone.
-      </p>
       <div class="cta-block" style="padding: 1.5rem 0 0; text-align: center;">
         <div class="download-grid">
           <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">

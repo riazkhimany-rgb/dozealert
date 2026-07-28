@@ -1,19 +1,33 @@
 # Apple Watch screenshots (App Store)
 
-Upload Watch screenshots in App Store Connect when the companion ships. Prefer a physical Watch or Watch Simulator captures at the sizes Connect requests for the current watchOS.
+When the Watch companion ships in the build under review, upload Watch screenshots in
+App Store Connect → your iOS version → **App Previews and Screenshots** → **Apple Watch**
+(or Media Manager → Apple Watch).
 
-## Suggested frames (match Wear story)
+## Ready to upload
 
-1. **Home / Ready** — destination set, Start trip available  
-2. **Monitoring** — stops remaining (or km) while Watching  
-3. **Alarm** — full-screen wake UI  
-4. **Complication** — watch face with DozeAlert circular or corner complication  
+| Folder | Size | Connect slot |
+|--------|------|--------------|
+| `screens/upload/watch-416x496/` | **416 × 496** | Series 11 / Series 10 (46mm) — use this set |
 
-## Capture tips
+Files (upload in this order):
 
-- Use paired iPhone Simulator + Watch Simulator on RentAMac for layout; use a physical Watch for marketing polish if available  
-- Keep status bar / time consistent across shots when possible  
-- Do not show personal stop names you do not want public; prefer a demo destination  
+1. `02-ready-start-trip.png` — Ready, destination + **Start trip**
+2. `03-watching.png` — Watching + **Stop trip**
+3. `01-idle-set-up-on-phone.png` — Idle / set up on phone
+
+Named copies of the Simulator captures also live in `screens/watch/`.
+
+## Optional iPhone shot
+
+`upload/6.1-inch|6.5-inch|6.7-inch/07-home-watch-connected.png` shows **Watch connected**
+on Home. Optional seventh iPhone screenshot — not required. Keep 01–06 as the core phone set.
+
+## Suggested future captures
+
+- GET READY full-screen alarm  
+- Watch face with DozeAlert complication  
+- Watching with a realistic stop countdown (avoid absurd km values from Simulator GPS)
 
 ## Listing copy
 
