@@ -32,8 +32,8 @@ $buildFiles = @'
 		1332F45542FF4D03967FD3E4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 430176535EB06EDB92DA3A1D /* Assets.xcassets */; };
 		F99501FFCB1BEAD5A6D8EDEC /* DozeAlertWatchWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F047F2F1DA43D35F234E52 /* DozeAlertWatchWidgets.swift */; };
 		B069EC4AA5864BF6E6EEB8D9 /* TripState.swift in Widgets Sources */ = {isa = PBXBuildFile; fileRef = 228A4AAE27C33B102858A3A9 /* TripState.swift */; };
-		96DF9873C93408668F8F0B6F /* DozeAlertWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = DA440360527BBD7F6AE5C346 /* DozeAlertWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		DB3D11B2316359193E1B4687 /* DozeAlertWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EDD6D98AE87E601AB04270D3 /* DozeAlertWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		96DF9873C93408668F8F0B6F /* DozeAlertWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = DA440360527BBD7F6AE5C346 /* DozeAlertWatch.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		DB3D11B2316359193E1B4687 /* DozeAlertWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EDD6D98AE87E601AB04270D3 /* DozeAlertWatchWidgets.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 '@
 
 $fileRefs = @'
@@ -75,8 +75,8 @@ $copyPhases = @'
 		982F7CCACDA7B84A167034B4 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
 			files = (
 				96DF9873C93408668F8F0B6F /* DozeAlertWatch.app in Embed Watch Content */,
 			);

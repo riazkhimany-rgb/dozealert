@@ -25,7 +25,5 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
-	<key>WKCompanionAppBundleIdentifier</key>
-	<string>app.dozealert</string>
 </dict>
 </plist>

@@ -68,8 +68,9 @@ Phone owns GPS/monitoring; the Watch is a remote + glance surface (Wear OS parit
 1. Open `ios/Runner.xcworkspace`
 2. Confirm targets **DozeAlertWatch** (`app.dozealert.watch`) and **DozeAlertWatchWidgets** (`app.dozealert.watch.widgets`) exist (re-run `powershell -File tools/ios-add-watch-targets.ps1` on Windows if missing)
 3. For Runner, Watch, and Widgets: same Team; enable App Group **`group.app.dozealert`** under Signing & Capabilities (create the group in the Apple Developer portal if needed)
-4. Add a 1024×1024 watch App Icon in `DozeAlertWatch/Assets.xcassets/AppIcon.appiconset` before Archive
-5. Simulator: pair an iPhone Simulator with a Watch Simulator; run the **DozeAlertWatch** scheme (or Runner with Watch embedded) to exercise trip sync / remote buttons / alarm UI / complications
+4. Confirm Runner’s **Embed Watch Content** phase uses destination **Watch** (`dstPath = $(CONTENTS_FOLDER_PATH)/Watch`, not PlugIns) — App Store rejects Watch apps under `Plugins/`
+5. Add a 1024×1024 watch App Icon in `DozeAlertWatch/Assets.xcassets/AppIcon.appiconset` before Archive
+6. Simulator: pair an iPhone Simulator with a Watch Simulator; run the **DozeAlertWatch** scheme (or Runner with Watch embedded) to exercise trip sync / remote buttons / alarm UI / complications
 
 **TestFlight / physical Watch gate**
 
