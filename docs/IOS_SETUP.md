@@ -46,9 +46,42 @@ Signing, certificates, and provisioning are configured in Xcode / App Store Conn
 
 ## What Phase 1–4 do / do not do
 
-**Done in repo:** identity, Info.plist, Maps key plumbing, iOS Always + notification permission flows, Wear/activity UI hidden on iOS, background GPS via Geolocator `AppleSettings`, iOS locked-reliability stack (real looping alarm tone, trip keep-alive audio session, native geofence wake, heartbeat notification, custom notification sound, pre-alert, stale-stop fallback, persisted trip log), App Store listing package under [`app-store/`](../app-store/), export compliance key in Info.plist.
+**Done in repo:** identity, Info.plist, Maps key plumbing, iOS Always + notification permission flows, background GPS via Geolocator `AppleSettings`, iOS locked-reliability stack (real looping alarm tone, trip keep-alive audio session, native geofence wake, heartbeat notification, custom notification sound, pre-alert, stale-stop fallback, persisted trip log), Apple Watch companion (WCSession bridge + watchOS UI + WidgetKit complication targets), App Store listing package under [`app-store/`](../app-store/), export compliance key in Info.plist.
 
-**Still needs you on a Mac + Apple account:** create the App Store Connect app, sign/archive/upload, screenshots, TestFlight, and App Review. Real lock-screen proof needs a physical iPhone.
+**Still needs you on a Mac + Apple account:** create the App Store Connect app, sign/archive/upload, screenshots, TestFlight, and App Review. Real lock-screen proof needs a physical iPhone. Apple Watch companion sources and Xcode targets are in-repo; first Mac open needs Team + App Group signing (see [Apple Watch companion](#apple-watch-companion)).
+
+### Apple Watch companion
+
+Phone owns GPS/monitoring; the Watch is a remote + glance surface (Wear OS parity).
+
+**In repo**
+
+- Phone bridge: `ios/Runner/WatchConnectivityBridge.swift` (channels `app.dozealert/watch`, `watch_commands`, `watch_connection`)
+- Watch app: `ios/DozeAlertWatch/` (SwiftUI trip remote, alarm + haptics, always-on dim UI)
+- Shared model: `ios/DozeAlertWatchShared/TripState.swift`
+- Complication: `ios/DozeAlertWatchWidgets/`
+- Flutter: `WearSyncService` / `WearCommandBridge` push the same trip payload on iOS; Settings → **Apple Watch** when the watch app is installed
+- App Group: `group.app.dozealert` (`Runner/DozeAlert.entitlements`, Watch, Widgets)
+
+**Mac one-time signing**
+
+1. Open `ios/Runner.xcworkspace`
+2. Confirm targets **DozeAlertWatch** (`app.dozealert.watch`) and **DozeAlertWatchWidgets** (`app.dozealert.watch.widgets`) exist (re-run `powershell -File tools/ios-add-watch-targets.ps1` on Windows if missing)
+3. For Runner, Watch, and Widgets: same Team; enable App Group **`group.app.dozealert`** under Signing & Capabilities (create the group in the Apple Developer portal if needed)
+4. Add a 1024×1024 watch App Icon in `DozeAlertWatch/Assets.xcassets/AppIcon.appiconset` before Archive
+5. Simulator: pair an iPhone Simulator with a Watch Simulator; run the **DozeAlertWatch** scheme (or Runner with Watch embedded) to exercise trip sync / remote buttons / alarm UI / complications
+
+**TestFlight / physical Watch gate**
+
+Simulator covers UI and WCSession. Before calling Watch support “done”, a tester with a real Apple Watch should:
+
+1. Install DozeAlert from TestFlight; install the Watch app from the iPhone Watch app  
+2. Add the DozeAlert complication to a face  
+3. Start a trip on phone or watch; confirm status updates with phone locked  
+4. Confirm wake alarm haptic + dismiss on wrist  
+5. Confirm Start / Stop / Open on phone from the Watch remote  
+
+See also [`app-store/TESTFLIGHT_CHECKLIST.md`](../app-store/TESTFLIGHT_CHECKLIST.md) and [`app-store/WATCH_SCREENSHOTS.md`](../app-store/WATCH_SCREENSHOTS.md).
 
 ### Locked-phone alarms (iOS)
 
@@ -193,7 +226,7 @@ Two smaller bugs found alongside: `defaultToSpeaker` and `allowBluetooth` are `p
 
 ### Enabling Critical Alerts (after Apple approval)
 
-`ios/Runner/Runner.entitlements` exists but is **deliberately not referenced by any build configuration** — signing fails if the provisioning profile lacks the key.
+`ios/Runner/Runner.entitlements` holds Critical Alerts only and is **deliberately not** the active `CODE_SIGN_ENTITLEMENTS` file — signing fails if the provisioning profile lacks the key. The phone target currently signs with `Runner/DozeAlert.entitlements` (App Group for Watch complications). When Critical Alerts is granted, merge that key into `DozeAlert.entitlements` (or point CODE_SIGN_ENTITLEMENTS at a combined file) so App Groups stay enabled.
 
 1. Submit the request at <https://developer.apple.com/contact/request/notifications-critical-alerts-entitlement/>
 2. Once granted, regenerate the provisioning profile, then in Xcode set the Runner target's **Code Signing Entitlements** to `Runner/Runner.entitlements` (or add `CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;` to each Runner build configuration)

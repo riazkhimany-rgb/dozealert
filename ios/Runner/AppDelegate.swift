@@ -58,6 +58,8 @@ import UserNotifications
       self?.handleReliabilityCall(call, result: result)
     }
 
+    WatchConnectivityBridge.shared.register(with: messenger)
+
     let manager = CLLocationManager()
     manager.delegate = self
     manager.allowsBackgroundLocationUpdates = true

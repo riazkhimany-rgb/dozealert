@@ -18,7 +18,7 @@ import '../services/wear_sync_service.dart';
 import '../utils/wear_trip_state_payload.dart';
 import '../utils/location_format.dart';
 
-/// Bridges Wear OS commands to phone-side monitoring actions.
+/// Bridges Wear OS / Apple Watch commands to phone-side monitoring actions.
 class WearCommandBridge extends StatefulWidget {
   const WearCommandBridge({
     super.key,
@@ -42,7 +42,7 @@ class _WearCommandBridgeState extends State<WearCommandBridge>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (!Platform.isAndroid) {
+    if (!Platform.isAndroid && !Platform.isIOS) {
       return;
     }
 
@@ -83,9 +83,9 @@ class _WearCommandBridgeState extends State<WearCommandBridge>
       const Duration(seconds: 15),
       (_) => unawaited(_refreshWearConnection()),
     );
-    _wearConnectionSubscription = const EventChannel(
-      'app.dozealert/wear_connection',
-    ).receiveBroadcastStream().listen(
+    _wearConnectionSubscription = wearSyncService.connectionEventChannel
+        .receiveBroadcastStream()
+        .listen(
       (_) => unawaited(_refreshWearConnection()),
     );
 
@@ -96,14 +96,16 @@ class _WearCommandBridgeState extends State<WearCommandBridge>
 
     setState(() => _wearSyncService = wearSyncService);
 
-    final backgroundMonitorService = context.read<BackgroundMonitorService>();
-    _wearSyncSubscription = backgroundMonitorService.wearSyncStream.listen(
-      (payload) => unawaited(
-        wearSyncService.pushTripStateMap(
-          WearTripStatePayload.fromBackgroundMap(payload),
+    if (Platform.isAndroid) {
+      final backgroundMonitorService = context.read<BackgroundMonitorService>();
+      _wearSyncSubscription = backgroundMonitorService.wearSyncStream.listen(
+        (payload) => unawaited(
+          wearSyncService.pushTripStateMap(
+            WearTripStatePayload.fromBackgroundMap(payload),
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Future<void> _refreshWearConnection([WearSyncService? service]) async {

@@ -126,13 +126,15 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          if (Platform.isAndroid &&
+          if ((Platform.isAndroid || Platform.isIOS) &&
               context.watch<WearStatusProvider>().appInstalled) ...[
             const Divider(height: 32),
-            const SettingsSectionHeader(title: 'Wear'),
+            SettingsSectionHeader(
+              title: Platform.isIOS ? 'Apple Watch' : 'Wear',
+            ),
             SettingsNavTile(
               icon: Icons.watch_outlined,
-              title: 'Wear OS',
+              title: Platform.isIOS ? 'Apple Watch' : 'Wear OS',
               subtitle: 'Watch companion and trip-start launch',
               onTap: () {
                 Navigator.of(context).push(

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// Phone-side Wear OS status for the DozeAlert watch app specifically.
+/// Phone-side companion watch status for Wear OS / Apple Watch.
 ///
 /// [appInstalled] is true only when the DozeAlert watch app is present on a
 /// paired watch (even if that watch is momentarily offline). [watchConnected]

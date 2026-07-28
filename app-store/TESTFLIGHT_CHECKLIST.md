@@ -37,6 +37,17 @@ Alternative: `flutter build ipa` then upload the IPA via Transporter or Xcode Or
 - [ ] Screenshots uploaded (see `SCREENSHOTS.md`)  
 - [ ] Support URL / marketing URL if you have them (support: support@dozealert.app)  
 
+## Apple Watch (companion)
+
+Ship with builds that include the Watch app (see [docs/IOS_SETUP.md](../docs/IOS_SETUP.md) → Apple Watch companion).
+
+- [ ] Watch + Widgets targets signed with the same Team as Runner; App Group `group.app.dozealert` enabled  
+- [ ] Watch App Icon present (1024×1024) before Archive  
+- [ ] Internal TestFlight install includes Watch app (iPhone Watch app → install DozeAlert)  
+- [ ] Simulator smoke (optional on RentAMac): trip remote buttons + alarm screen  
+- [ ] **Physical Watch release gate:** locked phone + Watch updates; alarm haptic; dismiss; complication on face  
+- [ ] Listing: note “Works with Apple Watch”; upload Watch screenshots per `WATCH_SCREENSHOTS.md`  
+
 ## TestFlight
 
 - [ ] **Internal testing:** add yourself / team; install via TestFlight; run the alarm matrix in `docs/IOS_SETUP.md`  

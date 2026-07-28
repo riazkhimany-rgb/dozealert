@@ -52,13 +52,13 @@ class WatchConnectionIndicator extends StatelessWidget {
 }
 
 /// Shows [WatchConnectionIndicator] only after we confirm the DozeAlert watch
-/// app is installed on a paired watch (Android only). Hidden when not installed.
+/// app is installed on a paired watch. Hidden when not installed.
 class WatchConnectionIndicatorIfInstalled extends StatelessWidget {
   const WatchConnectionIndicatorIfInstalled({super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (!Platform.isAndroid) {
+    if (!Platform.isAndroid && !Platform.isIOS) {
       return const SizedBox.shrink();
     }
 

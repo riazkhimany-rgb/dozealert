@@ -24,7 +24,8 @@ class WearAppStatus {
   final bool connected;
 }
 
-/// Syncs trip state to a paired Wear OS companion and receives watch commands.
+/// Syncs trip state to a paired Wear OS / Apple Watch companion and receives
+/// watch commands. Android uses Play Services Wearable; iOS uses WatchConnectivity.
 class WearSyncService {
   WearSyncService({
     required this._monitoringProvider,
@@ -40,8 +41,15 @@ class WearSyncService {
     _settingsProvider.addListener(_schedulePush);
   }
 
-  static const _channel = MethodChannel('app.dozealert/wear');
-  static const _eventChannel = EventChannel('app.dozealert/wear_commands');
+  static const _androidChannel = MethodChannel('app.dozealert/wear');
+  static const _androidEventChannel = EventChannel('app.dozealert/wear_commands');
+  static const _androidConnectionChannel =
+      EventChannel('app.dozealert/wear_connection');
+
+  static const _iosChannel = MethodChannel('app.dozealert/watch');
+  static const _iosEventChannel = EventChannel('app.dozealert/watch_commands');
+  static const _iosConnectionChannel =
+      EventChannel('app.dozealert/watch_connection');
 
   static const cmdStartMonitoring = '/cmd/start_monitoring';
   static const cmdStopMonitoring = '/cmd/stop_monitoring';
@@ -64,8 +72,28 @@ class WearSyncService {
   Future<void> Function()? onStopMonitoring;
   Future<void> Function()? onDismissAlarm;
 
+  bool get _isSupported => Platform.isAndroid || Platform.isIOS;
+
+  MethodChannel get _channel =>
+      Platform.isIOS ? _iosChannel : _androidChannel;
+
+  EventChannel get _eventChannel =>
+      Platform.isIOS ? _iosEventChannel : _androidEventChannel;
+
+  EventChannel get connectionEventChannel =>
+      Platform.isIOS ? _iosConnectionChannel : _androidConnectionChannel;
+
+  String get _consumePendingMethod =>
+      Platform.isIOS ? 'consumePendingWatchCommand' : 'consumePendingWearCommand';
+
+  String get _statusMethod =>
+      Platform.isIOS ? 'watchAppStatus' : 'wearAppStatus';
+
+  String get _launchMethod =>
+      Platform.isIOS ? 'launchWatchApp' : 'launchWearApp';
+
   Future<void> initialize() async {
-    if (!Platform.isAndroid || _initialized) {
+    if (!_isSupported || _initialized) {
       return;
     }
 
@@ -78,9 +106,7 @@ class WearSyncService {
       },
     );
 
-    final pending = await _channel.invokeMethod<String?>(
-      'consumePendingWearCommand',
-    );
+    final pending = await _channel.invokeMethod<String?>(_consumePendingMethod);
     if (pending != null) {
       unawaited(_handleWearCommand(pending));
     }
@@ -100,13 +126,13 @@ class WearSyncService {
   }
 
   Future<WearAppStatus> refreshWatchConnection() async {
-    if (!Platform.isAndroid) {
+    if (!_isSupported) {
       return const WearAppStatus(appInstalled: false, connected: false);
     }
 
     try {
       final status = await _channel.invokeMapMethod<String, dynamic>(
-        'wearAppStatus',
+        _statusMethod,
       );
       if (status == null) {
         return const WearAppStatus(appInstalled: false, connected: false);
@@ -121,7 +147,7 @@ class WearSyncService {
   }
 
   Future<void> pushTripState() async {
-    if (!Platform.isAndroid) {
+    if (!_isSupported) {
       return;
     }
 
@@ -138,21 +164,21 @@ class WearSyncService {
   }
 
   Future<void> pushTripStateMap(Map<String, dynamic> payload) async {
-    if (!Platform.isAndroid) {
+    if (!_isSupported) {
       return;
     }
 
     try {
       await _channel.invokeMethod<void>('pushTripState', payload);
     } on PlatformException {
-      // Wear API unavailable on this device/build.
+      // Companion API unavailable on this device/build.
     }
 
     await _maybeLaunchWearApp();
   }
 
   Future<void> _maybeLaunchWearApp({bool force = false}) async {
-    if (!Platform.isAndroid) {
+    if (!_isSupported) {
       return;
     }
 
@@ -171,9 +197,9 @@ class WearSyncService {
     }
 
     try {
-      await _channel.invokeMethod<void>('launchWearApp');
+      await _channel.invokeMethod<void>(_launchMethod);
     } on PlatformException {
-      // No paired watch or Wear API unavailable.
+      // No paired watch or companion API unavailable.
     }
   }
 

@@ -9,7 +9,7 @@ import '../services/alarm_service.dart';
 import '../utils/gtfs_stop_name_utils.dart';
 import '../utils/trip_ux_copy.dart';
 
-/// Shared trip-state map for phone → Wear OS sync.
+/// Shared trip-state map for phone → Wear OS / Apple Watch sync.
 abstract final class WearTripStatePayload {
   static Map<String, dynamic> build({
     required MonitoringProvider monitoring,

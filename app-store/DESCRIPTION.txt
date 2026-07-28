@@ -17,6 +17,8 @@ FEATURES
 • First-time setup guide with travel mode choice
 • Agency stop lists where supported across Canada and the US
 • Battery-conscious design for daily commutes and long trips
+• Apple Watch companion — start, stop, and dismiss wake from your wrist
+• Wear OS companion on Android
 
 PERMISSIONS
 DozeAlert uses location (including Always while a trip is monitoring) and notifications so alerts work when your screen is off. You control permissions in iPhone Settings → DozeAlert.

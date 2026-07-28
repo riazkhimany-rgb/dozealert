@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,18 +17,30 @@ class WearSettingsScreen extends StatelessWidget {
     final settings = context.watch<SettingsProvider>();
     final wearStatus = context.watch<WearStatusProvider>();
     final colorScheme = Theme.of(context).colorScheme;
+    final isAppleWatch = Platform.isIOS;
+    final platformLabel = isAppleWatch ? 'Apple Watch' : 'Wear OS';
 
     final connectionSubtitle = !wearStatus.hasChecked
         ? 'Checking watch connection…'
         : !wearStatus.appInstalled
-            ? 'Wear app not detected on a paired watch'
+            ? isAppleWatch
+                ? 'Watch app not detected on a paired Apple Watch'
+                : 'Wear app not detected on a paired watch'
             : wearStatus.watchConnected
                 ? 'DozeAlert watch app connected'
-                : 'Wear app installed — watch not reachable right now';
+                : 'Watch app installed — watch not reachable right now';
+
+    final openWatchSubtitle = isAppleWatch
+        ? 'When on, starting a trip on the phone also opens DozeAlert on '
+            'your Apple Watch. Turn off to keep the watch face visible and '
+            'rely on the complication for status.'
+        : 'When on, starting a trip on the phone also opens DozeAlert on '
+            'your watch. Turn off to keep the watch face visible and rely on '
+            'the complication or the DozeAlert trip tile for status.';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Wear OS'),
+        title: Text(platformLabel),
       ),
       body: ListView(
         padding: EdgeInsets.only(
@@ -47,9 +60,7 @@ class WearSettingsScreen extends StatelessWidget {
             secondary: Icon(Icons.open_in_new, color: colorScheme.primary),
             title: const Text('Open watch app when trip starts'),
             subtitle: BrandedMentionText(
-              'When on, starting a trip on the phone also opens DozeAlert on '
-              'your watch. Turn off to keep the watch face visible and rely on '
-              'the complication or the DozeAlert trip tile for status.',
+              openWatchSubtitle,
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             value: settings.openWatchAppWhenTripStarts,
