@@ -70,7 +70,7 @@ Phone owns GPS/monitoring; the Watch is a remote + glance surface (Wear OS parit
 3. For Runner, Watch, and Widgets: same Team; enable App Group **`group.app.dozealert`** under Signing & Capabilities (create the group in the Apple Developer portal if needed)
 4. Confirm Runner’s **Embed Watch Content** phase uses destination **Watch** (`dstPath = $(CONTENTS_FOLDER_PATH)/Watch`, not PlugIns) — App Store rejects Watch apps under `Plugins/`
 5. Add a 1024×1024 watch App Icon in `DozeAlertWatch/Assets.xcassets/AppIcon.appiconset` before Archive
-6. Simulator: use a paired **iPhone + Watch** destination. Running the **Runner** scheme only launches the **phone** — the Watch app is installed but stays on the clock until you open it. To auto-open Watch UI: scheme menu → **DozeAlertWatch** → destination = the Watch in that pair → Run. Or after Runner installs, on the Watch Simulator press the Digital Crown and tap **DozeAlert**.
+6. Simulator: use a paired **iPhone + Watch** destination. Open **`ios/Runner.xcworkspace`** (not `.xcodeproj`). Workflow: scheme **Runner** → Run once (installs phone + embeds Watch). Then either open **DozeAlert** from the Watch home screen, or switch scheme to **DozeAlertWatch** (Watch-only; does not rebuild Flutter/Pods) → destination = paired Watch → Run. Do not Archive from the Watch scheme — Archive **Runner** for TestFlight.
 
 **TestFlight / physical Watch gate**
 
