@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="App tour � iPhone TestFlight beta, Android phone, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=66">
-  <link rel="stylesheet" href="../assets/brand.css?v=66">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=67">
+  <link rel="stylesheet" href="../assets/brand.css?v=67">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -889,6 +889,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=66"></script>
+  <script src="../assets/brand.js?v=67"></script>
 </body>
 </html>
