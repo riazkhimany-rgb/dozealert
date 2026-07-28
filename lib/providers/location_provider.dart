@@ -284,6 +284,15 @@ class LocationProvider extends ChangeNotifier {
       _monitoringStartedAt = startedAt;
       await _monitoringStorage.markMonitoringStarted(startedAt);
       _resetLocationState(awaitingFresh: recentPrewarmFix == null);
+
+      // Android: clear any prewarm-seeded transit progress before FGS loads
+      // prefs. A stale "on route at destination" snapshot would wake immediately
+      // on Start. Mid-trip FGS evaluation is unchanged.
+      if (Platform.isAndroid) {
+        await _monitoringStorage.setTransitOnRouteActive(false);
+        await _monitoringStorage.clearTransitBackgroundSnapshot();
+        _transitModeProvider.resetProgressForMonitoringStart();
+      }
     } else {
       _monitoringStartedAt = await _monitoringStorage.loadMonitoringStartedAt();
       _awaitingFreshLocation = false;
@@ -394,16 +403,10 @@ class LocationProvider extends ChangeNotifier {
       await _onLocationUpdate(prewarmFix, allowStale: true);
     }
 
-    // iOS: never seed transit progress from Core Location lastKnown — it often
-    // sits near the destination the rider just picked, which shows
-    // "At destination stop" while Android (FGS-filtered live GPS) is correct.
-    if (!Platform.isIOS) {
-      final lastKnown = await _locationService.fetchLastKnownLocation();
-      if (lastKnown != null) {
-        await _onLocationUpdate(lastKnown, allowStale: true);
-      }
-    }
-
+    // Never seed stop progress from lastKnown on trip start. A cached fix near
+    // the destination the rider just picked (or visited) locks "at destination"
+    // and fires the wake before live GPS snaps onto the route. Live fixes only.
+    // (FGS mid-trip stream is unchanged — it does not emit lastKnown.)
     await refreshLocation();
   }
 
@@ -601,10 +604,9 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
-    // iOS: cached/stale fixes may only seed direction — never lock stop progress
-    // (otherwise a lastKnown near the destination zeros stops-remaining).
-    final iosStaleProgressGuard =
-        Platform.isIOS && allowStale && _isStaleLocation(location);
+    // Cached/stale fixes may only seed direction — never lock stop progress
+    // (otherwise lastKnown near the destination zeros stops-remaining / wakes).
+    final staleProgressGuard = allowStale && _isStaleLocation(location);
 
     final routeActive = _transitModeProvider.isActive;
     final bootstrapPhase = _awaitingFreshLocation ||
@@ -613,7 +615,7 @@ class LocationProvider extends ChangeNotifier {
             !routeActive);
     final allowDegraded = _settingsService.settings.transitModeEnabled &&
         (bootstrapPhase || routeActive);
-    final positionOk = !iosStaleProgressGuard &&
+    final positionOk = !staleProgressGuard &&
         _gpsQualityGate.accept(
           location,
           allowDegraded: allowDegraded,
@@ -1133,15 +1135,8 @@ class LocationProvider extends ChangeNotifier {
         return;
       }
 
-      // Android only: lastKnown fallback. On iOS it falsely reports arrival.
-      if (Platform.isIOS) {
-        return;
-      }
-
-      final lastKnown = await _locationService.fetchLastKnownLocation();
-      if (lastKnown != null) {
-        await _onLocationUpdate(lastKnown, allowStale: true);
-      }
+      // Do not fall back to lastKnown — it falsely arms stop wakes at Start.
+      // Wait for the next live stream / FGS fix instead.
     } catch (error) {
       AppLog.d('LocationProvider: refreshLocation failed: $error');
     }

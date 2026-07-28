@@ -218,17 +218,9 @@ class LocationService {
     _mode = mode;
     _navigationPriority = navigationPriority;
 
-    // Android can use a recent lastKnown to paint UI immediately; the FGS path
-    // still filters poor fixes before transit progress locks. On iOS, Core
-    // Location's lastKnown is often a cached fix near a recently opened map
-    // pin / prior visit — emitting it here falsely zeros stops-remaining.
-    if (!Platform.isIOS) {
-      final lastKnown = await fetchLastKnownLocation();
-      if (lastKnown != null) {
-        _emitLocation(lastKnown);
-      }
-    }
-
+    // Do not emit lastKnown. A cached fix near a recently picked / visited
+    // destination can lock transit progress at "at destination" before live
+    // GPS arrives. Fresh current + stream follow immediately below.
     await _emitCurrentLocation(navigationPriority: navigationPriority);
 
     await _positionSubscription?.cancel();

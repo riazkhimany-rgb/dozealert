@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -253,10 +252,10 @@ class TransitModeProvider extends ChangeNotifier {
       fixTimestamp: fixTimestamp,
     );
 
-    // iOS only: a bad projection / cached fix can claim "at destination" while
-    // the rider is still far away as the crow flies. Android's FGS filter makes
-    // this rare — leave that path alone.
-    final progressSnapshot = _rejectImplausibleIosArrival(
+    // First-lock guard: a bad projection / cached fix can claim "at destination"
+    // while the rider is still far away as the crow flies. Only applies before
+    // progress is established — mid-trip stop tracking is unchanged.
+    final progressSnapshot = _rejectImplausibleBootstrapArrival(
       rawSnapshot,
       latitude: latitude,
       longitude: longitude,
@@ -510,6 +509,20 @@ class TransitModeProvider extends ChangeNotifier {
     _approachAlarmTriggered = false;
   }
 
+  /// Android Start: drop prewarm/lastKnown progress so FGS cannot inherit a
+  /// false "at destination" lock. Does not change mid-trip evaluation rules.
+  void resetProgressForMonitoringStart() {
+    _approachAlarmTriggered = false;
+    _snapshot = TransitModeSnapshot.inactive;
+    _lastActiveSnapshot = null;
+    _stopProgressTracker.reset();
+    _movingAwayDetector.reset();
+    _resetWakePlan();
+    _wakeArmedAt = null;
+    _wakeArmStableFixes = 0;
+    _lastWakeDecisionReason = null;
+  }
+
   void refreshFromSettings() {
     if (!_settingsService.settings.transitModeEnabled) {
       if (_snapshot.isActive ||
@@ -636,16 +649,16 @@ class TransitModeProvider extends ChangeNotifier {
     return snapshot;
   }
 
-  /// Drops an iOS "0 stops remaining" match when GPS is clearly nowhere near
-  /// the destination stop. Shared hop math is unchanged on Android.
-  TransitModeSnapshot _rejectImplausibleIosArrival(
+  /// Drops an initial "0 stops remaining" match when GPS is clearly nowhere
+  /// near the destination stop. Once progress is established, mid-trip
+  /// tracking (including Android FGS) is left alone.
+  TransitModeSnapshot _rejectImplausibleBootstrapArrival(
     TransitModeSnapshot snapshot, {
     required double? latitude,
     required double? longitude,
     double? accuracyMeters,
   }) {
-    if (!Platform.isIOS ||
-        !snapshot.isActive ||
+    if (!snapshot.isActive ||
         snapshot.stopsRemaining > 0 ||
         snapshot.destinationStop == null ||
         latitude == null ||

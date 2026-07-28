@@ -1,4 +1,4 @@
-name: dozealert
+﻿name: dozealert
 description: "Sleep peacefully. Arrive confidently."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -16,8 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.0+62
-
+version: 1.1.0+63
 environment:
   sdk: ^3.12.2
 
@@ -89,7 +88,7 @@ flutter_launcher_icons:
   ios: true
   # Android adaptive uses foreground + background separately.
   image_path: assets/branding/icon_foreground.png
-  # iOS requires a full opaque square (no transparency) — use the composed icon.
+  # iOS requires a full opaque square (no transparency) â€” use the composed icon.
   image_path_ios: play-store/icon-512.png
   adaptive_icon_background: assets/branding/icon_background.png
   adaptive_icon_foreground: assets/branding/icon_foreground.png
