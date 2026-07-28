@@ -29,35 +29,40 @@ struct DozeAlertComplicationView: View {
   @Environment(\.widgetFamily) var family
 
   var body: some View {
-    switch family {
-    case .accessoryCircular:
-      ZStack {
-        AccessoryWidgetBackground()
-        Text(entry.state.complicationShortText)
-          .font(.system(size: 12, weight: .bold))
-          .minimumScaleFactor(0.6)
-          .multilineTextAlignment(.center)
-      }
-      .widgetAccentable()
-    case .accessoryCorner:
-      Text(entry.state.complicationShortText)
-        .font(.headline.weight(.bold))
+    Group {
+      switch family {
+      case .accessoryCircular:
+        ZStack {
+          AccessoryWidgetBackground()
+          Text(entry.state.complicationShortText)
+            .font(.system(size: 12, weight: .bold))
+            .minimumScaleFactor(0.6)
+            .multilineTextAlignment(.center)
+        }
         .widgetAccentable()
-    case .accessoryRectangular:
-      VStack(alignment: .leading, spacing: 2) {
-        Text("DozeAlert")
-          .font(.caption2.weight(.semibold))
+      case .accessoryCorner:
         Text(entry.state.complicationShortText)
           .font(.headline.weight(.bold))
-        Text(entry.state.headline)
-          .font(.caption2)
-          .lineLimit(1)
+          .widgetAccentable()
+      case .accessoryRectangular:
+        VStack(alignment: .leading, spacing: 2) {
+          Text("DozeAlert")
+            .font(.caption2.weight(.semibold))
+          Text(entry.state.complicationShortText)
+            .font(.headline.weight(.bold))
+          Text(entry.state.headline)
+            .font(.caption2)
+            .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+      case .accessoryInline:
+        Text("DozeAlert · \(entry.state.complicationShortText)")
+      default:
+        Text(entry.state.complicationShortText)
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
-    case .accessoryInline:
-      Text("DozeAlert · \(entry.state.complicationShortText)")
-    default:
-      Text(entry.state.complicationShortText)
+    }
+    .containerBackground(for: .widget) {
+      AccessoryWidgetBackground()
     }
   }
 }
@@ -75,7 +80,6 @@ struct DozeAlertComplication: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: kind, provider: DozeAlertComplicationProvider()) { entry in
       DozeAlertComplicationView(entry: entry)
-        .containerBackground(.fill.tertiary, for: .widget)
     }
     .configurationDisplayName("DozeAlert")
     .description("Trip status at a glance.")
