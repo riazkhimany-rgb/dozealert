@@ -247,7 +247,7 @@ $deps = @'
 $watchConfigs = @'
 		F364C30177BA6F20C24CF495 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
+			baseConfigurationReference = B7E4C0002F2A000100WATCHXC /* Watch.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = DozeAlertWatch/DozeAlertWatch.entitlements;
@@ -275,7 +275,7 @@ $watchConfigs = @'
 		};
 		0D3F31A3064AA127BEAEFA46 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			baseConfigurationReference = B7E4C0002F2A000100WATCHXC /* Watch.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = DozeAlertWatch/DozeAlertWatch.entitlements;
@@ -303,7 +303,7 @@ $watchConfigs = @'
 		};
 		0314C291D8A30D4730434B9B /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			baseConfigurationReference = B7E4C0002F2A000100WATCHXC /* Watch.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = DozeAlertWatch/DozeAlertWatch.entitlements;
@@ -331,7 +331,7 @@ $watchConfigs = @'
 		};
 		5BF824C6687E15A5BE39A75C /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
+			baseConfigurationReference = B7E4C0002F2A000100WATCHXC /* Watch.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = DozeAlertWatchWidgets/DozeAlertWatchWidgets.entitlements;
@@ -360,7 +360,7 @@ $watchConfigs = @'
 		};
 		1238009C1760798491E31E57 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			baseConfigurationReference = B7E4C0002F2A000100WATCHXC /* Watch.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = DozeAlertWatchWidgets/DozeAlertWatchWidgets.entitlements;
@@ -389,7 +389,7 @@ $watchConfigs = @'
 		};
 		8719F179637F8590346BFC74 /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			baseConfigurationReference = B7E4C0002F2A000100WATCHXC /* Watch.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = DozeAlertWatchWidgets/DozeAlertWatchWidgets.entitlements;

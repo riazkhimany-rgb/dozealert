@@ -1,0 +1,3 @@
+// Watch / Widgets only — do NOT include Debug/Release.xcconfig (Pods-Runner).
+// Those pull iOS-only linker flags (e.g. CoreImage) that break watchOS.
+#include "Generated.xcconfig"
