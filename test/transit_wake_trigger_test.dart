@@ -261,14 +261,40 @@ void main() {
       },
     );
 
-    test('recovers after progress jumps to destination', () {
+    test(
+      'does not recover from stop jump while still far from destination',
+      () {
+        final decision = TransitWakeTrigger.evaluatePlan(
+          plan: plan,
+          directionLocked: true,
+          hasEstablishedProgress: true,
+          hasTripConcern: false,
+          currentStop: segmentStops[2],
+          alongRouteRemainingMeters: 1200,
+          offRouteMeters: 20,
+          accuracyMeters: 15,
+          gpsStale: false,
+          armedAt: null,
+          armStableFixes: 0,
+        );
+
+        expect(decision.shouldTrigger, isFalse);
+        expect(decision.isArmed, isTrue);
+        expect(
+          decision.reason,
+          TransitWakeDecisionReason.armedWaitingForDistance,
+        );
+      },
+    );
+
+    test('recovers after progress jumps when near destination buffer', () {
       final decision = TransitWakeTrigger.evaluatePlan(
         plan: plan,
         directionLocked: true,
         hasEstablishedProgress: true,
         hasTripConcern: false,
         currentStop: segmentStops[2],
-        alongRouteRemainingMeters: 1200,
+        alongRouteRemainingMeters: 80,
         offRouteMeters: 20,
         accuracyMeters: 15,
         gpsStale: false,
@@ -278,6 +304,33 @@ void main() {
 
       expect(decision.shouldTrigger, isTrue);
       expect(decision.reason, TransitWakeDecisionReason.recoveredAfterStopJump);
+    });
+
+    test('aligns wake distance to stop-chord geometry for FGS', () {
+      final shapeBiasedPlan = TransitWakePlan(
+        routeId: routeId,
+        patternKey: 'eastbound',
+        wakeStopCount: 1,
+        destinationStopSequence: 3,
+        wakeStopSequence: 2,
+        wakeToDestinationMeters: 5000,
+        segmentStops: segmentStops,
+        travelingForward: true,
+        vehicleType: TransitVehicleType.train,
+      );
+
+      final aligned = TransitWakeTrigger.withStopChordWakeDistance(
+        shapeBiasedPlan,
+      );
+      final chord = TransitWakeTrigger.alongRouteMetersBetweenStops(
+        segmentStops: segmentStops,
+        fromStop: segmentStops[1],
+        toStop: segmentStops[2],
+        destinationStop: segmentStops[2],
+      );
+
+      expect(aligned.wakeToDestinationMeters, closeTo(chord!, 1));
+      expect(aligned.wakeToDestinationMeters, lessThan(5000));
     });
 
     test('uses stable armed stop after the train GPS grace period', () {

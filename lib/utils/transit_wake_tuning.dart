@@ -6,10 +6,27 @@ class TransitWakeTuning {
   const TransitWakeTuning._();
 
   /// How far along-route past the wake stop GPS may still count as "near".
-  static double approachBufferMeters(TransitVehicleType? vehicleType) {
+  ///
+  /// [wakeStopCount] of `0` (at destination) uses a tighter lead so rail does
+  /// not confirm hundreds of metres before the platform.
+  static double approachBufferMeters(
+    TransitVehicleType? vehicleType, {
+    int wakeStopCount = 0,
+  }) {
+    if (wakeStopCount == 0) {
+      return switch (vehicleType) {
+        TransitVehicleType.train => 100,
+        TransitVehicleType.lightRail => 120,
+        TransitVehicleType.subway => 120,
+        TransitVehicleType.streetcar => 80,
+        TransitVehicleType.bus => 100,
+        null => 100,
+      };
+    }
+
     return switch (vehicleType) {
-      TransitVehicleType.train => 350,
-      TransitVehicleType.lightRail => 250,
+      TransitVehicleType.train => 150,
+      TransitVehicleType.lightRail => 200,
       TransitVehicleType.subway => 200,
       TransitVehicleType.streetcar => 100,
       TransitVehicleType.bus => 120,

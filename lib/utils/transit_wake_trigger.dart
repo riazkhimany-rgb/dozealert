@@ -94,13 +94,19 @@ class TransitWakeTrigger {
         offRouteMeters != null &&
         offRouteMeters <= TransitModeService.routeStopMatchMeters;
     if (hasUsableRouteDistance) {
-      final threshold =
-          plan.wakeToDestinationMeters +
-          TransitWakeTuning.approachBufferMeters(plan.vehicleType);
+      final buffer = TransitWakeTuning.approachBufferMeters(
+        plan.vehicleType,
+        wakeStopCount: plan.wakeStopCount,
+      );
+      final jumpedToDestination =
+          current?.stopSequence == plan.destinationStopSequence &&
+          plan.wakeStopSequence != plan.destinationStopSequence;
+      // Stop-jump recovery may only confirm near the destination itself — not
+      // the full wake-to-destination span (which can be 1km+ on rail).
+      final threshold = jumpedToDestination
+          ? buffer
+          : plan.wakeToDestinationMeters + buffer;
       if (alongRouteRemainingMeters <= threshold) {
-        final jumpedToDestination =
-            current?.stopSequence == plan.destinationStopSequence &&
-            plan.wakeStopSequence != plan.destinationStopSequence;
         return TransitWakeDecision(
           shouldTrigger: true,
           isArmed: true,
@@ -286,8 +292,66 @@ class TransitWakeTrigger {
       return false;
     }
 
-    final buffer = TransitWakeTuning.approachBufferMeters(vehicleType);
+    final buffer = TransitWakeTuning.approachBufferMeters(
+      vehicleType,
+      wakeStopCount: wakeStop.stopSequence == destinationStop.stopSequence
+          ? 0
+          : 1,
+    );
     return alongRouteRemainingMeters <= wakeToDestinationMeters + buffer;
+  }
+
+  /// Rebuilds [plan] so wake→destination meters match stop-chord geometry.
+  ///
+  /// Android FGS evaluates remaining distance on stop chords (no GTFS shapes).
+  /// Foreground plans often store shape-based distances; mixing the two fires
+  /// early on curved rail. Call this before isolate wake evaluation.
+  static TransitWakePlan withStopChordWakeDistance(TransitWakePlan plan) {
+    final wakeStop = plan.wakeStop;
+    final destinationStop = plan.destinationStop;
+    if (wakeStop == null || destinationStop == null) {
+      return plan;
+    }
+    if (plan.wakeStopCount == 0 ||
+        wakeStop.stopSequence == destinationStop.stopSequence) {
+      if (plan.wakeToDestinationMeters == 0) {
+        return plan;
+      }
+      return TransitWakePlan(
+        routeId: plan.routeId,
+        patternKey: plan.patternKey,
+        wakeStopCount: plan.wakeStopCount,
+        destinationStopSequence: plan.destinationStopSequence,
+        wakeStopSequence: plan.wakeStopSequence,
+        wakeToDestinationMeters: 0,
+        segmentStops: plan.segmentStops,
+        travelingForward: plan.travelingForward,
+        vehicleType: plan.vehicleType,
+      );
+    }
+
+    final chordMeters = alongRouteMetersBetweenStops(
+      segmentStops: plan.segmentStops,
+      fromStop: wakeStop,
+      toStop: destinationStop,
+      destinationStop: destinationStop,
+    );
+    if (chordMeters == null ||
+        (chordMeters - plan.wakeToDestinationMeters).abs() < 1) {
+      return plan;
+    }
+
+    return TransitWakePlan(
+      routeId: plan.routeId,
+      patternKey: plan.patternKey,
+      wakeStopCount: plan.wakeStopCount,
+      destinationStopSequence: plan.destinationStopSequence,
+      wakeStopSequence: plan.wakeStopSequence,
+      wakeToDestinationMeters: chordMeters,
+      segmentStops: plan.segmentStops,
+      travelingForward: plan.travelingForward,
+      vehicleType: plan.vehicleType,
+    );
   }
 
   static double? alongRouteMetersBetweenStops({

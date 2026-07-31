@@ -151,7 +151,7 @@ class TransitModeProvider extends ChangeNotifier {
   }
 
   bool get shouldTriggerApproachAlarm {
-    if (!_settingsService.settings.transitModeEnabled || !_snapshot.isActive) {
+    if (!_settingsService.settings.transitModeEnabled) {
       return false;
     }
 
@@ -164,32 +164,85 @@ class TransitModeProvider extends ChangeNotifier {
       return false;
     }
 
+    // UI keeps last-known progress during GPS loss; wake evaluation must use
+    // the same source so poor-GPS grace can fire (and arm state is not wiped).
+    final source = displaySnapshot;
+    if (!source.isActive) {
+      return false;
+    }
+
+    final gpsStale = source.gpsStale || !_snapshot.isActive;
     final now = DateTime.now();
     final decision = TransitWakeTrigger.evaluatePlan(
       plan: plan,
-      directionLocked: _snapshot.directionLocked,
+      directionLocked: source.directionLocked,
       hasEstablishedProgress: _stopProgressTracker.hasEstablishedProgress,
-      hasTripConcern: _snapshot.hasTripConcern,
-      currentStop: _snapshot.currentStop,
-      alongRouteRemainingMeters: _snapshot.alongRouteRemainingMeters,
-      offRouteMeters: _snapshot.offRouteMeters,
-      accuracyMeters: _lastAccuracyMeters,
-      gpsStale: _snapshot.gpsStale,
+      hasTripConcern: source.hasTripConcern,
+      currentStop: source.currentStop,
+      alongRouteRemainingMeters:
+          gpsStale ? null : source.alongRouteRemainingMeters,
+      offRouteMeters: gpsStale ? null : source.offRouteMeters,
+      accuracyMeters: gpsStale ? 0 : _lastAccuracyMeters,
+      gpsStale: gpsStale,
       armedAt: _wakeArmedAt,
       armStableFixes: _wakeArmStableFixes,
       now: now,
     );
     _lastWakeDecisionReason = decision.reason;
 
+    final wasArmed = _wakeArmedAt != null;
+    final previousArmFixes = _wakeArmStableFixes;
     if (decision.isArmed) {
       _wakeArmedAt ??= now;
       _wakeArmStableFixes++;
-    } else {
+    } else if (!gpsStale) {
+      // Only clear arm on a live, confident "not at wake stop" decision.
+      // Brief GPS loss must not reset grace progress.
       _wakeArmedAt = null;
       _wakeArmStableFixes = 0;
     }
 
+    if (_wakeArmedAt != null &&
+        (!wasArmed || _wakeArmStableFixes != previousArmFixes)) {
+      unawaited(_persistWakeArmState());
+    }
+
     return decision.shouldTrigger;
+  }
+
+  Future<void> _persistWakeArmState() async {
+    final plan = _wakePlan;
+    final source = displaySnapshot;
+    final route = source.route;
+    final destination = source.destinationStop;
+    if (plan == null ||
+        !plan.isValid ||
+        route == null ||
+        destination == null ||
+        !source.isActive) {
+      return;
+    }
+
+    final segmentStops = plan.segmentStops;
+    final travelingForward =
+        destination.stopSequence >= segmentStops.first.stopSequence;
+    await _monitoringStorage.saveBackgroundTransitPattern(
+      BackgroundTransitPattern(
+        routeId: route.routeId,
+        directionLocked: source.directionLocked,
+        travelingForward: travelingForward,
+        destinationStopSequence: destination.stopSequence,
+        stabilizedStopSequence: source.currentStop?.stopSequence ?? -1,
+        segmentStops: segmentStops,
+        lineLabel: route.lineName,
+        vehicleType: source.vehicleType ?? route.vehicleType,
+        wakeStopCount: plan.wakeStopCount,
+        wakeStopSequence: plan.wakeStopSequence,
+        wakeToDestinationMeters: plan.wakeToDestinationMeters,
+        wakeArmedAtMs: _wakeArmedAt?.millisecondsSinceEpoch,
+        wakeArmStableFixes: _wakeArmStableFixes,
+      ),
+    );
   }
 
   /// Copy for the current approach alarm, based on wake-by-stops setting.
@@ -207,7 +260,7 @@ class TransitModeProvider extends ChangeNotifier {
             _ => TransitModeWakeSetting.oneStopBefore,
           };
     return TransitWakeMessage.forTransitAlarm(
-      snapshot: _snapshot,
+      snapshot: displaySnapshot,
       wakeSetting: wakeSetting,
       segmentStops: _wakePlan?.segmentStops ?? routeSegmentStops,
       fallbackDestinationName: _monitoringProvider.selectedDestination?.name,

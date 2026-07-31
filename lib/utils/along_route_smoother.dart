@@ -5,10 +5,15 @@ class AlongRouteKalmanFilter {
   AlongRouteKalmanFilter({
     this.initialVariance = 2500,
     this.maxPredictSeconds = 120,
+    this.maxPredictAccuracyMeters = 50,
   }) : _variance = initialVariance;
 
   final double initialVariance;
   final double maxPredictSeconds;
+
+  /// Dead-reckon remaining downward only while GPS accuracy is at least this
+  /// good. Poor/pocket fixes otherwise shrink remaining too aggressively.
+  final double maxPredictAccuracyMeters;
 
   double? _estimateMeters;
   late double _variance;
@@ -41,7 +46,9 @@ class AlongRouteKalmanFilter {
           timestamp.difference(previousTime).inMilliseconds / 1000.0;
       if (elapsedSeconds > 0 && elapsedSeconds <= maxPredictSeconds) {
         final speed = speedMps;
-        if (speed != null && speed > 0) {
+        final accuracyOk =
+            accuracyMeters > 0 && accuracyMeters <= maxPredictAccuracyMeters;
+        if (speed != null && speed > 0 && accuracyOk) {
           _estimateMeters =
               math.max(0, _estimateMeters! - speed * elapsedSeconds);
         }

@@ -101,6 +101,7 @@ class LocationProvider extends ChangeNotifier {
 
   /// How long stop counting may sit frozen before the distance wake takes over.
   static const _stopTrackingStaleAfter = Duration(seconds: 90);
+  static const _transitWakeWatchdogInterval = Duration(seconds: 15);
 
   /// Only gaps this long are worth a diagnostics entry.
   static const _fixGapLogThreshold = Duration(seconds: 30);
@@ -132,6 +133,7 @@ class LocationProvider extends ChangeNotifier {
   StreamSubscription<bool>? _activitySubscription;
   StreamSubscription<bool>? _onFootActivitySubscription;
   Timer? _prewarmIdleTimer;
+  Timer? _transitWakeWatchdogTimer;
 
   CurrentLocation? _currentLocation;
   double _distanceRemainingMeters = 0;
@@ -392,9 +394,23 @@ class LocationProvider extends ChangeNotifier {
 
     await _tripHistoryService.startTrip(destination.name);
     await _backgroundMonitorService.syncServiceState();
+    _startTransitWakeWatchdog();
     unawaited(_bootstrapLocation());
     notifyListeners();
     return LocationStartResult.success;
+  }
+
+  void _startTransitWakeWatchdog() {
+    _transitWakeWatchdogTimer?.cancel();
+    _transitWakeWatchdogTimer = Timer.periodic(
+      _transitWakeWatchdogInterval,
+      (_) => unawaited(_checkArrival(allowWhileEstablishingGps: true)),
+    );
+  }
+
+  void _stopTransitWakeWatchdog() {
+    _transitWakeWatchdogTimer?.cancel();
+    _transitWakeWatchdogTimer = null;
   }
 
   Future<void> _bootstrapLocation() async {
@@ -445,6 +461,7 @@ class LocationProvider extends ChangeNotifier {
     _transitModeProvider.resetApproachAlarm();
     _iosPreAlertShown = false;
     unawaited(TripDiagnosticsLog.record('trip.stop'));
+    _stopTransitWakeWatchdog();
     await _activityRecognitionService.stopListening();
     await _locationService.stopTracking();
     await _disarmIosTripAids();
@@ -495,6 +512,7 @@ class LocationProvider extends ChangeNotifier {
     _transitModeProvider.resetApproachAlarm();
     await _monitoringStorage.setArrivalTriggered(false);
     _monitoringProvider.resetToIdle();
+    _stopTransitWakeWatchdog();
     await _activityRecognitionService.stopListening();
     await _locationService.stopTracking();
     await _disarmIosTripAids();
@@ -886,8 +904,8 @@ class LocationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _checkArrival() async {
-    if (!_trackingEnabled || _awaitingFreshLocation) {
+  Future<void> _checkArrival({bool allowWhileEstablishingGps = false}) async {
+    if (!_trackingEnabled) {
       return;
     }
 
@@ -899,15 +917,17 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
-    // Stop-based wakes can be evaluated from the transit snapshot alone (e.g.
-    // after an iOS geofence nudge). Distance wakes still need a fix.
-    if (_currentLocation == null &&
-        !(_settingsService.settings.transitModeEnabled &&
-            _transitModeProvider.shouldTriggerApproachAlarm)) {
+    if (await _monitoringStorage.isArrivalTriggered()) {
       return;
     }
 
-    if (await _monitoringStorage.isArrivalTriggered()) {
+    final establishingGps = _awaitingFreshLocation;
+    final shouldTransitWake = _settingsService.settings.transitModeEnabled &&
+        _transitModeProvider.shouldTriggerApproachAlarm;
+
+    // Stop-based wakes can use last-known progress (poor-GPS grace), including
+    // while acquiring a fresh fix. Distance wakes still need a live location.
+    if (_currentLocation == null && !shouldTransitWake) {
       return;
     }
 
@@ -916,11 +936,14 @@ class LocationProvider extends ChangeNotifier {
         : _monitoringProvider.radiusMeters.toDouble();
 
     if (_settingsService.settings.transitModeEnabled) {
-      if (_transitModeProvider.shouldTriggerApproachAlarm) {
+      if (shouldTransitWake) {
         await _monitoringStorage.setArrivalTriggered(true);
         await TripDiagnosticsLog.record('wake.fired', {
           'source': 'stops',
-          'stopsRemaining': _transitModeProvider.snapshot.stopsRemaining,
+          'stopsRemaining':
+              _transitModeProvider.displaySnapshot.stopsRemaining,
+          'wakeReason':
+              _transitModeProvider.lastWakeDecisionReason?.name ?? '',
         });
         final copy = _transitModeProvider.approachAlarmCopy;
         await _alarmService.playApproachAlarm(
@@ -940,8 +963,13 @@ class LocationProvider extends ChangeNotifier {
         return;
       }
 
+      if (establishingGps && !allowWhileEstablishingGps) {
+        return;
+      }
+
       if (_transitModeProvider.isActive ||
-          _transitModeProvider.isTransitTrackableDestination) {
+          _transitModeProvider.isTransitTrackableDestination ||
+          _transitModeProvider.gpsSignalLost) {
         // Normally we wait for the stop counter (or route lock) rather than
         // firing a straight-line wake. Weak GPS can freeze that counter, so
         // fall through to the distance wake once it has clearly gone stale and
@@ -960,9 +988,11 @@ class LocationProvider extends ChangeNotifier {
       }
 
       // Distance fallback for map-pin destinations when not on a transit route.
+    } else if (establishingGps && !allowWhileEstablishingGps) {
+      return;
     }
 
-    if (_currentLocation == null) {
+    if (establishingGps || _currentLocation == null) {
       return;
     }
 
@@ -1488,6 +1518,7 @@ class LocationProvider extends ChangeNotifier {
   @override
   void dispose() {
     _prewarmIdleTimer?.cancel();
+    _stopTransitWakeWatchdog();
     _locationSubscription?.cancel();
     _backgroundLocationSubscription?.cancel();
     _arrivalSubscription?.cancel();

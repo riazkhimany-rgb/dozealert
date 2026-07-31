@@ -147,6 +147,27 @@ void main() {
 
       expect(outOfOrder, closeTo(1000, 0.1));
     });
+
+    test('does not dead-reckon remaining down on poor GPS accuracy', () {
+      final filter = AlongRouteKalmanFilter();
+      final t0 = DateTime(2026, 1, 1, 12);
+
+      filter.filter(
+        measuredRemainingMeters: 2000,
+        accuracyMeters: 20,
+        timestamp: t0,
+        speedMps: 30,
+      );
+      final afterPoorFix = filter.filter(
+        measuredRemainingMeters: 2000,
+        accuracyMeters: 120,
+        timestamp: t0.add(const Duration(seconds: 20)),
+        speedMps: 30,
+      );
+
+      // 20s at 30 m/s would subtract 600 m if prediction ran.
+      expect(afterPoorFix, greaterThan(1900));
+    });
   });
 
   group('GpsTrackingConfidence', () {

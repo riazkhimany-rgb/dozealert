@@ -434,8 +434,9 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       pattern.segmentStops,
       pattern.stabilizedStopSequence,
     );
+    final consistentPlan = TransitWakeTrigger.withStopChordWakeDistance(plan);
     final decision = TransitWakeTrigger.evaluatePlan(
-      plan: plan,
+      plan: consistentPlan,
       directionLocked: _transitDirectionLocked,
       hasEstablishedProgress: pattern.stabilizedStopSequence > 0,
       hasTripConcern: _transitHasTripConcern,
@@ -497,12 +498,14 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       return false;
     }
 
+    // FGS remaining distance is stop-chord based; align the wake threshold.
+    final consistentPlan = TransitWakeTrigger.withStopChordWakeDistance(plan);
     final currentStop = _stopForSequence(
       pattern.segmentStops,
       _transitCurrentStopSequence,
     );
     final decision = TransitWakeTrigger.evaluatePlan(
-      plan: plan,
+      plan: consistentPlan,
       directionLocked: _transitDirectionLocked,
       hasEstablishedProgress: _transitHasEstablishedProgress,
       hasTripConcern: _transitHasTripConcern,
