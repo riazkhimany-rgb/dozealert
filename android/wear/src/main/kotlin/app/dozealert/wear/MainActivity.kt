@@ -35,8 +35,16 @@ class MainActivity : ComponentActivity() {
     private var connectionJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splashScreen = installSplashScreen()
+        // Hold briefly so the branded icon is visible (cold start can paint Compose
+        // in one frame, which makes a black splash look like "no splash").
+        var keepSplash = true
+        splashScreen.setKeepOnScreenCondition { keepSplash }
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            delay(700)
+            keepSplash = false
+        }
 
         setContent {
             DozeAlertTheme {

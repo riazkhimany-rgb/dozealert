@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 48x48dp app icon centered on black (background comes from Theme.SplashScreen). -->
+<!--
+  Use the flat foreground drawable — NOT @mipmap/ic_launcher.
+  On API 26+ that mipmap resolves to adaptive-icon XML, which SplashScreen
+  often fails to paint on Wear (black frame, no icon).
+-->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:width="@dimen/splash_icon_size"
         android:height="@dimen/splash_icon_size"
-        android:drawable="@mipmap/ic_launcher"
+        android:drawable="@drawable/ic_launcher_foreground"
         android:gravity="center" />
 </layer-list>
