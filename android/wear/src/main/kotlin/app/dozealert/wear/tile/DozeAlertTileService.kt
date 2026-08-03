@@ -3,6 +3,7 @@ package app.dozealert.wear.tile
 import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
+import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders
 import androidx.wear.protolayout.material.Text
@@ -64,6 +65,22 @@ class DozeAlertTileService : TileService() {
             .addContent(line)
             .build()
 
+        // Wear App Quality: tile canvas must be true black (#000000).
+        val root = LayoutElementBuilders.Box.Builder()
+            .setWidth(DimensionBuilders.expand())
+            .setHeight(DimensionBuilders.expand())
+            .setModifiers(
+                ModifiersBuilders.Modifiers.Builder()
+                    .setBackground(
+                        ModifiersBuilders.Background.Builder()
+                            .setColor(ColorBuilders.argb(0xFF000000.toInt()))
+                            .build(),
+                    )
+                    .build(),
+            )
+            .addContent(content)
+            .build()
+
         return TileBuilders.Tile.Builder()
             .setResourcesVersion(RESOURCES_VERSION)
             .setTileTimeline(
@@ -72,7 +89,7 @@ class DozeAlertTileService : TileService() {
                         TimelineBuilders.TimelineEntry.Builder()
                             .setLayout(
                                 LayoutElementBuilders.Layout.Builder()
-                                    .setRoot(content)
+                                    .setRoot(root)
                                     .build(),
                             )
                             .build(),
@@ -83,6 +100,6 @@ class DozeAlertTileService : TileService() {
     }
 
     companion object {
-        private const val RESOURCES_VERSION = "1"
+        private const val RESOURCES_VERSION = "2"
     }
 }

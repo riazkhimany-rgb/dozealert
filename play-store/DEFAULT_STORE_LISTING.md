@@ -81,14 +81,18 @@ Sleep peacefully. Arrive confidently.
 | --- | --- | --- |
 | App icon | `play-store/icon-512.png` | 512 × 512 |
 | Feature graphic | `play-store/feature-graphic-1024x500.png` | 1024 × 500 |
-| Phone screenshots | `docs/screenshots/*.png` | 1080 × 1920 portrait |
+| Phone screenshots | `play-store/phone-screenshots/*.png` | 1080 × 1920 portrait |
 
-Suggested screenshot order and captions:
+Suggested screenshot order and captions (see `phone-screenshots/README.md`):
 
-1. `home_screen.png` — Never miss your stop again
-2. `map_selection.png` — Choose any destination
-3. `monitoring.png` — Wake up at the right place
-4. `smart_sleep_mode.png` — Sleep peacefully. Arrive confidently.
+1. `01-home-pick-stop.png` — Never miss your stop again
+2. `02-ready-start.png` — Set your stop, tap Start
+3. `03-pick-stop-stations.png` — Pick any station on your line
+4. `04-choose-transit-line.png` — Choose transit and line
+5. `05-monitoring.png` — Watching your trip
+6. `06-wake-alert.png` — Wake 1 stop before
+7. `07-my-trips.png` — Saved stops and lines
+8. `08-alarm.png` — GET READY wake alert
 
 ---
 

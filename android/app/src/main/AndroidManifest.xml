@@ -46,6 +46,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Opened from Wear via RemoteActivityHelper (dozealert://open). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="dozealert"
+                    android:host="open"/>
+            </intent-filter>
         </activity>
         <service
             android:name=".wear.WearListenerService"

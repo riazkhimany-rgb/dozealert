@@ -7,18 +7,20 @@ import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import androidx.activity.enableEdgeToEdge
 import app.dozealert.wear.WearBridge
 import app.dozealert.wear.WearPaths
 import app.dozealert.wear.WearSyncManager
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.Wearable
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import kotlin.math.roundToInt
 
-class MainActivity : FlutterActivity() {
+// FlutterFragmentActivity (ComponentActivity) is required for enableEdgeToEdge().
+class MainActivity : FlutterFragmentActivity() {
     private var wearCommandSink: EventChannel.EventSink? = null
     private var wearConnectionSink: EventChannel.EventSink? = null
 
@@ -30,6 +32,9 @@ class MainActivity : FlutterActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Play recommendation: enable edge-to-edge on pre-Android 15 as well.
+        // Android 15+ (targetSdk 35) already enforces this; insets are handled in Flutter.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         deliverWearCommandFromIntent(intent)
     }

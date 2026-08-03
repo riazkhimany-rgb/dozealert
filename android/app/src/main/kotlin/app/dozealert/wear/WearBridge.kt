@@ -35,14 +35,33 @@ object WearBridge {
 
     fun openPhoneApp(context: Context, wearCommand: String? = null) {
         val launchIntent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            data = android.net.Uri.parse("dozealert://open")
+            addCategory(Intent.CATEGORY_DEFAULT)
+            addCategory(Intent.CATEGORY_BROWSABLE)
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_REORDER_TO_FRONT,
             )
             wearCommand?.let { putExtra(WearPaths.EXTRA_WEAR_COMMAND, it) }
         }
-        context.startActivity(launchIntent)
+        try {
+            context.startActivity(launchIntent)
+        } catch (_: Exception) {
+            // Fallback without deep-link extras if the VIEW path is blocked.
+            val fallback = Intent(context, MainActivity::class.java).apply {
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT,
+                )
+                wearCommand?.let { putExtra(WearPaths.EXTRA_WEAR_COMMAND, it) }
+            }
+            context.startActivity(fallback)
+        }
     }
 
     fun consumePendingCommand(): String? {

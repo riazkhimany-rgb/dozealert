@@ -256,12 +256,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
     return Scaffold(
       appBar: AppBar(title: const BrandedAppBarTitle()),
       body: AppGradientBackground(
         child: ListView(
           controller: _scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 24 + bottomInset),
           children: [
             destinationCard,
             const SizedBox(height: 16),

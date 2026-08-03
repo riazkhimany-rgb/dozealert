@@ -13,11 +13,11 @@ Response.Expires = -1
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="DozeAlert wakes you before you reach your destination. Android, iPhone TestFlight, Wear OS, and Apple Watch companion. Sleep peacefully. Arrive confidently.">
+  <meta name="description" content="DozeAlert wakes you before you reach your destination. On Google Play for Android, iPhone TestFlight beta, Wear OS, and Apple Watch. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
-  <link rel="icon" type="image/png" href="assets/icon-512.png?v=72">
-  <link rel="stylesheet" href="assets/brand.css?v=72">
+  <link rel="icon" type="image/png" href="assets/icon-512.png?v=73">
+  <link rel="stylesheet" href="assets/brand.css?v=73">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -170,6 +170,23 @@ Response.Expires = -1
       flex-direction: column;
       align-items: center;
       gap: 0.75rem;
+    }
+
+    .play-badge {
+      display: inline-block;
+      line-height: 0;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    .play-badge:hover {
+      transform: translateY(-1px);
+      opacity: 0.92;
+    }
+
+    .play-badge img {
+      display: block;
+      height: 80px;
+      width: auto;
     }
 
     .watch-grid {
@@ -371,66 +388,27 @@ Response.Expires = -1
       <p class="tagline">Sleep peacefully. Arrive confidently.</p>
     </header>
 
-    <section class="card download-block">
+    <section class="card download-block" id="android">
       <h2 style="margin-bottom: 0.75rem;">Get DozeAlert on Android</h2>
       <p class="meta" style="margin-top: 0; margin-bottom: 1.25rem;">
-        The easiest way to try DozeAlert &mdash; join the <strong>Google Play
-        closed test</strong> and install straight from the Play Store, with
-        automatic updates on every new build.
+        DozeAlert is available on the <strong>Google Play Store</strong> &mdash;
+        install on your phone and get automatic updates. The Wear OS companion
+        installs to a paired watch from Play.
       </p>
       <div class="download-grid">
-        <a class="download-btn" href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M3.6 2.3a1 1 0 0 0-.6.9v17.6a1 1 0 0 0 .6.9l9.8-9.7-9.8-9.7z"/>
-            <path d="M14.7 10.3 5.4 1.1l11.9 6.8-2.6 2.4z" opacity="0.85"/>
-            <path d="M14.7 13.7 17.3 16 5.4 22.9l9.3-9.2z" opacity="0.85"/>
-            <path d="M18.4 8.6 21.6 10.4a1.3 1.3 0 0 1 0 3.2l-3.2 1.8-2.9-2.7 2.9-2.7z" opacity="0.7"/>
-          </svg>
-          Join on Android (Play Store)
+        <a class="play-badge" href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">
+          <img src="assets/google-play-badge.png" width="215" height="83" alt="Get it on Google Play">
         </a>
-        <a class="download-btn download-btn-secondary" href="https://play.google.com/apps/testing/app.dozealert" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"/>
-            <path d="M3 12h18"/>
-            <path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/>
-          </svg>
-          Join from the web
+        <a class="download-btn download-btn-secondary" href="screenshots/index.asp#android">
+          Android app tour
         </a>
       </div>
       <p class="meta" style="margin-top: 1rem;">
-        On your Android phone, tap <strong>Join on Android</strong> to open the
-        listing right in the Play Store &mdash; or use <strong>Join from the web</strong>
-        on any device. Accept the invite, then install DozeAlert like any other
-        app, signed in with the Google account you use on your phone. The Wear OS
-        companion installs automatically to a paired watch.
+        Open the Play Store listing on your Android phone, tap <strong>Install</strong>,
+        then pick your stop and start a trip. Requires Android 8.0+.
       </p>
-      <details style="margin-top: 1.25rem; text-align: left;">
-        <summary>Prefer a manual APK install instead?</summary>
-        <p>
-          Manual APKs don&rsquo;t receive Play&rsquo;s automatic updates, so we
-          recommend the closed test above. If you still want to sideload:
-        </p>
-        <div class="download-grid" style="margin-top: 0.75rem;">
-          <a class="download-btn download-btn-secondary" href="downloads/dozealert-latest.apk" download="dozealert.apk">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Download phone APK
-          </a>
-          <a class="download-btn download-btn-secondary" href="downloads/dozealert-wear-latest.apk" download="dozealert-wear.apk">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="7"/>
-              <polyline points="12 9 12 12 13.5 13.5"/>
-              <path d="M16.5 7.5l2-2"/>
-            </svg>
-            Download Wear OS APK
-          </a>
-        </div>
-      </details>
       <p class="meta">
-        Phone <span id="app-version">1.1.0+72</span> &middot; Wear <span id="wear-version">1.1.0+100097</span>
+        Phone <span id="app-version">1.1.0+73</span> &middot; Wear <span id="wear-version">1.1.0+100099</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
@@ -549,10 +527,10 @@ Response.Expires = -1
         <a class="text-link" href="screenshots/index.asp#wear-complication">Complication &rarr;</a>
       </p>
       <div class="note" style="margin-top: 1rem;">
-        <strong>Install order:</strong> Install the <strong>phone APK</strong> first, then the
-        <strong>Wear OS APK</strong> on your paired watch (same Google account, Bluetooth connected).
-        Sideload via ADB or a file manager on the watch. Google Play closed testing uses separate
-        phone and Wear tracks.
+        <strong>Install:</strong> Install DozeAlert from
+        <a class="text-link" href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">Google Play</a>
+        on your phone first (same Google account, Bluetooth connected). The Wear OS
+        companion can then install to your paired watch from Play.
       </div>
     </section>
 
@@ -633,71 +611,12 @@ Response.Expires = -1
     </section>
 
     <section class="card">
-      <h2>Install from APK (sideload)</h2>
-      <p style="margin-bottom: 1rem;">
-        We recommend the Google Play closed test &mdash; it installs from the Play Store
-        and updates automatically. Join
-        <a href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">on Android (Play Store)</a>
-        or <a href="https://play.google.com/apps/testing/app.dozealert" target="_blank" rel="noopener">from the web</a>.
-        Use a direct APK only if you sideload or can&rsquo;t access the Play test in your region.
-      </p>
-
-      <ol class="steps">
-        <li>
-          <strong>Download the APKs</strong> from the &ldquo;Prefer a manual APK install?&rdquo;
-          section above &mdash; phone first, then Wear OS if you use a paired watch.
-          Wait until each download finishes (check your notification shade or Downloads folder).
-        </li>
-        <li>
-          <strong>Open the downloaded file</strong> &mdash; tap the notification, or open
-          <em>Files</em> / <em>Downloads</em> and tap <code>dozealert-latest.apk</code>
-          (phone) or sideload <code>dozealert-wear-latest.apk</code> to your watch.
-        </li>
-        <li>
-          <strong>Allow installation</strong> if Android blocks it. When prompted, tap
-          <em>Settings</em> and turn on <em>Allow from this source</em> for Chrome,
-          Samsung Internet, or whichever app you used to download. Then go back and tap
-          <em>Install</em>.
-        </li>
-        <li>
-          <strong>Complete setup in the app</strong> &mdash; pick the transit you ride
-          (you can select more than one agency on the same day).
-          Stop lists download in the background when available. Then grant permissions
-          as prompted (location all the time, notifications, GPS on). See
-          <a class="text-link" href="privacy/index.asp">Privacy Policy</a> for details.
-        </li>
-        <li>
-          <strong>Open DozeAlert</strong>, tap <strong>Pick your stop</strong> if needed,
-          choose where you get off (or open <strong>My Trips</strong>), confirm wake timing,
-          answer &ldquo;Ready to sleep?&rdquo;, and tap Start.
-        </li>
-      </ol>
-
-      <div class="note">
-        <strong>Tip:</strong> After installing, you can turn off &ldquo;Install unknown apps&rdquo; again
-        for your browser. It only needs to be enabled during installation.
-      </div>
-
-      <details>
-        <summary>Android version-specific help</summary>
-        <p><strong>Android 13 and newer:</strong> Settings &rarr; Security &amp; privacy &rarr;
-        More security settings &rarr; Install unknown apps &rarr; select your browser &rarr; Allow.</p>
-        <p><strong>Android 12:</strong> Settings &rarr; Apps &rarr; Special app access &rarr;
-        Install unknown apps &rarr; your browser &rarr; Allow.</p>
-        <p><strong>Samsung Galaxy:</strong> Settings &rarr; Biometrics and security &rarr;
-        Install unknown apps &rarr; select the app you downloaded with &rarr; Allow.</p>
-        <p><strong>&ldquo;App not installed&rdquo; error:</strong> Uninstall any older test build first,
-        or download the APK again &mdash; the file may have been corrupted during download.</p>
-      </details>
-    </section>
-
-    <section class="card">
       <h2>Requirements</h2>
       <ul>
-        <li>Android 8.0 (Oreo) or later on phone</li>
+        <li>Android 8.0 (Oreo) or later on phone &mdash; install from Google Play</li>
         <li>iPhone with iOS 16+ for the TestFlight beta</li>
         <li>Apple Watch on watchOS 10+ for the iPhone companion (optional)</li>
-        <li>Wear OS 3+ on watch for the Android companion APK (paired with the phone app)</li>
+        <li>Wear OS 3+ on watch for the Android companion (paired with the phone app from Play)</li>
         <li>GPS / location services enabled</li>
         <li>Internet for map search and optional transit stop list downloads</li>
         <li>Background location and notifications for trip monitoring</li>
@@ -707,6 +626,8 @@ Response.Expires = -1
     <footer>
       <p class="footer-links">
         <a href="screenshots/index.asp">App tour</a>
+        <span aria-hidden="true"> &middot; </span>
+        <a href="#android">Google Play</a>
         <span aria-hidden="true"> &middot; </span>
         <a href="#ios">iOS TestFlight</a>
         <span aria-hidden="true"> &middot; </span>
@@ -760,6 +681,6 @@ Response.Expires = -1
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=72"></script>
+  <script src="assets/brand.js?v=73"></script>
 </body>
 </html>

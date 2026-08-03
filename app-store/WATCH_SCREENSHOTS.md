@@ -1,34 +1,41 @@
 # Apple Watch screenshots (App Store)
 
-When the Watch companion ships in the build under review, upload Watch screenshots in
-App Store Connect → your iOS version → **App Previews and Screenshots** → **Apple Watch**
+Upload in App Store Connect → your iOS version → **Apple Watch** screenshots
 (or Media Manager → Apple Watch).
 
-## Ready to upload
+Apple requires **one consistent size** across all localizations. Prefer the size
+Connect marks as required for your app (often Series 11 **416 × 496**). Extra
+folders below are ready if Connect asks for other slots.
 
-| Folder | Size | Connect slot |
-|--------|------|--------------|
-| `screens/upload/watch-416x496/` | **416 × 496** | Series 11 / Series 10 (46mm) — use this set |
+## Upload folders (`screens/upload/`)
 
-Files (upload in this order):
+| Folder | Pixels | Connect models |
+|--------|--------|----------------|
+| `watch-422x514/` | 422 × 514 | Ultra 3 |
+| `watch-410x502/` | 410 × 502 | Ultra 2 / Ultra |
+| `watch-416x496/` | 416 × 496 | **Series 11 / Series 10** (recommended start) |
+| `watch-396x484/` | 396 × 484 | Series 9 / 8 / 7 |
+| `watch-368x448/` | 368 × 448 | Series 6 / 5 / 4 / SE |
+| `watch-312x390/` | 312 × 390 | Series 3 |
 
-1. `02-ready-start-trip.png` — Ready, destination + **Start trip**
-2. `03-watching.png` — Watching + **Stop trip**
-3. `01-idle-set-up-on-phone.png` — Idle / set up on phone
+Each folder has the same three shots, in upload order:
 
-Named copies of the Simulator captures also live in `screens/watch/`.
+1. `01-ready-start-trip.png` — Ready + Start trip  
+2. `02-watching.png` — Watching + Stop trip  
+3. `03-idle-set-up-on-phone.png` — Idle / set up on phone  
 
-## Optional iPhone shot
+## How to upload
 
-`upload/6.1-inch|6.5-inch|6.7-inch/07-home-watch-connected.png` shows **Watch connected**
-on Home. Optional seventh iPhone screenshot — not required. Keep 01–06 as the core phone set.
+1. Open the **Apple Watch** screenshot area in Connect.  
+2. Start with **`upload/watch-416x496/`** (Series 11 size shown in Connect).  
+3. Drag **01 → 02 → 03** in that order.  
+4. If Connect still shows empty required slots for Ultra / Series 9 / etc., upload the matching folder the same way (same three files).  
+5. Save.
 
-## Suggested future captures
+Source captures: `screens/watch/` and `Simulator Screenshot - Apple Watch…`.
+
+## Optional later captures
 
 - GET READY full-screen alarm  
-- Watch face with DozeAlert complication  
-- Watching with a realistic stop countdown (avoid absurd km values from Simulator GPS)
-
-## Listing copy
-
-Add a short line such as “Works with Apple Watch — start, stop, and dismiss your wake from your wrist” in the App Store description when Watch support is live in the build under review.
+- Complication on a watch face  
+- Watching with a realistic stop count / distance (Simulator GPS can show absurd km)

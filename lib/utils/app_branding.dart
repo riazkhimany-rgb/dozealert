@@ -9,8 +9,8 @@ abstract final class AppBranding {
   static const String privacyPolicyAsset = 'privacy_policy.md';
   static const String supportEmail = 'support@dozealert.app';
   static const String websiteUrl = 'https://dozealert.app';
-  static const String apkDownloadUrl =
-      'https://dozealert.app/downloads/dozealert-latest.apk';
+  static const String playStoreUrl =
+      'https://play.google.com/store/apps/details?id=app.dozealert';
   static const String privacyPolicyUrl = 'https://dozealert.app/privacy/';
   static const String feedbackUrl = 'https://dozealert.app/feedback/';
   static const String transitLicensesUrl =

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.FilledTonalButton
@@ -128,8 +129,10 @@ private fun ActiveTripContent(
     onDismissAlarm: () -> Unit,
     onOpenPhone: () -> Unit,
 ) {
-    ScreenScaffold {
+    val listState = rememberScalingLazyListState()
+    ScreenScaffold(scrollState = listState) {
         ScalingLazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background),
@@ -179,7 +182,9 @@ private fun ActiveTripContent(
                 )
             }
 
-            if (!phoneConnected) {
+            if (!phoneConnected ||
+                state.statusKind == TripState.StatusKind.Idle
+            ) {
                 item {
                     Text(
                         text = stringResource(R.string.hint_setup),

@@ -13,11 +13,11 @@ Response.Expires = -1
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="App tour — iPhone TestFlight beta with Apple Watch, Android phone, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
+  <meta name="description" content="App tour — Android on Google Play, iPhone TestFlight beta with Apple Watch, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=72">
-  <link rel="stylesheet" href="../assets/brand.css?v=72">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=73">
+  <link rel="stylesheet" href="../assets/brand.css?v=73">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -224,6 +224,23 @@ Response.Expires = -1
       gap: 0.75rem;
     }
 
+    .play-badge {
+      display: inline-block;
+      line-height: 0;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    .play-badge:hover {
+      transform: translateY(-1px);
+      opacity: 0.92;
+    }
+
+    .play-badge img {
+      display: block;
+      height: 80px;
+      width: auto;
+    }
+
     .download-btn-secondary {
       background: transparent;
       color: var(--cyan) !important;
@@ -337,7 +354,7 @@ Response.Expires = -1
         DozeAlert is a commute alarm for riders who want to rest without missing where
         they need to get off. Use Transit Mode on supported agencies with stop-by-stop
         progress, or turn it off and wake by distance for taxi, Uber, and other rides.
-        Available on <strong>Android</strong> (with Wear OS) and as an
+        Available on <strong>Android via Google Play</strong> (with Wear OS) and as an
         <strong>iPhone TestFlight beta</strong> (with Apple Watch companion).
         No account required &mdash; trip data stays on your device.
       </p>
@@ -601,7 +618,7 @@ Response.Expires = -1
       </div>
       <div class="showcase two-col" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot9.jpg" width="280" height="606" alt="Permissions checklist complete with You're ready message.">
+          <img class="shot" src="../assets/screens/shot9.jpg?v=72" width="280" height="606" alt="Permissions checklist with guided Android setup steps.">
         </div>
         <div class="copy">
           <h3>Guided permissions</h3>
@@ -636,7 +653,7 @@ Response.Expires = -1
       </div>
       <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot11.jpg" width="280" height="606" alt="Home screen with Pick your stop card and selected transit line.">
+          <img class="shot" src="../assets/screens/shot11.jpg?v=72" width="280" height="606" alt="Home screen with Pick your stop card and Lakeshore West line.">
         </div>
         <div class="copy">
           <h3>Home</h3>
@@ -649,7 +666,7 @@ Response.Expires = -1
       </div>
       <div class="showcase two-col" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot13.jpg" width="280" height="606" alt="Choose transit and line sheet with route search and bus or train filters.">
+          <img class="shot" src="../assets/screens/shot13.jpg?v=72" width="280" height="606" alt="Choose transit and line sheet with route search and bus or train filters.">
         </div>
         <div class="copy">
           <h3>Transit &amp; line</h3>
@@ -661,7 +678,7 @@ Response.Expires = -1
       </div>
       <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot12.jpg" width="280" height="606" alt="Pick your stop sheet listing stations on the selected route.">
+          <img class="shot" src="../assets/screens/shot12.jpg?v=72" width="280" height="606" alt="Pick your stop sheet listing stations on the selected route.">
         </div>
         <div class="copy">
           <h3>Pick a stop</h3>
@@ -676,18 +693,18 @@ Response.Expires = -1
     <section class="card">
       <h2>Start monitoring</h2>
       <p class="section-lead">
-        Review wake timing, confirm &ldquo;Ready to sleep?&rdquo;, then relax.
+        Pick your stop, set wake timing, tap Start, then relax.
         DozeAlert tracks your trip and shows progress on Home and in your notification shade.
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot16.jpg" width="280" height="606" alt="Ready to sleep confirmation before starting trip monitoring.">
+          <img class="shot" src="../assets/screens/shot16.jpg?v=72" width="280" height="606" alt="Home with Bronte GO selected and Start trip button.">
         </div>
         <div class="copy">
-          <h3>Ready to sleep?</h3>
+          <h3>Start when you&rsquo;re on board</h3>
           <p>
-            Before monitoring begins, a short confirmation reminds you to keep volume on and
-            your phone charged. Tap <strong>Start my trip</strong> when you are settled.
+            With your stop and wake timing set, tap <strong>Start</strong> when you board.
+            Keep volume on so the wake alert can reach you while the phone is locked.
           </p>
         </div>
       </div>
@@ -775,7 +792,7 @@ Response.Expires = -1
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot20.jpg" width="280" height="606" alt="My Trips tab with saved stops, saved lines, and recent stops.">
+          <img class="shot" src="../assets/screens/shot20.jpg?v=72" width="280" height="606" alt="My Trips tab with saved stops, saved lines, and recent stops.">
         </div>
         <div class="copy">
           <h3>Saved stops &amp; lines</h3>
@@ -800,7 +817,7 @@ Response.Expires = -1
       </p>
       <div class="showcase two-col reverse">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot21.jpg" width="280" height="606" alt="Settings hub with permissions, transit, location, and alarm sections.">
+          <img class="shot" src="../assets/screens/shot21.jpg?v=72" width="280" height="606" alt="Settings hub with permissions, transit, wake alert, and alarm sections.">
         </div>
         <div class="copy">
           <h3>Settings hub</h3>
@@ -813,10 +830,10 @@ Response.Expires = -1
       </div>
       <div class="showcase two-col" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot" src="../assets/screens/shot24.jpg" width="280" height="606" alt="Transit Mode settings with wake-by-stops timing.">
+          <img class="shot" src="../assets/screens/shot24.jpg?v=72" width="280" height="606" alt="Wake alert settings with wake-by-stops timing.">
         </div>
         <div class="copy">
-          <h3>Transit Mode</h3>
+          <h3>Wake alert</h3>
           <p>
             Wake by stops when you are on your transit route. Choose at destination,
             1 stop before, or 2 stops before. A distance fallback handles map-pin
@@ -960,31 +977,24 @@ Response.Expires = -1
     <section class="card cta-block">
       <h2 style="margin-bottom: 0.75rem;">Ready to try it?</h2>
       <p style="color: #cbd5e1; margin-bottom: 1.25rem; font-size: 0.95rem;">
-        Join the iPhone TestFlight beta (Apple Watch included) or the Google Play closed test
-        and set your first destination in under a minute.
+        Get DozeAlert on Google Play for Android, or join the iPhone TestFlight beta
+        (Apple Watch included), and set your first destination in under a minute.
       </p>
       <div class="download-grid">
+        <a class="play-badge" href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">
+          <img src="../assets/google-play-badge.png" width="215" height="83" alt="Get it on Google Play">
+        </a>
         <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">
           Join iOS beta on TestFlight
         </a>
-        <a class="download-btn download-btn-secondary" href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">
-          Join on Android (Play Store)
-        </a>
-        <a class="download-btn download-btn-secondary" href="../downloads/dozealert-latest.apk" download="dozealert.apk">
-          Download phone APK
-        </a>
-        <a class="download-btn download-btn-secondary" href="../downloads/dozealert-wear-latest.apk" download="dozealert-wear.apk">
-          Download Wear OS APK
-        </a>
       </div>
-      <p style="margin-top: 1rem; font-size: 0.8125rem; color: var(--muted);">
-        Wear builds are on a separate Play closed-testing track when sideloading.
-      </p>
     </section>
 
     <footer>
       <p>
         <a href="../index.asp">Home</a>
+        <span aria-hidden="true"> &middot; </span>
+        <a href="../index.asp#android">Google Play</a>
         <span aria-hidden="true"> &middot; </span>
         <a href="../index.asp#ios">iOS TestFlight</a>
         <span aria-hidden="true"> &middot; </span>
@@ -997,6 +1007,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=72"></script>
+  <script src="../assets/brand.js?v=73"></script>
 </body>
 </html>

@@ -7,22 +7,26 @@ import androidx.wear.compose.material3.MaterialTheme
 
 private val MidnightBlue = Color(0xFF0D1B2A)
 private val CyanAccent = Color(0xFF4CC9F0)
-private val SlateSurface = Color(0xFF1B263B)
 private val MutedText = Color(0xFFADB5BD)
 private val AlarmAccent = Color(0xFFFFB703)
 private val SuccessGreen = Color(0xFF52B788)
 private val MissedRed = Color(0xFFE63946)
+// Wear App Quality: OLED screens require true black app/tile backgrounds.
+private val WearBlack = Color(0xFF000000)
+private val WearSurfaceLow = Color(0xFF121212)
+private val WearSurface = Color(0xFF1C1C1C)
+private val WearSurfaceHigh = Color(0xFF2A2A2A)
 
 val DozeAlertColorScheme = ColorScheme(
     primary = CyanAccent,
     onPrimary = MidnightBlue,
     primaryContainer = Color(0xFF1B4965),
     onPrimaryContainer = CyanAccent,
-    background = MidnightBlue,
+    background = WearBlack,
     onBackground = Color.White,
-    surfaceContainerLow = Color(0xFF152238),
-    surfaceContainer = SlateSurface,
-    surfaceContainerHigh = Color(0xFF243B55),
+    surfaceContainerLow = WearSurfaceLow,
+    surfaceContainer = WearSurface,
+    surfaceContainerHigh = WearSurfaceHigh,
     onSurface = Color(0xFFE0E1DD),
     onSurfaceVariant = MutedText,
     error = MissedRed,

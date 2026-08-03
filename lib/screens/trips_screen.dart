@@ -65,7 +65,12 @@ class TripsScreen extends StatelessWidget {
         title: const Text(TripUxCopy.myTripsTab),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          8,
+          20,
+          24 + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           if (stats.hasData) ...[
             _TripStatsTeaser(stats: stats),
