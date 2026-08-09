@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="App tour — Android on Google Play, iPhone TestFlight beta with Apple Watch, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=74">
-  <link rel="stylesheet" href="../assets/brand.css?v=74">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=75">
+  <link rel="stylesheet" href="../assets/brand.css?v=75">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -865,6 +865,18 @@ Response.Expires = -1
       </p>
       <div class="showcase two-col">
         <div class="shot-wrap">
+          <img class="shot watch-shot" src="../assets/screens/w_shot_splash.png?v=75" width="512" height="512" alt="Wear branded splash screen with DozeAlert sleepy-pin icon on black.">
+        </div>
+        <div class="copy">
+          <h3>Branded launch</h3>
+          <p>
+            Cold start shows the DozeAlert pin on a true black splash &mdash; the same
+            branded launch experience Play expects for Wear OS apps.
+          </p>
+        </div>
+      </div>
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+        <div class="shot-wrap">
           <img class="shot watch-shot" src="../assets/screens/w_shot1.png" width="512" height="512" alt="Wear app idle screen with Open on phone button.">
         </div>
         <div class="copy">
@@ -876,20 +888,20 @@ Response.Expires = -1
           </p>
         </div>
       </div>
-      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
-          <img class="shot watch-shot" src="../assets/screens/w_shot2_new.png" width="512" height="512" alt="Wear app ready screen with Phone connected, Bronte GO destination, and Start trip.">
+          <img class="shot watch-shot" src="../assets/screens/w_shot_ready_scroll.png?v=75" width="512" height="512" alt="Wear Ready screen for Derry Rd with Start trip and visible scrollbar.">
         </div>
         <div class="copy">
           <h3>Ready when you are</h3>
           <p>
-            With a destination set, the watch shows <strong>Phone connected</strong>,
-            <strong>Ready</strong>, and your stop or line. Tap <strong>Start trip</strong>
-            on your wrist or phone &mdash; either starts monitoring on the phone.
+            With a destination set, the watch shows <strong>Ready</strong>, your stop or line,
+            and <strong>Start trip</strong>. Scrollable screens show a Wear scrollbar so you can
+            see more actions (including <strong>Open on phone</strong>) without guessing.
           </p>
         </div>
       </div>
-      <div class="showcase two-col" style="margin-top: 1.5rem;">
+      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
           <img class="shot watch-shot" src="../assets/screens/w_shot3.png" width="512" height="512" alt="Wear app monitoring with stop countdown and Stop trip.">
         </div>
@@ -903,7 +915,7 @@ Response.Expires = -1
           </p>
         </div>
       </div>
-      <div class="showcase two-col reverse" style="margin-top: 1.5rem;">
+      <div class="showcase two-col" style="margin-top: 1.5rem;">
         <div class="shot-wrap">
           <img class="shot watch-shot" src="../assets/screens/w_shot4.png" width="512" height="512" alt="Wear app GET READY wake alert with Dismiss alarm button.">
         </div>
@@ -1007,6 +1019,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=74"></script>
+  <script src="../assets/brand.js?v=75"></script>
 </body>
 </html>

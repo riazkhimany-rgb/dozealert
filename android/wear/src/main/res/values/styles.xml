@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Wear App Quality: branded launch — 48dp icon on black. -->
+    <!--
+      Wear App Quality WO-V15 — branded launch:
+      48x48dp app icon matching the launcher icon, on black.
+      App name text is NOT required (unlike some phone splash designs).
+    -->
     <style name="Theme.DozeAlert.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@android:color/black</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>
-        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault</item>
+        <!-- Immediate paint path for cold start / review automation -->
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.DozeAlert</item>
     </style>
+
+    <style name="Theme.DozeAlert" parent="@android:style/Theme.DeviceDefault" />
 </resources>

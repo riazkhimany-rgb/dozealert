@@ -24,7 +24,7 @@ val phoneVersionName =
     localProperties.getProperty("flutter.versionName") ?: "1.0.0"
 // Increment when shipping a wear-only update without bumping the phone versionCode.
 // Bump when shipping a Wear-only AAB (e.g. Play warning fixes) without a phone version bump.
-val wearVersionExtra = 28
+val wearVersionExtra = 29
 
 android {
     namespace = "app.dozealert.wear"

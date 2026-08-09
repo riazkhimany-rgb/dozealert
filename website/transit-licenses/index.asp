@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="DozeAlert transit open data attributions and licence links for supported transit systems.">
   <meta name="theme-color" content="#0D1B2A">
   <title>Transit Data Licenses &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=74">
-  <link rel="stylesheet" href="../assets/brand.css?v=74">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=75">
+  <link rel="stylesheet" href="../assets/brand.css?v=75">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -358,6 +358,6 @@ Response.Expires = -1
       </p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=74"></script>
+  <script src="../assets/brand.js?v=75"></script>
 </body>
 </html>

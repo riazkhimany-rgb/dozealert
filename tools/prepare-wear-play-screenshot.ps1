@@ -103,6 +103,21 @@ function Save-PlayScreenshot {
     $outputGraphics.Dispose()
     $cropped.Dispose()
 
+    # Match existing Wear Play shots: black square with round UI, never white corners.
+    $cx = ($TargetSize - 1) / 2.0
+    $cy = ($TargetSize - 1) / 2.0
+    $radius = ($TargetSize / 2.0) - 0.5
+    $radiusSq = $radius * $radius
+    for ($y = 0; $y -lt $TargetSize; $y++) {
+        for ($x = 0; $x -lt $TargetSize; $x++) {
+            $dx = $x - $cx
+            $dy = $y - $cy
+            if (($dx * $dx + $dy * $dy) -gt $radiusSq) {
+                $output.SetPixel($x, $y, [System.Drawing.Color]::Black)
+            }
+        }
+    }
+
     $directory = Split-Path -Parent $Destination
     if ($directory -and -not (Test-Path $directory)) {
         New-Item -ItemType Directory -Force -Path $directory | Out-Null

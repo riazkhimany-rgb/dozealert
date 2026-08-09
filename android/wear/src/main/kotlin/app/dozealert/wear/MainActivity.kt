@@ -36,13 +36,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        // Hold briefly so the branded icon is visible (cold start can paint Compose
-        // in one frame, which makes a black splash look like "no splash").
+        // Hold so reviewers / users can see the 48dp branded icon (Compose can
+        // paint the first frame immediately on a black theme).
         var keepSplash = true
         splashScreen.setKeepOnScreenCondition { keepSplash }
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
-            delay(700)
+            delay(1000)
             keepSplash = false
         }
 

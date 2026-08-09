@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Wear branded launch (WO-V15): 48dp launcher icon centered.
-  Uses flat density PNGs (ic_splash_icon), never @mipmap/ic_launcher —
-  that resolves to adaptive-icon XML and often paints blank on Wear.
+  Fallback windowBackground for cold start / automated review:
+  true black + 48dp launcher icon (same asset as SplashScreen API).
 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/black" />
+        </shape>
+    </item>
     <item
         android:width="@dimen/splash_screen_icon_size"
         android:height="@dimen/splash_screen_icon_size"

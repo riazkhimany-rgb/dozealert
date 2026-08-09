@@ -16,8 +16,8 @@ Response.Expires = -1
   <meta name="description" content="DozeAlert wakes you before you reach your destination. On Google Play for Android, iPhone TestFlight beta, Wear OS, and Apple Watch. Sleep peacefully. Arrive confidently.">
   <meta name="theme-color" content="#0D1B2A">
   <title>DozeAlert &mdash; Sleep peacefully. Arrive confidently.</title>
-  <link rel="icon" type="image/png" href="assets/icon-512.png?v=74">
-  <link rel="stylesheet" href="assets/brand.css?v=74">
+  <link rel="icon" type="image/png" href="assets/icon-512.png?v=75">
+  <link rel="stylesheet" href="assets/brand.css?v=75">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -408,7 +408,7 @@ Response.Expires = -1
         then pick your stop and start a trip. Requires Android 8.0+.
       </p>
       <p class="meta">
-        Phone <span id="app-version">1.1.0+74</span> &middot; Wear <span id="wear-version">1.1.0+100102</span>
+        Phone <span id="app-version">1.1.0+75</span> &middot; Wear <span id="wear-version">1.1.0+100104</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>
@@ -505,16 +505,16 @@ Response.Expires = -1
       </p>
       <div class="watch-grid" aria-label="Wear OS app and complication screenshots">
         <figure class="watch-card">
+          <img class="watch-shot" src="assets/screens/w_shot_splash.png?v=75" width="512" height="512" alt="Wear branded splash screen with DozeAlert sleepy-pin icon on black.">
+          <figcaption><strong>Branded splash</strong>Cold start shows the DozeAlert pin on true black.</figcaption>
+        </figure>
+        <figure class="watch-card">
+          <img class="watch-shot" src="assets/screens/w_shot_ready_scroll.png?v=75" width="512" height="512" alt="Wear Ready screen with Start trip and visible scrollbar.">
+          <figcaption><strong>Ready + scroll</strong>Destination, Start trip, and a Wear scrollbar for more actions.</figcaption>
+        </figure>
+        <figure class="watch-card">
           <img class="watch-shot" src="assets/screens/w_shot7.png" width="512" height="512" alt="Minimal analog watch face with DozeAlert sleepy-pin complication showing RDY.">
           <figcaption><strong>Complication: ready</strong>Add DozeAlert to your watch face &mdash; see RDY when a destination is set.</figcaption>
-        </figure>
-        <figure class="watch-card">
-          <img class="watch-shot" src="assets/screens/w_shot6.png" width="512" height="512" alt="Minimal analog watch face with DozeAlert complication showing 4 stp while monitoring.">
-          <figcaption><strong>Complication: watching</strong>Stops remaining or distance while monitoring, without opening the Wear app.</figcaption>
-        </figure>
-        <figure class="watch-card">
-          <img class="watch-shot" src="assets/screens/w_shot3.png" width="512" height="512" alt="Wear app monitoring trip with stop countdown.">
-          <figcaption><strong>Watching</strong>Open the app for full trip detail and start/stop controls.</figcaption>
         </figure>
         <figure class="watch-card">
           <img class="watch-shot" src="assets/screens/w_shot4.png" width="512" height="512" alt="Wear app GET READY wake alert screen.">
@@ -681,6 +681,6 @@ Response.Expires = -1
       })
       .catch(() => {});
   </script>
-  <script src="assets/brand.js?v=74"></script>
+  <script src="assets/brand.js?v=75"></script>
 </body>
 </html>

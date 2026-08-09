@@ -6,29 +6,36 @@ Play Console requires:
 - **App UI only** — no emulator gray bezel / device frame
 - **Solid background** (black is fine), not transparent
 
-## From website captures (current listing assets)
+## Current listing set (`play-store/wear-screenshots/`)
 
-Real Wear app UI captures live in `website/assets/screens/watch_shot*.png`.
-Convert them to Play-ready **512×512** opaque PNGs:
-
-```powershell
-cd D:\Dev\Projects\dozealert
-.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot4.png -OutputPath play-store\wear-screenshots\01-idle.png
-.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot2.png -OutputPath play-store\wear-screenshots\02-ready.png
-.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot1.png -OutputPath play-store\wear-screenshots\03-monitoring.png
-.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot3.png -OutputPath play-store\wear-screenshots\04-alarm.png
-```
+Upload these to **Play Console → Wear OS screenshots** (numeric order):
 
 | Play file | Source | Screen |
 |-----------|--------|--------|
-| `01-idle.png` | `watch_shot4.png` | Set up on phone |
-| `02-ready.png` | `watch_shot2.png` | Ready to rest, **Start trip** |
-| `03-monitoring.png` | `watch_shot1.png` | **17.4 km left**, Clarkson GO |
-| `04-alarm.png` | `watch_shot3.png` | Wake-up alarm |
+| `01-idle.png` | prior capture | Set up on phone |
+| `02-ready.png` | `watch_shot1.png` | **Ready** + **scrollbar** (Derry Rd / Start trip) |
+| `03-monitoring.png` | prior capture | Monitoring / distance left |
+| `04-alarm.png` | prior capture | Wake-up alarm |
+| `05-splash.png` | `watch_shot2.png` | **Branded splash** (sleepy-pin on black) |
+
+`02-ready` and `05-splash` prove the two Wear App Quality fixes that blocked production.
+
+JPEG mirrors for the same upload set also live in `website/play-console/wear/` (`02-ready.jpg`, `05-splash.jpg`).
+
+## Regenerate from website captures
+
+```powershell
+cd D:\Dev\Projects\dozealert
+.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot1.png -OutputPath play-store\wear-screenshots\02-ready.png
+.\tools\prepare-wear-play-screenshot.ps1 -InputPath website\assets\screens\watch_shot2.png -OutputPath play-store\wear-screenshots\05-splash.png
+```
+
+Website display copies:
+
+- `website/assets/screens/w_shot_ready_scroll.png`
+- `website/assets/screens/w_shot_splash.png`
 
 ## Quick generate (no emulator, synthetic UI)
-
-Renders Play-ready **512×512** PNGs from scripted mock UI:
 
 ```powershell
 cd D:\Dev\Projects\dozealert
@@ -36,8 +43,6 @@ cd D:\Dev\Projects\dozealert
 ```
 
 ## Capture from Wear emulator (pixel-perfect)
-
-After installing a debug Wear APK (includes `ScreenshotActivity` mock states):
 
 ```powershell
 .\tools\build-wear.ps1 -InstallDebug
@@ -53,8 +58,6 @@ cd D:\Dev\Projects\dozealert
 
 This produces a **512x512** square PNG and replaces the emulator gray bezel with black.
 
-Upload files from this folder to **Play Console → Wear OS screenshots**.
-
 ## Best capture (avoids bezel)
 
 **Android Studio → Running Devices → camera icon → "Play Store Compatible"** (if shown).
@@ -64,9 +67,3 @@ Or raw ADB (then run the script above):
 ```powershell
 adb -s emulator-5554 exec-out screencap -p > wear-raw.png
 ```
-
-## Suggested shots
-
-1. `01-idle.png` — destination set, Idle / Open on phone
-2. `02-monitoring.png` — trip monitoring with km remaining
-3. `03-tile.png` — DozeAlert tile (optional)
