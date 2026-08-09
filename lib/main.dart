@@ -47,13 +47,16 @@ Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // Align with Android 15 edge-to-edge on older OS versions too.
+  // Android 15 edge-to-edge: enable on older OS too (matches enableEdgeToEdge()
+  // in MainActivity). Do NOT set statusBarColor / systemNavigationBarColor —
+  // those call deprecated Window APIs that Play flags for targetSdk 35.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarDividerColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarIconBrightness: Brightness.light,
+      systemStatusBarContrastEnforced: false,
+      systemNavigationBarContrastEnforced: false,
     ),
   );
 

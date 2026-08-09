@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_branding.dart';
 
@@ -52,6 +53,13 @@ abstract final class AppTheme {
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
+        // Icon brightness only — do not set statusBarColor (deprecated on API 35).
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarIconBrightness: colorScheme.brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark,
+          systemStatusBarContrastEnforced: false,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,

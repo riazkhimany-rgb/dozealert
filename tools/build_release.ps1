@@ -8,6 +8,7 @@ Push-Location (Split-Path $PSScriptRoot -Parent)
 
 flutter clean
 flutter pub get
+& (Join-Path $PSScriptRoot 'apply-android-dep-patches.ps1')
 dart run flutter_launcher_icons
 dart run flutter_native_splash:create
 flutter build appbundle --release

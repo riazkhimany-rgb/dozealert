@@ -1,0 +1,7 @@
+{
+          final int reqSize =
+              Math.round(256f * context.getResources().getDisplayMetrics().density);
+          icon =
+              IconCompat.createWithBitmap(
+                  decodeSampledBitmapFile((String) data, reqSize));
+        }

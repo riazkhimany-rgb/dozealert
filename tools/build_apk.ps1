@@ -28,6 +28,7 @@ try {
     Write-Host "Building DozeAlert $versionName ($versionCode)..." -ForegroundColor Cyan
 
     flutter pub get
+    & (Join-Path $PSScriptRoot 'apply-android-dep-patches.ps1')
 
     $apkArgs = @('build', 'apk', '--release')
     if (-not $FatApk) {

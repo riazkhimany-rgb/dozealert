@@ -108,6 +108,8 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Edge-to-edge helpers (enableEdgeToEdge) + modern IconCompat.
     implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation("com.google.android.gms:play-services-wearable:20.0.1")
 }

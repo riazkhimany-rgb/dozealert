@@ -1,0 +1,7 @@
+          FlutterLoader flutterLoader = FlutterInjector.instance().flutterLoader();
+          AssetFileDescriptor assetFileDescriptor =
+              context.getAssets().openFd(flutterLoader.getLookupKeyForAsset((String) data));
+          FileInputStream fileInputStream = assetFileDescriptor.createInputStream();
+          icon = IconCompat.createWithBitmap(BitmapFactory.decodeStream(fileInputStream));
+          fileInputStream.close();
+          assetFileDescriptor.close();

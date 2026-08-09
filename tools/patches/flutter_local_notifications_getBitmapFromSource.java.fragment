@@ -1,0 +1,16 @@
+  private static Bitmap getBitmapFromSource(
+      Context context, Object data, BitmapSource bitmapSource) {
+    // Play Console: pass BitmapFactory.Options and downsample large bitmaps (~256dp).
+    final int reqSize =
+        Math.round(256f * context.getResources().getDisplayMetrics().density);
+    if (bitmapSource == BitmapSource.DrawableResource) {
+      int resId = getDrawableResourceId(context, (String) data);
+      return decodeSampledBitmapResource(context, resId, reqSize);
+    } else if (bitmapSource == BitmapSource.FilePath) {
+      return decodeSampledBitmapFile((String) data, reqSize);
+    } else if (bitmapSource == BitmapSource.ByteArray) {
+      byte[] byteArray = castObjectToByteArray(data);
+      return decodeSampledBitmapByteArray(byteArray, reqSize);
+    }
+    return null;
+  }

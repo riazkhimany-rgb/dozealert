@@ -218,6 +218,9 @@ try {
     }
 
     Invoke-Step 'flutter pub get' { flutter pub get }
+    Invoke-Step 'Apply Android dependency patches' {
+        & (Join-Path $PSScriptRoot 'apply-android-dep-patches.ps1')
+    }
 
     if (-not $SkipBranding) {
         Invoke-Step 'Regenerate branding PNGs from splash' {

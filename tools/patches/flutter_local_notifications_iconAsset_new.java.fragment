@@ -1,0 +1,12 @@
+          FlutterLoader flutterLoader = FlutterInjector.instance().flutterLoader();
+          String assetKey = flutterLoader.getLookupKeyForAsset((String) data);
+          final int reqSize =
+              Math.round(256f * context.getResources().getDisplayMetrics().density);
+          AssetFileDescriptor boundsFd = context.getAssets().openFd(assetKey);
+          AssetFileDescriptor decodeFd = context.getAssets().openFd(assetKey);
+          icon =
+              IconCompat.createWithBitmap(
+                  decodeSampledBitmapStream(
+                      boundsFd.createInputStream(), decodeFd.createInputStream(), reqSize));
+          boundsFd.close();
+          decodeFd.close();
