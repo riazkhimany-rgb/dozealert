@@ -67,4 +67,54 @@ class TransitWakeTuning {
     }
     return highConfidence ? 1 : 1;
   }
+
+  /// Max crow-flies distance from the rider to the wake stop before a
+  /// distance-based wake may confirm. Along-route remaining alone can look
+  /// "at Oakville" when GPS projects ahead on open rail ~1–1.5 km early.
+  static double wakeStopConfirmProximityMeters(TransitVehicleType? vehicleType) {
+    return switch (vehicleType) {
+      TransitVehicleType.train => 400,
+      TransitVehicleType.lightRail => 350,
+      TransitVehicleType.subway => 300,
+      TransitVehicleType.streetcar => 200,
+      TransitVehicleType.bus => 250,
+      null => 300,
+    };
+  }
+
+  /// Rail (and subway) must see a few armed fixes before distance confirm so
+  /// a single optimistic projection cannot fire immediately after arming.
+  static bool requiresStableArmBeforeDistanceConfirm(
+    TransitVehicleType? vehicleType,
+  ) {
+    return switch (vehicleType) {
+      TransitVehicleType.train ||
+      TransitVehicleType.lightRail ||
+      TransitVehicleType.subway =>
+        true,
+      _ => false,
+    };
+  }
+
+  /// Max crow-flies distance to the *next* stop when advancing progress.
+  /// Blocks Bronte→Oakville single-step snaps while GPS is still near Bronte.
+  static double? maxStopAdvanceHaversineMeters(TransitVehicleType? vehicleType) {
+    return switch (vehicleType) {
+      TransitVehicleType.train => 800,
+      TransitVehicleType.lightRail => 600,
+      TransitVehicleType.subway => 500,
+      _ => null,
+    };
+  }
+
+  /// Extra arm fixes required for poor-GPS fallback on rail when no fix is
+  /// available to prove wake-stop proximity.
+  static int minStableArmFixesForPoorGps(TransitVehicleType? vehicleType) {
+    return switch (vehicleType) {
+      TransitVehicleType.train => 4,
+      TransitVehicleType.lightRail => 3,
+      TransitVehicleType.subway => 3,
+      _ => 2,
+    };
+  }
 }

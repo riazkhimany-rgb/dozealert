@@ -216,5 +216,53 @@ void main() {
 
       expect(fresh.stopName, 'D');
     });
+
+    test('does not advance to a far rail stop when GPS is still near current', () {
+      const bronte = TransitStop(
+        stopId: 'bronte',
+        stopName: 'Bronte GO',
+        latitude: 43.4165,
+        longitude: -79.7220,
+        routeId: routeId,
+        stopSequence: 10,
+      );
+      const oakville = TransitStop(
+        stopId: 'oakville',
+        stopName: 'Oakville GO',
+        latitude: 43.4550,
+        longitude: -79.6820,
+        routeId: routeId,
+        stopSequence: 20,
+      );
+      const clarkson = TransitStop(
+        stopId: 'clarkson',
+        stopName: 'Clarkson GO',
+        latitude: 43.5067,
+        longitude: -79.6350,
+        routeId: routeId,
+        stopSequence: 30,
+      );
+      final railStops = [bronte, oakville, clarkson];
+
+      tracker.reconcile(
+        routeId: routeId,
+        destinationStop: clarkson,
+        rawStop: bronte,
+        routeStops: railStops,
+      );
+
+      // Raw match jumped to Oakville, but rider GPS is still near Bronte.
+      final held = tracker.reconcile(
+        routeId: routeId,
+        destinationStop: clarkson,
+        rawStop: oakville,
+        routeStops: railStops,
+        latitude: bronte.latitude,
+        longitude: bronte.longitude,
+        maxAdvanceDistanceMeters: 800,
+      );
+
+      expect(held.stopName, 'Bronte GO');
+    });
   });
 }

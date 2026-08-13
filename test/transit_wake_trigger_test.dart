@@ -300,10 +300,201 @@ void main() {
         gpsStale: false,
         armedAt: null,
         armStableFixes: 0,
+        latitude: segmentStops[2].latitude,
+        longitude: segmentStops[2].longitude,
       );
 
       expect(decision.shouldTrigger, isTrue);
       expect(decision.reason, TransitWakeDecisionReason.recoveredAfterStopJump);
+    });
+
+    test(
+      'train does not fire 1.5km before wake stop when along-route looks early',
+      () {
+        // Bronte → Oakville → Clarkson style spacing (~5 km wake→dest chords
+        // omitted; plan stores wakeToDestinationMeters=5000).
+        final lakeshore = [
+          const TransitStop(
+            stopId: 'bronte',
+            stopName: 'Bronte GO',
+            latitude: 43.4165,
+            longitude: -79.7220,
+            routeId: routeId,
+            stopSequence: 10,
+          ),
+          const TransitStop(
+            stopId: 'oakville',
+            stopName: 'Oakville GO',
+            latitude: 43.4550,
+            longitude: -79.6820,
+            routeId: routeId,
+            stopSequence: 20,
+          ),
+          const TransitStop(
+            stopId: 'clarkson',
+            stopName: 'Clarkson GO',
+            latitude: 43.5067,
+            longitude: -79.6350,
+            routeId: routeId,
+            stopSequence: 30,
+          ),
+        ];
+        final oakvillePlan = TransitWakePlan(
+          routeId: routeId,
+          patternKey: 'lakeshore-east',
+          wakeStopCount: 1,
+          destinationStopSequence: 30,
+          wakeStopSequence: 20,
+          wakeToDestinationMeters: 6500,
+          segmentStops: lakeshore,
+          travelingForward: true,
+          vehicleType: TransitVehicleType.train,
+        );
+
+        // Optimistic along-route remaining (as if at Oakville) while GPS is
+        // still ~1.5 km southwest of Oakville — between Bronte and Oakville.
+        final decision = TransitWakeTrigger.evaluatePlan(
+          plan: oakvillePlan,
+          directionLocked: true,
+          hasEstablishedProgress: true,
+          hasTripConcern: false,
+          currentStop: lakeshore[1],
+          alongRouteRemainingMeters: 6400,
+          offRouteMeters: 25,
+          accuracyMeters: 20,
+          gpsStale: false,
+          armedAt: DateTime(2026, 8, 13, 8),
+          armStableFixes: TransitWakeTrigger.minStableArmFixes,
+          latitude: 43.4450,
+          longitude: -79.6950,
+        );
+
+        expect(decision.shouldTrigger, isFalse);
+        expect(
+          decision.reason,
+          TransitWakeDecisionReason.armedWaitingForWakeProximity,
+        );
+      },
+    );
+
+    test('train fires when near the wake stop itself', () {
+      final lakeshore = [
+        const TransitStop(
+          stopId: 'bronte',
+          stopName: 'Bronte GO',
+          latitude: 43.4165,
+          longitude: -79.7220,
+          routeId: routeId,
+          stopSequence: 10,
+        ),
+        const TransitStop(
+          stopId: 'oakville',
+          stopName: 'Oakville GO',
+          latitude: 43.4550,
+          longitude: -79.6820,
+          routeId: routeId,
+          stopSequence: 20,
+        ),
+        const TransitStop(
+          stopId: 'clarkson',
+          stopName: 'Clarkson GO',
+          latitude: 43.5067,
+          longitude: -79.6350,
+          routeId: routeId,
+          stopSequence: 30,
+        ),
+      ];
+      final oakvillePlan = TransitWakePlan(
+        routeId: routeId,
+        patternKey: 'lakeshore-east',
+        wakeStopCount: 1,
+        destinationStopSequence: 30,
+        wakeStopSequence: 20,
+        wakeToDestinationMeters: 6500,
+        segmentStops: lakeshore,
+        travelingForward: true,
+        vehicleType: TransitVehicleType.train,
+      );
+
+      final decision = TransitWakeTrigger.evaluatePlan(
+        plan: oakvillePlan,
+        directionLocked: true,
+        hasEstablishedProgress: true,
+        hasTripConcern: false,
+        currentStop: lakeshore[1],
+        alongRouteRemainingMeters: 6400,
+        offRouteMeters: 25,
+        accuracyMeters: 20,
+        gpsStale: false,
+        armedAt: DateTime(2026, 8, 13, 8),
+        armStableFixes: TransitWakeTrigger.minStableArmFixes,
+        latitude: lakeshore[1].latitude,
+        longitude: lakeshore[1].longitude,
+      );
+
+      expect(decision.shouldTrigger, isTrue);
+      expect(decision.reason, TransitWakeDecisionReason.confirmedByDistance);
+    });
+
+    test('train needs stable arm fixes before distance confirm', () {
+      final lakeshore = [
+        const TransitStop(
+          stopId: 'oakville',
+          stopName: 'Oakville GO',
+          latitude: 43.4550,
+          longitude: -79.6820,
+          routeId: routeId,
+          stopSequence: 20,
+        ),
+        const TransitStop(
+          stopId: 'clarkson',
+          stopName: 'Clarkson GO',
+          latitude: 43.5067,
+          longitude: -79.6350,
+          routeId: routeId,
+          stopSequence: 30,
+        ),
+      ];
+      final oakvillePlan = TransitWakePlan(
+        routeId: routeId,
+        patternKey: 'lakeshore-east',
+        wakeStopCount: 1,
+        destinationStopSequence: 30,
+        wakeStopSequence: 20,
+        wakeToDestinationMeters: 6500,
+        segmentStops: [
+          const TransitStop(
+            stopId: 'bronte',
+            stopName: 'Bronte GO',
+            latitude: 43.4165,
+            longitude: -79.7220,
+            routeId: routeId,
+            stopSequence: 10,
+          ),
+          ...lakeshore,
+        ],
+        travelingForward: true,
+        vehicleType: TransitVehicleType.train,
+      );
+
+      final decision = TransitWakeTrigger.evaluatePlan(
+        plan: oakvillePlan,
+        directionLocked: true,
+        hasEstablishedProgress: true,
+        hasTripConcern: false,
+        currentStop: lakeshore[0],
+        alongRouteRemainingMeters: 6400,
+        offRouteMeters: 25,
+        accuracyMeters: 20,
+        gpsStale: false,
+        armedAt: null,
+        armStableFixes: 0,
+        latitude: lakeshore[0].latitude,
+        longitude: lakeshore[0].longitude,
+      );
+
+      expect(decision.shouldTrigger, isFalse);
+      expect(decision.isArmed, isTrue);
     });
 
     test('aligns wake distance to stop-chord geometry for FGS', () {
@@ -346,14 +537,80 @@ void main() {
         accuracyMeters: 0,
         gpsStale: true,
         armedAt: armedAt,
-        armStableFixes: TransitWakeTrigger.minStableArmFixes,
+        armStableFixes: 4,
         now: armedAt.add(const Duration(seconds: 45)),
+        // Near the wake stop — poor-GPS must not fire while far away.
+        latitude: segmentStops[1].latitude,
+        longitude: segmentStops[1].longitude,
       );
 
       expect(decision.shouldTrigger, isTrue);
       expect(
         decision.reason,
         TransitWakeDecisionReason.confirmedByPoorGpsFallback,
+      );
+    });
+
+    test('poor-GPS fallback does not fire far from the train wake stop', () {
+      final lakeshore = [
+        const TransitStop(
+          stopId: 'bronte',
+          stopName: 'Bronte GO',
+          latitude: 43.4165,
+          longitude: -79.7220,
+          routeId: routeId,
+          stopSequence: 10,
+        ),
+        const TransitStop(
+          stopId: 'oakville',
+          stopName: 'Oakville GO',
+          latitude: 43.4550,
+          longitude: -79.6820,
+          routeId: routeId,
+          stopSequence: 20,
+        ),
+        const TransitStop(
+          stopId: 'clarkson',
+          stopName: 'Clarkson GO',
+          latitude: 43.5067,
+          longitude: -79.6350,
+          routeId: routeId,
+          stopSequence: 30,
+        ),
+      ];
+      final oakvillePlan = TransitWakePlan(
+        routeId: routeId,
+        patternKey: 'lakeshore-east',
+        wakeStopCount: 1,
+        destinationStopSequence: 30,
+        wakeStopSequence: 20,
+        wakeToDestinationMeters: 6500,
+        segmentStops: lakeshore,
+        travelingForward: true,
+        vehicleType: TransitVehicleType.train,
+      );
+      final armedAt = DateTime(2026, 7, 17, 12);
+      final decision = TransitWakeTrigger.evaluatePlan(
+        plan: oakvillePlan,
+        directionLocked: true,
+        hasEstablishedProgress: true,
+        hasTripConcern: false,
+        currentStop: lakeshore[1],
+        alongRouteRemainingMeters: null,
+        offRouteMeters: null,
+        accuracyMeters: 0,
+        gpsStale: true,
+        armedAt: armedAt,
+        armStableFixes: 4,
+        now: armedAt.add(const Duration(seconds: 45)),
+        latitude: lakeshore[0].latitude,
+        longitude: lakeshore[0].longitude,
+      );
+
+      expect(decision.shouldTrigger, isFalse);
+      expect(
+        decision.reason,
+        TransitWakeDecisionReason.armedWaitingForGpsGrace,
       );
     });
 

@@ -1,3 +1,5 @@
+import 'package:geolocator/geolocator.dart';
+
 import '../models/transit_stop.dart';
 
 /// Keeps [currentStop] converging on the rider without jumping more than one
@@ -34,12 +36,19 @@ class TransitStopProgressTracker {
   }
 
   /// Returns the stabilized stop to use instead of [rawStop].
+  ///
+  /// When [latitude]/[longitude] and [maxAdvanceDistanceMeters] are set,
+  /// refuses to advance to a stop farther than that crow-flies distance — so
+  /// rail cannot Bronte→Oakville in one fix while GPS is still near Bronte.
   TransitStop reconcile({
     required String routeId,
     required TransitStop destinationStop,
     required TransitStop rawStop,
     required List<TransitStop> routeStops,
     int maxStepsPerFix = 1,
+    double? latitude,
+    double? longitude,
+    double? maxAdvanceDistanceMeters,
   }) {
     if (_routeId != routeId ||
         _destinationStopSequence != destinationStop.stopSequence) {
@@ -65,9 +74,66 @@ class TransitStopProgressTracker {
       if (latest.stopSequence == rawStop.stopSequence) {
         break;
       }
+
+      final candidate = _peekStepTowardRaw(
+        fromSequence: latest.stopSequence,
+        rawStop: rawStop,
+        routeStops: routeStops,
+      );
+      if (candidate == null) {
+        break;
+      }
+
+      if (!_mayAdvanceTo(
+        candidate,
+        latitude: latitude,
+        longitude: longitude,
+        maxAdvanceDistanceMeters: maxAdvanceDistanceMeters,
+      )) {
+        break;
+      }
+
       latest = _stepTowardRaw(rawStop, routeStops);
     }
     return latest;
+  }
+
+  bool _mayAdvanceTo(
+    TransitStop candidate, {
+    required double? latitude,
+    required double? longitude,
+    required double? maxAdvanceDistanceMeters,
+  }) {
+    final cap = maxAdvanceDistanceMeters;
+    if (cap == null || latitude == null || longitude == null) {
+      return true;
+    }
+    final meters = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      candidate.latitude,
+      candidate.longitude,
+    );
+    return meters <= cap;
+  }
+
+  TransitStop? _peekStepTowardRaw({
+    required int fromSequence,
+    required TransitStop rawStop,
+    required List<TransitStop> routeStops,
+  }) {
+    final rawSeq = rawStop.stopSequence;
+    final forward = rawSeq > fromSequence;
+    final adjacent = _adjacentStop(
+      routeStops,
+      fromSequence,
+      forward: forward,
+    );
+    final overshoots = adjacent == null ||
+        (forward
+            ? adjacent.stopSequence >= rawSeq
+            : adjacent.stopSequence <= rawSeq);
+    return overshoots ? rawStop : adjacent;
   }
 
   /// Advances/retreats [_acceptedStopSequence] by a single stop toward

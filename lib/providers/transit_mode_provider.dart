@@ -42,6 +42,8 @@ class TransitModeProvider extends ChangeNotifier {
   final _MovingAwayDetector _movingAwayDetector = _MovingAwayDetector();
 
   double _lastAccuracyMeters = 0;
+  double? _lastEvalLatitude;
+  double? _lastEvalLongitude;
 
   TransitModeSnapshot _snapshot = TransitModeSnapshot.inactive;
   TransitModeSnapshot? _lastActiveSnapshot;
@@ -187,6 +189,8 @@ class TransitModeProvider extends ChangeNotifier {
       armedAt: _wakeArmedAt,
       armStableFixes: _wakeArmStableFixes,
       now: now,
+      latitude: _lastEvalLatitude,
+      longitude: _lastEvalLongitude,
     );
     _lastWakeDecisionReason = decision.reason;
 
@@ -293,6 +297,10 @@ class TransitModeProvider extends ChangeNotifier {
     if (accuracyMeters != null && accuracyMeters > 0) {
       _lastAccuracyMeters = accuracyMeters;
     }
+    if (latitude != null && longitude != null) {
+      _lastEvalLatitude = latitude;
+      _lastEvalLongitude = longitude;
+    }
     final rawSnapshot = _transitModeService.evaluate(
       destination: _monitoringProvider.selectedDestination,
       latitude: latitude,
@@ -321,7 +329,11 @@ class TransitModeProvider extends ChangeNotifier {
       }
       if (progressSnapshot.isActive || progressSnapshot.directionConfirming) {
         final nextSnapshot = progressSnapshot.isActive
-            ? _stabilizeSnapshot(progressSnapshot)
+            ? _stabilizeSnapshot(
+                progressSnapshot,
+                latitude: latitude,
+                longitude: longitude,
+              )
             : progressSnapshot;
         if (nextSnapshot.isActive) {
           _ensureWakePlan(nextSnapshot);
@@ -336,7 +348,11 @@ class TransitModeProvider extends ChangeNotifier {
     }
 
     final nextSnapshot = _flagMovingAway(
-      _stabilizeSnapshot(progressSnapshot),
+      _stabilizeSnapshot(
+        progressSnapshot,
+        latitude: latitude,
+        longitude: longitude,
+      ),
       latitude: latitude,
       longitude: longitude,
     );
@@ -746,7 +762,11 @@ class TransitModeProvider extends ChangeNotifier {
     return TransitModeSnapshot.inactive;
   }
 
-  TransitModeSnapshot _stabilizeSnapshot(TransitModeSnapshot rawSnapshot) {
+  TransitModeSnapshot _stabilizeSnapshot(
+    TransitModeSnapshot rawSnapshot, {
+    double? latitude,
+    double? longitude,
+  }) {
     if (!rawSnapshot.isActive ||
         rawSnapshot.currentStop == null ||
         rawSnapshot.destinationStop == null ||
@@ -770,6 +790,11 @@ class TransitModeProvider extends ChangeNotifier {
         lockedPatternKey: _transitModeService.tripSession.lockedPatternKey,
       ),
       maxStepsPerFix: maxStepsPerFix,
+      latitude: latitude,
+      longitude: longitude,
+      maxAdvanceDistanceMeters: TransitWakeTuning.maxStopAdvanceHaversineMeters(
+        rawSnapshot.vehicleType,
+      ),
     );
 
     if (stabilizedStop == rawSnapshot.currentStop) {

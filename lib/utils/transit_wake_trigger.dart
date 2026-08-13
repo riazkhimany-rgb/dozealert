@@ -15,6 +15,7 @@ enum TransitWakeDecisionReason {
   tripConcern,
   beforeWakeStop,
   armedWaitingForDistance,
+  armedWaitingForWakeProximity,
   armedWaitingForGpsGrace,
   confirmedByDistance,
   recoveredAfterStopJump,
@@ -58,6 +59,8 @@ class TransitWakeTrigger {
     required DateTime? armedAt,
     required int armStableFixes,
     DateTime? now,
+    double? latitude,
+    double? longitude,
   }) {
     if (!plan.isValid || !directionLocked || !hasEstablishedProgress) {
       return const TransitWakeDecision(
@@ -106,27 +109,79 @@ class TransitWakeTrigger {
       final threshold = jumpedToDestination
           ? buffer
           : plan.wakeToDestinationMeters + buffer;
-      if (alongRouteRemainingMeters <= threshold) {
-        return TransitWakeDecision(
-          shouldTrigger: true,
+      if (alongRouteRemainingMeters > threshold) {
+        return const TransitWakeDecision(
+          shouldTrigger: false,
           isArmed: true,
-          reason: jumpedToDestination
-              ? TransitWakeDecisionReason.recoveredAfterStopJump
-              : TransitWakeDecisionReason.confirmedByDistance,
+          reason: TransitWakeDecisionReason.armedWaitingForDistance,
         );
       }
-      return const TransitWakeDecision(
-        shouldTrigger: false,
+
+      // Rail: one optimistic projection can arm + satisfy remaining in the same
+      // fix — require a few armed samples before confirming.
+      if (!jumpedToDestination &&
+          TransitWakeTuning.requiresStableArmBeforeDistanceConfirm(
+            plan.vehicleType,
+          ) &&
+          armStableFixes < minStableArmFixes) {
+        return const TransitWakeDecision(
+          shouldTrigger: false,
+          isArmed: true,
+          reason: TransitWakeDecisionReason.armedWaitingForDistance,
+        );
+      }
+
+      final confirmStop = jumpedToDestination
+          ? plan.destinationStop
+          : plan.wakeStop;
+      if (!_isWithinWakeStopProximity(
+        stop: confirmStop,
+        vehicleType: plan.vehicleType,
+        latitude: latitude,
+        longitude: longitude,
+        accuracyMeters: accuracyMeters,
+        requirePositionForRail: !jumpedToDestination,
+      )) {
+        return const TransitWakeDecision(
+          shouldTrigger: false,
+          isArmed: true,
+          reason: TransitWakeDecisionReason.armedWaitingForWakeProximity,
+        );
+      }
+
+      return TransitWakeDecision(
+        shouldTrigger: true,
         isArmed: true,
-        reason: TransitWakeDecisionReason.armedWaitingForDistance,
+        reason: jumpedToDestination
+            ? TransitWakeDecisionReason.recoveredAfterStopJump
+            : TransitWakeDecisionReason.confirmedByDistance,
       );
     }
 
     final effectiveNow = now ?? DateTime.now();
     final grace = TransitWakeTuning.poorGpsGracePeriod(plan.vehicleType);
+    final poorGpsArmFixes = TransitWakeTuning.minStableArmFixesForPoorGps(
+      plan.vehicleType,
+    );
     if (armedAt != null &&
-        armStableFixes >= minStableArmFixes &&
+        armStableFixes >= poorGpsArmFixes &&
         effectiveNow.difference(armedAt) >= grace) {
+      // Never fire poor-GPS fallback while crow-flies far from the wake stop.
+      if (!_isWithinWakeStopProximity(
+        stop: plan.wakeStop,
+        vehicleType: plan.vehicleType,
+        latitude: latitude,
+        longitude: longitude,
+        accuracyMeters: accuracyMeters > 0 ? accuracyMeters : 50,
+        requirePositionForRail: false,
+        allowMissingPosition: true,
+      )) {
+        return const TransitWakeDecision(
+          shouldTrigger: false,
+          isArmed: true,
+          reason: TransitWakeDecisionReason.armedWaitingForGpsGrace,
+        );
+      }
       return const TransitWakeDecision(
         shouldTrigger: true,
         isArmed: true,
@@ -139,6 +194,47 @@ class TransitWakeTrigger {
       isArmed: true,
       reason: TransitWakeDecisionReason.armedWaitingForGpsGrace,
     );
+  }
+
+  /// Crow-flies gate so along-route optimism cannot confirm early on rail.
+  static bool _isWithinWakeStopProximity({
+    required TransitStop? stop,
+    required TransitVehicleType? vehicleType,
+    required double? latitude,
+    required double? longitude,
+    required double accuracyMeters,
+    required bool requirePositionForRail,
+    bool allowMissingPosition = false,
+  }) {
+    if (stop == null) {
+      return false;
+    }
+
+    final hasFix = latitude != null && longitude != null;
+    if (!hasFix) {
+      // Rail distance-confirm requires a live fix (along-route alone is too
+      // optimistic). Jump recovery / bus / poor-GPS may proceed without one.
+      if (requirePositionForRail &&
+          TransitWakeTuning.requiresStableArmBeforeDistanceConfirm(
+            vehicleType,
+          )) {
+        return false;
+      }
+      return allowMissingPosition ||
+          !TransitWakeTuning.requiresStableArmBeforeDistanceConfirm(
+            vehicleType,
+          );
+    }
+
+    final cap = TransitWakeTuning.wakeStopConfirmProximityMeters(vehicleType);
+    final accuracySlack = accuracyMeters.clamp(0, 50);
+    final meters = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      stop.latitude,
+      stop.longitude,
+    );
+    return meters <= cap + accuracySlack;
   }
 
   static bool shouldTrigger({
@@ -156,6 +252,8 @@ class TransitWakeTrigger {
     TransitVehicleType? vehicleType,
     bool? activityInVehicle,
     bool? activityOnFoot,
+    double? latitude,
+    double? longitude,
   }) {
     if (!directionLocked || !hasEstablishedProgress) {
       return false;
@@ -182,12 +280,21 @@ class TransitWakeTrigger {
       }
 
       return isNearWakeStopAlongRoute(
-        alongRouteRemainingMeters: alongRouteRemainingMeters,
-        segmentStops: segmentStops,
-        wakeStop: destination,
-        destinationStop: destination,
-        vehicleType: vehicleType,
-      );
+            alongRouteRemainingMeters: alongRouteRemainingMeters,
+            segmentStops: segmentStops,
+            wakeStop: destination,
+            destinationStop: destination,
+            vehicleType: vehicleType,
+          ) &&
+          _isWithinWakeStopProximity(
+            stop: destination,
+            vehicleType: vehicleType,
+            latitude: latitude,
+            longitude: longitude,
+            accuracyMeters: accuracyMeters,
+            requirePositionForRail: false,
+            allowMissingPosition: true,
+          );
     }
 
     if (stopsRemaining > wakeStopCount) {
@@ -213,12 +320,21 @@ class TransitWakeTrigger {
     }
 
     return isNearWakeStopAlongRoute(
-      alongRouteRemainingMeters: alongRouteRemainingMeters,
-      segmentStops: segmentStops,
-      wakeStop: wakeStop,
-      destinationStop: destination,
-      vehicleType: vehicleType,
-    );
+          alongRouteRemainingMeters: alongRouteRemainingMeters,
+          segmentStops: segmentStops,
+          wakeStop: wakeStop,
+          destinationStop: destination,
+          vehicleType: vehicleType,
+        ) &&
+        _isWithinWakeStopProximity(
+          stop: wakeStop,
+          vehicleType: vehicleType,
+          latitude: latitude,
+          longitude: longitude,
+          accuracyMeters: accuracyMeters,
+          requirePositionForRail: false,
+          allowMissingPosition: true,
+        );
   }
 
   /// Stop where the rider should get off for [wakeStopCount] before destination.

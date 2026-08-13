@@ -52,6 +52,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   double? _transitOffRouteMeters;
   int _transitCurrentStopSequence = -1;
   double _lastPositionAccuracy = 0;
+  double? _lastEvalLatitude;
+  double? _lastEvalLongitude;
   bool? _riderInVehicle;
   bool? _riderOnFoot;
   bool _transitHasTripConcern = false;
@@ -217,6 +219,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     }
 
     _lastPositionAccuracy = position.accuracy;
+    _lastEvalLatitude = position.latitude;
+    _lastEvalLongitude = position.longitude;
 
     FlutterForegroundTask.sendDataToMain(<String, Object>{
       'type': 'location',
@@ -450,6 +454,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
           : DateTime.fromMillisecondsSinceEpoch(pattern.wakeArmedAtMs!),
       armStableFixes: pattern.wakeArmStableFixes,
       now: timestamp,
+      latitude: _lastEvalLatitude,
+      longitude: _lastEvalLongitude,
     );
     if (decision.shouldTrigger) {
       await _triggerArrival(transitWake: true);
@@ -518,6 +524,8 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
           ? null
           : DateTime.fromMillisecondsSinceEpoch(pattern.wakeArmedAtMs!),
       armStableFixes: pattern.wakeArmStableFixes,
+      latitude: _lastEvalLatitude,
+      longitude: _lastEvalLongitude,
     );
     return decision.shouldTrigger;
   }

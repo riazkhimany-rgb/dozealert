@@ -126,6 +126,11 @@ class BackgroundTransitEvaluator {
         vehicleType: pattern.vehicleType,
         highConfidence: highConfidence,
       ),
+      latitude: latitude,
+      longitude: longitude,
+      maxAdvanceDistanceMeters: TransitWakeTuning.maxStopAdvanceHaversineMeters(
+        pattern.vehicleType,
+      ),
     );
 
     final stopsRemaining = _stopsBetween(
