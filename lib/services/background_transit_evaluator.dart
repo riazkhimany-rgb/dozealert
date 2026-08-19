@@ -1,3 +1,5 @@
+import 'package:geolocator/geolocator.dart';
+
 import '../models/background_transit_pattern.dart';
 import '../models/transit_stop.dart';
 import '../utils/rider_motion_rules.dart';
@@ -139,11 +141,22 @@ class BackgroundTransitEvaluator {
       routeStops: pattern.segmentStops,
     );
 
-    final alongRouteRemainingMeters = _routeGeometry.alongRouteRemainingMeters(
+    var alongRouteRemainingMeters = _routeGeometry.alongRouteRemainingMeters(
       polyline: polyline,
       projection: projection,
       destinationStop: destinationStop,
     );
+    if (stopsRemaining == 0 && alongRouteRemainingMeters != null) {
+      final haversine = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        destinationStop.latitude,
+        destinationStop.longitude,
+      );
+      if (haversine < alongRouteRemainingMeters) {
+        alongRouteRemainingMeters = haversine;
+      }
+    }
 
     return BackgroundTransitEvaluation(
       stopsRemaining: stopsRemaining,

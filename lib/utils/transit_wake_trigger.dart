@@ -101,12 +101,39 @@ class TransitWakeTrigger {
         plan.vehicleType,
         wakeStopCount: plan.wakeStopCount,
       );
+      final atDestinationSetting = plan.wakeStopCount == 0;
+      final currentIsDestination =
+          current?.stopSequence == plan.destinationStopSequence;
       final jumpedToDestination =
-          current?.stopSequence == plan.destinationStopSequence &&
+          currentIsDestination &&
           plan.wakeStopSequence != plan.destinationStopSequence;
+
+      // Rail GTFS shapes can report kilometers remaining while the rider is
+      // already at the destination platform ("At destination" never fired).
+      // Crow-flies proximity is the source of truth in that case.
+      if ((atDestinationSetting || jumpedToDestination) &&
+          _isWithinWakeStopProximity(
+            stop: plan.destinationStop,
+            vehicleType: plan.vehicleType,
+            latitude: latitude,
+            longitude: longitude,
+            accuracyMeters: accuracyMeters,
+            requirePositionForRail: true,
+          )) {
+        // Do not wait for stable arm here — that gate is for 1-stop-before
+        // rail optimism. At the platform, remaining can stay kilometers high.
+        return TransitWakeDecision(
+          shouldTrigger: true,
+          isArmed: true,
+          reason: jumpedToDestination
+              ? TransitWakeDecisionReason.recoveredAfterStopJump
+              : TransitWakeDecisionReason.confirmedByDistance,
+        );
+      }
+
       // Stop-jump recovery may only confirm near the destination itself — not
       // the full wake-to-destination span (which can be 1km+ on rail).
-      final threshold = jumpedToDestination
+      final threshold = jumpedToDestination || atDestinationSetting
           ? buffer
           : plan.wakeToDestinationMeters + buffer;
       if (alongRouteRemainingMeters > threshold) {
@@ -120,6 +147,7 @@ class TransitWakeTrigger {
       // Rail: one optimistic projection can arm + satisfy remaining in the same
       // fix — require a few armed samples before confirming.
       if (!jumpedToDestination &&
+          !atDestinationSetting &&
           TransitWakeTuning.requiresStableArmBeforeDistanceConfirm(
             plan.vehicleType,
           ) &&
@@ -131,7 +159,7 @@ class TransitWakeTrigger {
         );
       }
 
-      final confirmStop = jumpedToDestination
+      final confirmStop = jumpedToDestination || atDestinationSetting
           ? plan.destinationStop
           : plan.wakeStop;
       if (!_isWithinWakeStopProximity(
@@ -140,7 +168,7 @@ class TransitWakeTrigger {
         latitude: latitude,
         longitude: longitude,
         accuracyMeters: accuracyMeters,
-        requirePositionForRail: !jumpedToDestination,
+        requirePositionForRail: !jumpedToDestination && !atDestinationSetting,
       )) {
         return const TransitWakeDecision(
           shouldTrigger: false,

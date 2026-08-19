@@ -614,6 +614,62 @@ void main() {
       );
     });
 
+    test(
+      'at destination fires at the platform even when along-route remaining is 2km',
+      () {
+        // Field: Bronte GO, At destination, standing at the station, UI still
+        // showed ~2.3 km remaining (GTFS shape hinterland) and never alarmed.
+        final lakeshore = [
+          const TransitStop(
+            stopId: 'oakville',
+            stopName: 'Oakville GO',
+            latitude: 43.4550,
+            longitude: -79.6820,
+            routeId: routeId,
+            stopSequence: 20,
+          ),
+          const TransitStop(
+            stopId: 'bronte',
+            stopName: 'Bronte GO',
+            latitude: 43.4165,
+            longitude: -79.7220,
+            routeId: routeId,
+            stopSequence: 30,
+          ),
+        ];
+        final destPlan = TransitWakePlan(
+          routeId: routeId,
+          patternKey: 'lakeshore-west',
+          wakeStopCount: 0,
+          destinationStopSequence: 30,
+          wakeStopSequence: 30,
+          wakeToDestinationMeters: 0,
+          segmentStops: lakeshore,
+          travelingForward: true,
+          vehicleType: TransitVehicleType.train,
+        );
+
+        final decision = TransitWakeTrigger.evaluatePlan(
+          plan: destPlan,
+          directionLocked: true,
+          hasEstablishedProgress: true,
+          hasTripConcern: false,
+          currentStop: lakeshore[1],
+          alongRouteRemainingMeters: 2300,
+          offRouteMeters: 20,
+          accuracyMeters: 15,
+          gpsStale: false,
+          armedAt: DateTime(2026, 8, 19, 17, 29),
+          armStableFixes: TransitWakeTrigger.minStableArmFixes,
+          latitude: lakeshore[1].latitude,
+          longitude: lakeshore[1].longitude,
+        );
+
+        expect(decision.shouldTrigger, isTrue);
+        expect(decision.reason, TransitWakeDecisionReason.confirmedByDistance);
+      },
+    );
+
     test('trip concern blocks distance and poor-GPS confirmation', () {
       final decision = TransitWakeTrigger.evaluatePlan(
         plan: plan,

@@ -148,6 +148,24 @@ void main() {
       expect(outOfOrder, closeTo(1000, 0.1));
     });
 
+    test('snaps remaining down on sudden platform arrival', () {
+      final filter = AlongRouteKalmanFilter();
+      final t0 = DateTime(2026, 1, 1, 12);
+
+      filter.filter(
+        measuredRemainingMeters: 2300,
+        accuracyMeters: 15,
+        timestamp: t0,
+      );
+      final afterArrival = filter.filter(
+        measuredRemainingMeters: 40,
+        accuracyMeters: 12,
+        timestamp: t0.add(const Duration(seconds: 2)),
+      );
+
+      expect(afterArrival, closeTo(40, 0.1));
+    });
+
     test('does not dead-reckon remaining down on poor GPS accuracy', () {
       final filter = AlongRouteKalmanFilter();
       final t0 = DateTime(2026, 1, 1, 12);

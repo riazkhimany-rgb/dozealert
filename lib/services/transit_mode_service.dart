@@ -250,7 +250,7 @@ class TransitModeService {
       );
       if (rawAlong != null) {
         final timestamp = fixTimestamp ?? DateTime.now();
-        alongRouteRemainingMeters = accuracyMeters != null && accuracyMeters > 0
+        var remaining = accuracyMeters != null && accuracyMeters > 0
             ? _alongRouteSmoother.smooth(
                 alongRouteMeters: rawAlong,
                 accuracyMeters: accuracyMeters,
@@ -258,6 +258,20 @@ class TransitModeService {
                 speedMps: speedMps,
               )
             : rawAlong;
+        // At the destination stop, crow-flies is more trustworthy than a
+        // shape hinterland remaining (often 1–3 km on GO rail).
+        if (stopsRemaining == 0) {
+          final haversine = Geolocator.distanceBetween(
+            latitude,
+            longitude,
+            destinationStop.latitude,
+            destinationStop.longitude,
+          );
+          if (haversine < remaining) {
+            remaining = haversine;
+          }
+        }
+        alongRouteRemainingMeters = remaining;
       }
     }
 

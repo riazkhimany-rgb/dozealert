@@ -41,6 +41,17 @@ class AlongRouteKalmanFilter {
       return _estimateMeters!;
     }
 
+    // Platform arrival: raw remaining can snap from kilometers to ~0 once
+    // destination along-meters is correct. Don't let Kalman crawl down slowly.
+    final previous = _estimateMeters!;
+    if (measuredRemainingMeters + 400 < previous &&
+        measuredRemainingMeters < previous * 0.5) {
+      _estimateMeters = measuredRemainingMeters;
+      _variance = math.max(accuracyMeters * accuracyMeters, 25);
+      _lastTimestamp = timestamp;
+      return _estimateMeters!;
+    }
+
     if (previousTime != null) {
       final elapsedSeconds =
           timestamp.difference(previousTime).inMilliseconds / 1000.0;

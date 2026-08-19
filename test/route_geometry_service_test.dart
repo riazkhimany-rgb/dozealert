@@ -1,5 +1,6 @@
 import 'package:dozealert/models/current_location.dart';
 import 'package:dozealert/models/destination.dart';
+import 'package:dozealert/models/route_shape_polyline.dart';
 import 'package:dozealert/models/transit_stop.dart';
 import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/route_geometry_service.dart';
@@ -117,6 +118,56 @@ void main() {
       );
 
       expect(matched?.stopName, 'A');
+    });
+
+    test('remaining at destination is small even when shape hinterland is long', () {
+      const origin = TransitStop(
+        stopId: 'oakville',
+        stopName: 'Oakville GO',
+        latitude: 43.4550,
+        longitude: -79.6820,
+        routeId: 'lw',
+        stopSequence: 1,
+      );
+      const destination = TransitStop(
+        stopId: 'bronte',
+        stopName: 'Bronte GO',
+        latitude: 43.4165,
+        longitude: -79.7220,
+        routeId: 'lw',
+        stopSequence: 2,
+      );
+
+      // Dense shape so many points nearer Bronte start ~2.3 km before the station.
+      final shapePoints = <RouteShapePoint>[
+        const RouteShapePoint(latitude: 43.4550, longitude: -79.6820),
+        const RouteShapePoint(latitude: 43.4450, longitude: -79.6920),
+        const RouteShapePoint(latitude: 43.4350, longitude: -79.7020),
+        const RouteShapePoint(latitude: 43.4280, longitude: -79.7100),
+        const RouteShapePoint(latitude: 43.4220, longitude: -79.7160),
+        const RouteShapePoint(latitude: 43.4165, longitude: -79.7220),
+      ];
+
+      final polyline = geometry.buildPolyline(
+        routeStops: [origin, destination],
+        destinationStop: destination,
+        shapePoints: shapePoints,
+      );
+      final atPlatform = geometry.projectOnPolyline(
+        polyline: polyline,
+        latitude: destination.latitude,
+        longitude: destination.longitude,
+      );
+
+      expect(atPlatform, isNotNull);
+      final remaining = geometry.alongRouteRemainingMeters(
+        polyline: polyline,
+        projection: atPlatform!,
+        destinationStop: destination,
+      );
+
+      expect(remaining, isNotNull);
+      expect(remaining!, lessThan(250));
     });
 
     test('empty candidate fallback stays at or behind projection', () {

@@ -307,6 +307,32 @@ class RouteGeometryService {
     required RoutePolyline polyline,
     required TransitStop stop,
   }) {
+    if (polyline.stops.isEmpty) {
+      return null;
+    }
+
+    final first = polyline.stops.first;
+    final last = polyline.stops.last;
+    // Destination (and origin) must use the polyline endpoints — not the first
+    // GTFS-shape segment whose nearest stop happens to be this station. On rail,
+    // that hinterland starts 1–3 km before the platform, which made "At
+    // destination" report kilometers remaining while standing at the stop.
+    if (stop.stopSequence == first.stopSequence) {
+      return 0;
+    }
+    if (stop.stopSequence == last.stopSequence) {
+      return polyline.totalLengthMeters;
+    }
+
+    final projected = projectOnPolyline(
+      polyline: polyline,
+      latitude: stop.latitude,
+      longitude: stop.longitude,
+    );
+    if (projected != null) {
+      return projected.alongRouteMeters;
+    }
+
     for (final segment in polyline.segments) {
       if (segment.fromStopSequence == stop.stopSequence) {
         return segment.startAlongMeters;
@@ -314,19 +340,6 @@ class RouteGeometryService {
       if (segment.toStopSequence == stop.stopSequence) {
         return segment.endAlongMeters;
       }
-    }
-
-    if (polyline.stops.isEmpty) {
-      return null;
-    }
-
-    final first = polyline.stops.first;
-    final last = polyline.stops.last;
-    if (stop.stopSequence == first.stopSequence) {
-      return 0;
-    }
-    if (stop.stopSequence == last.stopSequence) {
-      return polyline.totalLengthMeters;
     }
 
     return null;
