@@ -3,15 +3,21 @@
     <!--
       Wear App Quality WO-V15 — branded launch:
       48x48dp app icon matching the launcher icon, on black.
-      App name text is NOT required (unlike some phone splash designs).
+      App name text is NOT required (unlike phone Flutter splash).
+
+      Theme paints the same icon via windowBackground before the layout
+      inflates; SplashActivity then shows activity_splash.xml for 2s.
     -->
-    <style name="Theme.DozeAlert.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@android:color/black</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>
-        <!-- Immediate paint path for cold start / review automation -->
+    <style name="Theme.DozeAlert.Splash" parent="@android:style/Theme.DeviceDefault">
         <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="postSplashScreenTheme">@style/Theme.DozeAlert</item>
+        <item name="android:colorBackground">@android:color/black</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowDisablePreview">false</item>
     </style>
 
-    <style name="Theme.DozeAlert" parent="@android:style/Theme.DeviceDefault" />
+    <style name="Theme.DozeAlert" parent="@android:style/Theme.DeviceDefault">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:colorBackground">@android:color/black</item>
+    </style>
 </resources>

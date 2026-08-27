@@ -24,17 +24,24 @@
             android:name="com.google.android.wearable"
             android:required="true" />
 
+        <!-- WO-V15: dedicated splash so cold start always shows 48dp icon on black. -->
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true"
-            android:launchMode="singleTop"
             android:taskAffinity=""
-            android:theme="@style/Theme.DozeAlert.Starting">
+            android:theme="@style/Theme.DozeAlert.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/Theme.DozeAlert" />
 
         <activity
             android:name=".ScreenshotActivity"

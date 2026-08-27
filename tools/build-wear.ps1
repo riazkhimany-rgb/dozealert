@@ -47,8 +47,32 @@ try {
     Write-Host "Using JAVA_HOME=$($env:JAVA_HOME)" -ForegroundColor Cyan
 
     # Sync Flutter version into local.properties for wear versionCode/versionName.
+    # flutter pub get alone can leave a stale flutter.versionCode — write from pubspec.
     Push-Location $projectRoot
     flutter pub get | Out-Null
+    $versionLine = (Select-String -Path (Join-Path $projectRoot 'pubspec.yaml') -Pattern '^version:').Line
+    if ($versionLine -notmatch 'version:\s*([\d.]+)\+(\d+)') {
+        throw "Could not parse version from pubspec.yaml"
+    }
+    $versionName = $Matches[1]
+    $versionCode = $Matches[2]
+    $localProps = Join-Path $projectRoot 'android\local.properties'
+    if (-not (Test-Path $localProps)) {
+        throw "Missing $localProps"
+    }
+    $updated = Get-Content $localProps | ForEach-Object {
+        if ($_ -match '^flutter\.versionCode=') { "flutter.versionCode=$versionCode" }
+        elseif ($_ -match '^flutter\.versionName=') { "flutter.versionName=$versionName" }
+        else { $_ }
+    }
+    $updated | Set-Content $localProps -Encoding ascii
+    $wearExtra = 25
+    $wearGradle = Get-Content (Join-Path $projectRoot 'android\wear\build.gradle.kts') -Raw
+    if ($wearGradle -match 'wearVersionExtra\s*=\s*(\d+)') {
+        $wearExtra = [int]$Matches[1]
+    }
+    $wearCode = 100000 + [int]$versionCode + $wearExtra
+    Write-Host "Wear versionName=$versionName versionCode=$wearCode (phone +$versionCode, extra $wearExtra)" -ForegroundColor Cyan
     Pop-Location
 
     if ($InstallDebug) {
