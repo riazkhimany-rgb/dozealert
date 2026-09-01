@@ -119,6 +119,13 @@ class BackgroundTransitEvaluator {
       accuracyMeters: accuracyMeters,
       speedMps: speedMps,
     );
+
+    var alongRouteRemainingMeters = _routeGeometry.alongRouteRemainingMeters(
+      polyline: polyline,
+      projection: projection,
+      destinationStop: destinationStop,
+    );
+
     final stabilizedStop = _progressTracker.reconcile(
       routeId: pattern.routeId,
       destinationStop: destinationStop,
@@ -133,6 +140,9 @@ class BackgroundTransitEvaluator {
       maxAdvanceDistanceMeters: TransitWakeTuning.maxStopAdvanceHaversineMeters(
         pattern.vehicleType,
       ),
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
+      vehicleType: pattern.vehicleType,
+      accuracyMeters: accuracyMeters,
     );
 
     final stopsRemaining = _stopsBetween(
@@ -141,19 +151,14 @@ class BackgroundTransitEvaluator {
       routeStops: pattern.segmentStops,
     );
 
-    var alongRouteRemainingMeters = _routeGeometry.alongRouteRemainingMeters(
-      polyline: polyline,
-      projection: projection,
-      destinationStop: destinationStop,
-    );
-    if (stopsRemaining == 0 && alongRouteRemainingMeters != null) {
+    if (alongRouteRemainingMeters != null && stopsRemaining <= 1) {
       final haversine = Geolocator.distanceBetween(
         latitude,
         longitude,
         destinationStop.latitude,
         destinationStop.longitude,
       );
-      if (haversine < alongRouteRemainingMeters) {
+      if (haversine < alongRouteRemainingMeters!) {
         alongRouteRemainingMeters = haversine;
       }
     }

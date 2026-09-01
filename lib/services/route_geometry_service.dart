@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 
 import '../models/route_shape_polyline.dart';
 import '../models/transit_stop.dart';
+import '../models/transit_vehicle_type.dart';
+import '../utils/transit_wake_tuning.dart';
 
 /// A polyline built from ordered route stops (GTFS shapes fallback).
 class RoutePolyline {
@@ -472,6 +474,86 @@ class RouteGeometryService {
     }
 
     return best;
+  }
+
+  /// Snaps [currentStop] forward when rail/subway GPS projection lags the
+  /// platform but along-route remaining and crow-flies say the rider is there.
+  ///
+  /// Polyline matching refuses stops ahead of projection (early-fire guard).
+  /// Near a platform that rule leaves progress one station behind while
+  /// remaining distance already reads ~100 m.
+  TransitStop refineStopForPlatformApproach({
+    required TransitStop currentStop,
+    required List<TransitStop> routeStops,
+    required TransitStop destinationStop,
+    required double? alongRouteRemainingMeters,
+    required double latitude,
+    required double longitude,
+    required TransitVehicleType? vehicleType,
+    double accuracyMeters = 0,
+  }) {
+    if (!TransitWakeTuning.usesPlatformCatchUp(vehicleType)) {
+      return currentStop;
+    }
+
+    final proximityCap =
+        TransitWakeTuning.wakeStopConfirmProximityMeters(vehicleType);
+    final accuracySlack = accuracyMeters.clamp(0, 50);
+
+    final destinationDistance = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      destinationStop.latitude,
+      destinationStop.longitude,
+    );
+    if (destinationDistance <= proximityCap + accuracySlack) {
+      return destinationStop;
+    }
+
+    final alongThreshold =
+        TransitWakeTuning.platformCatchUpAlongRemainingMeters(vehicleType);
+    if (alongRouteRemainingMeters == null ||
+        alongRouteRemainingMeters > alongThreshold) {
+      return currentStop;
+    }
+
+    final travelingForward =
+        destinationStop.stopSequence >= routeStops.first.stopSequence;
+    final ordered = List<TransitStop>.from(routeStops)
+      ..sort(
+        (a, b) => travelingForward
+            ? a.stopSequence.compareTo(b.stopSequence)
+            : b.stopSequence.compareTo(a.stopSequence),
+      );
+
+    TransitStop? furthestNear;
+    for (final stop in ordered) {
+      final aheadOfCurrent = travelingForward
+          ? stop.stopSequence > currentStop.stopSequence
+          : stop.stopSequence < currentStop.stopSequence;
+      if (!aheadOfCurrent) {
+        continue;
+      }
+
+      final beforeOrAtDestination = travelingForward
+          ? stop.stopSequence <= destinationStop.stopSequence
+          : stop.stopSequence >= destinationStop.stopSequence;
+      if (!beforeOrAtDestination) {
+        continue;
+      }
+
+      final meters = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        stop.latitude,
+        stop.longitude,
+      );
+      if (meters <= proximityCap + accuracySlack) {
+        furthestNear = stop;
+      }
+    }
+
+    return furthestNear ?? currentStop;
   }
 
   bool _shouldUseHeading(double? headingDegrees, double? speedMps) {

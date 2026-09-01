@@ -223,6 +223,50 @@ class TransitModeService {
         currentStop;
 
     // routeStops already in scope — use private helpers to avoid extra GTFS lookups.
+    double? alongRouteRemainingMeters;
+    double? offRouteMeters;
+    if (projection != null) {
+      offRouteMeters = projection.offRouteMeters;
+      final rawAlong = _routeGeometry.alongRouteRemainingMeters(
+        polyline: polyline,
+        projection: projection,
+        destinationStop: destinationStop,
+      );
+      if (rawAlong != null) {
+        final timestamp = fixTimestamp ?? DateTime.now();
+        alongRouteRemainingMeters = accuracyMeters != null && accuracyMeters > 0
+            ? _alongRouteSmoother.smooth(
+                alongRouteMeters: rawAlong,
+                accuracyMeters: accuracyMeters,
+                timestamp: timestamp,
+                speedMps: speedMps,
+              )
+            : rawAlong;
+      }
+    }
+
+    currentStop = _routeGeometry.refineStopForPlatformApproach(
+      currentStop: currentStop,
+      routeStops: routeStops,
+      destinationStop: destinationStop,
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
+      latitude: latitude,
+      longitude: longitude,
+      vehicleType: route.vehicleType,
+      accuracyMeters: accuracyMeters ?? 0,
+    );
+    currentStop =
+        _gtfsService.resolveStopAmongStops(
+          destination: Destination(
+            name: currentStop.stopName,
+            latitude: currentStop.latitude,
+            longitude: currentStop.longitude,
+            stationKey: _gtfsService.stationKeyForStop(currentStop),
+          ),
+          stops: routeStops,
+        ) ??
+        currentStop;
+
     final nextStop = _nextStopFrom(
       patternStops: routeStops,
       currentStop: currentStop,
@@ -239,39 +283,15 @@ class TransitModeService {
       destinationStop: destinationStop,
     );
 
-    double? alongRouteRemainingMeters;
-    double? offRouteMeters;
-    if (projection != null) {
-      offRouteMeters = projection.offRouteMeters;
-      final rawAlong = _routeGeometry.alongRouteRemainingMeters(
-        polyline: polyline,
-        projection: projection,
-        destinationStop: destinationStop,
+    if (alongRouteRemainingMeters != null && stopsRemaining <= 1) {
+      final haversine = Geolocator.distanceBetween(
+        latitude,
+        longitude,
+        destinationStop.latitude,
+        destinationStop.longitude,
       );
-      if (rawAlong != null) {
-        final timestamp = fixTimestamp ?? DateTime.now();
-        var remaining = accuracyMeters != null && accuracyMeters > 0
-            ? _alongRouteSmoother.smooth(
-                alongRouteMeters: rawAlong,
-                accuracyMeters: accuracyMeters,
-                timestamp: timestamp,
-                speedMps: speedMps,
-              )
-            : rawAlong;
-        // At the destination stop, crow-flies is more trustworthy than a
-        // shape hinterland remaining (often 1–3 km on GO rail).
-        if (stopsRemaining == 0) {
-          final haversine = Geolocator.distanceBetween(
-            latitude,
-            longitude,
-            destinationStop.latitude,
-            destinationStop.longitude,
-          );
-          if (haversine < remaining) {
-            remaining = haversine;
-          }
-        }
-        alongRouteRemainingMeters = remaining;
+      if (haversine < alongRouteRemainingMeters!) {
+        alongRouteRemainingMeters = haversine;
       }
     }
 

@@ -13,11 +13,11 @@ Response.Expires = -1
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="App tour — Android on Google Play, iPhone TestFlight beta with Apple Watch, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
+  <meta name="description" content="App tour — Android on Google Play, iPhone on the App Store with Apple Watch, and Wear OS: pick your stop, map destinations, monitoring, and wake alerts.">
   <meta name="theme-color" content="#0D1B2A">
   <title>App Tour &mdash; DozeAlert</title>
-  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=81">
-  <link rel="stylesheet" href="../assets/brand.css?v=81">
+  <link rel="icon" type="image/png" href="../assets/icon-512.png?v=82">
+  <link rel="stylesheet" href="../assets/brand.css?v=82">
   <style>
     :root {
       --midnight: #0D1B2A;
@@ -241,6 +241,31 @@ Response.Expires = -1
       width: auto;
     }
 
+    .app-store-badge {
+      display: inline-block;
+      line-height: 0;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    .app-store-badge:hover {
+      transform: translateY(-1px);
+      opacity: 0.92;
+    }
+
+    .app-store-badge img {
+      display: block;
+      height: 80px;
+      width: auto;
+    }
+
+    @media (min-width: 520px) {
+      .download-grid.store-badges {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+
     .download-btn-secondary {
       background: transparent;
       color: var(--cyan) !important;
@@ -354,8 +379,8 @@ Response.Expires = -1
         DozeAlert is a commute alarm for riders who want to rest without missing where
         they need to get off. Use Transit Mode on supported agencies with stop-by-stop
         progress, or turn it off and wake by distance for taxi, Uber, and other rides.
-        Available on <strong>Android via Google Play</strong> (with Wear OS) and as an
-        <strong>iPhone TestFlight beta</strong> (with Apple Watch companion).
+        Available on <strong>Android via Google Play</strong> (with Wear OS) and on
+        <strong>iPhone via the App Store</strong> (with Apple Watch companion).
         No account required &mdash; trip data stays on your device.
       </p>
       <nav class="tour-jump" aria-label="Tour sections">
@@ -368,10 +393,10 @@ Response.Expires = -1
     </header>
 
     <section class="card" id="ios">
-      <h2>iPhone (TestFlight beta)</h2>
+      <h2>iPhone</h2>
       <p class="section-lead">
         The same trip-first experience on iOS &mdash; pick a transit stop or map pin,
-        start monitoring, and wake before you arrive. Join the public TestFlight beta;
+        start monitoring, and wake before you arrive. Download from the App Store;
         the build also includes the <a class="text-link" href="#apple-watch">Apple Watch companion</a>.
       </p>
       <div class="showcase two-col">
@@ -386,7 +411,7 @@ Response.Expires = -1
           </p>
           <div class="pill-row">
             <span class="pill">iPhone</span>
-            <span class="pill">TestFlight</span>
+            <span class="pill">App Store</span>
             <span class="pill">No account</span>
           </div>
         </div>
@@ -453,18 +478,18 @@ Response.Expires = -1
       </div>
       <div class="cta-block" style="padding: 1.5rem 0 0; text-align: center;">
         <p style="color: #cbd5e1; margin-bottom: 1rem; font-size: 0.95rem;">
-          Join the public iOS beta &mdash; install via Apple TestFlight on your iPhone.
+          Get DozeAlert on the App Store for iPhone.
         </p>
         <div class="download-grid">
-          <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">
-            Join iOS beta on TestFlight
+          <a class="app-store-badge" href="https://apps.apple.com/app/dozealert/id6794867582" target="_blank" rel="noopener">
+            <img src="../assets/app-store-badge.svg" width="250" height="83" alt="Download on the App Store">
           </a>
           <a class="download-btn download-btn-secondary" href="../index.asp#ios">
-            How to join (on home)
+            App Store install
           </a>
         </div>
         <p style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--muted);">
-          Includes Apple Watch companion &mdash; install from the iPhone Watch app after TestFlight.
+          Includes Apple Watch companion &mdash; install from the iPhone Watch app after installing from the App Store.
           <a class="text-link" href="#apple-watch">See Apple Watch tour</a>.
         </p>
       </div>
@@ -474,7 +499,7 @@ Response.Expires = -1
       <h2>Apple Watch companion</h2>
       <p class="section-lead">
         Phone-owned GPS and wake logic, wrist remote for status and controls &mdash;
-        the same companion model as Wear OS. Ships inside the iPhone TestFlight build
+        the same companion model as Wear OS. Ships inside the iPhone App Store app
         (watchOS 10+). No separate Watch App Store app to download.
       </p>
       <div class="showcase two-col">
@@ -489,7 +514,7 @@ Response.Expires = -1
           </p>
           <div class="pill-row">
             <span class="pill">watchOS 10+</span>
-            <span class="pill">TestFlight</span>
+            <span class="pill">App Store</span>
             <span class="pill">Companion remote</span>
           </div>
         </div>
@@ -539,7 +564,7 @@ Response.Expires = -1
         <div class="copy" style="grid-column: 1 / -1;">
           <h3>How to install</h3>
           <ol style="margin: 0.5rem 0 0; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.55;">
-            <li>Update DozeAlert from TestFlight on the paired iPhone.</li>
+            <li>Update DozeAlert from the App Store on the paired iPhone.</li>
             <li>Open the iPhone <strong>Watch</strong> app &rarr; <strong>My Watch</strong>.</li>
             <li>Under Available Apps, tap <strong>Install</strong> next to DozeAlert.</li>
             <li>Optional: add the DozeAlert complication to a face.</li>
@@ -549,8 +574,8 @@ Response.Expires = -1
       </div>
       <div class="cta-block" style="padding: 1.5rem 0 0; text-align: center;">
         <div class="download-grid">
-          <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">
-            Join iOS beta on TestFlight
+          <a class="app-store-badge" href="https://apps.apple.com/app/dozealert/id6794867582" target="_blank" rel="noopener">
+            <img src="../assets/app-store-badge.svg" width="250" height="83" alt="Download on the App Store">
           </a>
           <a class="download-btn download-btn-secondary" href="../index.asp#apple-watch">
             Apple Watch on home
@@ -989,15 +1014,15 @@ Response.Expires = -1
     <section class="card cta-block">
       <h2 style="margin-bottom: 0.75rem;">Ready to try it?</h2>
       <p style="color: #cbd5e1; margin-bottom: 1.25rem; font-size: 0.95rem;">
-        Get DozeAlert on Google Play for Android, or join the iPhone TestFlight beta
+        Get DozeAlert on Google Play for Android or the App Store for iPhone
         (Apple Watch included), and set your first destination in under a minute.
       </p>
-      <div class="download-grid">
+      <div class="download-grid store-badges">
         <a class="play-badge" href="https://play.google.com/store/apps/details?id=app.dozealert" target="_blank" rel="noopener">
           <img src="../assets/google-play-badge.png" width="215" height="83" alt="Get it on Google Play">
         </a>
-        <a class="download-btn" href="https://testflight.apple.com/join/QhMZbJvR" target="_blank" rel="noopener">
-          Join iOS beta on TestFlight
+        <a class="app-store-badge" href="https://apps.apple.com/app/dozealert/id6794867582" target="_blank" rel="noopener">
+          <img src="../assets/app-store-badge.svg" width="250" height="83" alt="Download on the App Store">
         </a>
       </div>
     </section>
@@ -1008,7 +1033,7 @@ Response.Expires = -1
         <span aria-hidden="true"> &middot; </span>
         <a href="../index.asp#android">Google Play</a>
         <span aria-hidden="true"> &middot; </span>
-        <a href="../index.asp#ios">iOS TestFlight</a>
+        <a href="../index.asp#ios">App Store</a>
         <span aria-hidden="true"> &middot; </span>
         <a href="../privacy/index.asp">Privacy Policy</a>
         <span aria-hidden="true"> &middot; </span>
@@ -1019,6 +1044,6 @@ Response.Expires = -1
       <p style="margin-top: 0.75rem;">&copy; DozeAlert</p>
     </footer>
   </div>
-  <script src="../assets/brand.js?v=81"></script>
+  <script src="../assets/brand.js?v=82"></script>
 </body>
 </html>

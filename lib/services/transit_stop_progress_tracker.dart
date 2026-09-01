@@ -1,6 +1,9 @@
 import 'package:geolocator/geolocator.dart';
 
 import '../models/transit_stop.dart';
+import '../models/transit_vehicle_type.dart';
+import '../utils/transit_wake_tuning.dart';
+import 'route_geometry_service.dart';
 
 /// Keeps [currentStop] converging on the rider without jumping more than one
 /// stop per GPS update.
@@ -12,6 +15,10 @@ class TransitStopProgressTracker {
   String? _routeId;
   int? _destinationStopSequence;
   int? _acceptedStopSequence;
+  final RouteGeometryService _routeGeometry;
+
+  TransitStopProgressTracker({RouteGeometryService? routeGeometry})
+      : _routeGeometry = routeGeometry ?? RouteGeometryService();
 
   bool get hasEstablishedProgress =>
       _routeId != null && _acceptedStopSequence != null;
@@ -49,6 +56,9 @@ class TransitStopProgressTracker {
     double? latitude,
     double? longitude,
     double? maxAdvanceDistanceMeters,
+    double? alongRouteRemainingMeters,
+    TransitVehicleType? vehicleType,
+    double accuracyMeters = 0,
   }) {
     if (_routeId != routeId ||
         _destinationStopSequence != destinationStop.stopSequence) {
@@ -65,7 +75,16 @@ class TransitStopProgressTracker {
     }
 
     if (rawStop.stopSequence == _acceptedStopSequence) {
-      return accepted;
+      return _catchUpIfNearPlatform(
+        accepted: accepted,
+        routeStops: routeStops,
+        destinationStop: destinationStop,
+        latitude: latitude,
+        longitude: longitude,
+        alongRouteRemainingMeters: alongRouteRemainingMeters,
+        vehicleType: vehicleType,
+        accuracyMeters: accuracyMeters,
+      );
     }
 
     final steps = maxStepsPerFix.clamp(1, 2);
@@ -95,7 +114,74 @@ class TransitStopProgressTracker {
 
       latest = _stepTowardRaw(rawStop, routeStops);
     }
-    return latest;
+    _acceptedStopSequence = latest.stopSequence;
+    return _catchUpIfNearPlatform(
+      accepted: latest,
+      routeStops: routeStops,
+      destinationStop: destinationStop,
+      latitude: latitude,
+      longitude: longitude,
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
+      vehicleType: vehicleType,
+      accuracyMeters: accuracyMeters,
+    );
+  }
+
+  TransitStop _catchUpIfNearPlatform({
+    required TransitStop accepted,
+    required List<TransitStop> routeStops,
+    required TransitStop destinationStop,
+    required double? latitude,
+    required double? longitude,
+    required double? alongRouteRemainingMeters,
+    required TransitVehicleType? vehicleType,
+    required double accuracyMeters,
+  }) {
+    if (latitude == null ||
+        longitude == null ||
+        !TransitWakeTuning.usesPlatformCatchUp(vehicleType)) {
+      return accepted;
+    }
+
+    final refined = _routeGeometry.refineStopForPlatformApproach(
+      currentStop: accepted,
+      routeStops: routeStops,
+      destinationStop: destinationStop,
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
+      latitude: latitude,
+      longitude: longitude,
+      vehicleType: vehicleType,
+      accuracyMeters: accuracyMeters,
+    );
+    if (refined.stopSequence == accepted.stopSequence) {
+      return accepted;
+    }
+
+    if (!_isForwardTowardDestination(
+      refined: refined,
+      from: accepted,
+      destinationStop: destinationStop,
+    )) {
+      return accepted;
+    }
+
+    _acceptedStopSequence = refined.stopSequence;
+    return refined;
+  }
+
+  bool _isForwardTowardDestination({
+    required TransitStop refined,
+    required TransitStop from,
+    required TransitStop destinationStop,
+  }) {
+    final travelingForward =
+        destinationStop.stopSequence >= from.stopSequence;
+    if (travelingForward) {
+      return refined.stopSequence > from.stopSequence &&
+          refined.stopSequence <= destinationStop.stopSequence;
+    }
+    return refined.stopSequence < from.stopSequence &&
+        refined.stopSequence >= destinationStop.stopSequence;
   }
 
   bool _mayAdvanceTo(

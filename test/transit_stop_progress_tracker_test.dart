@@ -1,4 +1,5 @@
 import 'package:dozealert/models/transit_stop.dart';
+import 'package:dozealert/models/transit_vehicle_type.dart';
 import 'package:dozealert/services/transit_stop_progress_tracker.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -263,6 +264,46 @@ void main() {
       );
 
       expect(held.stopName, 'Bronte GO');
+    });
+
+    test('catch-up advances to destination when near platform with small remaining', () {
+      const union = TransitStop(
+        stopId: 'union',
+        stopName: 'Union Station',
+        latitude: 43.6453,
+        longitude: -79.3806,
+        routeId: routeId,
+        stopSequence: 1,
+      );
+      const exhibition = TransitStop(
+        stopId: 'exhibition',
+        stopName: 'Exhibition GO',
+        latitude: 43.6359,
+        longitude: -79.4186,
+        routeId: routeId,
+        stopSequence: 2,
+      );
+      final stops = [union, exhibition];
+
+      tracker.reconcile(
+        routeId: routeId,
+        destinationStop: exhibition,
+        rawStop: union,
+        routeStops: stops,
+      );
+
+      final caughtUp = tracker.reconcile(
+        routeId: routeId,
+        destinationStop: exhibition,
+        rawStop: union,
+        routeStops: stops,
+        latitude: exhibition.latitude,
+        longitude: exhibition.longitude,
+        alongRouteRemainingMeters: 100,
+        vehicleType: TransitVehicleType.train,
+      );
+
+      expect(caughtUp.stopName, 'Exhibition GO');
     });
   });
 }

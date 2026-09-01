@@ -69,6 +69,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   int _lastWearSyncAtMs = 0;
   int _lastWearStopsRemaining = -999;
   int? _lastTransitRouteFixAtMs;
+  bool _lastTransitWakeShouldTrigger = false;
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
@@ -289,6 +290,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
 
     final pattern = _transitPattern;
     if (pattern == null || !pattern.isValid) {
+      _lastTransitWakeShouldTrigger = false;
       return;
     }
 
@@ -304,11 +306,13 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
       activityOnFoot: !_activityRecognitionEnabled ? null : _riderOnFoot,
     );
     if (evaluation == null) {
+      _lastTransitWakeShouldTrigger = false;
       return;
     }
 
     if (!evaluation.onRoute) {
       _transitOnRoute = false;
+      _lastTransitWakeShouldTrigger = false;
       await _monitoringStorage.setTransitOnRouteActive(false);
       return;
     }
@@ -343,21 +347,44 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
     final wakePlan = updatedPattern.wakePlan;
     final currentStop = evaluation.currentStop;
     if (wakePlan != null && currentStop != null) {
-      final reached = wakePlan.hasReachedWakeStop(currentStop.stopSequence);
-      if (reached) {
+      final consistentPlan =
+          TransitWakeTrigger.withStopChordWakeDistance(wakePlan);
+      final armDecision = TransitWakeTrigger.evaluatePlan(
+        plan: consistentPlan,
+        directionLocked: evaluation.directionLocked,
+        hasEstablishedProgress: evaluation.hasEstablishedProgress,
+        hasTripConcern: _transitHasTripConcern,
+        currentStop: currentStop,
+        alongRouteRemainingMeters: evaluation.alongRouteRemainingMeters,
+        offRouteMeters: evaluation.offRouteMeters,
+        accuracyMeters: position.accuracy,
+        gpsStale: false,
+        armedAt: updatedPattern.wakeArmedAtMs == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(
+                updatedPattern.wakeArmedAtMs!,
+              ),
+        armStableFixes: updatedPattern.wakeArmStableFixes,
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      _lastTransitWakeShouldTrigger = armDecision.shouldTrigger;
+
+      if (armDecision.isArmed) {
         updatedPattern = updatedPattern.copyWith(
           wakeArmedAtMs:
               updatedPattern.wakeArmedAtMs ??
               DateTime.now().millisecondsSinceEpoch,
           wakeArmStableFixes: updatedPattern.wakeArmStableFixes + 1,
         );
-      } else if (updatedPattern.wakeArmedAtMs != null ||
-          updatedPattern.wakeArmStableFixes != 0) {
+      } else {
         updatedPattern = updatedPattern.copyWith(
           clearWakeArmedAt: true,
           wakeArmStableFixes: 0,
         );
       }
+    } else {
+      _lastTransitWakeShouldTrigger = false;
     }
     _transitPattern = updatedPattern;
     await _monitoringStorage.saveBackgroundTransitPattern(updatedPattern);
@@ -498,36 +525,7 @@ class DozeAlertLocationTaskHandler extends TaskHandler {
   }
 
   bool _shouldTriggerTransitWake() {
-    final pattern = _transitPattern;
-    final plan = pattern?.wakePlan;
-    if (pattern == null || plan == null) {
-      return false;
-    }
-
-    // FGS remaining distance is stop-chord based; align the wake threshold.
-    final consistentPlan = TransitWakeTrigger.withStopChordWakeDistance(plan);
-    final currentStop = _stopForSequence(
-      pattern.segmentStops,
-      _transitCurrentStopSequence,
-    );
-    final decision = TransitWakeTrigger.evaluatePlan(
-      plan: consistentPlan,
-      directionLocked: _transitDirectionLocked,
-      hasEstablishedProgress: _transitHasEstablishedProgress,
-      hasTripConcern: _transitHasTripConcern,
-      currentStop: currentStop,
-      alongRouteRemainingMeters: _transitAlongRouteRemainingMeters,
-      offRouteMeters: _transitOffRouteMeters,
-      accuracyMeters: _lastPositionAccuracy,
-      gpsStale: false,
-      armedAt: pattern.wakeArmedAtMs == null
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(pattern.wakeArmedAtMs!),
-      armStableFixes: pattern.wakeArmStableFixes,
-      latitude: _lastEvalLatitude,
-      longitude: _lastEvalLongitude,
-    );
-    return decision.shouldTrigger;
+    return _lastTransitWakeShouldTrigger;
   }
 
   TransitStop? _stopForSequence(List<TransitStop> stops, int sequence) {

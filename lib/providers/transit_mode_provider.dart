@@ -152,7 +152,7 @@ class TransitModeProvider extends ChangeNotifier {
     return current.stopSequence < destination.stopSequence;
   }
 
-  bool get shouldTriggerApproachAlarm {
+  bool shouldTriggerApproachAlarm({bool countStableArmFix = true}) {
     if (!_settingsService.settings.transitModeEnabled) {
       return false;
     }
@@ -175,8 +175,9 @@ class TransitModeProvider extends ChangeNotifier {
 
     final gpsStale = source.gpsStale || !_snapshot.isActive;
     final now = DateTime.now();
+    final consistentPlan = TransitWakeTrigger.withStopChordWakeDistance(plan);
     final decision = TransitWakeTrigger.evaluatePlan(
-      plan: plan,
+      plan: consistentPlan,
       directionLocked: source.directionLocked,
       hasEstablishedProgress: _stopProgressTracker.hasEstablishedProgress,
       hasTripConcern: source.hasTripConcern,
@@ -198,7 +199,9 @@ class TransitModeProvider extends ChangeNotifier {
     final previousArmFixes = _wakeArmStableFixes;
     if (decision.isArmed) {
       _wakeArmedAt ??= now;
-      _wakeArmStableFixes++;
+      if (countStableArmFix) {
+        _wakeArmStableFixes++;
+      }
     } else if (!gpsStale) {
       // Only clear arm on a live, confident "not at wake stop" decision.
       // Brief GPS loss must not reset grace progress.
@@ -795,6 +798,9 @@ class TransitModeProvider extends ChangeNotifier {
       maxAdvanceDistanceMeters: TransitWakeTuning.maxStopAdvanceHaversineMeters(
         rawSnapshot.vehicleType,
       ),
+      alongRouteRemainingMeters: rawSnapshot.alongRouteRemainingMeters,
+      vehicleType: rawSnapshot.vehicleType,
+      accuracyMeters: _lastAccuracyMeters,
     );
 
     if (stabilizedStop == rawSnapshot.currentStop) {

@@ -80,7 +80,19 @@ class TransitWakeTrigger {
     final current = currentStop;
     final reachedWakeStop =
         current != null && plan.hasReachedWakeStop(current.stopSequence);
-    final isArmed = armedAt != null || reachedWakeStop;
+    final atDestinationSetting = plan.wakeStopCount == 0;
+    final geographicallyApproachingWake = _isGeographicallyApproachingWakeStop(
+      plan: plan,
+      atDestinationSetting: atDestinationSetting,
+      alongRouteRemainingMeters: alongRouteRemainingMeters,
+      latitude: latitude,
+      longitude: longitude,
+      accuracyMeters: accuracyMeters,
+      gpsStale: gpsStale,
+      offRouteMeters: offRouteMeters,
+    );
+    final isArmed =
+        armedAt != null || reachedWakeStop || geographicallyApproachingWake;
     if (!isArmed) {
       return const TransitWakeDecision(
         shouldTrigger: false,
@@ -101,7 +113,6 @@ class TransitWakeTrigger {
         plan.vehicleType,
         wakeStopCount: plan.wakeStopCount,
       );
-      final atDestinationSetting = plan.wakeStopCount == 0;
       final currentIsDestination =
           current?.stopSequence == plan.destinationStopSequence;
       final jumpedToDestination =
@@ -263,6 +274,56 @@ class TransitWakeTrigger {
       stop.longitude,
     );
     return meters <= cap + accuracySlack;
+  }
+
+  /// Arms wake when stop sequence lags but the rider is physically near the
+  /// wake stop and along-route remaining agrees (rail/subway platform lag).
+  static bool _isGeographicallyApproachingWakeStop({
+    required TransitWakePlan plan,
+    required bool atDestinationSetting,
+    required double? alongRouteRemainingMeters,
+    required double? latitude,
+    required double? longitude,
+    required double accuracyMeters,
+    required bool gpsStale,
+    required double? offRouteMeters,
+  }) {
+    if (gpsStale ||
+        alongRouteRemainingMeters == null ||
+        offRouteMeters == null ||
+        offRouteMeters > TransitModeService.routeStopMatchMeters) {
+      return false;
+    }
+
+    if (!TransitWakeTuning.usesPlatformCatchUp(plan.vehicleType)) {
+      return false;
+    }
+
+    final wakeStop =
+        atDestinationSetting ? plan.destinationStop : plan.wakeStop;
+    if (wakeStop == null) {
+      return false;
+    }
+
+    if (!_isWithinWakeStopProximity(
+      stop: wakeStop,
+      vehicleType: plan.vehicleType,
+      latitude: latitude,
+      longitude: longitude,
+      accuracyMeters: accuracyMeters,
+      requirePositionForRail: true,
+    )) {
+      return false;
+    }
+
+    final buffer = TransitWakeTuning.approachBufferMeters(
+      plan.vehicleType,
+      wakeStopCount: plan.wakeStopCount,
+    );
+    final threshold = atDestinationSetting
+        ? buffer
+        : plan.wakeToDestinationMeters + buffer;
+    return alongRouteRemainingMeters <= threshold;
   }
 
   static bool shouldTrigger({

@@ -404,7 +404,12 @@ class LocationProvider extends ChangeNotifier {
     _transitWakeWatchdogTimer?.cancel();
     _transitWakeWatchdogTimer = Timer.periodic(
       _transitWakeWatchdogInterval,
-      (_) => unawaited(_checkArrival(allowWhileEstablishingGps: true)),
+      (_) => unawaited(
+        _checkArrival(
+          allowWhileEstablishingGps: true,
+          countStableArmFix: false,
+        ),
+      ),
     );
   }
 
@@ -684,10 +689,15 @@ class LocationProvider extends ChangeNotifier {
 
     final destination = _monitoringProvider.selectedDestination;
     if (destination != null && _usingBackgroundService) {
-      await _backgroundMonitorService.updateNotification(
-        destinationName: destination.name,
-        distanceKm: _distanceRemainingKm,
-      );
+      final transitSnapshot = _transitModeProvider.displaySnapshot;
+      // FGS already publishes stop-based notification text on each fix; km here
+      // would overwrite "N stops remaining" during an on-route transit trip.
+      if (!transitSnapshot.isActive || !transitSnapshot.directionLocked) {
+        await _backgroundMonitorService.updateNotification(
+          destinationName: destination.name,
+          distanceKm: _distanceRemainingKm,
+        );
+      }
     }
 
     if (Platform.isIOS && destination != null && _trackingEnabled) {
@@ -904,7 +914,10 @@ class LocationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _checkArrival({bool allowWhileEstablishingGps = false}) async {
+  Future<void> _checkArrival({
+    bool allowWhileEstablishingGps = false,
+    bool countStableArmFix = true,
+  }) async {
     if (!_trackingEnabled) {
       return;
     }
@@ -923,7 +936,9 @@ class LocationProvider extends ChangeNotifier {
 
     final establishingGps = _awaitingFreshLocation;
     final shouldTransitWake = _settingsService.settings.transitModeEnabled &&
-        _transitModeProvider.shouldTriggerApproachAlarm;
+        _transitModeProvider.shouldTriggerApproachAlarm(
+          countStableArmFix: countStableArmFix,
+        );
 
     // Stop-based wakes can use last-known progress (poor-GPS grace), including
     // while acquiring a fresh fix. Distance wakes still need a live location.

@@ -670,6 +670,60 @@ void main() {
       },
     );
 
+    test(
+      'arms geographically at wake stop when stop sequence lags on rail',
+      () {
+        final lakeshore = [
+          const TransitStop(
+            stopId: 'union',
+            stopName: 'Union Station',
+            latitude: 43.6453,
+            longitude: -79.3806,
+            routeId: routeId,
+            stopSequence: 10,
+          ),
+          const TransitStop(
+            stopId: 'exhibition',
+            stopName: 'Exhibition GO',
+            latitude: 43.6359,
+            longitude: -79.4186,
+            routeId: routeId,
+            stopSequence: 20,
+          ),
+        ];
+        final wakePlan = TransitWakePlan(
+          routeId: routeId,
+          patternKey: 'lakeshore-west',
+          wakeStopCount: 0,
+          destinationStopSequence: 20,
+          wakeStopSequence: 20,
+          wakeToDestinationMeters: 0,
+          segmentStops: lakeshore,
+          travelingForward: true,
+          vehicleType: TransitVehicleType.train,
+        );
+
+        final decision = TransitWakeTrigger.evaluatePlan(
+          plan: wakePlan,
+          directionLocked: true,
+          hasEstablishedProgress: true,
+          hasTripConcern: false,
+          currentStop: lakeshore[0],
+          alongRouteRemainingMeters: 100,
+          offRouteMeters: 20,
+          accuracyMeters: 15,
+          gpsStale: false,
+          armedAt: null,
+          armStableFixes: 0,
+          latitude: lakeshore[1].latitude,
+          longitude: lakeshore[1].longitude,
+        );
+
+        expect(decision.isArmed, isTrue);
+        expect(decision.shouldTrigger, isTrue);
+      },
+    );
+
     test('trip concern blocks distance and poor-GPS confirmation', () {
       final decision = TransitWakeTrigger.evaluatePlan(
         plan: plan,

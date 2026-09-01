@@ -2,6 +2,7 @@ import 'package:dozealert/models/current_location.dart';
 import 'package:dozealert/models/destination.dart';
 import 'package:dozealert/models/route_shape_polyline.dart';
 import 'package:dozealert/models/transit_stop.dart';
+import 'package:dozealert/models/transit_vehicle_type.dart';
 import 'package:dozealert/services/gtfs_service.dart';
 import 'package:dozealert/services/route_geometry_service.dart';
 import 'package:dozealert/services/transit_mode_service.dart';
@@ -217,6 +218,70 @@ void main() {
       );
 
       expect(fallback?.stopName, 'A');
+    });
+
+    test('refineStopForPlatformApproach snaps to destination when near platform', () {
+      const union = TransitStop(
+        stopId: 'union',
+        stopName: 'Union Station',
+        latitude: 43.6453,
+        longitude: -79.3806,
+        routeId: 'lw',
+        stopSequence: 1,
+      );
+      const exhibition = TransitStop(
+        stopId: 'exhibition',
+        stopName: 'Exhibition GO',
+        latitude: 43.6359,
+        longitude: -79.4186,
+        routeId: 'lw',
+        stopSequence: 2,
+      );
+      const stops = [union, exhibition];
+
+      final refined = geometry.refineStopForPlatformApproach(
+        currentStop: union,
+        routeStops: stops,
+        destinationStop: exhibition,
+        alongRouteRemainingMeters: 100,
+        latitude: exhibition.latitude,
+        longitude: exhibition.longitude,
+        vehicleType: TransitVehicleType.train,
+      );
+
+      expect(refined.stopName, 'Exhibition GO');
+    });
+
+    test('refineStopForPlatformApproach does not snap when still far on the line', () {
+      const bronte = TransitStop(
+        stopId: 'bronte',
+        stopName: 'Bronte GO',
+        latitude: 43.4165,
+        longitude: -79.7220,
+        routeId: 'lw',
+        stopSequence: 1,
+      );
+      const oakville = TransitStop(
+        stopId: 'oakville',
+        stopName: 'Oakville GO',
+        latitude: 43.4550,
+        longitude: -79.6820,
+        routeId: 'lw',
+        stopSequence: 2,
+      );
+      const stops = [bronte, oakville];
+
+      final refined = geometry.refineStopForPlatformApproach(
+        currentStop: bronte,
+        routeStops: stops,
+        destinationStop: oakville,
+        alongRouteRemainingMeters: 5000,
+        latitude: bronte.latitude,
+        longitude: bronte.longitude,
+        vehicleType: TransitVehicleType.train,
+      );
+
+      expect(refined.stopName, 'Bronte GO');
     });
   });
 

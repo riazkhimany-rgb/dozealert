@@ -107,6 +107,30 @@ class TransitWakeTuning {
     };
   }
 
+  /// Rail/subway modes where polyline projection often lags the platform.
+  static bool usesPlatformCatchUp(TransitVehicleType? vehicleType) {
+    return switch (vehicleType) {
+      TransitVehicleType.train ||
+      TransitVehicleType.lightRail ||
+      TransitVehicleType.subway =>
+        true,
+      _ => false,
+    };
+  }
+
+  /// When along-route remaining is below this, allow geographic catch-up to
+  /// stops ahead of the polyline projection (fixes "one station behind" UI).
+  static double platformCatchUpAlongRemainingMeters(
+    TransitVehicleType? vehicleType,
+  ) {
+    return switch (vehicleType) {
+      TransitVehicleType.train => 650,
+      TransitVehicleType.lightRail => 550,
+      TransitVehicleType.subway => 500,
+      _ => 400,
+    };
+  }
+
   /// Extra arm fixes required for poor-GPS fallback on rail when no fix is
   /// available to prove wake-stop proximity.
   static int minStableArmFixesForPoorGps(TransitVehicleType? vehicleType) {
