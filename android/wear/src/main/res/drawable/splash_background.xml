@@ -2,6 +2,12 @@
 <!--
   Fallback windowBackground for cold start / automated review:
   true black + 48dp launcher icon (same asset as SplashScreen API).
+
+  WO-V15 requires the splash icon to match the launcher icon, so this points
+  at @mipmap/ic_launcher itself. AdaptiveIconDrawable scales the device icon
+  mask (a circle on Wear) to the full drawable bounds, so a 48dp box yields a
+  48dp circle identical to the app drawer. Never substitute a flat PNG here —
+  a transparent-background glyph is what Play rejected three times.
 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
@@ -12,6 +18,6 @@
     <item
         android:width="@dimen/splash_screen_icon_size"
         android:height="@dimen/splash_screen_icon_size"
-        android:drawable="@drawable/ic_splash_icon"
+        android:drawable="@mipmap/ic_launcher"
         android:gravity="center" />
 </layer-list>

@@ -433,7 +433,7 @@ Response.Expires = -1
         then pick your stop and start a trip. Requires Android 8.0+.
       </p>
       <p class="meta">
-        Phone <span id="app-version">1.1.1+83</span> &middot; Wear <span id="wear-version">1.1.1+100123</span>
+        Phone <span id="app-version">1.1.1+83</span> &middot; Wear <span id="wear-version">1.1.1+100124</span>
         &middot; Android 8.0+ &middot; Package <code>app.dozealert</code>
       </p>
     </section>

@@ -47,8 +47,11 @@
             android:name=".ScreenshotActivity"
             android:exported="false"
             android:taskAffinity=""
-            android:theme="@android:style/Theme.DeviceDefault" />
+            android:theme="@style/Theme.DozeAlert" />
 
+        <!-- WO-V13: Theme.DozeAlert (not Theme.DeviceDefault) so the window is
+             true black before Compose mounts. This fires on a sleeping wrist,
+             so any light flash is very visible. -->
         <activity
             android:name=".AlarmActivity"
             android:exported="false"
@@ -56,7 +59,7 @@
             android:showOnLockScreen="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:theme="@android:style/Theme.DeviceDefault" />
+            android:theme="@style/Theme.DozeAlert" />
 
         <service
             android:name=".WearDataListenerService"

@@ -180,8 +180,9 @@ data class TripState(
             isMonitoring -> "Watching"
             hasDestination -> destinationName
                 .ifBlank { if (transitActive) lineLabel else "" }
-                .ifBlank { "DozeAlert" }
-            else -> "DozeAlert"
+                .ifBlank { "Trip ready" }
+            // WO-V9: the empty state needs a call to action, not just a brand name.
+            else -> "Set a stop on phone"
         }
 
     /** Compact glance status for Wear complications (≈7 chars). */

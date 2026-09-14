@@ -1,5 +1,6 @@
 package app.dozealert.wear.tile
 
+import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
@@ -11,6 +12,7 @@ import androidx.wear.protolayout.material.Typography
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.TileService
+import app.dozealert.wear.SplashActivity
 import app.dozealert.wear.TripState
 import app.dozealert.wear.TripStateRepository
 import com.google.common.util.concurrent.ListenableFuture
@@ -65,7 +67,8 @@ class DozeAlertTileService : TileService() {
             .addContent(line)
             .build()
 
-        // Wear App Quality: tile canvas must be true black (#000000).
+        // Wear App Quality: tile canvas must be true black (#000000), and the
+        // whole tile must be tappable so the empty state has a way forward (WO-V9).
         val root = LayoutElementBuilders.Box.Builder()
             .setWidth(DimensionBuilders.expand())
             .setHeight(DimensionBuilders.expand())
@@ -76,6 +79,7 @@ class DozeAlertTileService : TileService() {
                             .setColor(ColorBuilders.argb(0xFF000000.toInt()))
                             .build(),
                     )
+                    .setClickable(openAppClickable())
                     .build(),
             )
             .addContent(content)
@@ -99,7 +103,30 @@ class DozeAlertTileService : TileService() {
             .build()
     }
 
+    /**
+     * Opens the watch app. Targets [SplashActivity] rather than `MainActivity`
+     * because the tile host launches this from another process, so the target
+     * must be an exported activity — and routing through the launcher activity
+     * also keeps the WO-V15 branded launch on the tile entry path.
+     */
+    private fun openAppClickable(): ModifiersBuilders.Clickable {
+        return ModifiersBuilders.Clickable.Builder()
+            .setId(CLICK_ID_OPEN_APP)
+            .setOnClick(
+                ActionBuilders.LaunchAction.Builder()
+                    .setAndroidActivity(
+                        ActionBuilders.AndroidActivity.Builder()
+                            .setPackageName(packageName)
+                            .setClassName(SplashActivity::class.java.name)
+                            .build(),
+                    )
+                    .build(),
+            )
+            .build()
+    }
+
     companion object {
         private const val RESOURCES_VERSION = "2"
+        private const val CLICK_ID_OPEN_APP = "open_app"
     }
 }

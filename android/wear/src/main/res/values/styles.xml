@@ -1,12 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!--
       Wear App Quality WO-V15 — branded launch:
       48x48dp app icon matching the launcher icon, on black.
       App name text is NOT required (unlike phone Flutter splash).
 
-      Theme paints the same icon via windowBackground before the layout
-      inflates; SplashActivity then shows activity_splash.xml for 2s.
+      Three paint paths, all resolving to @mipmap/ic_launcher so the startup
+      icon cannot drift from the launcher icon — the mismatch Play rejected
+      three times:
+        1. android:windowBackground (all APIs, incl. Wear OS 3 / API 30, and
+           the frame before the activity draws).
+        2. android:windowSplashScreen* (API 31+, i.e. Wear OS 4 and 5) so the
+           platform splash is true black instead of a theme-derived colour.
+        3. SplashActivity holding activity_splash.xml for 2s, which is what
+           Play review automation actually screenshots.
+
+      androidx core-splashscreen is deliberately NOT used: on API 31+ the
+      platform attributes below do the same job, and the library would drag
+      appcompat-resources -> appcompat -> fragment -> emoji2 into a
+      Compose-only Wear module. Path 3 already covers API 30 better than the
+      library's compat splash would.
     -->
     <style name="Theme.DozeAlert.Splash" parent="@android:style/Theme.DeviceDefault">
         <item name="android:windowBackground">@drawable/splash_background</item>
@@ -14,10 +27,16 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowDisablePreview">false</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="s">@android:color/black</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@drawable/splash_screen</item>
+        <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="s">1000</item>
     </style>
 
     <style name="Theme.DozeAlert" parent="@android:style/Theme.DeviceDefault">
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:colorBackground">@android:color/black</item>
+        <!-- Complication taps open MainActivity directly; keep their platform
+             splash true black rather than a theme-derived colour. -->
+        <item name="android:windowSplashScreenBackground" tools:targetApi="s">@android:color/black</item>
     </style>
 </resources>

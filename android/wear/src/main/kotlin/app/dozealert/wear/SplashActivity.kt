@@ -8,8 +8,14 @@ import android.os.Looper
 
 /**
  * Wear branded launch (WO-V15): shows the 48dp launcher icon on black before
- * [MainActivity]. Play review automation screenshots cold start; relying only
- * on androidx SplashScreen often paints blank or dismisses in one frame.
+ * [MainActivity].
+ *
+ * `Theme.DozeAlert.Splash` gives the platform splash on API 31+ and a matching
+ * `windowBackground` below that; holding [R.layout.activity_splash] afterwards
+ * guarantees an explicitly painted icon for Play review automation, which
+ * screenshots cold start and can otherwise catch a system splash that dismisses
+ * in a single frame. Every path draws @mipmap/ic_launcher, so the frames are
+ * visually identical.
  */
 class SplashActivity : Activity() {
     private val handler = Handler(Looper.getMainLooper())

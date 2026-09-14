@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  windowSplashScreenAnimatedIcon for Theme.DozeAlert.Splash (WO-V15).
+  Same 48dp launcher icon the activity layout paints, so the platform splash
+  and the held splash frame are visually identical.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="@dimen/splash_screen_icon_size"
+        android:height="@dimen/splash_screen_icon_size"
+        android:drawable="@mipmap/ic_launcher"
+        android:gravity="center" />
+</layer-list>

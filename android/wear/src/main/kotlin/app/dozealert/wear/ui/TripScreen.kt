@@ -316,9 +316,10 @@ private fun TripConcernBanner(state: TripState) {
         )
         Text(
             text = state.tripConcernDetail,
+            // WO-V14: 12sp floor for essential text — this is a wrong-direction warning.
             style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 11.sp,
-                lineHeight = 14.sp,
+                fontSize = 12.sp,
+                lineHeight = 15.sp,
             ),
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.82f),
             textAlign = TextAlign.Center,
